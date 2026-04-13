@@ -126,7 +126,7 @@ function request_variables() {
   done
 
   while [[ -z "$SPRING_DATASOURCE_URL" ]]; do
-    read -rp "${AZUL}Datasource URL (jdbc...):${RESET}" SPRING_DATASOURCE_URL
+    read -rp "${AZUL}Datasource URL (example: jdbc:mariadb://localhost:3306/mydb):${RESET}" SPRING_DATASOURCE_URL
   done
 
   while [[ -z "$SPRING_DATASOURCE_USERNAME" ]]; do
@@ -143,24 +143,30 @@ function request_variables() {
   done
 
   while [[ ! "$SPRING_JPA_SHOW_SQL" =~ ^(true|false)$ ]]; do
-    read -rp "${RESET}Show SQL (true/false):${RESET}" SPRING_JPA_SHOW_SQL
+    read -rp "${AZUL}Show SQL (true/false):${RESET}" SPRING_JPA_SHOW_SQL
   done
 
-  while [[ -z "$SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT" ]]; do
-    read -rp "${AZUL}Hibernate dialect:${RESET}" SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
-  done
+  if [[ -z "$SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT" ]]; then
+    read -rp "${AZUL}Hibernate dialect (default: org.hibernate.dialect.MariaDBDialect):${RESET}" SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT
 
-  while [[ -z "$SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_CREATE_SOURCE" ]]; do
-    read -rp "${AZUL}Schema generation create source (metadata):${RESET}" SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_CREATE_SOURCE
-  done
+    SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT="org.hibernate.dialect.MariaDBDialect"
+  fi
+
+  if [[ -z "$SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_CREATE_SOURCE" ]]; then
+    read -rp "${AZUL}Schema generation create source (default: metadata):${RESET}" SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_CREATE_SOURCE
+
+    SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_CREATE_SOURCE="metadata"
+  fi
 
   while [[ -z "$SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_ACTION" ]]; do
     read -rp "${AZUL}Scripts action (create/none):${RESET}" SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_ACTION
   done
 
-  while [[ -z "$SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_CREATE_TARGET" ]]; do
-    read -rp "${AZUL}Scripts create target (.sql path):${RESET}" SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_CREATE_TARGET
-  done
+  if [[ -z "$SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_CREATE_TARGET" ]]; then
+    read -rp "${AZUL}Scripts create target (.sql path. default: src/main/resources/database/migrations):${RESET}" SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_CREATE_TARGET
+
+    SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_CREATE_TARGET="filesystem:src/main/resources/database/migrations"
+  fi
 
   while [[ ! "$SPRING_FLYWAY_ENABLED" =~ ^(true|false)$ ]]; do
     read -rp "${AZUL}Enable Flyway (true/false):${RESET}" SPRING_FLYWAY_ENABLED
@@ -180,13 +186,17 @@ function request_variables() {
     done
   done
 
-  while ! [[ "$SERVER_PORT" =~ ^[0-9]+$ ]] || ((SERVER_PORT < 1 || SERVER_PORT > 65535)); do
-    read -rp "${AZUL}Server port (1-65535):${RESET}" SERVER_PORT
-  done
+  if ! [[ "$SERVER_PORT" =~ ^[0-9]+$ ]] || ((SERVER_PORT < 1 || SERVER_PORT > 65535)); then
+    read -rp "${AZUL}Server port (1-65535. default: 8080):${RESET}" SERVER_PORT
 
-  while [[ -z "$SERVER_ADDRESS" ]]; do
-    read -rp "${AZUL}Server address (127.0.0.1):${RESET}" SERVER_ADDRESS
-  done
+    SERVER_PORT="8080"
+  fi
+
+  if [[ -z "$SERVER_ADDRESS" ]]; then
+    read -rp "${AZUL}Server address (default: 127.0.0.1):${RESET}" SERVER_ADDRESS
+
+    SERVER_ADDRESS="127.0.0.1"
+  fi
 
   command clear
   printf "\n\n\n"
