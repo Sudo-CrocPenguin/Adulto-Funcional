@@ -51,7 +51,7 @@ public class AccountEntity {
   @Column(name = "account_password", length = 60, nullable = false)
   private String account_password;
 
-  @Column(name = "master_key", length = 24)
+  @Column(name = "account_master_key", length = 24)
   private String account_master_key;
 
   @Column(name = "account_created_at", updatable = false)

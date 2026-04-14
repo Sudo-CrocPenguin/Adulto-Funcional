@@ -165,7 +165,7 @@ function request_variables() {
   if [[ -z "$SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_CREATE_TARGET" ]]; then
     read -rp "${AZUL}Scripts create target (.sql path. default: src/main/resources/database/migrations):${RESET}" SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_CREATE_TARGET
 
-    SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_CREATE_TARGET="classpath:src/main/resources/database/migrations"
+    SPRING_JPA_PROPERTIES_JAKARTA_PERSISTENCE_SCHEMA_GENERATION_SCRIPTS_CREATE_TARGET="classpath:database/migrations"
   fi
 
   while [[ ! "$SPRING_FLYWAY_ENABLED" =~ ^(true|false)$ ]]; do
@@ -174,7 +174,7 @@ function request_variables() {
     if [[ "$SPRING_FLYWAY_ENABLED" == "true" ]]; then
       read -rp "${AZUL}Migrations location (default: src/main/resources/database/migrations):${RESET}" SPRING_FLYWAY_LOCATIONS
 
-      SPRING_FLYWAY_LOCATIONS="classpath:src/main/resources/database/migrations"
+      SPRING_FLYWAY_LOCATIONS="classpath:database/migrations"
     fi
 
     while [[ -z "$SPRING_FLYWAY_BASELINE_ON_MIGRATE" ]]; do
