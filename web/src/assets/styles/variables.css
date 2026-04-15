@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+:root {
+
+  /* fuentes */
+  --font-primary: 'DM Sans', Arial, sans-serif;
+  --font-secondary: 'Inter', Arial, sans-serif;
+
+  /* azules y celestes */
+  --color-primary: #2e4c7e;         /* Azul principal - banner, sidebar */
+  --color-primary-2: #294b85;       /* Azul variante */
+  --color-primary-3: #315187;       /* Azul variante */
+  --color-primary-4: #3e63a0;       /* Azul medio */
+  --color-celeste: #3a7ca5;         /* Celeste - hipervínculos */
+  --color-celeste-2: #41b8d5;       /* Celeste claro */
+  --color-celeste-muted: #98a1a9;   /* Celeste apagado */
+  --color-cyan: #6ce5e8;            /* Cian */
+  --color-teal: #1cabb0;            /* Verde azulado tropical */
+
+  /* fondos y bordes */
+  --color-background: #f4f6f9;      /* Fondo total de la aplicación */
+  --color-border: #dde2e8;          /* Borde azul claro */
+  --color-gray-light: #cfd2d5;      /* Gris claro */
+  --color-white: #ffffff;           /* Blanco */
+
+  /* texto */
+  --color-text-primary: #534d4d;    /* Gris oscuro */
+  --color-text-secondary: #8e8e8e;  /* Gris */
+  --color-black: #000000;           /* Negro */
+
+  /* rojos */
+  --color-error: #ff3131;           /* Rojo brillante */
+  --color-error-2: #d05252;         /* Rojo */
+  --color-error-light: #f97979;     /* Rojo pastel */
+  --color-error-extra-light: #f8aaaa; /* Rojo claro */
+
+  /*verdes*/
+  --color-success: #42971d;         /* Verde */
+  --color-success-muted: #77b973;   /* Verde apagado */
+  --color-success-light: #e3fbd8;   /* Verde claro */
+
+  /* naranjas y amarillos */
+  --color-warning: #eba547;         /* Naranja */
+  --color-warning-muted: #d6b04f;   /* Naranja apagado */
+  --color-warning-2: #b79336;       /* Naranja apagado variante */
+  --color-warning-light: #ebdea6;   /* Amarillo pastel apagado */
+
+  /* espacios*/
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+
+  /* bordes radius*/
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 20px;
+
+  /* sombras */
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --shadow-input: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-banner: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
