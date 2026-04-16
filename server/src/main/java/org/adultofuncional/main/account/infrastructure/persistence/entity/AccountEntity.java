@@ -70,7 +70,7 @@ public class AccountEntity {
   private List<PasswordEntity> passwords = new ArrayList<>();
 
   @PrePersist
-  protected void onCreate() {
+  public void onCreate() {
     account_created_at = LocalDateTime.now();
   }
 }
