@@ -7,7 +7,7 @@ CREATE TABLE accounts
   account_email                 VARCHAR(255)      NOT NULL          UNIQUE,
   account_phone                 VARCHAR(20)       NOT NULL,
   account_password              VARCHAR(60)       NOT NULL,
-  account_master_key            VARCHAR(24)       NULL,
+  account_master_key            VARCHAR(60)       NULL,
   account_created_at            TIMESTAMP         DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -81,7 +81,7 @@ CREATE TABLE passwords
   password_id                   CHAR(36)          PRIMARY KEY DEFAULT(UUID_V7()),
 
   password_application_name     VARCHAR(35)       NOT NULL,
-  password_application          VARCHAR(20)       NOT NULL,
+  password_application          TEXT              NOT NULL,
   password_last_change_date     DATE,
 
   passwords_fk_account_id       CHAR(36),

@@ -212,7 +212,7 @@ public class AccountEntity {
    * 
    * @see PasswordEntity
    */
-  @Column(name = "account_master_key", length = 24)
+  @Column(name = "account_master_key", length = 60)
   private String account_master_key;
 
   /**
