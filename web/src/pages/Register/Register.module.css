@@ -1,0 +1,130 @@
+.title{
+    font-family: var(--font-secondary);
+    color: var(--color-primary);
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.formGroup {
+    margin-bottom: 18px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.formGroup input {
+    width: 100%;
+    padding: 11px 15px;
+    border: 1px solid var(--color-gray-light);
+    border-radius: 0.70rem;
+    background-color: var(--color-background);
+    transition: all 0.3s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}
+
+.formGroup input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(46, 76, 126, 0.15);
+}
+
+.inputError {
+    border-color: var(--color-error) !important;
+    box-shadow: 0 0 0 2px rgba(255, 49, 49, 0.15) !important;
+}
+
+.errorMsg {
+    display: block;
+    color: var(--color-error);
+    font-size: 0.82rem;
+    margin-top: 4px;
+}
+
+.successMsg {
+    background: var(--color-success-light);
+    color: var(--color-success);
+    border: 1px solid var(--color-success-muted);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.phoneWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.phonePrefix {
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    padding: 11px 12px;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.phoneWrapper input {
+    flex: 1;
+}
+
+.passwordWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.passwordWrapper input {
+    padding-right: 42px;
+}
+
+.eyeIcon {
+    position: absolute;
+    right: 12px;
+    color: var(--color-celeste-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.eyeIcon:hover {
+    color: var(--color-primary);
+}
+
+.btnPrimary {
+    width: 100%;
+    padding: 13px;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 8px;
+}
+
+.loginLink {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+}
+
+.loginLink a {
+    color: var(--color-celeste);
+    font-weight: 600;
+}
