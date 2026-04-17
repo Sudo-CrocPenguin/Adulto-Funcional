@@ -202,7 +202,8 @@ public class AccountEntity {
    * <li>Este campo almacena el <strong>HASH</strong> de la Master Key, NUNCA el
    * valor original</li>
    * <li>Si el usuario olvida su Master Key, pierde acceso a sus contraseñas
-   * almacenadas o tendrá que verificar su identidad para la nueva contraseña</li>
+   * almacenadas o tendrá que verificar su identidad para la nueva contraseñam
+   * mediante la opcion de recuperar contraseña</li>
    * <li>La Master Key es independiente de la contraseña de login</li>
    * </ul>
    * 
