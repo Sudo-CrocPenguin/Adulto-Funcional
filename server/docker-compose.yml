@@ -2,21 +2,18 @@ services:
   # Base de datos MariaDB
   mariadb:
     image: mariadb:11.8
-    container_name: afs-mariadb
     restart: unless-stopped
     environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-rootpassword}
-      MARIADB_DATABASE: ${MARIADB_DATABASE:-agenda}
-      MARIADB_USER: ${MARIADB_USER:-agenda_user}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-agenda_password}
-    ports:
-      - "3309:3306"
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     volumes:
       - mariadb_data:/var/lib/mysql
     networks:
       - afs-network
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,16 +23,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: afs-server
     restart: unless-stopped
     depends_on:
       mariadb:
         condition: service_healthy
     environment:
       SPRING_APPLICATION_NAME: ${SPRING_APPLICATION_NAME:-adulto-funcional}
-      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/${MARIADB_DATABASE:-agenda}
-      SPRING_DATASOURCE_USERNAME: ${MARIADB_USER:-agenda_user}
-      SPRING_DATASOURCE_PASSWORD: ${MARIADB_PASSWORD:-agenda_password}
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/${MARIADB_DATABASE}
+      SPRING_DATASOURCE_USERNAME: ${MARIADB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MARIADB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-validate}
       SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL:-false}
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.MariaDBDialect
@@ -44,9 +40,9 @@ services:
       SPRING_FLYWAY_BASELINE_ON_MIGRATE: ${SPRING_FLYWAY_BASELINE_ON_MIGRATE:-true}
       SPRING_FLYWAY_VALIDATE_ON_MIGRATE: ${SPRING_FLYWAY_VALIDATE_ON_MIGRATE:-true}
       SERVER_PORT: "8080"
-      SERVER_ADDRESS: "127.0.0.1"
-      JWT_SECRET: ${JWT_SECRET:-claveSecretaMuyLargaParaJWT256bitsMinimoCambiarEnProduccion}
-      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      SERVER_ADDRESS: "0.0.0.0"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
     networks:
       - afs-network
     healthcheck:
@@ -66,13 +62,11 @@ services:
 
   nginx:
     image: nginx:alpine
-    container_name: afs-nginx
     restart: unless-stopped
     depends_on:
       - app
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
@@ -92,7 +86,6 @@ services:
       retries: 3
 volumes:
   mariadb_data:
-    name: afs-mariadb-data
 
 networks:
   afs-network:
