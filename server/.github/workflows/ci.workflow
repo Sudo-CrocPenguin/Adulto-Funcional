@@ -1,0 +1,84 @@
+name: CI for develop branch
+
+on:
+  pull_request:
+    branches: [ "develop" ]
+
+# ================================================================== #
+# trabajos que va realizar el workflow; los cuales incluyen un       #
+# apartado de Checkout code para clonar el repositorio en la maquina #
+# virtual además de establecer el sistema de dicha maquina, siendo   #
+# en este caso Ubuntu Linux                                          #
+# ================================================================== #
+
+# ================================================================== #
+# Job para validar el correcto funcionamiento de los contenedores    #
+# verificando que sus estados sean "healthy", mediante Bash scripts  #
+# ================================================================== #
+jobs:
+  docker-validation:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Create .env file
+      run: cp .env.example .env
+
+    - name: Build Docker containers
+      run: docker-compose up -d --build
+
+    - name: Verify containers are running
+      run: docker-compose ps
+
+    - name: Wait for app healthcheck
+      run: |
+        echo "Waiting the app is healthy..."
+        timeout=60
+
+        while [ $timeout -gt 0 ]; do
+          if docker-compose ps app | grep -q "healthy"; then
+            echo "App is healthy"
+            exit 0
+          fi
+
+          sleep 5
+          timeout=$((timeout - 5))
+        done
+
+        echo "Timeout: App no se puso saludable"
+        docker-compose logs app
+
+        exit 1
+
+    - name: Verify app responds to requests
+      run: |
+        curl --fail http://localhost:8080/actuator/health
+
+    - name: Down containers
+      if: always()
+      run: docker-compose down -v
+
+  # ================================================================== #
+  # Job para ejecutar las pruebas unitarias, el cual genera un archivo #
+  # con las variables de entorno necesarias para la correcta ejecución #
+  # de Spring Boot, y ejecuta los comandos con Maven Wraper(mvnw) para #
+  # los tests                                                          #
+  # ================================================================== #
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Create .env file
+        run: cp .env.example .env
+
+      - name: Run unit tests
+        run: ./mvnw clean test
