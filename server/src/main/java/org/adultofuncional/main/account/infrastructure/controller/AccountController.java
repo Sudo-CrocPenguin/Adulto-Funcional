@@ -71,6 +71,21 @@ public class AccountController {
     @return -> respuesta vacia con status 204
     */
 
+    @PutMapping("/{id}")
+    public ResponseEntity<Object> updateAccount (
+        @PathVariable UUID id,
+        @RequestBody Object request) {
+
+            /*REEMPLAZAR cuando UpdateAccountUseCase este disponible
+            
+            AccountResponse response = updateAccountUseCase.excute(id, request);
+            return ResponseEntity.ok(response)
+
+            */
+
+            return ResponseEntity.ok(null); //cuando funcionen las lineas de arriba elimina esta
+        }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAccount(@PathVariable UUID id) {
         // agregar DeleteAccountUseCase cuando este disponible:
