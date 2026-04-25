@@ -52,6 +52,7 @@ public class AccountMapper {
         account.setEmail(entity.getAccount_email());
         account.setPhone(entity.getAccount_phone());
         account.setCreatedAt(entity.getAccount_created_at());
+        account.setHasMasterKey(entity.getAccount_master_key() != null);
 
         return account;
 
@@ -88,6 +89,7 @@ public class AccountMapper {
         response.setEmail(account.getEmail());
         response.setPhone(account.getPhone());
         response.setCreatedAt(account.getCreatedAt());
+        response.setHasMasterKey(account.isHasMasterKey());
 
         return response;
         */
