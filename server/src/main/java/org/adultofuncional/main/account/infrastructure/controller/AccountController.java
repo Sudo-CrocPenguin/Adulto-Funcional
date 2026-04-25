@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
     /**
-     * Controller que expone los endpoints HTTP del módulo account.
+     * Controller que expone los métodos REST del módulo account.
      *
      * <p>Endpoints disponibles:
      * <ul>
@@ -69,7 +69,7 @@ public class AccountController {
     public ResponseEntity<Object> getAccount(@PathVariable UUID id) {
         /*REEMPLAZAR cuando GetAccountUseCase este disponible
         
-        AccountResponse response = getAccountUseCase.excute(id);
+        AccountResponse response = getAccountUseCase.execute(id);
         return ResponseEntity.ok(response);
         
         */
@@ -95,8 +95,8 @@ public class AccountController {
     public ResponseEntity<Object> updateAccount ( @PathVariable UUID id, @RequestBody Object request) {
 
          /*
-            AccountResponse response = updateAccountUseCase.excute(id, request);
-            return ResponseEntity.ok(response)
+            AccountResponse response = updateAccountUseCase.execute(id, request);
+            return ResponseEntity.ok(response);
 
         */
 
