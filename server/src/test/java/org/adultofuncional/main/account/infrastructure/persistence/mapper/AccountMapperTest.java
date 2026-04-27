@@ -1,7 +1,6 @@
 package org.adultofuncional.main.account.infrastructure.persistence.mapper;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,9 +18,7 @@ import org.junit.jupiter.api.Test;
  *   <li>Manejo de valores null en {@code toResponse()}</li>
  * </ul>
  *
- * <p><strong>Pendiente:</strong> ampliar tests cuando
- * {@code Account.java} y {@code AccountResponse.java} estén disponibles.
- *
+ * 
  * @author Lidys Jaraba
  * @since 0.0.1
  * @see AccountMapper
@@ -29,6 +26,8 @@ import org.junit.jupiter.api.Test;
 
 @DisplayName("AccountMapper - Tests Unitarios")
 class AccountMapperTest {
+
+    // TODO: ampliar tests cuando Account.java y AccountResponse.java estén disponibles
 
     private AccountMapper mapper;
 
@@ -44,7 +43,7 @@ class AccountMapperTest {
 
         @Test
         @DisplayName("Debe retornar null cuando la entidad es null")
-        void TestToDomainReturnsNullWhenEntityIsNull() {
+        void testToDomainReturnsNullWhenEntityIsNull() {
 
             //Given - entidad null
             AccountEntity entity = null;
@@ -57,8 +56,8 @@ class AccountMapperTest {
         }
 
         @Test
-        @DisplayName("Debe retornarl null como placecholder cuando la entidad es válida")
-        void TestToDomainReturnsNullPlacecholder() {
+        @DisplayName("Debe retornar null como placeholder cuando la entidad es válida")
+        void testToDomainReturnsNullPlaceholder() {
 
             //Given - entidad validada
             AccountEntity entity = new AccountEntity();
@@ -68,9 +67,10 @@ class AccountMapperTest {
             entity.setAccount_phone("3001234567");
             entity.setAccount_password("hashedPassword");
 
+            // When - se llama al mapper
             Object result = mapper.toDomain(entity);
 
-            //Then - retorna null porque es placecholder temporal
+            //Then - retorna null porque es placeholder temporal
             assertNull(result, "toDomain() retornar null mientras Account.java no esté disponible");
 
 
@@ -83,25 +83,30 @@ class AccountMapperTest {
 
         @Test
         @DisplayName("Debe retornar null cuando el account es null")
-        void TestToResponseReturnsNullWhenAccountIsNull() {
+        void testToResponseReturnsNullWhenAccountIsNull() {
 
+            // Given - account null
             Object account = null;
 
+            // When - se llama al mapper
             Object result = mapper.toResponse(account);
 
-            assertNull(result , "toResponse() debe retornal null cuando recibe null");
+            // Then - debe retornar null
+            assertNull(result , "toResponse() debe retornar null cuando recibe null");
 
         }
 
         @Test
-        @DisplayName("Debe retornar null como placecholder cuando el account es válido")
-        void TestToResponseReturnsNullPlacecholder() {
-            //Given - un objecto cualquiera simulando un account
+        @DisplayName("Debe retornar null como placeholder cuando el account es válido")
+        void testToResponseReturnsNullPlaceholder() {
+            //Given - un objeto cualquiera simulando un account
             Object account = new Object();
 
+            // When - se llama al mapper
             Object result = mapper.toResponse(account);
 
-            assertNull(result, "toResponse() retona null mientras AccountResponse.java no esté disponible");
+            // Then - retorna null porque es placeholder temporal
+            assertNull(result, "toResponse() retornar null mientras AccountResponse.java no esté disponible");
         }
     }
 }
