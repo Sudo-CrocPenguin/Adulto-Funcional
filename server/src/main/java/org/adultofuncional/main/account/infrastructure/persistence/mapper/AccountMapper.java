@@ -33,12 +33,11 @@ public class AccountMapper {
      * <p>Traduce los campos de {@link AccountEntity} a un objeto Account
      * del dominio, excluyendo información sensible como password y master key.
      *
-     * <p><strong> Pendiente:</strong> reemplazar Object por Account
-     * cuando {@code Account.java} esté disponible.
-     *
      * @param entity la entidad JPA de la cuenta a convertir
      * @return el modelo de dominio Account, o {@code null} si entity es null
     */
+
+    // TODO: reemplazar Object por Account cuando Account.java esté disponible
 
     public Object toDomain(AccountEntity entity) {
         if (entity == null) return null;
@@ -70,12 +69,11 @@ public class AccountMapper {
      * <p><strong>Seguridad:</strong> nunca incluir {@code password}
      * ni {@code master key} en la respuesta.
      *
-     * <p><strong>Pendiente:</strong> reemplazar ambos Object por Account
-     * y AccountResponse cuando los DTOs estén disponibles.
-     *
      * @param account el modelo de dominio de la cuenta
      * @return el DTO AccountResponse, o {@code null} si account es null
     */
+
+    // TODO: reemplazar ambos Object por Account y AccountResponse cuando los DTOs estén disponibles
 
     public Object toResponse(Object account) {
         if (account == null) return null;
