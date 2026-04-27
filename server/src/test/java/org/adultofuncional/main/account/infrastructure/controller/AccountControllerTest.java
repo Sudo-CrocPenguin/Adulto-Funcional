@@ -22,9 +22,6 @@ import java.util.UUID;
  *   <li>{@code deleteAccount()} retorna status 204</li>
  * </ul>
  *
- * <p><strong>⚠️ Pendiente:</strong> ampliar tests cuando
- * los use cases estén disponibles.
- *
  * @author Lidys Jaraba
  * @since 0.0.1
  * @see AccountController
@@ -33,6 +30,7 @@ import java.util.UUID;
 @DisplayName("AccountController - Tests unitarios")
 class AccountControllerTest {
 
+    // TODO: ampliar tests cuando los use cases estén disponibles
     private AccountController controller;
 
     @BeforeEach
@@ -73,8 +71,10 @@ class AccountControllerTest {
             UUID id = UUID.randomUUID();
             Object request = new Object();
 
+            // When - se llama al endpoint
             ResponseEntity<Object> result = controller.updateAccount(id, request);
 
+            // Then - debe retornar status 200
             assertNotNull(result, "La respuesta no debe ser null");
             assertEquals(HttpStatus.OK, result.getStatusCode(), "updateAccount() debe retornar status 200");
         }
@@ -88,10 +88,13 @@ class AccountControllerTest {
         @DisplayName("Debe retornar status 204")
         void testDeleteAccountReturnsStatus204() {
 
+            // Given - un UUID cualquiera
             UUID id = UUID.randomUUID();
 
+            // When - se llama al endpoint
             ResponseEntity<Void> result = controller.deleteAccount(id);
 
+            // Then - debe retornar status 204
             assertNotNull(result, "La respuesta no debe ser null");
             assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode(), "deleteAccount() debe retornar status 204");
         }
