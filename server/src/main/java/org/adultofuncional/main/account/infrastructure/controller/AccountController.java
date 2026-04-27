@@ -57,13 +57,11 @@ public class AccountController {
      * <p>Retorna la información de la cuenta sin exponer
      * datos sensibles como password o master key.
      *
-     * <p><strong>Pendiente:</strong> conectar con {@code GetAccountUseCase}
-     * cuando esté disponible.
-     *
      * @param id el UUID de la cuenta a consultar
      * @return los datos de la cuenta con status 200, o null como placeholder temporal
     */
 
+    // TODO: conectar con GetAccountUseCase cuando esté disponible
 
     @GetMapping("/{id}")
     public ResponseEntity<Object> getAccount(@PathVariable UUID id) {
@@ -83,13 +81,12 @@ public class AccountController {
      * <p>Recibe los nuevos datos en el cuerpo de la petición
      * y retorna la cuenta actualizada.
      *
-     * <p><strong>Pendiente:</strong> conectar con {@code UpdateAccountUseCase}
-     * cuando esté disponible.
-     *
      * @param id el UUID de la cuenta a actualizar
      * @param request los nuevos datos de la cuenta
      * @return los datos actualizados con status 200, o null como placeholder temporal
     */
+
+    // TODO: conectar con UpdateAccountUseCase cuando esté disponible
 
     @PutMapping("/{id}")
     public ResponseEntity<Object> updateAccount ( @PathVariable UUID id, @RequestBody Object request) {
@@ -110,12 +107,11 @@ public class AccountController {
      * <p>Una vez eliminada, se eliminan en cascada todos los datos
      * asociados a la cuenta como movimientos, eventos y contraseñas.
      *
-     * <p><strong>Pendiente:</strong> conectar con {@code DeleteAccountUseCase}
-     * cuando esté disponible.
-     *
      * @param id el UUID de la cuenta a eliminar
      * @return respuesta vacía con status 204
     */
+
+     // TODO: conectar con DeleteAccountUseCase cuando esté disponible
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteAccount(@PathVariable UUID id) {
