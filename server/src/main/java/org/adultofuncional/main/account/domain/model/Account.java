@@ -268,8 +268,6 @@ public int hashCode() {
     // =========================
     
     private static void validateName(String name) {
-        // TODO: Mejorar validación de email con expresión RFC 5322 o Apache Commons Validator.
-        //       La validación actual solo verifica que contenga '@', lo cual es insuficiente para producción.
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Name cannot be empty");
         }
