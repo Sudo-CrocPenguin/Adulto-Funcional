@@ -13,7 +13,7 @@ import java.util.UUID;
  * Servicio de dominio para la autenticación de usuarios.
  * 
  * <p>
- * <strong>⚠️ ADVERTENCIA ARQUITECTÓNICA:</strong>
+ * <strong> ADVERTENCIA ARQUITECTÓNICA:</strong>
  * Esta clase actualmente mezcla responsabilidades de dominio y aplicación,
  * lo que viola los principios de Arquitectura Limpia / Hexagonal.
  * 
