@@ -4,7 +4,7 @@ package org.adultofuncional.main.account.infrastructure.controller;
 import org.adultofuncional.main.account.application.usecase.GetAccountUseCase;
 import org.adultofuncional.main.account.application.usecase.UpdateAccountUseCase;
 import org.adultofuncional.main.account.application.dto.AccountResponse;
-import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
+
 
 import java.util.UUID;
 
@@ -64,7 +64,7 @@ public class AccountController {
    */
   // TODO: conectar con GetAccountUseCase cuando esté disponible
   @GetMapping("/{id}")
-  public ResponseEntity<GetAccountUseCase> getAccount(@PathVariable UUID id) {
+  public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID id) {
 
     AccountResponse response = getAccountUseCase.execute(id);
     return ResponseEntity.ok(response);
@@ -80,7 +80,7 @@ public class AccountController {
    */
   // TODO: conectar con UpdateAccountUseCase cuando esté disponible
   @PatchMapping("/{id}")
-  public ResponseEntity<UpdateAccountUseCase> updateAccount(@PathVariable UUID id, @RequestBody Object request) {
+  public ResponseEntity<AccountResponse> updateAccount(@PathVariable UUID id, @RequestBody Object request) {
 
     AccountResponse response = updateAccountUseCase.execute(id, request);
 

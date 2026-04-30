@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.domain.model.Account;
+import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 
 //import org.adultofuncional.main.account.domain.model.Account;
 
@@ -34,7 +35,7 @@ import org.adultofuncional.main.account.domain.model.Account;
  */
 public interface AccountRepository {
 
-  Account save(Account account);
+  AccountEntity save(AccountEntity entity);
 
   Optional<Account> findById(UUID id);
 
@@ -43,4 +44,18 @@ public interface AccountRepository {
   List<Account> findAll();
 
   void deleteById(UUID id);
+
+  /**
+     * Guarda una cuenta en la base de datos.
+     *
+     * <p>
+     * Flujo: {@code Account} → {@code mapper.toEntity()} →
+     * {@code jpaRepository.save()} → {@code mapper.toDomain()} → retorna
+     * el modelo de dominio con los campos actualizados.
+     *
+     * @param account modelo de dominio a persistir
+     * @return modelo de dominio persistido
+     * @throws IllegalArgumentException si account es null
+     */
+  Account save(Account account);
 }

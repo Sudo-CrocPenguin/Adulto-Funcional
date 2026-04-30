@@ -28,7 +28,7 @@ public class AccountRepositoryImpl implements AccountRepository {
    * Repositorio Spring Data JPA para operaciones CRUD sobre
    * {@code AccountEntity}.
    */
-  private final AccountRepository jpaRepository;
+  private final SpringAccountJpaRepository jpaRepository;
   /** Mapper para convertir entre {@link Account} y {@link AccountEntity}. */
   private final AccountMapper mapper;
 
@@ -38,7 +38,7 @@ public class AccountRepositoryImpl implements AccountRepository {
    * @param jpaRepository repositorio Spring Data JPA
    * @param mapper        conversor entre dominio y entidad
    */
-  public AccountRepositoryImpl(AccountRepository jpaRepository,
+  public AccountRepositoryImpl(SpringAccountJpaRepository jpaRepository,
       AccountMapper mapper) {
     this.jpaRepository = jpaRepository;
     this.mapper = mapper;
@@ -61,7 +61,7 @@ public class AccountRepositoryImpl implements AccountRepository {
       throw new IllegalArgumentException("Account cannot be null");
     }
     AccountEntity entity = mapper.toEntity(account);
-    AccountEntity savedEntity = (AccountEntity) jpaRepository.save(entity);
+    AccountEntity savedEntity = jpaRepository.save(entity);
     return mapper.toDomain(savedEntity);
   }
 
@@ -95,7 +95,7 @@ public class AccountRepositoryImpl implements AccountRepository {
       throw new IllegalArgumentException("Email cannot be null or empty");
     }
     return jpaRepository.findByEmail(email)
-        .map(entity -> mapper.toDomain((Account) entity));
+        .map(mapper::toDomain);
   }
 
   /**

@@ -91,4 +91,9 @@ public class AccountResponse {
      * Corresponde a {@code account_created_at}.
      */
     private LocalDateTime createdAt;
+
+    public void setHasMasterKey(Object hasMasterKey) {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'setHasMasterKey'");
+    }
 }
