@@ -21,64 +21,41 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Entidad JPA que representa un evento en la agenda del usuario.
- * 
+ * Entidad JPA que mapea la tabla {@code events} de MariaDB.
+ *
  * <p>
- * Esta entidad gestiona compromisos, recordatorios y eventos programados
- * asociados a una cuenta de usuario. Soporta eventos únicos o recurrentes
- * con diferentes niveles de prioridad y estados de seguimiento.
- * 
+ * Representa un evento en la agenda del usuario, con soporte para
+ * recurrencia en días, recordatorios, prioridad y estado.
+ *
  * <p>
- * <strong>Características principales:</strong>
+ * Schema de la tabla {@code events}:
+ * 
+ * <pre>
+ * event_id             CHAR(36)     PRIMARY KEY DEFAULT(UUID_V7())
+ * event_title          VARCHAR(35)  NOT NULL
+ * event_priority       VARCHAR(15)  NULL DEFAULT 'Media'
+ * event_date           DATE         NOT NULL
+ * event_frequency      INT          NOT NULL          -- días entre repeticiones (0 = único)
+ * event_reminder       DATETIME     NOT NULL
+ * event_start_hour     DATETIME     NOT NULL
+ * event_end_hour       DATETIME     NOT NULL
+ * event_description    TEXT         NULL
+ * event_status         VARCHAR(20)  DEFAULT 'Pendiente'
+ * event_fk_category_id CHAR(36)     FK → categories(category_id)
+ * event_fk_account_id  CHAR(36)     FK → accounts(account_id)
+ * </pre>
+ *
+ * <p>
+ * Frecuencia ({@code event_frequency}):
  * <ul>
- * <li><b>Identificador único:</b> UUID v7 generado automáticamente</li>
- * <li><b>Eventos recurrentes:</b> Frecuencia configurable en días</li>
- * <li><b>Recordatorios:</b> Fecha y hora específica para notificaciones</li>
- * <li><b>Duración definida:</b> Hora de inicio y fin del evento</li>
- * <li><b>Prioridades:</b> Baja, Media, Alta</li>
- * <li><b>Estados:</b> Pendiente, Completado, Cancelado</li>
- * <li><b>Categoria opcional:</b></li>
+ * <li>{@code 0} → evento único</li>
+ * <li>{@code 1} → diario</li>
+ * <li>{@code 7} → semanal</li>
+ * <li>{@code 30} → mensual</li>
+ * <li>{@code 365} → anual</li>
  * </ul>
- * 
- * <p>
- * <strong>Valores por defecto:</strong>
- * <ul>
- * <li>Prioridad: "Media"</li>
- * <li>Estado: "Pendiente"</li>
- * </ul>
- * 
- * <p>
- * <strong>Frecuencia de repetición:</strong>
- * <ul>
- * <li>{@code 0} = Evento único (sin repetición)</li>
- * <li>{@code 1} = Diario</li>
- * <li>{@code 7} = Semanal</li>
- * <li>{@code 30} = Mensual (aproximado)</li>
- * <li>{@code 365} = Anual</li>
- * </ul>
- * 
- * <p>
- * <strong>Restricciones de base de datos:</strong>
- * <ul>
- * <li>{@code event_id}: CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())</li>
- * <li>{@code event_title}: VARCHAR(35) NOT NULL</li>
- * <li>{@code event_priority}: VARCHAR(15) DEFAULT 'Media'</li>
- * <li>{@code event_status}: VARCHAR(20) DEFAULT 'Pendiente'</li>
- * <li>{@code event_frequency}: INT NOT NULL (0 = sin repetición)</li>
- * </ul>
- * 
- * <p>
- * <strong>Relaciones:</strong>
- * <ul>
- * <li>{@code @ManyToOne} → {@link AccountEntity} (obligatorio)</li>
- * <li>{@code @ManyToOne} → {@link CategoryEntity} (opcional)</li>
- * </ul>
- * 
- * <p>
- * Esta entidad forma parte del módulo de agenda y permite a los usuarios
- * organizar sus compromisos con recordatorios y seguimiento de estado.
- * 
- * @author juan
+ *
+ * @author Juan Sebastian Rios
  * @since 0.0.1
  * @see AccountEntity
  * @see CategoryEntity
@@ -92,14 +69,9 @@ public class EventEntity {
 
   /**
    * Identificador único del evento.
-   * 
+   *
    * <p>
-   * Se genera automáticamente como UUID v7 (ordenable temporalmente).
-   * El estilo {@code UuidGenerator.Style.TIME} garantiza que los primeros
-   * bits contengan un timestamp, lo que mejora la indexación en base de datos.
-   * 
-   * <p>
-   * Formato: {@code CHAR(36)} en base de datos.
+   * Columna: {@code event_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())}.
    */
   @Id
   @GeneratedValue
@@ -108,183 +80,105 @@ public class EventEntity {
   private UUID event_id;
 
   /**
-   * Título descriptivo del evento.
-   * 
+   * Título del evento.
+   *
    * <p>
-   * Obligatorio. Máximo 35 caracteres.
-   * Debe ser conciso pero informativo sobre el propósito del evento.
-   * 
-   * <p>
-   * Ejemplos: "Reunión equipo", "Cita médico", "Entrega proyecto".
+   * Columna: {@code event_title VARCHAR(35) NOT NULL}.
    */
   @Column(name = "event_title", length = 35, nullable = false)
   private String event_title;
 
   /**
-   * Nivel de prioridad del evento.
-   * 
+   * Prioridad del evento. Por defecto {@code "Media"}.
+   *
    * <p>
-   * Opcional. Valor por defecto: "Media".
-   * Máximo 15 caracteres.
-   * 
-   * <p>
-   * <strong>Valores típicos:</strong>
-   * <ul>
-   * <li>"Baja" - Eventos flexibles o poco urgentes</li>
-   * <li>"Media" - Prioridad normal (por defecto)</li>
-   * <li>"Alta" - Eventos importantes o impostergables</li>
-   * </ul>
-   * 
-   * <p>
-   * Útil para ordenar y filtrar eventos por importancia.
+   * Columna: {@code event_priority VARCHAR(15) NULL DEFAULT 'Media'}.
+   * Valores típicos: {@code "Baja"}, {@code "Media"}, {@code "Alta"}.
    */
   @Column(name = "event_priority", length = 15)
   private String event_priority = "Media";
 
   /**
-   * Fecha en la que ocurre el evento.
-   * 
+   * Fecha calendario del evento.
+   *
    * <p>
-   * Obligatorio. Representa el día calendario del evento,
-   * independientemente de la hora de inicio y fin.
-   * 
-   * <p>
-   * Para eventos recurrentes, esta es la fecha de la primera ocurrencia.
+   * Columna: {@code event_date DATE NOT NULL}.
    */
   @Column(name = "event_date", nullable = false)
   private LocalDate event_date;
 
   /**
-   * Frecuencia de repetición del evento en días.
-   * 
+   * Frecuencia de repetición en días.
+   *
    * <p>
-   * Obligatorio. Un valor entero que indica cada cuántos días se repite.
-   * 
-   * <p>
-   * <strong>Valores comunes:</strong>
-   * <ul>
-   * <li>{@code 0} = Evento único, sin repetición</li>
-   * <li>{@code 1} = Diario (cada 1 día)</li>
-   * <li>{@code 7} = Semanal (cada 7 días)</li>
-   * <li>{@code 14} = Quincenal (cada 14 días)</li>
-   * <li>{@code 30} = Mensual aproximado (cada 30 días)</li>
-   * <li>{@code 365} = Anual (cada 365 días)</li>
-   * </ul>
-   * 
-   * <p>
-   * La lógica de recurrencia se implementa en la capa de aplicación,
-   * generando instancias virtuales basadas en esta frecuencia.
+   * Columna: {@code event_frequency INT NOT NULL}.
+   * {@code 0} indica evento único sin repetición.
    */
   @Column(name = "event_frequency", nullable = false)
   private Integer event_frequency;
 
   /**
-   * Fecha y hora del recordatorio programado.
-   * 
+   * Fecha y hora del recordatorio.
+   *
    * <p>
-   * Obligatorio. Momento exacto en que se debe notificar al usuario
-   * sobre el evento. Puede ser anterior a la hora de inicio del evento.
-   * 
-   * <p>
-   * <strong>Ejemplo:</strong> Para un evento a las 15:00, el recordatorio
-   * podría configurarse a las 14:30 (30 minutos antes).
+   * Columna: {@code event_reminder DATETIME NOT NULL}.
    */
   @Column(name = "event_reminder", nullable = false)
   private LocalDateTime event_reminder;
 
   /**
    * Hora de inicio del evento.
-   * 
+   *
    * <p>
-   * Obligatorio. Momento exacto en que comienza el evento.
-   * Incluye fecha y hora para soportar eventos de varios días.
-   * 
-   * <p>
-   * Debe ser anterior a {@link #event_end_hour}.
+   * Columna: {@code event_start_hour DATETIME NOT NULL}.
    */
   @Column(name = "event_start_hour", nullable = false)
   private LocalDateTime event_start_hour;
 
   /**
    * Hora de finalización del evento.
-   * 
+   *
    * <p>
-   * Obligatorio. Momento exacto en que termina el evento.
-   * Incluye fecha y hora para soportar eventos de varios días.
-   * 
-   * <p>
-   * Debe ser posterior a {@link #event_start_hour}.
+   * Columna: {@code event_end_hour DATETIME NOT NULL}.
    */
   @Column(name = "event_end_hour", nullable = false)
   private LocalDateTime event_end_hour;
 
   /**
    * Descripción detallada del evento.
-   * 
+   *
    * <p>
-   * Opcional. Campo de texto libre sin límite de longitud
-   * ({@code TEXT} en base de datos).
-   * 
-   * <p>
-   * Puede incluir notas, agenda, ubicación, participantes, enlaces, etc.
+   * Columna: {@code event_description TEXT NULL}.
    */
   @Column(name = "event_description", columnDefinition = "TEXT")
   private String event_description;
 
   /**
-   * Estado actual del evento.
-   * 
+   * Estado del evento. Por defecto {@code "Pendiente"}.
+   *
    * <p>
-   * Opcional. Valor por defecto: "Pendiente".
-   * Máximo 20 caracteres.
-   * 
-   * <p>
-   * <strong>Valores típicos:</strong>
-   * <ul>
-   * <li>"Pendiente" - Evento programado, aún no realizado</li>
-   * <li>"Completado" - Evento ya realizado</li>
-   * <li>"Cancelado" - Evento cancelado</li>
-   * <li>"Pospuesto" - Evento reprogramado</li>
-   * </ul>
-   * 
-   * <p>
-   * Útil para seguimiento y filtrado de eventos.
+   * Columna: {@code event_status VARCHAR(20) DEFAULT 'Pendiente'}.
+   * Valores típicos: {@code "Pendiente"}, {@code "Completado"},
+   * {@code "Cancelado"}, {@code "Pospuesto"}.
    */
   @Column(name = "event_status", length = 20)
   private String event_status = "Pendiente";
 
   /**
-   * Categoría asociada al evento.
-   * 
+   * Categoría asociada al evento (opcional).
+   *
    * <p>
-   * Relación {@code @ManyToOne} opcional con {@link CategoryEntity}.
-   * Carga perezosa ({@code LAZY}) para optimizar rendimiento.
-   * 
-   * <p>
-   * Permite categorizar eventos (ej. "Trabajo", "Personal", "Salud")
-   * usando las mismas categorías del módulo financiero.
-   * 
-   * <p>
-   * En base de datos: {@code event_fk_category_id CHAR(36)}.
+   * FK: {@code event_fk_category_id CHAR(36)} → {@code categories(category_id)}.
    */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "event_fk_category_id")
   private CategoryEntity category;
 
   /**
-   * Cuenta de usuario propietaria del evento.
-   * 
+   * Cuenta propietaria del evento.
+   *
    * <p>
-   * Relación {@code @ManyToOne} obligatoria con {@link AccountEntity}.
-   * Carga perezosa ({@code LAZY}) para optimizar rendimiento.
-   * 
-   * <p>
-   * Cada evento pertenece a una única cuenta. La eliminación de una cuenta
-   * eliminará en cascada todos sus eventos ({@code CascadeType.ALL} +
-   * {@code orphanRemoval = true} definido en {@link AccountEntity}).
-   * 
-   * <p>
-   * En base de datos: {@code event_fk_account_id CHAR(36) NOT NULL}.
+   * FK: {@code event_fk_account_id CHAR(36)} → {@code accounts(account_id)}.
    */
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "event_fk_account_id", nullable = false)

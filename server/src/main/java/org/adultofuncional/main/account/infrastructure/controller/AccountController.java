@@ -17,108 +17,97 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-    /**
-     * Controller que expone los métodos REST del módulo account.
-     *
-     * <p>Endpoints disponibles:
-     * <ul>
-     *   <li>{@code GET    /api/account/{id}} → obtener datos de una cuenta</li>
-     *   <li>{@code PUT    /api/account/{id}} → actualizar datos de una cuenta</li>
-     *   <li>{@code DELETE /api/account/{id}} → eliminar una cuenta</li>
-     * </ul>
-     *
-     * <p><strong>Seguridad:</strong> este controller nunca retorna
-     * {@code password} ni {@code master key} en las respuestas.
-     *
-     * @author Lidys Jaraba
-     * @since 0.0.1
-    */
-
-@RestController 
+/**
+ * Controlador REST que expone los endpoints del módulo de cuentas.
+ *
+ * <p>
+ * Base path: {@code /api/account}. Las respuestas nunca incluyen
+ * {@code account_password} ni {@code account_master_key}.
+ *
+ * <p>
+ * Endpoints:
+ * <ul>
+ * <li>{@code GET /api/account/{id}} — obtener datos de una cuenta</li>
+ * <li>{@code PUT /api/account/{id}} — actualizar datos de una cuenta</li>
+ * <li>{@code DELETE /api/account/{id}} — eliminar una cuenta</li>
+ * </ul>
+ *
+ * @author Lydis Jaraba
+ * @since 0.0.1
+ */
+@RestController
 @RequestMapping("/api/account")
 public class AccountController {
 
-    /*por ahora en comentarios hasta que los use cases esten disponibles
-    
-    private final GetAccountUseCase getAccountUseCase;
-    private final UpdateAccountUseCase updateAccountUseCase;
-    
-    public AccountController(GetAccountUseCase getAccountUseCase, UpdateAccountUseCase updateAccountUseCase) {
-        this.getAccountUseCase = getAccountUseCase;
-        this.updateAccountUseCase = updateAccountUseCase;
-        
-    }
+  /*
+   * por ahora en comentarios hasta que los use cases esten disponibles
+   * 
+   * private final GetAccountUseCase getAccountUseCase;
+   * private final UpdateAccountUseCase updateAccountUseCase;
+   * 
+   * public AccountController(GetAccountUseCase getAccountUseCase,
+   * UpdateAccountUseCase updateAccountUseCase) {
+   * this.getAccountUseCase = getAccountUseCase;
+   * this.updateAccountUseCase = updateAccountUseCase;
+   * 
+   * }
+   * 
+   */
 
-    */
+  /**
+   * Obtiene los datos de una cuenta por su ID.
+   *
+   * @param id UUID de la cuenta a consultar
+   * @return datos de la cuenta con status 200, o null como placeholder temporal
+   */
+  // TODO: conectar con GetAccountUseCase cuando esté disponible
+  @GetMapping("/{id}")
+  public ResponseEntity<Object> getAccount(@PathVariable UUID id) {
+    /*
+     * REEMPLAZAR cuando GetAccountUseCase este disponible
+     * 
+     * AccountResponse response = getAccountUseCase.execute(id);
+     * return ResponseEntity.ok(response);
+     * 
+     */
 
-    /**
-     * Obtiene los datos de una cuenta por su ID.
-     *
-     * <p>Retorna la información de la cuenta sin exponer
-     * datos sensibles como password o master key.
-     *
-     * @param id el UUID de la cuenta a consultar
-     * @return los datos de la cuenta con status 200, o null como placeholder temporal
-    */
+    return ResponseEntity.ok(null); // cuando funcione las lineas de arriba se elimina esta
+  }
 
-    // TODO: conectar con GetAccountUseCase cuando esté disponible
+  /**
+   * Actualiza los datos de una cuenta.
+   *
+   * @param id      UUID de la cuenta a actualizar
+   * @param request nuevos datos de la cuenta
+   * @return datos actualizados con status 200, o null como placeholder temporal
+   */
+  // TODO: conectar con UpdateAccountUseCase cuando esté disponible
+  @PutMapping("/{id}")
+  public ResponseEntity<Object> updateAccount(@PathVariable UUID id, @RequestBody Object request) {
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Object> getAccount(@PathVariable UUID id) {
-        /*REEMPLAZAR cuando GetAccountUseCase este disponible
-        
-        AccountResponse response = getAccountUseCase.execute(id);
-        return ResponseEntity.ok(response);
-        
-        */
+    /*
+     * AccountResponse response = updateAccountUseCase.execute(id, request);
+     * return ResponseEntity.ok(response);
+     * 
+     */
 
-        return ResponseEntity.ok(null); //cuando funcione las lineas de arriba se elimina esta
-    }
+    return ResponseEntity.ok(null);
+  }
 
-    /**
-     * Actualiza los datos de una cuenta.
-     *
-     * <p>Recibe los nuevos datos en el cuerpo de la petición
-     * y retorna la cuenta actualizada.
-     *
-     * @param id el UUID de la cuenta a actualizar
-     * @param request los nuevos datos de la cuenta
-     * @return los datos actualizados con status 200, o null como placeholder temporal
-    */
+  /**
+   * Elimina una cuenta por su ID. Al eliminarla se eliminan en cascada
+   * todos los datos asociados (movimientos, eventos, gastos fijos y contraseñas).
+   *
+   * @param id UUID de la cuenta a eliminar
+   * @return respuesta vacía con status 204
+   */
+  // TODO: conectar con DeleteAccountUseCase cuando esté disponible
+  @DeleteMapping("/{id}")
+  public ResponseEntity<Void> deleteAccount(@PathVariable UUID id) {
+    // agregar DeleteAccountUseCase cuando este disponible:
+    // deleteAccountUseCase.execute(id);
 
-    // TODO: conectar con UpdateAccountUseCase cuando esté disponible
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Object> updateAccount ( @PathVariable UUID id, @RequestBody Object request) {
-
-         /*
-            AccountResponse response = updateAccountUseCase.execute(id, request);
-            return ResponseEntity.ok(response);
-
-        */
-
-        return ResponseEntity.ok(null); 
-    }
-
-
-    /**
-     * Elimina una cuenta por su ID.
-     *
-     * <p>Una vez eliminada, se eliminan en cascada todos los datos
-     * asociados a la cuenta como movimientos, eventos y contraseñas.
-     *
-     * @param id el UUID de la cuenta a eliminar
-     * @return respuesta vacía con status 204
-    */
-
-     // TODO: conectar con DeleteAccountUseCase cuando esté disponible
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteAccount(@PathVariable UUID id) {
-        // agregar DeleteAccountUseCase cuando este disponible:
-        //deleteAccountUseCase.execute(id);
-
-        return ResponseEntity.noContent().build(); 
-    }
+    return ResponseEntity.noContent().build();
+  }
 
 }

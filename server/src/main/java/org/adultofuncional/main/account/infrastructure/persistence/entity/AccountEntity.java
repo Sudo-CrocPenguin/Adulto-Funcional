@@ -24,64 +24,36 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * Entidad JPA que representa una cuenta de usuario en el sistema.
- * 
+ * Entidad JPA que mapea la tabla {@code accounts} de MariaDB.
+ *
  * <p>
- * Esta es la entidad central del dominio, ya que todas las operaciones
- * del sistema están asociadas a una cuenta de usuario. Contiene la información
- * personal del usuario y sus credenciales de acceso.
- * 
+ * Es la entidad central del sistema. Todas las demás entidades (movimientos,
+ * categorías, gastos fijos, eventos y contraseñas) referencian una cuenta
+ * mediante su {@code account_id}.
+ *
  * <p>
- * <strong>Características principales:</strong>
+ * Schema de la tabla {@code accounts}:
+ * 
+ * <pre>
+ * account_id          CHAR(36)    PRIMARY KEY DEFAULT(UUID_V7())
+ * account_names       VARCHAR(50) NOT NULL
+ * account_lastnames   VARCHAR(50) NOT NULL
+ * account_email       VARCHAR(255) NOT NULL UNIQUE
+ * account_phone       VARCHAR(20) NOT NULL
+ * account_password    VARCHAR(60) NOT NULL
+ * account_master_key  VARCHAR(60) NULL
+ * account_created_at  TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
+ * </pre>
+ *
+ * <p>
+ * Seguridad:
  * <ul>
- * <li><b>Identificador único:</b> UUID v7 generado automáticamente</li>
- * <li><b>Email único:</b> Restricción {@code UNIQUE} en base de datos</li>
- * <li><b>Contraseña hasheada:</b> Longitud de 60 caracteres para Argon2</li>
- * <li><b>Master Key:</b> Clave opcional para encriptación de datos
- * sensibles</li>
- * <li><b>Fecha de creación automática:</b> Establecida en
- * {@code @PrePersist}</li>
- * <li><b>Cascada completa:</b> Al eliminar una cuenta, se eliminan todos sus
- * datos asociados</li>
+ * <li>{@code account_password}: hash Argon2, nunca texto plano</li>
+ * <li>{@code account_master_key}: hash Argon2 opcional, protege el acceso al
+ * gestor de contraseñas</li>
  * </ul>
- * 
- * <p>
- * <strong>Relaciones:</strong>
- * <ul>
- * <li>Movimientos financieros ({@code @OneToMany} →
- * {@link MovementEntity})</li>
- * <li>Gastos fijos ({@code @OneToMany} → {@link FixedExpensesEntity})</li>
- * <li>Eventos de agenda ({@code @OneToMany} → {@link EventEntity})</li>
- * <li>Contraseñas almacenadas ({@code @OneToMany} →
- * {@link PasswordEntity})</li>
- * </ul>
- * 
- * <p>
- * <strong>⚠️ Consideraciones de seguridad:</strong>
- * <ul>
- * <li>El campo {@code account_password} almacena el hash Argon2, NUNCA texto
- * plano</li>
- * <li>El campo {@code account_master_key} almacena el hash Argon2</li>
- * <li>Esta clase NUNCA debe ser expuesta directamente en respuestas API</li>
- * </ul>
- * 
- * <p>
- * <strong>Restricciones de base de datos:</strong>
- * <ul>
- * <li>{@code account_id}: CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())</li>
- * <li>{@code account_email}: VARCHAR(255) UNIQUE NOT NULL</li>
- * <li>{@code account_password}: VARCHAR(60) NOT NULL (espacio para hash
- * Argon2)</li>
- * <li>{@code account_master_key}: VARCHAR(60) NULL (espacio para hash Argon2)
- * </li>
- * </ul>
- * 
- * <p>
- * Esta entidad es el punto de entrada principal para la autenticación
- * y autorización en el sistema. Todas las demás entidades referencian
- * una cuenta mediante su {@code account_id}.
- * 
- * @author juan
+ *
+ * @author Juan Sebastian Rios
  * @since 0.0.1
  * @see MovementEntity
  * @see FixedExpensesEntity
@@ -94,211 +66,120 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class AccountEntity {
-
   /**
    * Identificador único de la cuenta.
-   * 
+   *
    * <p>
-   * Se genera automáticamente como UUID v7 (ordenable temporalmente).
-   * El estilo {@code UuidGenerator.Style.TIME} garantiza que los primeros
-   * bits contengan un timestamp, lo que mejora la indexación en base de datos.
-   * 
-   * <p>
-   * Formato: {@code CHAR(36)} en base de datos.
+   * Columna: {@code account_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())}.
+   * Generado como UUID v7 (ordenable temporalmente) mediante
+   * {@code UuidGenerator.Style.TIME}.
    */
   @Id
   @GeneratedValue
   @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "account_id", columnDefinition = "CHAR(36)")
   private UUID account_id;
-
   /**
-   * Nombres del titular de la cuenta.
-   * 
+   * Nombres del titular.
+   *
    * <p>
-   * Obligatorio. Máximo 50 caracteres.
-   * Se almacena como {@code VARCHAR(50)}.
+   * Columna: {@code account_names VARCHAR(50) NOT NULL}.
    */
   @Column(name = "account_names", length = 50, nullable = false)
   private String account_names;
-
   /**
-   * Apellidos del titular de la cuenta.
-   * 
+   * Apellidos del titular.
+   *
    * <p>
-   * Obligatorio. Máximo 50 caracteres.
-   * Se almacena como {@code VARCHAR(50)}.
+   * Columna: {@code account_lastnames VARCHAR(50) NOT NULL}.
    */
   @Column(name = "account_lastnames", length = 50, nullable = false)
   private String account_lastnames;
-
   /**
-   * Correo electrónico del usuario.
-   * 
+   * Correo electrónico. Único en todo el sistema, usado como username
+   * para autenticación con Spring Security.
+   *
    * <p>
-   * Obligatorio y único en todo el sistema. Se utiliza como
-   * identificador para el inicio de sesión (username en Spring Security).
-   * Máximo 255 caracteres.
-   * 
-   * <p>
-   * <strong>Restricción BD:</strong> {@code UNIQUE NOT NULL}
+   * Columna: {@code account_email VARCHAR(255) NOT NULL UNIQUE}.
    */
   @Column(name = "account_email", length = 255, nullable = false, unique = true)
   private String account_email;
-
   /**
    * Número de teléfono de contacto.
-   * 
+   *
    * <p>
-   * Obligatorio. Máximo 20 caracteres.
-   * Puede incluir código de país y formato internacional.
+   * Columna: {@code account_phone VARCHAR(20) NOT NULL}.
    */
   @Column(name = "account_phone", length = 20, nullable = false)
   private String account_phone;
-
   /**
-   * Contraseña hasheada del usuario.
-   * 
+   * Hash de la contraseña de inicio de sesión (Argon2).
+   *
    * <p>
-   * Obligatorio. Longitud de 60 caracteres para almacenar el hash
-   * generado por Argon2 (formato estándar).
-   * 
-   * <p>
-   * <strong>⚠️ IMPORTANTE:</strong> NUNCA almacenar contraseñas en texto plano.
-   * Este campo debe contener SIEMPRE un hash criptográfico.
-   * 
-   * <p>
-   * Formato esperado: {@code $argon2id$v=19$m=4096,t=3,p=1$...}
-   * 
-   * @see org.springframework.security.crypto.argon2.Argon2PasswordEncoder
+   * Columna: {@code account_password VARCHAR(60) NOT NULL}.
+   * Nunca debe contener texto plano.
    */
   @Column(name = "account_password", length = 60, nullable = false)
   private String account_password;
-
   /**
    * Hash de la clave maestra para acceder al gestor de contraseñas.
-   * 
+   * Es opcional y se verifica con Argon2 de forma independiente a la
+   * contraseña de login.
+   *
    * <p>
-   * Obligatorio. Longitud de 60 caracteres para almacenar el hash Argon2.
-   * 
-   * <p>
-   * <strong>Propósito:</strong> Actúa como un segundo factor de autenticación
-   * específico para proteger el acceso al módulo de gestor de contraseñas.
-   * 
-   * <p>
-   * <strong>Flujo de uso:</strong>
-   * <ol>
-   * <li>El usuario inicia sesión normalmente con email + contraseña</li>
-   * <li>Al intentar acceder al gestor de contraseñas, se solicita la Master
-   * Key</li>
-   * <li>Se verifica con Argon2:
-   * {@code argon2.matches(providedKey, this.account_master_key)}</li>
-   * <li>Si es correcta, se concede acceso al gestor de contraseñas</li>
-   * </ol>
-   * 
-   * <p>
-   * <strong>⚠️ IMPORTANTE:</strong>
-   * <ul>
-   * <li>Este campo almacena el <strong>HASH</strong> de la Master Key, NUNCA el
-   * valor original</li>
-   * <li>Si el usuario olvida su Master Key, pierde acceso a sus contraseñas
-   * almacenadas o tendrá que verificar su identidad para la nueva contraseñam
-   * mediante la opcion de recuperar contraseña</li>
-   * <li>La Master Key es independiente de la contraseña de login</li>
-   * </ul>
-   * 
-   * <p>
-   * Las contraseñas almacenadas en {@link PasswordEntity} están encriptadas
-   * por AES-256.
-   * 
-   * @see PasswordEntity
+   * Columna: {@code account_master_key VARCHAR(60) NULL}.
    */
   @Column(name = "account_master_key", length = 60)
   private String account_master_key;
-
   /**
    * Fecha y hora de creación de la cuenta.
-   * 
+   *
    * <p>
-   * Se establece automáticamente en {@link #onCreate()} antes de
-   * persistir la entidad por primera vez. El campo está marcado como
-   * {@code updatable = false}, por lo que nunca se modificará después
-   * de la inserción inicial.
-   * 
-   * <p>
-   * Útil para auditoría y reportes de crecimiento de usuarios.
+   * Columna: {@code account_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP}.
+   * Se establece automáticamente en {@link #onCreate()} y no es modificable.
    */
   @Column(name = "account_created_at", updatable = false)
   private LocalDateTime account_created_at;
-
   /**
-   * Lista de movimientos financieros asociados a esta cuenta.
-   * 
+   * Movimientos financieros asociados a esta cuenta.
+   *
    * <p>
-   * Relación {@code @OneToMany} bidireccional con {@link MovementEntity}.
-   * La eliminación de una cuenta eliminará en cascada todos sus movimientos
-   * ({@code CascadeType.ALL} + {@code orphanRemoval = true}).
-   * 
-   * <p>
-   * Se inicializa como {@code ArrayList} vacía para evitar
-   * {@link NullPointerException} al agregar elementos.
+   * Relación {@code @OneToMany} con {@code movement_fk_account_id} como FK.
+   * La eliminación de una cuenta elimina en cascada todos sus movimientos.
    */
   @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<MovementEntity> movements = new ArrayList<>();
-
   /**
-   * Lista de gastos fijos asociados a esta cuenta.
-   * 
+   * Gastos fijos asociados a esta cuenta.
+   *
    * <p>
-   * Relación {@code @OneToMany} bidireccional con {@link FixedExpensesEntity}.
-   * La eliminación de una cuenta eliminará en cascada todos sus gastos fijos.
-   * 
-   * <p>
-   * Se inicializa como {@code ArrayList} vacía para evitar
-   * {@link NullPointerException} al agregar elementos.
+   * Relación {@code @OneToMany} con {@code fixed_expense_fk_account_id} como FK.
+   * La eliminación de una cuenta elimina en cascada todos sus gastos fijos.
    */
   @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<FixedExpensesEntity> fixed_expenses = new ArrayList<>();
-
   /**
-   * Lista de eventos de agenda asociados a esta cuenta.
-   * 
+   * Eventos de agenda asociados a esta cuenta.
+   *
    * <p>
-   * Relación {@code @OneToMany} bidireccional con {@link EventEntity}.
-   * La eliminación de una cuenta eliminará en cascada todos sus eventos.
-   * 
-   * <p>
-   * Se inicializa como {@code ArrayList} vacía para evitar
-   * {@link NullPointerException} al agregar elementos.
+   * Relación {@code @OneToMany} con {@code event_fk_account_id} como FK.
+   * La eliminación de una cuenta elimina en cascada todos sus eventos.
    */
   @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<EventEntity> events = new ArrayList<>();
-
   /**
-   * Lista de contraseñas almacenadas asociadas a esta cuenta.
-   * 
+   * Contraseñas almacenadas asociadas a esta cuenta.
+   *
    * <p>
-   * Relación {@code @OneToMany} bidireccional con {@link PasswordEntity}.
-   * La eliminación de una cuenta eliminará en cascada todas sus contraseñas
-   * almacenadas.
-   * 
-   * <p>
-   * Se inicializa como {@code ArrayList} vacía para evitar
-   * {@link NullPointerException} al agregar elementos.
+   * Relación {@code @OneToMany} con {@code passwords_fk_account_id} como FK.
+   * La eliminación de una cuenta elimina en cascada todas sus contraseñas.
    */
   @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<PasswordEntity> passwords = new ArrayList<>();
 
   /**
-   * Callback de ciclo de vida JPA ejecutado antes de persistir la entidad.
-   * 
-   * <p>
-   * Establece automáticamente la fecha y hora de creación de la cuenta
-   * al momento de ser guardada por primera vez en la base de datos.
-   * 
-   * <p>
-   * Este método es invocado automáticamente por el proveedor JPA
-   * (Hibernate) durante la operación {@code persist()}.
+   * Callback JPA que establece {@code account_created_at} antes del primer
+   * {@code INSERT}.
    */
   @PrePersist
   public void onCreate() {
