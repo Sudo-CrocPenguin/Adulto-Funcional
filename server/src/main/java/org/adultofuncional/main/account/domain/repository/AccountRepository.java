@@ -10,13 +10,12 @@ import java.util.UUID;
  * Interfaz de repositorio definida en la capa de dominio (domain/repository).
  * <p>
  * Declara las operaciones de persistencia que necesita la logica de negocio sin
- * incluir ninguna implementacion. De esta forma aisla los detalles tecnicos de
- * acceso a datos (JPA, SQL, MongoDB, etc.) y aplica el principio de inversion de
- * dependencias.
+ * incluir ninguna implementacion. Aisla los detalles tecnicos de acceso a datos
+ * (JPA, SQL, MongoDB, etc.) y aplica el principio de inversion de dependencias.
  * <p>
  * Los casos de uso reciben esta interfaz por constructor e invocan sus metodos,
- * lo que permite cambiar la tecnologia de persistencia sin modificar el codigo
- * del dominio.
+ * permitiendo cambiar la tecnologia de persistencia sin modificar el codigo del
+ * dominio.
  *
  * @author daniel
  * @since 0.0.1
@@ -31,5 +30,10 @@ public interface AccountRepository {
 
 //    List<Account> findAll();
 
+    /**
+     * Elimina una cuenta por su identificador unico.
+     *
+     * @param id el UUID de la cuenta a eliminar
+     */
     void deleteById(UUID id);
 }

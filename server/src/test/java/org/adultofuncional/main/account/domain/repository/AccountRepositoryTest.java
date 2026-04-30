@@ -49,7 +49,7 @@ class AccountRepositoryTest {
     @Mock
     private SpringAccountJpaRepository jpaRepo;
 
-    // Descomentar cuando exista la implementacion concreta de AccountRepository
+    // TODO: Descomentar cuando exista la implementacion concreta de AccountRepository
     // @InjectMocks
     // private JpaAccountRepository repository;
 
@@ -67,7 +67,7 @@ class AccountRepositoryTest {
 
             when(jpaRepo.findByAccount_email(email)).thenReturn(Optional.of(entity));
 
-            // Descomentar cuando la implementacion este disponible
+            // TODO: Descomentar cuando la implementacion este disponible
             // Optional<Account> result = repository.findByEmail(email);
             // assertTrue(result.isPresent());
             // assertEquals(email, result.get().getEmail());
@@ -80,7 +80,7 @@ class AccountRepositoryTest {
         void shouldReturnEmptyWhenEmailNotFound() {
             when(jpaRepo.findByAccount_email("no@existe.com")).thenReturn(Optional.empty());
 
-            // Descomentar cuando la implementacion este disponible
+            // TODO: Descomentar cuando la implementacion este disponible
             // Optional<Account> result = repository.findByEmail("no@existe.com");
             // assertFalse(result.isPresent());
         }

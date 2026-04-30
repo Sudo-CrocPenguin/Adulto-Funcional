@@ -42,14 +42,21 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 @DataJpaTest
 class SpringAccountJpaRepositoryTest {
 
+    /** Permite persistir entidades directamente sin usar el repositorio bajo prueba. */
     @Autowired
     private TestEntityManager entityManager;
 
+    /** Repositorio que se esta probando. */
     @Autowired
     private SpringAccountJpaRepository repository;
 
+    /** Entidad de prueba configurada antes de cada test. */
     private AccountEntity accountEntity;
 
+    /**
+     * Prepara una cuenta de ejemplo con datos fijos.
+     * No se persiste automaticamente para que cada test controle el estado inicial.
+     */
     @BeforeEach
     void setUp() {
         accountEntity = new AccountEntity();
@@ -63,15 +70,16 @@ class SpringAccountJpaRepositoryTest {
         accountEntity.setAccount_created_at(LocalDateTime.now());
     }
 
+    /** Pruebas del metodo personalizado {@code findByAccount_email}. */
     @Nested
     @DisplayName("Metodo findByAccount_email")
     class FindByAccountEmail {
 
+        /** Verifica que al buscar un email existente se retorne la entidad correcta. */
         @Test
         @DisplayName("Debe encontrar una cuenta por email existente")
         void shouldFindByExistingEmail() {
             entityManager.persistAndFlush(accountEntity);
-
             Optional<AccountEntity> result = repository.findByAccount_email("maria@email.com");
 
             assertTrue(result.isPresent(), "Deberia existir una cuenta con ese email");
@@ -79,6 +87,7 @@ class SpringAccountJpaRepositoryTest {
             assertEquals("maria@email.com", result.get().getAccount_email());
         }
 
+        /** Verifica que al buscar un email no registrado se obtenga {@code Optional.empty()}. */
         @Test
         @DisplayName("Debe retornar Optional.empty() para email inexistente")
         void shouldReturnEmptyForNonExistingEmail() {
@@ -87,11 +96,11 @@ class SpringAccountJpaRepositoryTest {
             assertFalse(result.isPresent(), "No deberia encontrar ninguna cuenta");
         }
 
+        /** Verifica que la busqueda por email distingue mayusculas y minusculas. */
         @Test
         @DisplayName("Debe ser case-sensitive segun la configuracion de la columna")
         void shouldBeCaseSensitive() {
             entityManager.persistAndFlush(accountEntity);
-
             Optional<AccountEntity> result = repository.findByAccount_email("MARIA@email.com");
 
             assertFalse(result.isPresent(),
@@ -99,15 +108,16 @@ class SpringAccountJpaRepositoryTest {
         }
     }
 
+    /** Pruebas para las operaciones heredadas de {@link JpaRepository}. */
     @Nested
     @DisplayName("Operaciones heredadas de JpaRepository")
     class JpaRepositoryOperations {
 
+        /** Verifica que se puede guardar una entidad y luego recuperarla por su ID. */
         @Test
         @DisplayName("Debe guardar y recuperar una entidad por ID")
         void shouldSaveAndFindById() {
             AccountEntity saved = repository.save(accountEntity);
-
             Optional<AccountEntity> found = repository.findById(saved.getAccount_id());
 
             assertTrue(found.isPresent());
