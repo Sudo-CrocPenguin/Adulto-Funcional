@@ -1,4 +1,4 @@
-package org.adultofuncional.main.account.application.domain.model;
+package org.adultofuncional.main.account.domain.model;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

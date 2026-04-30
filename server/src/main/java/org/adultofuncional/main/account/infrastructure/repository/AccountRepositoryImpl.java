@@ -2,9 +2,12 @@ package org.adultofuncional.main.account.infrastructure.repository;
 
 import java.util.Optional;
 import java.util.UUID;
+
 import org.adultofuncional.main.account.domain.model.Account;
+import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.adultofuncional.main.account.infrastructure.persistence.mapper.AccountMapper;
+import org.adultofuncional.main.account.infrastructure.persistence.repository.SpringAccountJpaRepository;
 import org.springframework.stereotype.Repository;
 
 /**

@@ -20,30 +20,23 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
- * Prueba unitaria para la implementacion de {@link AccountRepository}.
- * <p>
- * Utiliza Mockito para simular el repositorio {@link SpringAccountJpaRepository} y asi
- * aislar la logica del adaptador. No requiere base de datos real.
- * <p>
- * Esta prueba permite:
+ * Pruebas unitarias del adaptador {@link AccountRepository}.
+ *
+ * <p>Usa Mockito para simular {@link SpringAccountJpaRepository} y verificar
+ * que la implementación del repositorio delega correctamente las llamadas
+ * sin requerir una base de datos real.
+ *
+ * <p>Casos cubiertos:
  * <ul>
- *   <li>Simular la respuesta de {@code SpringAccountJpaRepository.findByAccount_email}.</li>
- *   <li>Verificar que el metodo {@code findByEmail} de la implementacion devuelve un modelo
- *       {@code Account} cuando el email existe.</li>
- *   <li>Verificar que retorna {@code Optional.empty()} cuando el email no existe.</li>
- *   <li>Validar el mapeo de {@code AccountEntity} a {@code Account} (modelo de dominio)
- *       sin depender de una base de datos relacional.</li>
- *   <li>Asegurar que el adaptador (implementacion de {@code AccountRepository}) delega
- *       correctamente al repositorio Spring Data.</li>
- *   <li>Detectar errores en la capa de infraestructura de forma rapida sin necesidad de
- *       levantar el contexto completo de Spring.</li>
+ *   <li>{@code findByEmail()} retorna Account cuando el email existe</li>
+ *   <li>{@code findByEmail()} retorna {@code Optional.empty()} cuando el email no existe</li>
  * </ul>
  *
- * @author daniel
+ * @author Daniel Salazar
  * @since 0.0.1
  */
 @ExtendWith(MockitoExtension.class)
-@DisplayName("AccountRepository - Tests del adaptador JPA")
+@DisplayName("AccountRepository")
 class AccountRepositoryTest {
 
     @Mock
@@ -57,6 +50,10 @@ class AccountRepositoryTest {
     @DisplayName("Metodo findByEmail")
     class FindByEmail {
 
+        /**
+         * Verifica que al encontrar una entidad por email, el repositorio
+         * delega correctamente en {@code jpaRepo.findByAccount_email()}.
+         */
         @Test
         @DisplayName("Debe retornar Account cuando el email existe")
         void shouldReturnAccountWhenEmailExists() {
@@ -75,6 +72,9 @@ class AccountRepositoryTest {
             verify(jpaRepo).findByAccount_email(email);
         }
 
+        /**
+         * Verifica que cuando el email no existe, se retorna {@code Optional.empty()}.
+         */
         @Test
         @DisplayName("Debe retornar Optional.empty() cuando el email no existe")
         void shouldReturnEmptyWhenEmailNotFound() {
