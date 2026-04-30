@@ -39,6 +39,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/account")
 public class AccountController {
 
+  // TODO: Terminar implementación del controlador:
+  // 1. Descomentar dependencias de use cases y constructor
+  // 2. Implementar endpoints conectándolos a los use cases
+  // 3. Reemplazar ResponseEntity.ok(null) con respuestas reales
+  // 4. Agregar DeleteAccountUseCase faltante
+
   /*
    * por ahora en comentarios hasta que los use cases esten disponibles
    * 

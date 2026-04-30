@@ -115,6 +115,7 @@ public class Account {
    * @param name  nuevo nombre completo (no vacío)
    * @param phone nuevo teléfono
    */
+  // TODO: Agregar validación para el campo phone (no null, formato válido, etc.)
   public void updateDetails(String name, String phone) {
     validateName(name);
     this.name = name;
@@ -146,6 +147,7 @@ public class Account {
     }
   }
 
+  // TODO: Mejorar validación de email usando @Email de Jakarta Validation o una regex más robusta
   private static void validateEmail(String email) {
     if (email == null || !email.matches("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")) {
       throw new IllegalArgumentException("Invalid email");
