@@ -26,7 +26,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <li>Spring Boot Actuator para health checks en Docker</li>
  * </ul>
  *
- * @author Jeronimo Ospina
  * @since 0.0.1
  */
 @SpringBootApplication

@@ -13,21 +13,20 @@ import org.springframework.http.HttpStatus;
 import java.util.UUID;
 
 /**
- * Tests unitarios para {@link AccountController}.
+ * Pruebas unitarias del controlador {@link AccountController}.
  *
- * <p>Verifica el comportamiento actual del esqueleto:
+ * <p>Verifica los status HTTP del esqueleto actual:
  * <ul>
- *   <li>{@code getAccount()} retorna status 200</li>
- *   <li>{@code updateAccount()} retorna status 200</li>
- *   <li>{@code deleteAccount()} retorna status 204</li>
+ *   <li>{@code GET /api/account/{id}} → 200 OK</li>
+ *   <li>{@code PUT /api/account/{id}} → 200 OK</li>
+ *   <li>{@code DELETE /api/account/{id}} → 204 No Content</li>
  * </ul>
  *
- * @author Lidys Jaraba
+ * @author Lydis Jaraba
  * @since 0.0.1
  * @see AccountController
  */
-
-@DisplayName("AccountController - Tests unitarios")
+@DisplayName("AccountController")
 class AccountControllerTest {
 
     // TODO: ampliar tests cuando los use cases estén disponibles
@@ -36,7 +35,6 @@ class AccountControllerTest {
     @BeforeEach
     void setUp() {
         controller = new AccountController();
-
     }
 
     @Nested
@@ -46,16 +44,10 @@ class AccountControllerTest {
         @Test
         @DisplayName("Debe retornar status 200")
         void testGetAccountReturnsStatus200() {
-
-            //Given - un UUID cualquiera
             UUID id = UUID.randomUUID();
-
-            //When - se llama al endpoint
             ResponseEntity<Object> result = controller.getAccount(id);
-
-            //Then - debe retornar status 200
-            assertNotNull(result, "La respuesta no debe ser null");
-            assertEquals(HttpStatus.OK, result.getStatusCode(), "getAccount() debe retornar status 200");
+            assertNotNull(result);
+            assertEquals(HttpStatus.OK, result.getStatusCode());
         }
     }
 
@@ -66,17 +58,11 @@ class AccountControllerTest {
         @Test
         @DisplayName("Debe retornar status 200")
         void testUpdateAccountReturnsStatus200() {
-
-            //Given - un UUID y un request cualquiera
             UUID id = UUID.randomUUID();
             Object request = new Object();
-
-            // When - se llama al endpoint
             ResponseEntity<Object> result = controller.updateAccount(id, request);
-
-            // Then - debe retornar status 200
-            assertNotNull(result, "La respuesta no debe ser null");
-            assertEquals(HttpStatus.OK, result.getStatusCode(), "updateAccount() debe retornar status 200");
+            assertNotNull(result);
+            assertEquals(HttpStatus.OK, result.getStatusCode());
         }
     }
 
@@ -87,16 +73,10 @@ class AccountControllerTest {
         @Test
         @DisplayName("Debe retornar status 204")
         void testDeleteAccountReturnsStatus204() {
-
-            // Given - un UUID cualquiera
             UUID id = UUID.randomUUID();
-
-            // When - se llama al endpoint
             ResponseEntity<Void> result = controller.deleteAccount(id);
-
-            // Then - debe retornar status 204
-            assertNotNull(result, "La respuesta no debe ser null");
-            assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode(), "deleteAccount() debe retornar status 204");
+            assertNotNull(result);
+            assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
         }
     }
 }

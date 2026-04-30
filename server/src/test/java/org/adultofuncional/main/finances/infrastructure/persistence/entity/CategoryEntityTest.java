@@ -14,39 +14,21 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 /**
- * Tests unitarios para la entidad {@link CategoryEntity}.
- * 
- * <p>
- * Verifica el comportamiento correcto de:
+ * Pruebas unitarias de la entidad JPA {@link CategoryEntity}.
+ *
+ * <p>Casos cubiertos:
  * <ul>
- * <li>Callback de ciclo de vida JPA (@PrePersist) para fecha de creación</li>
- * <li>Mecanismo de borrado lógico (soft delete) mediante fecha de
- * eliminación</li>
- * <li>Inicialización de colecciones para relaciones @OneToMany</li>
- * <li>Funcionamiento de getters y setters</li>
+ *   <li>Callback {@code @PrePersist} establece {@code category_created_at}</li>
+ *   <li>Soft delete mediante {@code softDelete()} y {@code @SQLRestriction}</li>
+ *   <li>Colecciones {@code @OneToMany} inicializadas como listas vacías</li>
+ *   <li>Getters y setters de todos los campos</li>
+ *   <li>Tipos de categoría: {@code "Finanzas"} y {@code "Agenda"}</li>
  * </ul>
- * 
- * <p>
- * <strong>Característica destacada: Soft Delete</strong>
- * <br>
- * Esta entidad implementa borrado lógico mediante el campo
- * {@code category_deleted_at}
- * y la anotación {@code @SQLRestriction("category_deleted_at IS NULL")} que
- * filtra
- * automáticamente las categorías eliminadas en todas las consultas JPA.
- * 
- * <p>
- * Las categorías pueden ser de tipo:
- * <ul>
- * <li>Ingreso - Para movimientos de entrada de dinero</li>
- * <li>Gasto - Para movimientos de salida de dinero</li>
- * </ul>
- * 
- * @author juan
+ *
+ * @author Juan Sebastian Rios
  * @since 0.0.1
- * @see org.hibernate.annotations.SQLRestriction
  */
-@DisplayName("CategoryEntity - Tests de entidad JPA para categorías con soft delete")
+@DisplayName("CategoryEntity")
 class CategoryEntityTest {
 
   private CategoryEntity category;
@@ -56,221 +38,116 @@ class CategoryEntityTest {
     category = new CategoryEntity();
   }
 
-  /**
-   * Tests relacionados con los callbacks del ciclo de vida JPA.
-   */
   @Nested
   @DisplayName("Ciclo de vida JPA")
   class LifecycleCallbacks {
 
     /**
-     * Verifica que el método anotado con {@code @PrePersist} establezca
-     * automáticamente la fecha de creación antes de persistir la entidad.
-     * 
-     * <p>
-     * Este timestamp permite auditoría y ordenamiento por fecha de creación.
+     * Verifica que {@code onCreate()} establece {@code category_created_at}.
      */
     @Test
-    @DisplayName("Debe establecer category_created_at automáticamente en @PrePersist")
+    @DisplayName("Debe establecer category_created_at en @PrePersist")
     void testPrePersistSetsCreatedAt() {
-      // Given - Entidad recién creada sin fecha de creación
-
-      // When - Se ejecuta el callback de pre-persistencia
       category.onCreate();
-
-      // Then - La fecha de creación debe estar presente
-      assertNotNull(category.getCategory_created_at(),
-          "La fecha de creación no debería ser null después de @PrePersist");
-      assertTrue(category.getCategory_created_at() instanceof LocalDateTime,
-          "La fecha de creación debe ser de tipo LocalDateTime");
+      assertNotNull(category.getCategory_created_at());
+      assertTrue(category.getCategory_created_at() instanceof LocalDateTime);
     }
   }
 
-  /**
-   * Tests relacionados con el mecanismo de borrado lógico (soft delete).
-   */
   @Nested
-  @DisplayName("Soft Delete - Borrado lógico")
+  @DisplayName("Soft Delete")
   class SoftDelete {
 
     /**
-     * Verifica que el método {@code softDelete()} establezca correctamente
-     * la fecha de eliminación, marcando la categoría como "borrada" sin
-     * eliminarla físicamente de la base de datos.
-     * 
-     * <p>
-     * <strong>Importante:</strong> La anotación {@code @SQLRestriction}
-     * en la entidad filtrará automáticamente las categorías con
-     * {@code deleted_at != null} en todas las consultas JPA.
-     * 
-     * <p>
-     * Este comportamiento permite:
-     * <ul>
-     * <li>Mantener integridad referencial con movimientos históricos</li>
-     * <li>Recuperar categorías "borradas" si es necesario</li>
-     * <li>Auditar cuándo se eliminó una categoría</li>
-     * </ul>
+     * Verifica que {@code softDelete()} establece {@code category_deleted_at}.
      */
     @Test
     @DisplayName("Debe establecer category_deleted_at al ejecutar softDelete()")
     void testSoftDelete() {
-      // Given - Categoría recién creada (no eliminada)
-      assertNull(category.getCategory_deleted_at(),
-          "Inicialmente, la fecha de eliminación debería ser null");
+      assertNull(category.getCategory_deleted_at());
 
-      // When - Se ejecuta el borrado lógico
       category.softDelete();
 
-      // Then - La fecha de eliminación debe estar presente
-      assertNotNull(category.getCategory_deleted_at(),
-          "Después de softDelete(), la fecha de eliminación no debería ser null");
-      assertTrue(category.getCategory_deleted_at() instanceof LocalDateTime,
-          "La fecha de eliminación debe ser de tipo LocalDateTime");
+      assertNotNull(category.getCategory_deleted_at());
     }
 
     /**
-     * Verifica que {@code softDelete()} pueda llamarse múltiples veces
-     * sin efectos secundarios inesperados (idempotencia).
+     * Verifica que {@code softDelete()} puede llamarse múltiples veces.
      */
     @Test
-    @DisplayName("Debe permitir múltiples llamadas a softDelete() sin errores")
+    @DisplayName("Debe permitir múltiples llamadas a softDelete()")
     void testSoftDeleteIsIdempotent() {
-      // Given - Primera llamada a softDelete
       category.softDelete();
       LocalDateTime firstDelete = category.getCategory_deleted_at();
 
-      // When - Segunda llamada (podría pasar en flujos repetidos)
       category.softDelete();
       LocalDateTime secondDelete = category.getCategory_deleted_at();
 
-      // Then - Ambas fechas deben existir (aunque la segunda sobrescribe la primera)
-      assertNotNull(firstDelete,
-          "La primera fecha de eliminación debería existir");
-      assertNotNull(secondDelete,
-          "La segunda fecha de eliminación debería existir");
+      assertNotNull(firstDelete);
+      assertNotNull(secondDelete);
     }
   }
 
-  /**
-   * Tests relacionados con la inicialización de colecciones para relaciones JPA.
-   */
   @Nested
   @DisplayName("Inicialización de colecciones")
   class CollectionsInitialization {
 
     /**
-     * Verifica que todas las colecciones para relaciones {@code @OneToMany}
-     * estén correctamente inicializadas como ArrayList vacías.
-     * 
-     * <p>
-     * Relaciones verificadas:
-     * <ul>
-     * <li>movements - Movimientos asociados a esta categoría</li>
-     * <li>fixed_expenses - Gastos fijos de esta categoría</li>
-     * <li>events - Eventos de agenda con esta categoría</li>
-     * </ul>
-     * 
-     * <p>
-     * Esto previene {@link NullPointerException} al intentar agregar
-     * elementos antes de que Hibernate inicialice los proxies.
+     * Verifica que {@code movements}, {@code fixed_expenses} y {@code events}
+     * están inicializados como listas vacías.
      */
     @Test
     @DisplayName("Debe inicializar todas las colecciones como listas vacías")
     void testCollectionsInitialization() {
-      // Given - Entidad recién instanciada
+      assertNotNull(category.getMovements());
+      assertNotNull(category.getFixed_expenses());
+      assertNotNull(category.getEvents());
 
-      // When - Se accede a las colecciones
-
-      // Then - Todas las colecciones deben estar inicializadas y vacías
-      assertNotNull(category.getMovements(),
-          "La lista de movimientos no debería ser null");
-      assertNotNull(category.getFixed_expenses(),
-          "La lista de gastos fijos no debería ser null");
-      assertNotNull(category.getEvents(),
-          "La lista de eventos no debería ser null");
-
-      assertTrue(category.getMovements().isEmpty(),
-          "La lista de movimientos debería estar vacía inicialmente");
-      assertTrue(category.getFixed_expenses().isEmpty(),
-          "La lista de gastos fijos debería estar vacía inicialmente");
-      assertTrue(category.getEvents().isEmpty(),
-          "La lista de eventos debería estar vacía inicialmente");
+      assertTrue(category.getMovements().isEmpty());
+      assertTrue(category.getFixed_expenses().isEmpty());
+      assertTrue(category.getEvents().isEmpty());
     }
   }
 
-  /**
-   * Tests relacionados con getters y setters de los campos básicos.
-   */
   @Nested
   @DisplayName("Getters y Setters")
   class GettersAndSetters {
 
     /**
-     * Verifica que todos los getters y setters de la entidad funcionen
-     * correctamente,
-     * estableciendo y recuperando valores para cada campo.
-     * 
-     * <p>
-     * Campos probados:
-     * <ul>
-     * <li>category_id (UUID) - Identificador único</li>
-     * <li>category_name (String) - Nombre de la categoría (máx. 20 chars)</li>
-     * <li>category_type (String) - Tipo: "Ingreso" o "Gasto"</li>
-     * <li>category_created_at (LocalDateTime) - Fecha de creación</li>
-     * <li>category_deleted_at (LocalDateTime) - Fecha de borrado lógico</li>
-     * </ul>
-     * 
-     * <p>
-     * <strong>Nota sobre category_type:</strong> En una versión futura,
-     * este campo podría convertirse en un Enum para mayor type safety.
+     * Establece y recupera todos los campos de la entidad.
      */
     @Test
     @DisplayName("Debe establecer y recuperar correctamente todos los campos")
     void testSettersAndGetters() {
-      // Given - Valores de prueba
       UUID id = UUID.randomUUID();
       LocalDateTime now = LocalDateTime.now();
       String nombre = "Alimentos";
-      String tipo = "Gasto";
+      String tipo = "Finanzas";
 
-      // When - Se establecen todos los campos
       category.setCategory_id(id);
       category.setCategory_name(nombre);
       category.setCategory_type(tipo);
       category.setCategory_created_at(now);
       category.setCategory_deleted_at(now);
 
-      // Then - Los getters deben devolver exactamente los valores establecidos
-      assertEquals(id, category.getCategory_id(),
-          "El ID de categoría debería coincidir");
-      assertEquals(nombre, category.getCategory_name(),
-          "El nombre de la categoría debería coincidir");
-      assertEquals(tipo, category.getCategory_type(),
-          "El tipo de categoría debería coincidir");
-      assertEquals(now, category.getCategory_created_at(),
-          "La fecha de creación debería coincidir");
-      assertEquals(now, category.getCategory_deleted_at(),
-          "La fecha de eliminación debería coincidir");
+      assertEquals(id, category.getCategory_id());
+      assertEquals(nombre, category.getCategory_name());
+      assertEquals(tipo, category.getCategory_type());
+      assertEquals(now, category.getCategory_created_at());
+      assertEquals(now, category.getCategory_deleted_at());
     }
 
     /**
-     * Verifica que los tipos de categoría aceptados sean los esperados.
-     * Aunque no hay validación a nivel de entidad, documenta los valores válidos.
+     * Verifica que se aceptan los tipos {@code "Finanzas"} y {@code "Agenda"}.
      */
     @Test
-    @DisplayName("Debe aceptar los tipos de categoría 'Ingreso' y 'Gasto'")
+    @DisplayName("Debe aceptar tipos 'Finanzas' y 'Agenda'")
     void testCategoryTypeValues() {
-      // Given - Valores válidos según el dominio
-      String tipoIngreso = "Ingreso";
-      String tipoGasto = "Gasto";
+      category.setCategory_type("Finanzas");
+      assertEquals("Finanzas", category.getCategory_type());
 
-      // When & Then - Debe aceptar "Ingreso"
-      category.setCategory_type(tipoIngreso);
-      assertEquals(tipoIngreso, category.getCategory_type());
-
-      // When & Then - Debe aceptar "Gasto"
-      category.setCategory_type(tipoGasto);
-      assertEquals(tipoGasto, category.getCategory_type());
+      category.setCategory_type("Agenda");
+      assertEquals("Agenda", category.getCategory_type());
     }
   }
 }
