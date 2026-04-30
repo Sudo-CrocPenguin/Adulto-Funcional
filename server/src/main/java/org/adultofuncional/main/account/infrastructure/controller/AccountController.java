@@ -1,16 +1,17 @@
 package org.adultofuncional.main.account.infrastructure.controller;
 
 //por ahora en comentarios hasta que esten disponibles
-//import org.adultofuncional.main.account.application.usecase.GetAccountUseCase;
-// import org.adultofuncional.main.account.application.usecase.UpdateAccountUseCase;
-//import org.adultofuncional.main.account.application.dto.AccountResponse;
-//import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
+import org.adultofuncional.main.account.application.usecase.GetAccountUseCase;
+import org.adultofuncional.main.account.application.usecase.UpdateAccountUseCase;
+import org.adultofuncional.main.account.application.dto.AccountResponse;
+import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
 
 import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -45,20 +46,15 @@ public class AccountController {
   // 3. Reemplazar ResponseEntity.ok(null) con respuestas reales
   // 4. Agregar DeleteAccountUseCase faltante
 
-  /*
-   * por ahora en comentarios hasta que los use cases esten disponibles
-   * 
-   * private final GetAccountUseCase getAccountUseCase;
-   * private final UpdateAccountUseCase updateAccountUseCase;
-   * 
-   * public AccountController(GetAccountUseCase getAccountUseCase,
-   * UpdateAccountUseCase updateAccountUseCase) {
-   * this.getAccountUseCase = getAccountUseCase;
-   * this.updateAccountUseCase = updateAccountUseCase;
-   * 
-   * }
-   * 
-   */
+  private final GetAccountUseCase getAccountUseCase;
+  private final UpdateAccountUseCase updateAccountUseCase;
+
+  public AccountController(GetAccountUseCase getAccountUseCase,
+      UpdateAccountUseCase updateAccountUseCase) {
+    this.getAccountUseCase = getAccountUseCase;
+    this.updateAccountUseCase = updateAccountUseCase;
+
+  }
 
   /**
    * Obtiene los datos de una cuenta por su ID.
@@ -68,16 +64,11 @@ public class AccountController {
    */
   // TODO: conectar con GetAccountUseCase cuando esté disponible
   @GetMapping("/{id}")
-  public ResponseEntity<Object> getAccount(@PathVariable UUID id) {
-    /*
-     * REEMPLAZAR cuando GetAccountUseCase este disponible
-     * 
-     * AccountResponse response = getAccountUseCase.execute(id);
-     * return ResponseEntity.ok(response);
-     * 
-     */
+  public ResponseEntity<GetAccountUseCase> getAccount(@PathVariable UUID id) {
 
-    return ResponseEntity.ok(null); // cuando funcione las lineas de arriba se elimina esta
+    AccountResponse response = getAccountUseCase.execute(id);
+    return ResponseEntity.ok(response);
+
   }
 
   /**
@@ -88,16 +79,12 @@ public class AccountController {
    * @return datos actualizados con status 200, o null como placeholder temporal
    */
   // TODO: conectar con UpdateAccountUseCase cuando esté disponible
-  @PutMapping("/{id}")
-  public ResponseEntity<Object> updateAccount(@PathVariable UUID id, @RequestBody Object request) {
+  @PatchMapping("/{id}")
+  public ResponseEntity<UpdateAccountUseCase> updateAccount(@PathVariable UUID id, @RequestBody Object request) {
 
-    /*
-     * AccountResponse response = updateAccountUseCase.execute(id, request);
-     * return ResponseEntity.ok(response);
-     * 
-     */
+    AccountResponse response = updateAccountUseCase.execute(id, request);
 
-    return ResponseEntity.ok(null);
+    return ResponseEntity.ok(response);
   }
 
   /**

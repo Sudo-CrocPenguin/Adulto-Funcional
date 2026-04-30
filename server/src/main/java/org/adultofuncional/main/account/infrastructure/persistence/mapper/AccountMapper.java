@@ -1,5 +1,8 @@
 package org.adultofuncional.main.account.infrastructure.persistence.mapper;
 
+import org.adultofuncional.main.account.application.dto.AccountResponse;
+import org.adultofuncional.main.account.domain.model.Account;
+
 //por ahora en comentario hasta que estén disponibles
 //import org.adultofuncional.main.account.domain.model.Account;
 //import org.adultofuncional.main.account.application.dto.AccountResponse;
@@ -35,27 +38,21 @@ public class AccountMapper {
    * @return modelo de dominio, o {@code null} si la entidad es null
    */
   // TODO: reemplazar Object por Account cuando Account.java esté disponible
-  public Object toDomain(AccountEntity entity) {
+  public Account toDomain(AccountEntity entity) {
     if (entity == null)
       return null;
 
-    /*
-     * Descomentar este bloque cuando Account.java esté creado:
-     * 
-     * Account account = new Account();
-     * account.setId(entity.getAccount_id());
-     * account.setNames(entity.getAccount_names());
-     * account.setLastnames(entity.getAccount_lastnames());
-     * account.setEmail(entity.getAccount_email());
-     * account.setPhone(entity.getAccount_phone());
-     * account.setCreatedAt(entity.getAccount_created_at());
-     * account.setHasMasterKey(entity.getAccount_master_key() != null);
-     * 
-     * return account;
-     * 
-     */
+    Account account = new Account();
+    account.setId(entity.getAccount_id());
+    account.setNames(entity.getAccount_names());
+    account.setLastnames(entity.getAccount_lastnames());
+    account.setEmail(entity.getAccount_email());
+    account.setPhone(entity.getAccount_phone());
+    account.setCreatedAt(entity.getAccount_created_at());
+    account.setHasMasterKey(entity.getAccount_master_key() != null);
 
-    return null; // cuando funcione el bloque de arriba se elimina este return
+    return account;
+
   }
 
   /**
@@ -69,24 +66,20 @@ public class AccountMapper {
    */
   // TODO: reemplazar ambos Object por Account y AccountResponse cuando los DTOs
   // estén disponibles
-  public Object toResponse(Object account) {
+  public Account toResponse(Account account) {
     if (account == null)
       return null;
 
-    /*
-     * 
-     * AccountResponse response = new AccountResponse();
-     * response.setId(account.getId());
-     * response.setNames(account.getNames());
-     * response.setLastnames(account.getLastnames());
-     * response.setEmail(account.getEmail());
-     * response.setPhone(account.getPhone());
-     * response.setCreatedAt(account.getCreatedAt());
-     * response.setHasMasterKey(account.isHasMasterKey());
-     * 
-     * return response;
-     */
+    AccountResponse response = new AccountResponse();
+    response.setId(account.getId());
+    response.setNames(account.getNames());
+    response.setLastnames(account.getLastnames());
+    response.setEmail(account.getEmail());
+    response.setPhone(account.getPhone());
+    response.setCreatedAt(account.getCreatedAt());
+    response.setHasMasterKey(account.isHasMasterKey());
 
-    return null;
+    return response;
+
   }
 }

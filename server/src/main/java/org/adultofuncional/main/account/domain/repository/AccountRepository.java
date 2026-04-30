@@ -42,15 +42,5 @@ public interface AccountRepository {
 
   List<Account> findAll();
 
-  /**
-   * Elimina una cuenta por su identificador único.
-   *
-   * <p>
-   * Esta es una eliminación física (hard delete). Todos los datos
-   * relacionados (movimientos, gastos fijos, eventos y contraseñas) se
-   * eliminan en cascada.
-   *
-   * @param id UUID de la cuenta a eliminar
-   */
   void deleteById(UUID id);
 }

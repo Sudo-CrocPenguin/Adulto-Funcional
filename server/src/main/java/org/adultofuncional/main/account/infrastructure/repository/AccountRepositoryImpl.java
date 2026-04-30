@@ -27,7 +27,7 @@ public class AccountRepositoryImpl implements AccountRepository {
    * Repositorio Spring Data JPA para operaciones CRUD sobre
    * {@code AccountEntity}.
    */
-  private final SpringAccountJpaRepository jpaRepository;
+  private final AccountRepository jpaRepository;
   /** Mapper para convertir entre {@link Account} y {@link AccountEntity}. */
   private final AccountMapper mapper;
 
@@ -37,7 +37,7 @@ public class AccountRepositoryImpl implements AccountRepository {
    * @param jpaRepository repositorio Spring Data JPA
    * @param mapper        conversor entre dominio y entidad
    */
-  public AccountRepositoryImpl(SpringAccountJpaRepository jpaRepository,
+  public AccountRepositoryImpl(AccountRepository jpaRepository,
       AccountMapper mapper) {
     this.jpaRepository = jpaRepository;
     this.mapper = mapper;
