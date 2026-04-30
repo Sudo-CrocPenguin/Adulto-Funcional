@@ -13,30 +13,38 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.UUID;
 
 /**
- * {@code UpdateAccountUseCase} representa un caso de uso que permite modificar los datos
- * de una cuenta de usuario existente.
+ * Caso de uso: Actualizar los datos de una cuenta existente.
+ *
+ * <p><strong>¿Qué es?</strong><br>
+ * Es un servicio de aplicación que encapsula la lógica de negocio para modificar
+ * la información de una cuenta de usuario (nombres, apellidos, teléfono, email).
+ *
+ * <p><strong>¿Para qué sirve?</strong><br>
+ * Sirve para aplicar reglas de negocio antes de persistir los cambios:
+ * <ul>
+ *   <li>Validar que la cuenta exista</li>
+ *   <li>Verificar unicidad del email (si cambia)</li>
+ *   <li>Proteger campos sensibles (no se permiten modificar contraseña ni master key)</li>
+ * </ul>
+ *
+ * <p><strong>¿Cómo funciona?</strong><br>
+ * <ol>
+ *   <li>Recibe el ID de la cuenta y el DTO con los nuevos datos.</li>
+ *   <li>Busca la cuenta existente en el repositorio.</li>
+ *   <li>Si no existe → lanza {@code NotFoundException}.</li>
+ *   <li>Si el email cambió y ya existe en otra cuenta → lanza {@code BusinessException}.</li>
+ *   <li>Actualiza los campos permitidos en la entidad.</li>
+ *   <li>Persiste los cambios mediante el repositorio.</li>
+ *   <li>Retorna un {@code AccountResponse} con los datos actualizados.</li>
+ * </ol>
  *
  * <p><strong>Reglas de negocio implementadas:</strong>
  * <ul>
- *   <li>La cuenta debe existir previamente (de lo contrario, lanza {@link NotFoundException}).</li>
- *   <li>Si se cambia el email, se verifica que el nuevo email no esté ya en uso por otra cuenta diferente.</li>
- *   <li>Los campos actualizables son: nombres, apellidos, teléfono y email.</li>
- *   <li>La contraseña y la master key NO se pueden modificar desde este caso de uso.</li>
+ *   <li>El email debe ser único en todo el sistema (no puede haber dos cuentas con el mismo email).</li>
+ *   <li>Si el email no cambia, no se verifica unicidad.</li>
+ *   <li>Campos que se pueden actualizar: nombres, apellidos, teléfono, email.</li>
+ *   <li>Campos que NO se pueden actualizar aquí: contraseña, master key.</li>
  * </ul>
- *
- * <p><strong>Flujo de ejecución:</strong>
- * <ol>
- *   <li>El controlador recibe una solicitud PUT/PATCH con el ID en la URL y el DTO {@link UpdateAccountRequest} en el cuerpo.</li>
- *   <li>El controlador invoca {@code updateAccountUseCase.execute(id, request)}.</li>
- *   <li>El caso de uso busca la entidad actual en el repositorio.</li>
- *   <li>Si el email nuevo es distinto al actual, se comprueba su unicidad.</li>
- *   <li>Se actualizan los campos permitidos y se guarda la entidad modificada.</li>
- *   <li>Se retorna un {@link AccountResponse} con los datos actualizados.</li>
- * </ol>
- *
- * <p><strong>Seguridad:</strong>
- * Este caso de uso no recibe ni modifica campos sensibles. Para cambiar la contraseña
- * o la master key se deben implementar casos de uso separados (ej. {@code ChangePasswordUseCase}).
  *
  * @author Miguel Angel Blandon Montes
  * @version 1.0
@@ -57,11 +65,15 @@ public class UpdateAccountUseCase {
     /**
      * Ejecuta la actualización de los datos de una cuenta.
      *
-     * @param accountId Identificador de la cuenta a modificar. No puede ser nulo.
+     * @param accountId Identificador de la cuenta a modificar. No puede ser {@code null}.
      * @param request   Objeto DTO con los nuevos valores (nombres, apellidos, teléfono, email).
      * @return Un {@link AccountResponse} con los datos actualizados de la cuenta.
      * @throws NotFoundException Si no existe una cuenta con el ID proporcionado.
      * @throws BusinessException Si el nuevo email ya está registrado por otra cuenta distinta.
+     *
+     * //TODO: Agregar validación para evitar que el email se cambie a menos que el usuario confirme con contraseña
+     * //TODO: Agregar logs de auditoría para cambios en datos de cuenta (usuario que modifica)
+     * //TODO: Considerar enviar notificación por email al usuario cuando se cambia el correo electrónico
      */
     @Transactional
     public AccountResponse execute(UUID accountId, UpdateAccountRequest request) {
@@ -75,7 +87,6 @@ public class UpdateAccountUseCase {
             if (emailExists) {
                 throw new BusinessException("El email " + request.getEmail() + " ya está registrado por otra cuenta");
             }
-            // Actualizar el email (solo si es diferente y está disponible)
             entity.setAccount_email(request.getEmail());
         }
 
@@ -94,17 +105,11 @@ public class UpdateAccountUseCase {
     /**
      * Convierte una entidad {@link AccountEntity} en un DTO de respuesta {@link AccountResponse}.
      *
-     * <p><strong>Mapeo de campos:</strong>
-     * <ul>
-     *   <li>{@code account_id} → {@code id}</li>
-     *   <li>{@code account_names} → {@code names}</li>
-     *   <li>{@code account_lastnames} → {@code lastnames}</li>
-     *   <li>{@code account_email} → {@code email}</li>
-     *   <li>{@code account_phone} → {@code phone}</li>
-     *   <li>{@code account_created_at} → {@code createdAt}</li>
-     * </ul>
+     * <p><strong>¿Por qué es necesario?</strong><br>
+     * Para exponer solo los datos no sensibles al cliente y mantener el principio de
+     * separación de capas (la entidad JPA no debe serializarse directamente).
      *
-     * @param entity La entidad actualizada (o la original) a convertir.
+     * @param entity La entidad actualizada a convertir.
      * @return DTO listo para enviar al cliente.
      */
     private AccountResponse mapToResponse(AccountEntity entity) {

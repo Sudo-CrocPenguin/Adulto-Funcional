@@ -9,29 +9,33 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * {@code AccountResponse} es un DTO (Data Transfer Object) que encapsula la información
- * de una cuenta de usuario que se envía al cliente (frontend) como respuesta a una
- * operación exitosa (consulta o actualización).
+ * DTO (Data Transfer Object) que representa la respuesta de una cuenta de usuario.
  *
- * <p>Este objeto excluye deliberadamente campos sensibles como la contraseña ({@code account_password})
- * y la clave maestra ({@code account_master_key}) por razones de seguridad.
+ * <p><strong>¿Qué es?</strong><br>
+ * Es un objeto de transferencia de datos que se utiliza para enviar información
+ * de una cuenta desde el servidor hacia el cliente (frontend).
  *
- * <p><strong>Flujo típico:</strong>
- * <ol>
- *   <li>Un caso de uso (ej. {@code GetAccountUseCase}) recupera una entidad {@code AccountEntity}.</li>
- *   <li>Los datos relevantes se mapean a una instancia de {@code AccountResponse}.</li>
- *   <li>El controlador REST devuelve este objeto al cliente (normalmente en formato JSON).</li>
- * </ol>
+ * <p><strong>¿Para qué sirve?</strong><br>
+ * Sirve para encapsular únicamente los datos no sensibles de una cuenta que el
+ * frontend necesita mostrar (consulta) o confirmar (post-actualización).
+ * Excluye campos como contraseñas, claves maestras o relaciones internas.
+ *
+ * <p><strong>¿Cómo funciona?</strong><br>
+ * Un caso de uso (ej. {@code GetAccountUseCase}) recupera una entidad
+ * {@code AccountEntity} del repositorio, la mapea a este DTO y la retorna al controlador.
+ * El controlador la serializa a JSON y la envía como respuesta HTTP.
  *
  * <p><strong>Campos incluidos:</strong>
  * <ul>
- *   <li>{@code id} - Identificador único de la cuenta (UUID v7).</li>
- *   <li>{@code names} - Nombres del titular.</li>
- *   <li>{@code lastnames} - Apellidos del titular.</li>
- *   <li>{@code email} - Correo electrónico (único).</li>
- *   <li>{@code phone} - Número de teléfono.</li>
- *   <li>{@code createdAt} - Fecha y hora de creación de la cuenta.</li>
+ *   <li>{@code id} - Identificador UUID v7 de la cuenta</li>
+ *   <li>{@code names} - Nombres del usuario</li>
+ *   <li>{@code lastnames} - Apellidos del usuario</li>
+ *   <li>{@code email} - Correo electrónico (único en el sistema)</li>
+ *   <li>{@code phone} - Número de teléfono de contacto</li>
+ *   <li>{@code createdAt} - Fecha y hora de creación de la cuenta</li>
  * </ul>
+ *
+ * <p><strong>Seguridad:</strong> Este DTO nunca expone {@code password} ni {@code masterKey}.
  *
  * @author Miguel Angel Blandon Montes
  * @version 1.0
@@ -47,38 +51,44 @@ import java.util.UUID;
 public class AccountResponse {
 
     /**
-     * Identificador único de la cuenta (UUID v7).
-     * Corresponde al campo {@code account_id} de la entidad.
+     * Identificador único de la cuenta.
+     * Tipo UUID v7 generado automáticamente por la base de datos.
+     * Corresponde al campo {@code account_id} de la entidad y la tabla {@code accounts}.
      */
     private UUID id;
 
     /**
      * Nombres del titular de la cuenta.
+     * Obligatorio, máximo 50 caracteres.
      * Corresponde a {@code account_names} en la entidad y base de datos.
      */
     private String names;
 
     /**
      * Apellidos del titular de la cuenta.
+     * Obligatorio, máximo 50 caracteres.
      * Corresponde a {@code account_lastnames} en la entidad y base de datos.
      */
     private String lastnames;
 
     /**
-     * Correo electrónico del usuario. Es único y se usa como username para autenticación.
+     * Correo electrónico del usuario.
+     * Obligatorio, único en todo el sistema. Se usa como username para autenticación JWT.
      * Corresponde a {@code account_email}.
      */
     private String email;
 
     /**
      * Número de teléfono de contacto.
+     * Obligatorio, máximo 20 caracteres. Puede incluir código de país.
      * Corresponde a {@code account_phone}.
      */
     private String phone;
 
     /**
      * Fecha y hora en que la cuenta fue creada.
-     * Corresponde a {@code account_created_at} y se genera automáticamente al persistir.
+     * Se genera automáticamente al persistir la entidad (auditoría).
+     * Corresponde a {@code account_created_at}.
      */
     private LocalDateTime createdAt;
 }

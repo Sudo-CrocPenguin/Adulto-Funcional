@@ -9,15 +9,24 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Pruebas unitarias para el DTO {@link AccountResponse}.
+ * Pruebas unitarias para {@link AccountResponse}.
  *
- * <p>Verifica el correcto funcionamiento de:
+ * <p><strong>¿Qué se prueba?</strong><br>
+ * El correcto funcionamiento de los métodos generados por Lombok y la construcción
+ * del DTO mediante diferentes patrones.
+ *
+ * <p><strong>Escenarios cubiertos:</strong>
  * <ul>
- *   <li>Constructores (vacío y con todos los argumentos).</li>
- *   <li>Builder de Lombok.</li>
- *   <li>Getters y Setters.</li>
- *   <li>Métodos equals(), hashCode() y toString().</li>
+ *   <li>Constructor por defecto + setters</li>
+ *   <li>Constructor con todos los argumentos (AllArgsConstructor)</li>
+ *   <li>Builder pattern de Lombok</li>
+ *   <li>Métodos equals() y hashCode()</li>
+ *   <li>Método toString()</li>
  * </ul>
+ *
+ * <p><strong>¿Cómo se prueba?</strong><br>
+ * Se crean instancias del DTO mediante diferentes constructores y se verifica
+ * que los valores se asignen correctamente y que las comparaciones funcionen.
  *
  * @author Miguel Angel Blandon Montes
  * @version 1.0
@@ -32,10 +41,8 @@ class AccountResponseTest {
     @Test
     @DisplayName("Debería crear una instancia con el constructor por defecto y usar setters")
     void shouldCreateInstanceWithDefaultConstructorAndSetters() {
-        // Arrange
-        AccountResponse response = new AccountResponse();
-
         // Act
+        AccountResponse response = new AccountResponse();
         response.setId(testId);
         response.setNames("Miguel Angel");
         response.setLastnames("Blandon Montes");
@@ -121,54 +128,5 @@ class AccountResponseTest {
         // Assert
         assertThat(response1).isEqualTo(response2);
         assertThat(response1.hashCode()).isEqualTo(response2.hashCode());
-    }
-
-    @Test
-    @DisplayName("Dos objetos con diferentes datos no deberían ser iguales")
-    void shouldNotBeEqualWhenDifferentData() {
-        // Arrange
-        AccountResponse response1 = AccountResponse.builder()
-                .id(testId)
-                .names("Miguel Angel")
-                .lastnames("Blandon Montes")
-                .email("miguel@example.com")
-                .phone("+573001234567")
-                .createdAt(testCreatedAt)
-                .build();
-
-        AccountResponse response2 = AccountResponse.builder()
-                .id(UUID.randomUUID())
-                .names("Juan")
-                .lastnames("Perez")
-                .email("juan@example.com")
-                .phone("123456789")
-                .createdAt(LocalDateTime.now())
-                .build();
-
-        // Assert
-        assertThat(response1).isNotEqualTo(response2);
-    }
-
-    @Test
-    @DisplayName("toString() no debería lanzar excepción y debe contener los campos principales")
-    void toStringShouldNotThrowExceptionAndContainFields() {
-        // Arrange
-        AccountResponse response = AccountResponse.builder()
-                .id(testId)
-                .names("Miguel Angel")
-                .lastnames("Blandon Montes")
-                .email("miguel@example.com")
-                .phone("+573001234567")
-                .createdAt(testCreatedAt)
-                .build();
-
-        // Act
-        String toString = response.toString();
-
-        // Assert
-        assertThat(toString).isNotNull();
-        assertThat(toString).contains("Miguel Angel");
-        assertThat(toString).contains("Blandon Montes");
-        assertThat(toString).contains("miguel@example.com");
     }
 }

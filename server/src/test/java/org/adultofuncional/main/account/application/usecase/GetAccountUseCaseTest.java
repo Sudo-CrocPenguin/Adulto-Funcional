@@ -21,13 +21,20 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 /**
- * Pruebas unitarias para el caso de uso {@link GetAccountUseCase}.
+ * Pruebas unitarias para {@link GetAccountUseCase}.
  *
- * <p>Este conjunto de pruebas verifica que:
+ * <p><strong>¿Qué se prueba?</strong><br>
+ * El comportamiento del caso de uso que consulta una cuenta por ID.
+ *
+ * <p><strong>Escenarios cubiertos:</strong>
  * <ul>
- *   <li>Cuando la cuenta existe, se retorna un {@link AccountResponse} con los datos correctos.</li>
- *   <li>Cuando la cuenta no existe, se lanza {@link NotFoundException}.</li>
+ *   <li><strong>Caso feliz:</strong> La cuenta existe → se retorna {@link AccountResponse} correctamente.</li>
+ *   <li><strong>Caso error:</strong> La cuenta NO existe → se lanza {@link NotFoundException}.</li>
  * </ul>
+ *
+ * <p><strong>¿Cómo se prueba?</strong><br>
+ * Se utiliza Mockito para simular el comportamiento del repositorio y verificar
+ * que el caso de uso reacciona correctamente ante diferentes situaciones.
  *
  * @author Miguel Angel Blandon Montes
  * @version 1.0
@@ -52,7 +59,7 @@ class GetAccountUseCaseTest {
         existingAccountId = UUID.randomUUID();
         nonExistentAccountId = UUID.randomUUID();
 
-        // Construir una entidad simulada con datos de ejemplo
+        // Construir entidad simulada con datos de ejemplo
         mockEntity = new AccountEntity();
         mockEntity.setAccount_id(existingAccountId);
         mockEntity.setAccount_names("Miguel Angel");
@@ -63,18 +70,20 @@ class GetAccountUseCaseTest {
     }
 
     /**
-     * Prueba que cuando la cuenta existe, se retorna un AccountResponse con los datos correctos.
+     * Prueba: La cuenta existe → se retorna un AccountResponse con los datos correctos.
+     *
+     * //TODO: Agregar prueba para verificar que el mapeo excluye correctamente campos sensibles
      */
     @Test
     @DisplayName("Debería retornar AccountResponse cuando la cuenta existe")
     void shouldReturnAccountResponseWhenAccountExists() {
-        // Arrange
+        // Arrange: Configurar el mock para que encuentre la cuenta
         when(accountRepository.findById(existingAccountId)).thenReturn(Optional.of(mockEntity));
 
-        // Act
+        // Act: Ejecutar el caso de uso
         AccountResponse response = getAccountUseCase.execute(existingAccountId);
 
-        // Assert
+        // Assert: Verificar el resultado
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(existingAccountId);
         assertThat(response.getNames()).isEqualTo("Miguel Angel");
@@ -85,15 +94,17 @@ class GetAccountUseCaseTest {
     }
 
     /**
-     * Prueba que cuando la cuenta no existe, se lanza NotFoundException.
+     * Prueba: La cuenta NO existe → se lanza NotFoundException.
+     *
+     * //TODO: Agregar prueba para verificar el mensaje exacto de la excepción
      */
     @Test
     @DisplayName("Debería lanzar NotFoundException cuando la cuenta no existe")
     void shouldThrowNotFoundExceptionWhenAccountDoesNotExist() {
-        // Arrange
+        // Arrange: Configurar el mock para que NO encuentre la cuenta
         when(accountRepository.findById(nonExistentAccountId)).thenReturn(Optional.empty());
 
-        // Act & Assert
+        // Act & Assert: Verificar que se lanza la excepción esperada
         assertThrows(NotFoundException.class, () -> getAccountUseCase.execute(nonExistentAccountId));
     }
 }

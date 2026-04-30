@@ -24,15 +24,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 /**
- * Pruebas unitarias para el caso de uso {@link UpdateAccountUseCase}.
+ * Pruebas unitarias para {@link UpdateAccountUseCase}.
  *
- * <p>Este conjunto de pruebas verifica:
+ * <p><strong>¿Qué se prueba?</strong><br>
+ * El comportamiento del caso de uso que actualiza los datos de una cuenta.
+ *
+ * <p><strong>Escenarios cubiertos:</strong>
  * <ul>
- *   <li>Actualización exitosa de todos los campos permitidos.</li>
- *   <li>Lanzamiento de {@link NotFoundException} si la cuenta no existe.</li>
- *   <li>Lanzamiento de {@link BusinessException} si el nuevo email ya está en uso por otra cuenta.</li>
- *   <li>Que el repositorio guarda la entidad modificada.</li>
+ *   <li><strong>Caso feliz 1:</strong> Actualización con email nuevo y disponible → éxito.</li>
+ *   <li><strong>Caso feliz 2:</strong> Actualización sin cambiar email → éxito sin verificar unicidad.</li>
+ *   <li><strong>Caso error 1:</strong> La cuenta NO existe → {@link NotFoundException}.</li>
+ *   <li><strong>Caso error 2:</strong> Email nuevo ya existe en otra cuenta → {@link BusinessException}.</li>
  * </ul>
+ *
+ * <p><strong>¿Cómo se prueba?</strong><br>
+ * Se utiliza Mockito para simular el repositorio y ArgumentCaptor para verificar
+ * que los datos modificados son correctos antes de guardar.
  *
  * @author Miguel Angel Blandon Montes
  * @version 1.0
@@ -75,14 +82,16 @@ class UpdateAccountUseCaseTest {
     }
 
     /**
-     * Prueba la actualización exitosa de una cuenta existente.
+     * Prueba: Actualización exitosa con email nuevo y disponible.
+     *
+     * //TODO: Agregar prueba para verificar que se mantiene la fecha de creación original
      */
     @Test
     @DisplayName("Debería actualizar y retornar AccountResponse cuando la cuenta existe y el email es nuevo")
     void shouldUpdateAndReturnAccountResponseWhenAccountExistsAndEmailIsNew() {
         // Arrange
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(existingEntity));
-        when(accountRepository.existsByEmail(validRequest.getEmail())).thenReturn(false); // email no usado
+        when(accountRepository.existsByEmail(validRequest.getEmail())).thenReturn(false);
 
         // Capturar la entidad que se pasa al método save
         ArgumentCaptor<AccountEntity> entityCaptor = ArgumentCaptor.forClass(AccountEntity.class);
@@ -91,7 +100,7 @@ class UpdateAccountUseCaseTest {
         // Act
         AccountResponse response = updateAccountUseCase.execute(accountId, validRequest);
 
-        // Assert
+        // Assert: Verificar DTO de respuesta
         assertThat(response).isNotNull();
         assertThat(response.getId()).isEqualTo(accountId);
         assertThat(response.getNames()).isEqualTo("Miguel Angel");
@@ -99,7 +108,7 @@ class UpdateAccountUseCaseTest {
         assertThat(response.getEmail()).isEqualTo("miguel@example.com");
         assertThat(response.getPhone()).isEqualTo("+573001234567");
 
-        // Verificar que la entidad fue modificada antes de guardar
+        // Assert: Verificar que la entidad fue modificada antes de guardar
         AccountEntity savedEntity = entityCaptor.getValue();
         assertThat(savedEntity.getAccount_names()).isEqualTo("Miguel Angel");
         assertThat(savedEntity.getAccount_lastnames()).isEqualTo("Blandon Montes");
@@ -112,7 +121,7 @@ class UpdateAccountUseCaseTest {
     }
 
     /**
-     * Prueba que se lanza NotFoundException si la cuenta no existe.
+     * Prueba: La cuenta NO existe → lanza NotFoundException.
      */
     @Test
     @DisplayName("Debería lanzar NotFoundException cuando la cuenta no existe")
@@ -122,44 +131,40 @@ class UpdateAccountUseCaseTest {
 
         // Act & Assert
         assertThrows(NotFoundException.class, () -> updateAccountUseCase.execute(accountId, validRequest));
-
         verify(accountRepository, never()).save(any(AccountEntity.class));
     }
 
     /**
-     * Prueba que se lanza BusinessException si el nuevo email ya está en uso por otra cuenta.
+     * Prueba: Email nuevo ya existe en otra cuenta → lanza BusinessException.
      */
     @Test
     @DisplayName("Debería lanzar BusinessException cuando el nuevo email ya está registrado por otra cuenta")
     void shouldThrowBusinessExceptionWhenEmailAlreadyExistsForOtherAccount() {
         // Arrange
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(existingEntity));
-        // El nuevo email ya existe en otra cuenta (diferente a la actual)
         when(accountRepository.existsByEmail(validRequest.getEmail())).thenReturn(true);
 
         // Act & Assert
         assertThrows(BusinessException.class, () -> updateAccountUseCase.execute(accountId, validRequest));
-
         verify(accountRepository, never()).save(any(AccountEntity.class));
     }
 
     /**
-     * Prueba que cuando el email no cambia, no se verifica la unicidad y se actualizan los demás campos.
+     * Prueba: El email no cambia → no se verifica unicidad y se actualizan demás campos.
      */
     @Test
     @DisplayName("Debería actualizar sin verificar email si el email no ha cambiado")
     void shouldUpdateWithoutEmailUniquenessCheckWhenEmailIsSame() {
-        // Arrange
-        // Modificamos la solicitud para que tenga el mismo email que la entidad existente
+        // Arrange: Solicitud con el mismo email que la entidad
         UpdateAccountRequest requestWithSameEmail = UpdateAccountRequest.builder()
                 .names("Miguel Angel")
                 .lastnames("Blandon Montes")
-                .email("juan@example.com")  // mismo email original
+                .email("juan@example.com")  // mismo que el existente
                 .phone("+573001234567")
                 .build();
 
         when(accountRepository.findById(accountId)).thenReturn(Optional.of(existingEntity));
-        // No se debe llamar a existsByEmail, por lo que no lo configuramos (Mockito lanzaría error si se llama)
+        // No se debe llamar a existsByEmail, por lo que NO lo configuramos
 
         ArgumentCaptor<AccountEntity> entityCaptor = ArgumentCaptor.forClass(AccountEntity.class);
         when(accountRepository.save(entityCaptor.capture())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -172,9 +177,7 @@ class UpdateAccountUseCaseTest {
         assertThat(response.getNames()).isEqualTo("Miguel Angel");
         assertThat(response.getPhone()).isEqualTo("+573001234567");
 
-        // Verificar que el repositorio guardó los cambios
         verify(accountRepository, times(1)).save(any(AccountEntity.class));
-        // Verificamos que nunca se preguntó por existencia del email
         verify(accountRepository, never()).existsByEmail(anyString());
     }
 }
