@@ -5,57 +5,60 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.domain.model.Account;
-import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
-
-//import org.adultofuncional.main.account.domain.model.Account;
 
 /**
- * Puerto del dominio que define las operaciones de persistencia para la entidad
- * {@code Account}.
+ * Puerto del dominio que define las operaciones de persistencia para
+ * {@link Account}.
  *
  * <p>
- * Esta interfaz pertenece a la capa de dominio en Clean Architecture y sigue
- * el principio de inversión de dependencias: el dominio no conoce la
- * implementación concreta. La capa de infraestructura
- * ({@code AccountRepositoryImpl})
- * implementa este puerto y delega en {@code SpringAccountJpaRepository} para
- * acceder a MariaDB.
+ * Pertenece a la capa de dominio y sigue el principio de inversión de
+ * dependencias: el dominio define el contrato, la infraestructura
+ * ({@code AccountRepositoryImpl}) lo implementa delegando en
+ * {@code SpringAccountJpaRepository}.
  *
  * <p>
- * Operaciones:
- * <ul>
- * <li>{@code deleteById(UUID)} — eliminación física de una cuenta por su UUID
- * v7</li>
- * <li>(Futuros) {@code save}, {@code findById}, {@code findByEmail},
- * {@code findAll}</li>
- * </ul>
+ * El dominio nunca conoce {@code AccountEntity} ni ningún detalle de JPA.
  *
  * @author Daniel Salazar
  * @since 0.0.1
  */
 public interface AccountRepository {
 
-  AccountEntity save(AccountEntity entity);
-
-  Optional<Account> findById(UUID id);
-
-  Optional<Account> findByEmail(String email);
-
-  List<Account> findAll();
-
-  void deleteById(UUID id);
+  /**
+   * Persiste o actualiza una cuenta.
+   *
+   * @param account modelo de dominio a persistir. No puede ser {@code null}.
+   * @return modelo de dominio con los campos actualizados tras la persistencia.
+   */
+  Account save(Account account);
 
   /**
-     * Guarda una cuenta en la base de datos.
-     *
-     * <p>
-     * Flujo: {@code Account} → {@code mapper.toEntity()} →
-     * {@code jpaRepository.save()} → {@code mapper.toDomain()} → retorna
-     * el modelo de dominio con los campos actualizados.
-     *
-     * @param account modelo de dominio a persistir
-     * @return modelo de dominio persistido
-     * @throws IllegalArgumentException si account es null
-     */
-  Account save(Account account);
+   * Busca una cuenta por su identificador único.
+   *
+   * @param id UUID de la cuenta.
+   * @return {@link Optional} con la cuenta si existe, vacío si no.
+   */
+  Optional<Account> findById(UUID id);
+
+  /**
+   * Busca una cuenta por su correo electrónico.
+   *
+   * @param email correo electrónico a buscar.
+   * @return {@link Optional} con la cuenta si existe, vacío si no.
+   */
+  Optional<Account> findByEmail(String email);
+
+  /**
+   * Retorna todas las cuentas registradas en el sistema.
+   *
+   * @return lista de cuentas, vacía si no hay ninguna.
+   */
+  List<Account> findAll();
+
+  /**
+   * Elimina físicamente una cuenta por su identificador.
+   *
+   * @param id UUID de la cuenta a eliminar.
+   */
+  void deleteById(UUID id);
 }

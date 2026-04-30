@@ -9,15 +9,19 @@ import java.util.UUID;
 /**
  * Repositorio Spring Data JPA que opera sobre {@link AccountEntity}.
  *
- * <p>Extiende {@link JpaRepository} y Spring genera automáticamente un proxy
- * en tiempo de ejecución que traduce las llamadas a operaciones SQL contra
- * MariaDB. Actúa como adaptador de infraestructura para el puerto
+ * <p>
+ * Extiende {@link JpaRepository} — Spring genera automáticamente un proxy
+ * que traduce las llamadas a SQL contra MariaDB. Actúa como adaptador de
+ * infraestructura para el puerto
  * {@link org.adultofuncional.main.account.domain.repository.AccountRepository}.
  *
- * <p>Proporciona:
+ * <p>
+ * Métodos disponibles:
  * <ul>
- *   <li>Métodos CRUD heredados: {@code save}, {@code findById}, {@code findAll}, {@code deleteById}</li>
- *   <li>Consulta derivada {@code findByAccount_email(String)} sobre la columna UNIQUE {@code account_email}</li>
+ * <li>CRUD heredado: {@code save}, {@code findById}, {@code findAll},
+ * {@code deleteById}</li>
+ * <li>{@code findByAccountEmail} — consulta sobre la columna UNIQUE
+ * {@code account_email}</li>
  * </ul>
  *
  * @author Daniel Salazar
@@ -25,16 +29,16 @@ import java.util.UUID;
  */
 public interface SpringAccountJpaRepository extends JpaRepository<AccountEntity, UUID> {
 
-    /**
-     * Busca una cuenta por su correo electrónico exacto.
-     *
-     * <p>Consulta generada sobre la columna {@code account_email} (VARCHAR(255) UNIQUE).
-     * La comparación es case-sensitive según el collation de MariaDB.
-     *
-     * @param email correo electrónico a buscar
-     * @return {@code Optional} con la entidad si existe, o {@code Optional.empty()} si no
-     */
-    Optional<AccountEntity> findByAccount_email(String email);
-
-    Optional<AccountEntity> findByEmail(String email);
+  /**
+   * Busca una cuenta por su correo electrónico exacto.
+   *
+   * <p>
+   * Spring Data genera la query sobre {@code account_email} (VARCHAR(255)
+   * UNIQUE).
+   * La comparación es case-sensitive según el collation de MariaDB.
+   *
+   * @param email correo electrónico a buscar
+   * @return {@link Optional} con la entidad si existe, vacío si no
+   */
+  Optional<AccountEntity> findByAccount_email(String email);
 }

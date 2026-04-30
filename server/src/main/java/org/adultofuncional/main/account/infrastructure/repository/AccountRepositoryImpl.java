@@ -24,105 +24,77 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public class AccountRepositoryImpl implements AccountRepository {
-  /**
-   * Repositorio Spring Data JPA para operaciones CRUD sobre
-   * {@code AccountEntity}.
-   */
+
   private final SpringAccountJpaRepository jpaRepository;
-  /** Mapper para convertir entre {@link Account} y {@link AccountEntity}. */
   private final AccountMapper mapper;
 
-  /**
-   * Construye el repositorio con las dependencias inyectadas por Spring.
-   *
-   * @param jpaRepository repositorio Spring Data JPA
-   * @param mapper        conversor entre dominio y entidad
-   */
-  public AccountRepositoryImpl(SpringAccountJpaRepository jpaRepository,
-      AccountMapper mapper) {
+  public AccountRepositoryImpl(SpringAccountJpaRepository jpaRepository, AccountMapper mapper) {
     this.jpaRepository = jpaRepository;
     this.mapper = mapper;
   }
 
   /**
-   * Guarda una cuenta en la base de datos.
+   * Guarda o actualiza una cuenta.
    *
    * <p>
-   * Flujo: {@code Account} → {@code mapper.toEntity()} →
-   * {@code jpaRepository.save()} → {@code mapper.toDomain()} → retorna
-   * el modelo de dominio con los campos actualizados.
+   * Flujo: {@code Account} → {@code mapper.toEntity()}
+   * → {@code jpaRepository.save()} → {@code mapper.toDomain()}
    *
-   * @param account modelo de dominio a persistir
-   * @return modelo de dominio persistido
-   * @throws IllegalArgumentException si account es null
+   * @param account modelo de dominio a persistir. No puede ser {@code null}.
+   * @return modelo de dominio con los campos actualizados tras la persistencia.
    */
+  @Override
   public Account save(Account account) {
-    if (account == null) {
-      throw new IllegalArgumentException("Account cannot be null");
-    }
     AccountEntity entity = mapper.toEntity(account);
-    AccountEntity savedEntity = jpaRepository.save(entity);
-    return mapper.toDomain(savedEntity);
+    AccountEntity saved = jpaRepository.save(entity);
+    return mapper.toDomain(saved);
   }
 
   /**
-   * Busca una cuenta por su identificador UUID v7.
+   * Busca una cuenta por su identificador UUID.
    *
-   * @param id identificador de la cuenta
-   * @return Optional con la cuenta si existe, o empty si no se encuentra
-   * @throws IllegalArgumentException si id es null
+   * @param id identificador de la cuenta. No puede ser {@code null}.
+   * @return {@link Optional} con la cuenta si existe, vacío si no.
    */
   @Override
   public Optional<Account> findById(UUID id) {
-    if (id == null) {
-      throw new IllegalArgumentException("ID cannot be null");
-    }
     return jpaRepository.findById(id)
         .map(mapper::toDomain);
   }
 
   /**
-   * Busca una cuenta por su correo electrónico (columna {@code account_email},
-   * que es UNIQUE en la base de datos).
+   * Busca una cuenta por su correo electrónico.
    *
-   * @param email correo electrónico a buscar
-   * @return Optional con la cuenta si existe, o empty si no se encuentra
-   * @throws IllegalArgumentException si email es null o vacío
+   * @param email correo electrónico a buscar. No puede ser {@code null}.
+   * @return {@link Optional} con la cuenta si existe, vacío si no.
    */
   @Override
   public Optional<Account> findByEmail(String email) {
-    if (email == null || email.trim().isEmpty()) {
-      throw new IllegalArgumentException("Email cannot be null or empty");
-    }
-    return jpaRepository.findByEmail(email)
+    return jpaRepository.findByAccount_email(email)
         .map(mapper::toDomain);
   }
 
   /**
-   * Elimina una cuenta por su identificador. Esta es una eliminación física
-   * (hard delete). Todos los datos relacionados (movimientos, gastos fijos,
-   * eventos y contraseñas) se eliminan en cascada.
+   * Retorna todas las cuentas registradas en el sistema.
    *
-   * @param id identificador de la cuenta a eliminar
-   * @throws IllegalArgumentException si id es null
+   * @return lista de cuentas, vacía si no hay ninguna.
+   */
+  @Override
+  public List<Account> findAll() {
+    return jpaRepository.findAll()
+        .stream()
+        .map(mapper::toDomain)
+        .toList();
+  }
+
+  /**
+   * Elimina físicamente una cuenta por su identificador.
+   * Todos los datos relacionados se eliminan en cascada.
+   *
+   * @param id identificador de la cuenta a eliminar. No puede ser {@code null}.
    */
   @Override
   public void deleteById(UUID id) {
-    if (id == null) {
-      throw new IllegalArgumentException("ID cannot be null");
-    }
     jpaRepository.deleteById(id);
-  }
-
-  @Override
-  public AccountEntity save(AccountEntity entity) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'save'");
-  }
-
-  @Override
-  public List<Account> findAll() {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'findAll'");
   }
 }

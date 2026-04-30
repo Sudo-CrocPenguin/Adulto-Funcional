@@ -1,12 +1,7 @@
 package org.adultofuncional.main.account.infrastructure.persistence.mapper;
 
-import org.adultofuncional.main.account.application.dto.AccountResponse;
 import org.adultofuncional.main.account.domain.model.Account;
-
-//por ahora en comentario hasta que estén disponibles
-//import org.adultofuncional.main.account.domain.model.Account;
-//import org.adultofuncional.main.account.application.dto.AccountResponse;
-
+import org.adultofuncional.main.account.application.dto.AccountResponse;
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.springframework.stereotype.Component;
 
@@ -16,8 +11,9 @@ import org.springframework.stereotype.Component;
  * <p>
  * Traduce entre:
  * <ul>
- * <li>{@link AccountEntity} (persistencia JPA) → modelo de dominio</li>
- * <li>modelo de dominio → DTO de respuesta para el frontend</li>
+ * <li>{@link AccountEntity} (JPA) ↔ {@link Account} (dominio)</li>
+ * <li>{@link Account} (dominio) → {@link AccountResponse} (DTO de
+ * respuesta)</li>
  * </ul>
  *
  * <p>
@@ -26,65 +22,78 @@ import org.springframework.stereotype.Component;
  *
  * @author Lydis Jaraba
  * @since 0.0.1
- * @see AccountEntity
  */
 @Component
 public class AccountMapper {
 
   /**
-   * Convierte una entidad JPA al modelo de dominio.
+   * Convierte una {@link AccountEntity} al modelo de dominio {@link Account}.
    *
-   * @param entity entidad de persistencia
-   * @return modelo de dominio, o {@code null} si la entidad es null
+   * <p>
+   * Usa el método de fábrica {@code Account.reconstitute()} para respetar
+   * el constructor privado del modelo de dominio.
+   *
+   * @param entity entidad JPA. Si es {@code null} retorna {@code null}.
+   * @return modelo de dominio reconstituido.
    */
-  // TODO: reemplazar Object por Account cuando Account.java esté disponible
   public Account toDomain(AccountEntity entity) {
     if (entity == null)
       return null;
 
-    Account account = new Account(null, null, null, null, false, null);
-    account.setId(entity.getAccount_id());
-    account.setName(entity.getAccount_names());
-    account.setLastnames(entity.getAccount_lastnames());
-    account.setEmail(entity.getAccount_email());
-    account.setPhone(entity.getAccount_phone());
-    account.setCreatedAt(entity.getAccount_created_at());
-    account.setHasMasterKey(entity.getAccount_master_key() != null);
-
-    return account;
-
+    return Account.reconstitute(
+        entity.getAccount_id(),
+        entity.getAccount_names(),
+        entity.getAccount_lastnames(),
+        entity.getAccount_email(),
+        entity.getAccount_phone(),
+        entity.getAccount_created_at());
   }
 
   /**
-   * Convierte el modelo de dominio al DTO de respuesta HTTP.
+   * Convierte el modelo de dominio {@link Account} a {@link AccountEntity}.
    *
    * <p>
-   * No incluye {@code password} ni {@code master_key} en la respuesta.
+   * No copia {@code account_password} ni {@code account_master_key} —
+   * esos campos los gestiona exclusivamente la capa de seguridad.
    *
-   * @param account modelo de dominio
-   * @return DTO de respuesta, o {@code null} si account es null
+   * @param account modelo de dominio. Si es {@code null} retorna {@code null}.
+   * @return entidad JPA lista para persistir.
    */
-  // TODO: reemplazar ambos Object por Account y AccountResponse cuando los DTOs
-  // estén disponibles
+  public AccountEntity toEntity(Account account) {
+    if (account == null)
+      return null;
+
+    AccountEntity entity = new AccountEntity();
+    entity.setAccount_id(account.getId());
+    entity.setAccount_names(account.getNames());
+    entity.setAccount_lastnames(account.getLastnames());
+    entity.setAccount_email(account.getEmail());
+    entity.setAccount_phone(account.getPhone());
+    entity.setAccount_created_at(account.getCreatedAt());
+    return entity;
+  }
+
+  /**
+   * Convierte el modelo de dominio {@link Account} al DTO
+   * {@link AccountResponse}.
+   *
+   * <p>
+   * No expone {@code password} ni {@code masterKey} al cliente.
+   *
+   * @param account modelo de dominio. Si es {@code null} retorna {@code null}.
+   * @return DTO listo para serializar y enviar al cliente.
+   */
   public AccountResponse toResponse(Account account) {
     if (account == null)
       return null;
 
-    AccountResponse response = new AccountResponse();
-    response.setId(account.getId());
-    response.setNames(account.getNames());
-    response.setLastnames(account.getLastnames());
-    response.setEmail(account.getEmail());
-    response.setPhone(account.getPhone());
-    response.setCreatedAt(account.getCreatedAt());
-    response.setHasMasterKey(account.isHasMasterKey());
-
-    return response;
-
-  }
-
-  public AccountEntity toEntity(Account account) {
-    // TODO Auto-generated method stub
-    throw new UnsupportedOperationException("Unimplemented method 'toEntity'");
+    return AccountResponse.builder()
+        .id(account.getId())
+        .names(account.getNames())
+        .lastnames(account.getLastnames())
+        .email(account.getEmail())
+        .phone(account.getPhone())
+        .createdAt(account.getCreatedAt())
+        .build();
   }
 }
