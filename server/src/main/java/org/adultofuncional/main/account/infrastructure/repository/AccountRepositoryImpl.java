@@ -1,5 +1,6 @@
 package org.adultofuncional.main.account.infrastructure.repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,13 +56,12 @@ public class AccountRepositoryImpl implements AccountRepository {
    * @return modelo de dominio persistido
    * @throws IllegalArgumentException si account es null
    */
-  @Override
   public Account save(Account account) {
     if (account == null) {
       throw new IllegalArgumentException("Account cannot be null");
     }
     AccountEntity entity = mapper.toEntity(account);
-    AccountEntity savedEntity = jpaRepository.save(entity);
+    AccountEntity savedEntity = (AccountEntity) jpaRepository.save(entity);
     return mapper.toDomain(savedEntity);
   }
 
@@ -95,7 +95,7 @@ public class AccountRepositoryImpl implements AccountRepository {
       throw new IllegalArgumentException("Email cannot be null or empty");
     }
     return jpaRepository.findByEmail(email)
-        .map(mapper::toDomain);
+        .map(entity -> mapper.toDomain((Account) entity));
   }
 
   /**
@@ -112,5 +112,17 @@ public class AccountRepositoryImpl implements AccountRepository {
       throw new IllegalArgumentException("ID cannot be null");
     }
     jpaRepository.deleteById(id);
+  }
+
+  @Override
+  public AccountEntity save(AccountEntity entity) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'save'");
+  }
+
+  @Override
+  public List<Account> findAll() {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'findAll'");
   }
 }
