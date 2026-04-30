@@ -70,7 +70,7 @@ public class AccountRepositoryImpl implements AccountRepository {
    */
   @Override
   public Optional<Account> findByEmail(String email) {
-    return jpaRepository.findByAccount_email(email)
+    return jpaRepository.findByAccountEmail(email)
         .map(mapper::toDomain);
   }
 

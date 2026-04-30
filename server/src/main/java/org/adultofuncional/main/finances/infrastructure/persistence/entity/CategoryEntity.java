@@ -65,7 +65,7 @@ public class CategoryEntity {
   @GeneratedValue
   @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "category_id", columnDefinition = "CHAR(36)")
-  private UUID category_id;
+  private UUID categoryId;
 
   /**
    * Nombre de la categoría.
@@ -75,7 +75,7 @@ public class CategoryEntity {
    * Ejemplos: "Alimentación", "Transporte", "Trabajo", "Salud".
    */
   @Column(name = "category_name", length = 20, nullable = false)
-  private String category_name;
+  private String categoryName;
 
   /**
    * Tipo de categoría que define el módulo donde se utiliza.
@@ -86,7 +86,7 @@ public class CategoryEntity {
    * {@code "Agenda"} para eventos.
    */
   @Column(name = "category_type", length = 20, nullable = false)
-  private String category_type;
+  private String categoryType;
 
   /**
    * Fecha y hora de creación de la categoría.
@@ -96,7 +96,7 @@ public class CategoryEntity {
    * Se establece en {@link #onCreate()} y no es modificable.
    */
   @Column(name = "category_created_at", updatable = false)
-  private LocalDateTime category_created_at;
+  private LocalDateTime categoryCreatedAt;
 
   /**
    * Fecha y hora de borrado lógico. Cuando es distinta de null, la categoría
@@ -106,7 +106,7 @@ public class CategoryEntity {
    * Columna: {@code category_deleted_at TIMESTAMP NULL DEFAULT NULL}.
    */
   @Column(name = "category_deleted_at")
-  private LocalDateTime category_deleted_at;
+  private LocalDateTime categoryDeletedAt;
 
   /**
    * Movimientos financieros asociados a esta categoría.
@@ -118,7 +118,7 @@ public class CategoryEntity {
    * Gastos fijos asociados a esta categoría.
    */
   @OneToMany(mappedBy = "category")
-  private List<FixedExpensesEntity> fixed_expenses = new ArrayList<>();
+  private List<FixedExpensesEntity> fixedExpenses = new ArrayList<>();
 
   /**
    * Eventos de agenda asociados a esta categoría.
@@ -132,7 +132,7 @@ public class CategoryEntity {
    */
   @PrePersist
   protected void onCreate() {
-    category_created_at = LocalDateTime.now();
+    categoryCreatedAt = LocalDateTime.now();
   }
 
   /**
@@ -140,6 +140,6 @@ public class CategoryEntity {
    * {@code category_deleted_at} con la fecha actual.
    */
   public void softDelete() {
-    this.category_deleted_at = LocalDateTime.now();
+    this.categoryDeletedAt = LocalDateTime.now();
   }
 }

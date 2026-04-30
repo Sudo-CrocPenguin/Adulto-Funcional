@@ -62,7 +62,7 @@ public class FixedExpensesEntity {
   @GeneratedValue
   @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "fixed_expense_id", columnDefinition = "CHAR(36)")
-  private UUID fixed_expense_id;
+  private UUID fixedExpenseId;
 
   /**
    * Nombre descriptivo del gasto.
@@ -72,7 +72,7 @@ public class FixedExpensesEntity {
    * Ejemplos: "Netflix", "Alquiler", "Gimnasio".
    */
   @Column(name = "fixed_expense_name", length = 20, nullable = false)
-  private String fixed_expense_name;
+  private String fixedExpenseName;
 
   /**
    * Frecuencia de recurrencia del gasto.
@@ -83,7 +83,7 @@ public class FixedExpensesEntity {
    * {@code "Quincenal"}, {@code "Trimestral"}.
    */
   @Column(name = "fixed_expense_frequency", length = 15, nullable = false)
-  private String fixed_expense_frequency;
+  private String fixedExpenseFrequency;
 
   /**
    * Monto del gasto fijo.
@@ -93,7 +93,7 @@ public class FixedExpensesEntity {
    * Se usa {@link BigDecimal} para precisión exacta.
    */
   @Column(name = "fixed_expense_amount", precision = 10, scale = 2, nullable = false)
-  private BigDecimal fixed_expense_amount;
+  private BigDecimal fixedExpenseAmount;
 
   /**
    * Estado actual del gasto.
@@ -103,7 +103,7 @@ public class FixedExpensesEntity {
    * Valores: {@code "Activo"} o {@code "Inactivo"}.
    */
   @Column(name = "fixed_expense_status", length = 15, nullable = false)
-  private String fixed_expense_status;
+  private String fixedExpenseStatus;
 
   /**
    * Fecha de cierre o finalización del gasto. Después de esta fecha el sistema
@@ -113,7 +113,7 @@ public class FixedExpensesEntity {
    * Columna: {@code fixed_expense_closing_date DATE NOT NULL}.
    */
   @Column(name = "fixed_expense_closing_date", nullable = false)
-  private LocalDate fixed_expense_closing_date;
+  private LocalDate fixedExpenseClosingDate;
 
   /**
    * Categoría asociada al gasto fijo (opcional).

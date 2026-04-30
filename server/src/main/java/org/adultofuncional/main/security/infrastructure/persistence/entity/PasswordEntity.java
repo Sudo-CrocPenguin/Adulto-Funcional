@@ -59,7 +59,7 @@ public class PasswordEntity {
   @GeneratedValue
   @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "password_id", columnDefinition = "CHAR(36)")
-  private UUID password_id;
+  private UUID passwordId;
 
   /**
    * Nombre del servicio o aplicación.
@@ -69,7 +69,7 @@ public class PasswordEntity {
    * Ejemplos: "Gmail", "Netflix", "GitHub".
    */
   @Column(name = "password_application_name", length = 35, nullable = false)
-  private String password_application_name;
+  private String passwordApplicationName;
 
   /**
    * Contraseña encriptada con AES-256 (codificada en Base64).
@@ -79,7 +79,7 @@ public class PasswordEntity {
    * Se desencripta únicamente cuando el usuario proporciona su Master Key.
    */
   @Column(name = "password_application", columnDefinition = "TEXT", nullable = false)
-  private String password_application;
+  private String passwordApplication;
 
   /**
    * Fecha del último cambio de la contraseña.
@@ -89,7 +89,7 @@ public class PasswordEntity {
    * Útil para recordar rotaciones de contraseñas.
    */
   @Column(name = "password_last_change_date")
-  private LocalDate password_last_change_date;
+  private LocalDate passwordLastChangeDate;
 
   /**
    * Cuenta propietaria de esta contraseña.

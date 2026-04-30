@@ -41,12 +41,12 @@ public class AccountMapper {
       return null;
 
     return Account.reconstitute(
-        entity.getAccount_id(),
-        entity.getAccount_names(),
-        entity.getAccount_lastnames(),
-        entity.getAccount_email(),
-        entity.getAccount_phone(),
-        entity.getAccount_created_at());
+        entity.getAccountId(),
+        entity.getAccountNames(),
+        entity.getAccountLastNames(),
+        entity.getAccountEmail(),
+        entity.getAccountPhone(),
+        entity.getAccountCreatedAt());
   }
 
   /**
@@ -64,12 +64,12 @@ public class AccountMapper {
       return null;
 
     AccountEntity entity = new AccountEntity();
-    entity.setAccount_id(account.getId());
-    entity.setAccount_names(account.getNames());
-    entity.setAccount_lastnames(account.getLastnames());
-    entity.setAccount_email(account.getEmail());
-    entity.setAccount_phone(account.getPhone());
-    entity.setAccount_created_at(account.getCreatedAt());
+    entity.setAccountId(account.getId());
+    entity.setAccountNames(account.getNames());
+    entity.setAccountLastNames(account.getLastnames());
+    entity.setAccountEmail(account.getEmail());
+    entity.setAccountPhone(account.getPhone());
+    entity.setAccountCreatedAt(account.getCreatedAt());
     return entity;
   }
 

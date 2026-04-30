@@ -64,7 +64,7 @@ public class MovementEntity {
   @GeneratedValue
   @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "movement_id", columnDefinition = "CHAR(36)")
-  private UUID movement_id;
+  private UUID movementId;
 
   /**
    * Tipo de movimiento.
@@ -74,7 +74,7 @@ public class MovementEntity {
    * Valores: {@code "Ingreso"} o {@code "Egreso"}.
    */
   @Column(name = "movement_type", length = 7, nullable = false)
-  private String movement_type;
+  private String movementType;
 
   /**
    * Monto del movimiento.
@@ -84,7 +84,7 @@ public class MovementEntity {
    * Se usa {@link BigDecimal} para precisión exacta.
    */
   @Column(name = "movement_amount", precision = 10, scale = 2, nullable = false)
-  private BigDecimal movement_amount;
+  private BigDecimal movementAmount;
 
   /**
    * Fecha y hora en que se registró el movimiento en el sistema.
@@ -95,7 +95,7 @@ public class MovementEntity {
    * Se establece automáticamente en {@link #onCreate()} y no es modificable.
    */
   @Column(name = "movement_register_date", nullable = false, updatable = false)
-  private LocalDateTime movement_register_date;
+  private LocalDateTime movementRegisterDate;
 
   /**
    * Descripción opcional del movimiento.
@@ -104,7 +104,7 @@ public class MovementEntity {
    * Columna: {@code movement_description TEXT NULL}.
    */
   @Column(name = "movement_description", columnDefinition = "TEXT")
-  private String movement_description;
+  private String movementDescription;
 
   /**
    * Fecha calendario en que ocurrió la transacción.
@@ -114,7 +114,7 @@ public class MovementEntity {
    * Puede ser pasada, presente o futura.
    */
   @Column(name = "movement_date", nullable = false)
-  private LocalDate movement_date;
+  private LocalDate movementDate;
 
   /**
    * Cuenta propietaria del movimiento.
@@ -143,6 +143,6 @@ public class MovementEntity {
    */
   @PrePersist
   protected void onCreate() {
-    movement_register_date = LocalDateTime.now();
+    movementRegisterDate = LocalDateTime.now();
   }
 }

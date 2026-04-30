@@ -40,5 +40,5 @@ public interface SpringAccountJpaRepository extends JpaRepository<AccountEntity,
    * @param email correo electrónico a buscar
    * @return {@link Optional} con la entidad si existe, vacío si no
    */
-  Optional<AccountEntity> findByAccount_email(String email);
+  Optional<AccountEntity> findByAccountEmail(String email);
 }

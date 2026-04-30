@@ -77,7 +77,7 @@ public class EventEntity {
   @GeneratedValue
   @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "event_id", columnDefinition = "CHAR(36)")
-  private UUID event_id;
+  private UUID eventId;
 
   /**
    * Título del evento.
@@ -86,7 +86,7 @@ public class EventEntity {
    * Columna: {@code event_title VARCHAR(35) NOT NULL}.
    */
   @Column(name = "event_title", length = 35, nullable = false)
-  private String event_title;
+  private String eventTitle;
 
   /**
    * Prioridad del evento. Por defecto {@code "Media"}.
@@ -96,7 +96,7 @@ public class EventEntity {
    * Valores típicos: {@code "Baja"}, {@code "Media"}, {@code "Alta"}.
    */
   @Column(name = "event_priority", length = 15)
-  private String event_priority = "Media";
+  private String eventPriority = "Media";
 
   /**
    * Fecha calendario del evento.
@@ -105,7 +105,7 @@ public class EventEntity {
    * Columna: {@code event_date DATE NOT NULL}.
    */
   @Column(name = "event_date", nullable = false)
-  private LocalDate event_date;
+  private LocalDate eventDate;
 
   /**
    * Frecuencia de repetición en días.
@@ -115,7 +115,7 @@ public class EventEntity {
    * {@code 0} indica evento único sin repetición.
    */
   @Column(name = "event_frequency", nullable = false)
-  private Integer event_frequency;
+  private Integer eventFrequency;
 
   /**
    * Fecha y hora del recordatorio.
@@ -124,7 +124,7 @@ public class EventEntity {
    * Columna: {@code event_reminder DATETIME NOT NULL}.
    */
   @Column(name = "event_reminder", nullable = false)
-  private LocalDateTime event_reminder;
+  private LocalDateTime eventReminder;
 
   /**
    * Hora de inicio del evento.
@@ -133,7 +133,7 @@ public class EventEntity {
    * Columna: {@code event_start_hour DATETIME NOT NULL}.
    */
   @Column(name = "event_start_hour", nullable = false)
-  private LocalDateTime event_start_hour;
+  private LocalDateTime eventStartHour;
 
   /**
    * Hora de finalización del evento.
@@ -142,7 +142,7 @@ public class EventEntity {
    * Columna: {@code event_end_hour DATETIME NOT NULL}.
    */
   @Column(name = "event_end_hour", nullable = false)
-  private LocalDateTime event_end_hour;
+  private LocalDateTime eventEndHour;
 
   /**
    * Descripción detallada del evento.
@@ -151,7 +151,7 @@ public class EventEntity {
    * Columna: {@code event_description TEXT NULL}.
    */
   @Column(name = "event_description", columnDefinition = "TEXT")
-  private String event_description;
+  private String eventDescription;
 
   /**
    * Estado del evento. Por defecto {@code "Pendiente"}.
@@ -162,7 +162,7 @@ public class EventEntity {
    * {@code "Cancelado"}, {@code "Pospuesto"}.
    */
   @Column(name = "event_status", length = 20)
-  private String event_status = "Pendiente";
+  private String eventStatus = "Pendiente";
 
   /**
    * Categoría asociada al evento (opcional).

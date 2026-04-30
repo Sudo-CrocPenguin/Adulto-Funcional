@@ -78,7 +78,7 @@ public class AccountEntity {
   @GeneratedValue
   @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "account_id", columnDefinition = "CHAR(36)")
-  private UUID account_id;
+  private UUID accountId;
   /**
    * Nombres del titular.
    *
@@ -86,7 +86,7 @@ public class AccountEntity {
    * Columna: {@code account_names VARCHAR(50) NOT NULL}.
    */
   @Column(name = "account_names", length = 50, nullable = false)
-  private String account_names;
+  private String accountNames;
   /**
    * Apellidos del titular.
    *
@@ -94,7 +94,7 @@ public class AccountEntity {
    * Columna: {@code account_lastnames VARCHAR(50) NOT NULL}.
    */
   @Column(name = "account_lastnames", length = 50, nullable = false)
-  private String account_lastnames;
+  private String accountLastNames;
   /**
    * Correo electrónico. Único en todo el sistema, usado como username
    * para autenticación con Spring Security.
@@ -103,7 +103,7 @@ public class AccountEntity {
    * Columna: {@code account_email VARCHAR(255) NOT NULL UNIQUE}.
    */
   @Column(name = "account_email", length = 255, nullable = false, unique = true)
-  private String account_email;
+  private String accountEmail;
   /**
    * Número de teléfono de contacto.
    *
@@ -111,7 +111,7 @@ public class AccountEntity {
    * Columna: {@code account_phone VARCHAR(20) NOT NULL}.
    */
   @Column(name = "account_phone", length = 20, nullable = false)
-  private String account_phone;
+  private String accountPhone;
   /**
    * Hash de la contraseña de inicio de sesión (Argon2).
    *
@@ -120,7 +120,7 @@ public class AccountEntity {
    * Nunca debe contener texto plano.
    */
   @Column(name = "account_password", length = 60, nullable = false)
-  private String account_password;
+  private String accountPassword;
   /**
    * Hash de la clave maestra para acceder al gestor de contraseñas.
    * Es opcional y se verifica con Argon2 de forma independiente a la
@@ -130,7 +130,7 @@ public class AccountEntity {
    * Columna: {@code account_master_key VARCHAR(60) NULL}.
    */
   @Column(name = "account_master_key", length = 60)
-  private String account_master_key;
+  private String accountMasterKey;
   /**
    * Fecha y hora de creación de la cuenta.
    *
@@ -139,7 +139,7 @@ public class AccountEntity {
    * Se establece automáticamente en {@link #onCreate()} y no es modificable.
    */
   @Column(name = "account_created_at", updatable = false)
-  private LocalDateTime account_created_at;
+  private LocalDateTime accountCreatedAt;
   /**
    * Movimientos financieros asociados a esta cuenta.
    *
@@ -157,7 +157,7 @@ public class AccountEntity {
    * La eliminación de una cuenta elimina en cascada todos sus gastos fijos.
    */
   @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-  private List<FixedExpensesEntity> fixed_expenses = new ArrayList<>();
+  private List<FixedExpensesEntity> fixedExpenses = new ArrayList<>();
   /**
    * Eventos de agenda asociados a esta cuenta.
    *
@@ -183,6 +183,6 @@ public class AccountEntity {
    */
   @PrePersist
   public void onCreate() {
-    account_created_at = LocalDateTime.now();
+    accountCreatedAt = LocalDateTime.now();
   }
 }
