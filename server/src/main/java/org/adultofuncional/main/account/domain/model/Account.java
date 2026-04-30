@@ -3,7 +3,12 @@ package org.adultofuncional.main.account.domain.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+import lombok.experimental.FieldDefaults;
 
 /**
  * Modelo de dominio que representa una cuenta de usuario en el sistema.
@@ -23,45 +28,23 @@ import lombok.Getter;
  * @since 0.0.1
  */
 @Getter
+@Setter
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class Account {
 
-  private final UUID id;
-  private String name;
-  private final String email;
-  private String phone;
-  private final LocalDateTime createdAt;
-  private boolean active;
+  @EqualsAndHashCode.Include
+  final UUID id;
 
-  @Override
-  public boolean equals(Object o) {
-    if (this == o)
-      return true;
-    if (!(o instanceof Account))
-      return false;
-    Account account = (Account) o;
-    return id != null && id.equals(account.id);
-  }
+  String name;
+  final String email;
+  String phone;
+  final LocalDateTime createdAt;
+  boolean active;
 
-  @Override
-  public int hashCode() {
-    return id != null ? id.hashCode() : 0;
-  }
-
-  /**
-   * Constructor privado. Las instancias se crean mediante los factory methods
-   * {@link #create(String, String, String)} o
-   * {@link #reconstitute(UUID, String, String, String, boolean, LocalDateTime)}.
-   *
-   * @param id        UUID de la cuenta
-   * @param name      nombre completo del titular
-   * @param email     correo electrónico
-   * @param phone     número de teléfono
-   * @param active    estado de la cuenta
-   * @param createdAt fecha y hora de creación
-   * @throws IllegalArgumentException si name o email son inválidos,
-   *                                  o si createdAt es una fecha futura
-   */
-  private Account(UUID id, String name, String email, String phone, boolean active, LocalDateTime createdAt) {
+ 
+  public Account(UUID id, String name, String email, String phone, boolean active, LocalDateTime createdAt) {
     validateName(name);
     validateEmail(email);
     validateCreatedAt(createdAt);
@@ -72,25 +55,6 @@ public class Account {
     this.phone = phone;
     this.active = active;
     this.createdAt = createdAt;
-  }
-
-  /**
-   * Fábrica para crear una cuenta nueva. Genera un UUID aleatorio,
-   * establece la fecha de creación actual y la marca como activa.
-   *
-   * @param name  nombre completo (no vacío)
-   * @param email correo electrónico (debe contener '@')
-   * @param phone teléfono de contacto
-   * @return nueva instancia de Account
-   */
-  public static Account create(String name, String email, String phone) {
-    return new Account(
-        UUID.randomUUID(),
-        name,
-        email,
-        phone,
-        true,
-        LocalDateTime.now());
   }
 
   /**
@@ -130,15 +94,6 @@ public class Account {
   /** Activa la cuenta. */
   public void activate() {
     this.active = true;
-  }
-
-  /**
-   * Indica si la cuenta está activa.
-   *
-   * @return true si la cuenta está activa
-   */
-  public boolean isActive() {
-    return active;
   }
 
   private static void validateName(String name) {

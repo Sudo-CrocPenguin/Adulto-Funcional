@@ -2,6 +2,7 @@ package org.adultofuncional.main.account.application.usecase;
 
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.account.application.dto.AccountResponse;
+import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.adultofuncional.main.shared.exception.NotFoundException;
@@ -61,7 +62,7 @@ public class GetAccountUseCase {
     @Transactional(readOnly = true)
     public AccountResponse execute(UUID accountId) {
         // Buscar la entidad en el repositorio de dominio
-        AccountEntity entity = accountRepository.findById(accountId)
+        Account entity = accountRepository.findById(accountId)
                 .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
         // Mapear entidad a DTO de respuesta
@@ -88,13 +89,13 @@ public class GetAccountUseCase {
      * @param entity La entidad JPA recuperada del repositorio.
      * @return El DTO listo para ser enviado al cliente.
      */
-    private AccountResponse mapToResponse(AccountEntity entity) {
+    private AccountResponse mapToResponse(Account entity) {
         return AccountResponse.builder()
                 .id(entity.getAccount_id())
-                .names(entity.getAccount_names())
-                .lastnames(entity.getAccount_lastnames())
+                .names(entity.getAccount_id())
+                .lastnames(entity.getLastnames())
                 .email(entity.getAccount_email())
-                .phone(entity.getAccount_phone())
+                .phone(entity.getPhone())
                 .createdAt(entity.getAccount_created_at())
                 .build();
     }

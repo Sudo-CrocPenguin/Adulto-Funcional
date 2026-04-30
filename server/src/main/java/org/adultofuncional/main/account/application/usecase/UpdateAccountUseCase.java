@@ -3,6 +3,7 @@ package org.adultofuncional.main.account.application.usecase;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.account.application.dto.AccountResponse;
 import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
+import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.adultofuncional.main.shared.exception.BusinessException;
@@ -76,14 +77,14 @@ public class UpdateAccountUseCase {
      * //TODO: Considerar enviar notificación por email al usuario cuando se cambia el correo electrónico
      */
     @Transactional
-    public AccountResponse execute(UUID accountId, UpdateAccountRequest request) {
+    public AccountResponse execute1(UUID accountId, Object request) {
         // 1. Recuperar la entidad existente
-        AccountEntity entity = accountRepository.findById(accountId)
+        Account entity = accountRepository.findById(accountId)
                 .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
         // 2. Validar unicidad del email si ha cambiado
-        if (!entity.getAccount_email().equals(request.getEmail())) {
-            boolean emailExists = accountRepository.existsByEmail(request.getEmail());
+        if (!entity.getEmail().equals(request.getEmail())) {
+            boolean emailExists = accountRepository.findByEmail(request.getEmail()) != null;
             if (emailExists) {
                 throw new BusinessException("El email " + request.getEmail() + " ya está registrado por otra cuenta");
             }
@@ -122,4 +123,9 @@ public class UpdateAccountUseCase {
                 .createdAt(entity.getAccount_created_at())
                 .build();
     }
+
+	public AccountResponse execute(UUID id, Object request) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'execute'");
+	}
 }

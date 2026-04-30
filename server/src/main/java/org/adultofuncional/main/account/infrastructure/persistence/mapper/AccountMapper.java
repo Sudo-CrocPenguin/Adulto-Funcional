@@ -42,9 +42,9 @@ public class AccountMapper {
     if (entity == null)
       return null;
 
-    Account account = new Account();
+    Account account = new Account(null, null, null, null, false, null);
     account.setId(entity.getAccount_id());
-    account.setNames(entity.getAccount_names());
+    account.setName(entity.getAccount_names());
     account.setLastnames(entity.getAccount_lastnames());
     account.setEmail(entity.getAccount_email());
     account.setPhone(entity.getAccount_phone());
@@ -66,7 +66,7 @@ public class AccountMapper {
    */
   // TODO: reemplazar ambos Object por Account y AccountResponse cuando los DTOs
   // estén disponibles
-  public Account toResponse(Account account) {
+  public AccountResponse toResponse(Account account) {
     if (account == null)
       return null;
 
@@ -81,5 +81,10 @@ public class AccountMapper {
 
     return response;
 
+  }
+
+  public AccountEntity toEntity(Account account) {
+    // TODO Auto-generated method stub
+    throw new UnsupportedOperationException("Unimplemented method 'toEntity'");
   }
 }
