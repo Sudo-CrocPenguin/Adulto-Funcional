@@ -3,6 +3,8 @@ package org.adultofuncional.main.account.domain.model;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.fasterxml.uuid.Generators;
+
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -26,7 +28,7 @@ import lombok.experimental.FieldDefaults;
  */
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString
+@ToString(exclude = "passwordHash")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Account {
 
@@ -35,8 +37,9 @@ public class Account {
 
   String names;
   String lastnames;
-  String email; // FIX: ya no es final — el email puede actualizarse
+  String email;
   String phone;
+  String passwordHash;
 
   final LocalDateTime createdAt;
 
@@ -44,7 +47,7 @@ public class Account {
    * Constructor privado. Usar los métodos de fábrica.
    */
   private Account(UUID id, String names, String lastnames, String email,
-      String phone, LocalDateTime createdAt) {
+      String phone, LocalDateTime createdAt, String passwordHash) {
     validateId(id);
     validateCreatedAt(createdAt);
 
@@ -54,22 +57,45 @@ public class Account {
     this.email = email;
     this.phone = phone;
     this.createdAt = createdAt;
+    this.passwordHash = passwordHash;
+  }
+
+  /**
+   * Fábrica para crear una cuenta nueva (antes de persistirla).
+   *
+   * <p>
+   * Genera el UUID v7 y el {@code createdAt} en la aplicación,
+   * garantizando que el dominio sea dueño de su identidad.
+   *
+   * @param names        nombre(s) del titular
+   * @param lastnames    apellido(s) del titular
+   * @param email        correo electrónico
+   * @param phone        teléfono
+   * @param passwordHash hash Argon2 de la contraseña (generado en el use case)
+   * @return instancia de Account lista para persistir
+   */
+  public static Account create(String names, String lastnames,
+      String email, String phone, String passwordHash) {
+    UUID id = Generators.timeBasedEpochGenerator().generate(); // UUID v7
+    LocalDateTime now = LocalDateTime.now();
+    return new Account(id, names, lastnames, email, phone, now, passwordHash);
   }
 
   /**
    * Fábrica para reconstituir una cuenta existente desde persistencia.
    *
-   * @param id        UUID tal como está en la base de datos
-   * @param names     nombre(s) del titular
-   * @param lastnames apellido(s) del titular
-   * @param email     correo electrónico
-   * @param phone     teléfono
-   * @param createdAt fecha de creación original
+   * @param id           UUID tal como está en la base de datos
+   * @param names        nombre(s) del titular
+   * @param lastnames    apellido(s) del titular
+   * @param email        correo electrónico
+   * @param phone        teléfono
+   * @param createdAt    fecha de creación original
+   * @param passwordHash hash Argon2 almacenado
    * @return instancia de Account reconstituida
    */
   public static Account reconstitute(UUID id, String names, String lastnames,
-      String email, String phone, LocalDateTime createdAt) {
-    return new Account(id, names, lastnames, email, phone, createdAt);
+      String email, String phone, LocalDateTime createdAt, String passwordHash) {
+    return new Account(id, names, lastnames, email, phone, createdAt, passwordHash);
   }
 
   /**
