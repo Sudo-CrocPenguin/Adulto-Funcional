@@ -13,21 +13,21 @@ Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una a
 
 ## Stack tecnológico
 
-| Tecnología | Versión | Propósito |
-|-----------|---------|-----------|
-| Java | 21 | Lenguaje base |
-| Spring Boot | 3.5.13 | Framework principal |
-| Spring Data JPA | - | Persistencia ORM |
-| Spring Security | - | Autenticación y autorización |
-| MariaDB | 11.8 | Base de datos relacional |
-| Flyway | - | Migraciones de base de datos |
-| Lombok | - | Reducción de boilerplate |
-| JWT | - | Autenticación stateless |
-| Argon2 | - | Hash de contraseñas |
-| AES-256 | - | Encriptación de contraseñas en gestor de seguridad |
-| Testcontainers | - | Pruebas de integración |
-| Spring Boot Actuator | - | Health checks para Docker |
-| Maven | 3.9 | Gestión de dependencias |
+| Tecnología           | Versión | Propósito                                          |
+| -------------------- | ------- | -------------------------------------------------- |
+| Java                 | 21      | Lenguaje base                                      |
+| Spring Boot          | 3.5.13  | Framework principal                                |
+| Spring Data JPA      | -       | Persistencia ORM                                   |
+| Spring Security      | -       | Autenticación y autorización                       |
+| MariaDB              | 11.8    | Base de datos relacional                           |
+| Flyway               | -       | Migraciones de base de datos                       |
+| Lombok               | -       | Reducción de boilerplate                           |
+| JWT                  | -       | Autenticación stateless                            |
+| Argon2               | -       | Hash de contraseñas                                |
+| AES-256              | -       | Encriptación de contraseñas en gestor de seguridad |
+| Testcontainers       | -       | Pruebas de integración                             |
+| Spring Boot Actuator | -       | Health checks para Docker                          |
+| Maven                | 3.9     | Gestión de dependencias                            |
 
 ## Arquitectura
 
@@ -118,6 +118,12 @@ SPRING_FLYWAY_VALIDATE_ON_MIGRATE=true
 # JWT
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura
 JWT_EXPIRATION=86400000
+```
+
+O utilizar la plantilla del proyecto en lugar de crear el archivo manualmente
+
+```bash
+cp .env.example .env
 ```
 
 **Nota**: Spring Boot NO lee automáticamente archivos `.env`. Para ejecución local sin Docker, debes exportar las variables de entorno manualmente antes de iniciar la aplicación:
@@ -239,11 +245,13 @@ docker-compose restart app
 ## API Endpoints
 
 ### Cuentas (`/api/account`)
+
 - `GET /api/account/{id}` - Obtener datos de una cuenta
 - `PATCH /api/account/{id}` - Actualizar datos de una cuenta
 - `DELETE /api/account/{id}` - Eliminar una cuenta (en desarrollo)
 
 ### Autenticación (`/api/auth`)
+
 - `POST /api/auth/login` - Iniciar sesión (en desarrollo)
 - `POST /api/auth/register` - Registrar usuario (en desarrollo)
 
@@ -263,13 +271,13 @@ Todas las respuestas de la API siguen el formato `ApiResponse<T>`:
 
 El sistema usa una jerarquía de excepciones centralizada:
 
-| Excepción | HTTP Status | Descripción |
-|-----------|-------------|-------------|
-| `BusinessException` | 400 | Errores de negocio generales |
-| `NotFoundException` | 404 | Recurso no encontrado |
-| `UnauthorizedException` | 401 | Credenciales incorrectas |
-| `ConflictException` | 409 | Conflicto de datos (ej. email duplicado) |
-| `ForbiddenException` | 403 | Acceso denegado (Master Key requerida) |
+| Excepción               | HTTP Status | Descripción                              |
+| ----------------------- | ----------- | ---------------------------------------- |
+| `BusinessException`     | 400         | Errores de negocio generales             |
+| `NotFoundException`     | 404         | Recurso no encontrado                    |
+| `UnauthorizedException` | 401         | Credenciales incorrectas                 |
+| `ConflictException`     | 409         | Conflicto de datos (ej. email duplicado) |
+| `ForbiddenException`    | 403         | Acceso denegado (Master Key requerida)   |
 
 ## Documentación Javadoc
 
