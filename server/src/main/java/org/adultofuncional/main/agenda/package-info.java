@@ -1,22 +1,28 @@
 /**
  * Módulo de agenda y gestión de eventos.
  *
- * <p>Permite a los usuarios gestionar sus eventos personales con
- * soporte para recordatorios, prioridades, estados y recurrencia.</p>
+ * <p>
+ * Permite a los usuarios gestionar sus eventos personales con
+ * soporte para recordatorios, prioridades, estados y recurrencia.
+ * </p>
  *
- * <p>Características de eventos:
+ * <p>
+ * Características de eventos:
  * <ul>
- *   <li>Prioridad: Baja, Media, Alta</li>
- *   <li>Estado: Pendiente, Completado, Cancelado, Pospuesto</li>
- *   <li>Recurrencia configurable en días (0 = único, 1 = diario, etc.)</li>
- *   <li>Recordatorios con fecha y hora específica</li>
+ * <li>Prioridad: Baja, Media, Alta</li>
+ * <li>Estado: Pendiente, Completado, Cancelado, Pospuesto</li>
+ * <li>Recurrencia configurable en días (0 = único, 1 = diario, etc.)</li>
+ * <li>Recordatorios con fecha y hora específica</li>
  * </ul>
  * </p>
  *
- * <p>Tabla asociada: {@code events} con FK a {@code accounts}
- * y opcionalmente a {@code categories}.</p>
+ * <p>
+ * Tabla asociada: {@code events} con FK a {@code accounts}
+ * y opcionalmente a {@code categories}.
+ * </p>
  *
- * @author Juan Sebastian Rios
+ * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
+ *         Miguel Angel Blandon Montes
  * @since 0.0.1
  */
 package org.adultofuncional.main.agenda;

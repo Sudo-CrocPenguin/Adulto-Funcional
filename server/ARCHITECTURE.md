@@ -24,7 +24,7 @@ Adulto Funcional Server implementa **Clean Architecture** (Arquitectura Limpia) 
                             │
                             ▼
 ┌──────────────────────────────────────────────────────────────────┐
-│                     APPLICATION LAYER                            │ 
+│                     APPLICATION LAYER                            │
 │          (Casos de uso que orquestan el dominio)                 │
 │  ┌───────────────────────┐     ┌──────────────────────────────┐  │
 │  │         Use Cases     │     │ DTOs (Request/Response)      │  │
@@ -70,17 +70,18 @@ org.adultofuncional.main
 ```
 
 ┌─────────────────────────────────────────────────────────────┐
-│                    SHARED (COMPONENTES COMPARTIDOS)         │
-│  (Elementos transversales usados por todos los módulos)     │
-│  ┌────────────┐ ┌────────────┐ ┌─────────────────────┐      │
-│  │ constants/ │ │ exception/ │ │ response/           │      │
-│  │ (Constantes│ │ (GlobalExc.│ │ (ApiResponse)       │      │
-│  │  globales) │ │  Handler)  │ │                     │      │
-│  └────────────┘ └────────────┘ └─────────────────────┘      │
-│  ┌────────────────────────────────────────────────────┐     │
-│  │ util/ (Clases de utilidad general - pendiente)     │     │
-│  └────────────────────────────────────────────────────┘     │
+│ SHARED (COMPONENTES COMPARTIDOS) │
+│ (Elementos transversales usados por todos los módulos) │
+│ ┌────────────┐ ┌────────────┐ ┌─────────────────────┐ │
+│ │ constants/ │ │ exception/ │ │ response/ │ │
+│ │ (Constantes│ │ (GlobalExc.│ │ (ApiResponse) │ │
+│ │ globales) │ │ Handler) │ │ │ │
+│ └────────────┘ └────────────┘ └─────────────────────┘ │
+│ ┌────────────────────────────────────────────────────┐ │
+│ │ util/ (Clases de utilidad general - pendiente) │ │
+│ └────────────────────────────────────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
+
 ```
 
 ## Capa de Dominio (`domain`)
@@ -94,6 +95,7 @@ Es el núcleo del sistema. Contiene las entidades y reglas de negocio puras.
 - Validar reglas de integridad (ej. `id` y `createdAt` no nulos en `Account`)
 
 ### Ejemplo: `Account.java`
+```
 
 ```java
 public class Account {
@@ -103,13 +105,13 @@ public class Account {
     private String email;
     private String phone;
     private final LocalDateTime createdAt;
-    
+
     // Constructor privado - usar métodos de fábrica
     private Account(UUID id, String names, ...) { ... }
-    
+
     // Método de fábrica para reconstituir desde persistencia
     public static Account reconstitute(UUID id, ...) { ... }
-    
+
     // Comportamiento de dominio
     public void updateDetails(String names, String lastnames, String phone) { ... }
     public void updateEmail(String email) { ... }
@@ -148,23 +150,23 @@ Contienen la lógica de aplicación y coordinan el dominio:
 public class UpdateAccountUseCase {
     private final AccountRepository accountRepository;
     private final AccountMapper accountMapper;
-    
+
     @Transactional
     public AccountResponse execute(UUID accountId, UpdateAccountRequest request) {
         // 1. Buscar cuenta (regla: debe existir)
         Account account = accountRepository.findById(accountId)
             .orElseThrow(() -> new NotFoundException(...));
-        
+
         // 2. Validar unicidad de email (regla de negocio)
         if (!account.getEmail().equals(request.getEmail())) {
             accountRepository.findByEmail(request.getEmail())
                 .ifPresent(existing -> throw new BusinessException(...));
         }
-        
+
         // 3. Aplicar cambios en el dominio
         account.updateDetails(request.getNames(), ...);
         account.updateEmail(request.getEmail());
-        
+
         // 4. Persistir y retornar DTO
         return accountMapper.toResponse(accountRepository.save(account));
     }
@@ -192,12 +194,12 @@ Exponen los endpoints HTTP y validan la entrada:
 public class AccountController {
     private final GetAccountUseCase getAccountUseCase;
     private final UpdateAccountUseCase updateAccountUseCase;
-    
+
     @GetMapping("/{id}")
     public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID id) {
         return ResponseEntity.ok(getAccountUseCase.execute(id));
     }
-    
+
     @PatchMapping("/{id}")
     public ResponseEntity<AccountResponse> updateAccount(
         @PathVariable UUID id,
@@ -220,10 +222,10 @@ public class AccountEntity {
     @UuidGenerator(style = UuidGenerator.Style.TIME)
     @Column(name = "account_id", columnDefinition = "CHAR(36)")
     private UUID accountId;
-    
+
     @Column(name = "account_password", length = 60, nullable = false)
     private String accountPassword; // Hash Argon2
-    
+
     @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MovementEntity> movements = new ArrayList<>();
     // ...
@@ -240,7 +242,7 @@ public class AccountMapper {
     public Account toDomain(AccountEntity entity) {
         return Account.reconstitute(entity.getAccountId(), ...);
     }
-    
+
     public AccountEntity toEntity(Account account) { ... }
     public AccountResponse toResponse(Account account) { ... }
 }
@@ -255,7 +257,7 @@ Implementa los puertos del dominio usando Spring Data JPA:
 public class AccountRepositoryImpl implements AccountRepository {
     private final SpringAccountJpaRepository jpaRepository;
     private final AccountMapper mapper;
-    
+
     @Override
     public Account save(Account account) {
         AccountEntity entity = mapper.toEntity(account);
@@ -271,14 +273,18 @@ public class AccountRepositoryImpl implements AccountRepository {
 Elementos transversales que no pertenecen a un módulo de negocio específico y son utilizados por todos los módulos.
 
 ### `constants/` (Pendiente)
+
 Paquete planificado para constantes globales del sistema:
+
 - Códigos de estado HTTP
 - Mensajes de error estandarizados
 - Configuraciones de tiempo (JWT expiration, formatos de fecha)
 - Nombres de roles y permisos
 
 ### `exception/`
+
 Jerarquía centralizada de excepciones:
+
 - **`BusinessException`**: Base para errores de negocio (HTTP 400)
 - **`NotFoundException`**: Recurso no encontrado (HTTP 404)
 - **`UnauthorizedException`**: Credenciales incorrectas (HTTP 401)
@@ -287,7 +293,9 @@ Jerarquía centralizada de excepciones:
 - **`GlobalExceptionHandler`**: `@RestControllerAdvice` que intercepta todas las excepciones y retorna `ApiResponse` estandarizado
 
 ### `response/`
+
 Formato estándar de respuesta para toda la API:
+
 ```java
 public class ApiResponse<T> {
     private final int status;      // Código HTTP
@@ -297,7 +305,9 @@ public class ApiResponse<T> {
 ```
 
 ### `util/` (Pendiente)
+
 Paquete planificado para clases de utilidad general:
+
 - Validación de formatos (email, teléfono)
 - Generación de UUID v7
 - Encriptación/desencriptación AES-256
@@ -326,18 +336,20 @@ AccountRepositoryImpl → SpringAccountJpaRepository → MariaDB
 ## Seguridad
 
 ### Autenticación
+
 - **JWT (JSON Web Tokens)**: Autenticación stateless
 - **Argon2**: Hash de contraseñas de login en `account_password`
 - **Master Key**: Hash Argon2 opcional en `account_master_key` para proteger el gestor de contraseñas
 
 ### Gestor de contraseñas
+
 - Las contraseñas de servicios se encriptan con **AES-256**
 - La clave de encriptación se deriva de la Master Key del usuario
 - Acceso protegido: Si no se ha verificado la Master Key, se lanza `ForbiddenException` (HTTP 403)
 
 ## Base de datos
 
-### Esquema (Flyway V1__20260408_init_schema.sql)
+### Esquema (Flyway V1\_\_20260408_init_schema.sql)
 
 ```
 accounts (ENTIDAD CENTRAL)
@@ -400,6 +412,7 @@ passwords
 ```
 
 ### Características del esquema
+
 - **UUID v7**: Identificadores ordenables temporalmente (mejor rendimiento en índices B-tree)
 - **Eliminación en cascada**: Al eliminar una cuenta, se eliminan todos sus datos relacionados
 - **Soft delete**: Las categorías soportan borrado lógico mediante `category_deleted_at`
@@ -427,15 +440,15 @@ Etapa 2 (runtime): eclipse-temurin:21-jre-alpine
 
 ### Variables de entorno requeridas
 
-| Variable | Descripción | Ejemplo |
-|----------|-------------|---------|
-| `MARIADB_ROOT_PASSWORD` | Password de root de MariaDB | mysecret |
-| `MARIADB_DATABASE` | Nombre de la base de datos | adulto_funcional |
-| `MARIADB_USER` | Usuario de la aplicación | afs_user |
-| `MARIADB_PASSWORD` | Password del usuario | userpass |
-| `SPRING_DATASOURCE_URL` | JDBC URL | jdbc:mariadb://mariadb:3306/db |
-| `JWT_SECRET` | Clave secreta para firmar JWT | my-jwt-secret |
-| `JWT_EXPIRATION` | Tiempo de expiración JWT (ms) | 86400000 |
+| Variable                | Descripción                   | Ejemplo                        |
+| ----------------------- | ----------------------------- | ------------------------------ |
+| `MARIADB_ROOT_PASSWORD` | Password de root de MariaDB   | mysecret                       |
+| `MARIADB_DATABASE`      | Nombre de la base de datos    | adulto_funcional               |
+| `MARIADB_USER`          | Usuario de la aplicación      | afs_user                       |
+| `MARIADB_PASSWORD`      | Password del usuario          | userpass                       |
+| `SPRING_DATASOURCE_URL` | JDBC URL                      | jdbc:mariadb://mariadb:3306/db |
+| `JWT_SECRET`            | Clave secreta para firmar JWT | my-jwt-secret                  |
+| `JWT_EXPIRATION`        | Tiempo de expiración JWT (ms) | 86400000                       |
 
 ## Manejo de excepciones
 
@@ -505,3 +518,4 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 - [ ] Tests de integración con Testcontainers
 - [ ] Documentación OpenAPI/Swagger
 - [ ] Implementar refresh tokens para JWT
+

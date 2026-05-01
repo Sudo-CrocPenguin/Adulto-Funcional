@@ -21,7 +21,7 @@ import lombok.experimental.FieldDefaults;
  * Campos sensibles como {@code account_password} y {@code account_master_key}
  * permanecen en la capa de infraestructura ({@code AccountEntity}).
  *
- * @author Jeronimo Ospina
+ * @author Jeronimo Ospina Zapata
  * @since 0.0.1
  */
 @Getter

@@ -41,7 +41,8 @@
  * </ul>
  * </p>
  *
- * @author Equipo de desarrollo Adulto Funcional
+ * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
+ *         Miguel Angel Blandon Montes
  * @since 0.0.1
  */
 package org.adultofuncional.main;

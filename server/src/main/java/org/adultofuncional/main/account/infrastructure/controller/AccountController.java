@@ -33,7 +33,7 @@ import java.util.UUID;
  * <li>{@code DELETE /api/account/{id}} — eliminar una cuenta</li>
  * </ul>
  *
- * @author Lydis Jaraba
+ * @author Lydis Ester Jaraba
  * @since 0.0.1
  */
 @RestController

@@ -25,7 +25,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * <li>Testcontainers para pruebas de integración</li>
  * <li>Spring Boot Actuator para health checks en Docker</li>
  * </ul>
- *
+ * 
+ * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
+ *         Miguel Angel Blandon Montes
  * @since 0.0.1
  */
 @SpringBootApplication

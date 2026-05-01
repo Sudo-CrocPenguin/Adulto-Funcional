@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  * Las columnas {@code account_password} y {@code account_master_key} nunca
  * se exponen en las respuestas hacia el cliente.
  *
- * @author Lydis Jaraba
+ * @author Lydis Ester Jaraba
  * @since 0.0.1
  */
 @Component

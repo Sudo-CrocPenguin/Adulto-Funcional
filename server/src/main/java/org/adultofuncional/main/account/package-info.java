@@ -1,20 +1,26 @@
 /**
  * Módulo de gestión de cuentas de usuario.
  *
- * <p>Implementa la capa de dominio, aplicación, infraestructura y
- * presentación para el manejo de cuentas bajo Clean Architecture.</p>
+ * <p>
+ * Implementa la capa de dominio, aplicación, infraestructura y
+ * presentación para el manejo de cuentas bajo Clean Architecture.
+ * </p>
  *
- * <p>Responsabilidades:
+ * <p>
+ * Responsabilidades:
  * <ul>
- *   <li>Registro y actualización de datos de cuenta</li>
- *   <li>Consulta de información no sensible (sin password ni master key)</li>
- *   <li>Validación de unicidad de correo electrónico</li>
+ * <li>Registro y actualización de datos de cuenta</li>
+ * <li>Consulta de información no sensible (sin password ni master key)</li>
+ * <li>Validación de unicidad de correo electrónico</li>
  * </ul>
  * </p>
  *
- * <p>Tabla asociada: {@code accounts} con identificador UUID v7.</p>
+ * <p>
+ * Tabla asociada: {@code accounts} con identificador UUID v7.
+ * </p>
  *
- * @author Jeronimo Ospina, Miguel Angel Blandon Montes, Lydis Jaraba, Juan Sebastian Rios
+ * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
+ *         Miguel Angel Blandon Montes
  * @since 0.0.1
  */
 package org.adultofuncional.main.account;

@@ -19,7 +19,7 @@ import org.springframework.stereotype.Repository;
  * convirtiendo entre {@link Account} (modelo de dominio) y
  * {@link AccountEntity} (entidad JPA) mediante {@link AccountMapper}.
  *
- * @author Jeronimo Ospina
+ * @author Jeronimo Ospina Zapata
  * @since 0.0.1
  */
 @Repository
