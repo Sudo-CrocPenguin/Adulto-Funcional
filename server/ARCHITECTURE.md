@@ -49,22 +49,22 @@ Adulto Funcional Server implementa **Clean Architecture** (Arquitectura Limpia) 
 
 org.adultofuncional.main
 ├── account/            # Módulo de cuentas de usuario
-│   ├── domain/         #   Modelo de dominio y puertos
-│   ├── application/    #   Casos de uso y DTOs
+│   ├── domain/         # Modelo de dominio y puertos
+│   ├── application/    # Casos de uso y DTOs
 │   └── infrastructure/ # Adaptadores (JPA, REST)
 ├── auth/               # Módulo de autenticación (JWT)
 ├── config/             # Configuraciones de Spring
-│   ├── beans/          #   Configuración de beans (pendiente)
-│   ├── jackson/        #   Configuración de Jackson JSON (pendiente)
-│   └── security/       #   Configuración de Spring Security (pendiente)
+│   ├── beans/          # Configuración de beans (pendiente)
+│   ├── jackson/        # Configuración de Jackson JSON (pendiente)
+│   └── security/       # Configuración de Spring Security (pendiente)
 ├── finances/           # Módulo financiero (movimientos, gastos, categorías)
 ├── agenda/             # Módulo de agenda (eventos)
 ├── security/           # Gestor de contraseñas con Master Key
 └── shared/             # Componentes transversales
-    ├── constants/      #   Constantes globales (pendiente)
-    ├── exception/      #   Jerarquía de excepciones y GlobalExceptionHandler
-    ├── response/       #   Formato estándar de respuestas API (ApiResponse)
-    └── util/           #   Clases de utilidad general (pendiente)
+    ├── constants/      # Constantes globales (pendiente)
+    ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
+    ├── response/       # Formato estándar de respuestas API (ApiResponse)
+    └── util/           # Clases de utilidad general (pendiente)
 
 
 ```
