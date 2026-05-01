@@ -131,3 +131,27 @@ public class AuthResponse {
      */
     private boolean hasMasterKey;
 }
+
+//TODO: nececitamos para referencia ApiResponse.java  (ya existe en shared.response)
+
+//package org.adultofuncional.main.shared.response;
+
+//import lombok.AllArgsConstructor;
+//import lombok.Builder;
+//import lombok.Data;
+//TODO: import lombok.NoArgsConstructor;
+
+/**
+ * Respuesta estándar de la API.
+ *
+ * @param <T> Tipo de dato contenido en la respuesta.
+ */
+//@Data
+//@Builder
+//@NoArgsConstructor
+//@AllArgsConstructor
+//public class ApiResponse<T> {
+    //private int status;
+    //private String message;
+    //private T data;
+//}
