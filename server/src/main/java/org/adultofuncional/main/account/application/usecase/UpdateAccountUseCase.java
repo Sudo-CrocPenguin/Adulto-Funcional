@@ -5,6 +5,7 @@ import org.adultofuncional.main.account.application.dto.AccountResponse;
 import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
 import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
+import org.adultofuncional.main.account.infrastructure.persistence.mapper.AccountMapper;
 import org.adultofuncional.main.shared.exception.BusinessException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
@@ -24,10 +25,6 @@ import java.util.UUID;
  * <li>Contraseña y master key no se modifican aquí.</li>
  * </ul>
  *
- * // TODO: Requerir confirmación de contraseña al cambiar el email
- * // TODO: Notificar al usuario por email cuando cambie su correo
- * // TODO: Agregar logs de auditoría
- *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
  */
@@ -36,6 +33,7 @@ import java.util.UUID;
 public class UpdateAccountUseCase {
 
   private final AccountRepository accountRepository;
+  private final AccountMapper accountMapper;
 
   /**
    * Ejecuta la actualización de los datos de una cuenta.
@@ -69,22 +67,6 @@ public class UpdateAccountUseCase {
     // 4. Persistir y retornar
     Account updated = accountRepository.save(account);
 
-    return toResponse(updated);
-  }
-
-  /**
-   * Convierte el modelo de dominio {@link Account} en {@link AccountResponse}.
-   *
-   * // TODO: Extraer a AccountMapper cuando crezca la complejidad
-   */
-  private AccountResponse toResponse(Account account) {
-    return AccountResponse.builder()
-        .id(account.getId())
-        .names(account.getNames())
-        .lastnames(account.getLastnames())
-        .email(account.getEmail())
-        .phone(account.getPhone())
-        .createdAt(account.getCreatedAt())
-        .build();
+    return accountMapper.toResponse(updated);
   }
 }
