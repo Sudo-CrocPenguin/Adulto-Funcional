@@ -4,8 +4,8 @@
  * <p>
  * Contiene clases de configuración que definen beans personalizados,
  * configuraciones de serialización y seguridad.
- * </p>
  *
+ * 
  * <p>
  * Subpaquetes:
  * <ul>
@@ -15,10 +15,10 @@
  * <li>{@code security} — Configuración de Spring Security, filtros
  * JWT y CORS (pendiente)</li>
  * </ul>
- * </p>
  *
+ * 
  * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
- *         Miguel Angel Blandon Montes
+ *         Miguel Angel Blandon Montes, Daniel Salazar
  * @since 0.0.1
  */
 package org.adultofuncional.main.config;
