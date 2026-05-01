@@ -31,27 +31,27 @@ Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una a
 
 ## Arquitectura
 
-El proyecto sigue los principios de **Clean Architecture** organizados en cuatro capas:
+El proyecto sigue los principios de **Clean Architecture** organizados en las siguientes capas:
 
 ```
 org.adultofuncional.main
-├── account/          # Módulo de cuentas de usuario
-│   ├── domain/       #   Modelo de dominio y puertos
-│   ├── application/  #   Casos de uso y DTOs
+├── account/            # Módulo de cuentas de usuario
+│   ├── domain/         #   Modelo de dominio y puertos
+│   ├── application/    #   Casos de uso y DTOs
 │   └── infrastructure/ # Adaptadores (JPA, REST)
-├── auth/             # Módulo de autenticación (JWT)
-├── config/           # Configuraciones de Spring (beans, jackson, security)
-│   ├── beans/       #   Configuración de beans de Spring
-│   ├── jackson/     #   Configuración de serialización JSON
-│   └── security/    #   Configuración de Spring Security
-├── finances/         # Módulo financiero (movimientos, gastos, categorías)
-├── agenda/           # Módulo de agenda (eventos)
-├── security/         # Gestor de contraseñas con Master Key
-└── shared/           # Componentes transversales
-    ├── constants/    #   Constantes globales del sistema
-    ├── exception/    #   Jerarquía de excepciones y GlobalExceptionHandler
-    ├── response/     #   Formato estándar de respuestas API (ApiResponse)
-    └── util/         #   Clases de utilidad general
+├── auth/               # Módulo de autenticación (JWT)
+├── config/             # Configuraciones de Spring (beans, jackson, security)
+│   ├── beans/          #   Configuración de beans de Spring
+│   ├── jackson/        #   Configuración de serialización JSON
+│   └── security/       #   Configuración de Spring Security
+├── finances/           # Módulo financiero (movimientos, gastos, categorías)
+├── agenda/             # Módulo de agenda (eventos)
+├── security/           # Gestor de contraseñas con Master Key
+└── shared/             # Componentes transversales
+    ├── constants/      #   Constantes globales del sistema
+    ├── exception/      #   Jerarquía de excepciones y GlobalExceptionHandler
+    ├── response/       #   Formato estándar de respuestas API (ApiResponse)
+    └── util/           #   Clases de utilidad general
 ```
 
 Para una documentación técnica detallada de la arquitectura, consulta [ARCHITECTURE.md](./ARCHITECTURE.md).
