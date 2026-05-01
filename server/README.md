@@ -90,7 +90,15 @@ cd adulto-funcional-server
 Crea un archivo `.env` en la raíz del proyecto (no se incluye en el repositorio):
 
 ```env
+# Configuración de Spring
+SPRING_APPLICATION_NAME=adulto-funcional
+SERVER_PORT=8080
+SERVER_ADDRESS=0.0.0.0
+
 # Base de datos
+SPRING_DATASOURCE_URL=jdbc:mariadb://localhost:3306/adulto_funcional
+SPRING_DATASOURCE_USERNAME=afs_user
+SPRING_DATASOURCE_PASSWORD=tu_password
 MARIADB_ROOT_PASSWORD=tu_root_password
 MARIADB_DATABASE=adulto_funcional
 MARIADB_USER=afs_user
@@ -99,15 +107,28 @@ MARIADB_PASSWORD=tu_password
 # JPA
 SPRING_JPA_HIBERNATE_DDL_AUTO=validate
 SPRING_JPA_SHOW_SQL=false
+SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.MariaDBDialect
 
 # Flyway
 SPRING_FLYWAY_ENABLED=true
+SPRING_FLYWAY_LOCATIONS=classpath:database/migrations
 SPRING_FLYWAY_BASELINE_ON_MIGRATE=true
 SPRING_FLYWAY_VALIDATE_ON_MIGRATE=true
 
 # JWT
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura
 JWT_EXPIRATION=86400000
+```
+
+**Nota**: Spring Boot NO lee automáticamente archivos `.env`. Para ejecución local sin Docker, debes exportar las variables de entorno manualmente antes de iniciar la aplicación:
+
+```bash
+# Exportar todas las variables del .env al entorno actual
+export $(cat .env | xargs)
+
+# Verificar que se cargaron (opcional)
+echo $MARIADB_PASSWORD
+echo $JWT_SECRET
 ```
 
 ### 3. Ejecutar con Maven
