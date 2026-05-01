@@ -16,15 +16,18 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * y configura dinámicamente las propiedades del DataSource. Confirma que
  * todos los beans se instancian correctamente y que no hay conflictos de
  * configuración.
+ * </p>
  *
  * <p>
  * Características:
  * <ul>
- * <li>MariaDB 11.8 en contenedor Docker</li>
- * <li>Propiedades inyectadas vía {@link DynamicPropertySource}</li>
- * <li>Flyway deshabilitado para arranque rápido</li>
+ *   <li>MariaDB 11.8 en contenedor Docker</li>
+ *   <li>Propiedades inyectadas vía {@link DynamicPropertySource}</li>
+ *   <li>Flyway deshabilitado para arranque rápido</li>
  * </ul>
+ * </p>
  *
+ * @author Equipo de desarrollo Adulto Funcional
  * @since 0.0.1
  */
 @Testcontainers
@@ -32,12 +35,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class AdultoFuncionalServerApplicationTests {
 
   /**
-   * Contenedor MariaDB 11.8 para pruebas de integración.
-   *
-   * <p>
-   * Configuración: base de datos {@code testdb}, usuario {@code test},
-   * contraseña {@code test}.
-   */
+    * Contenedor MariaDB 11.8 para pruebas de integración.
+    *
+    * <p>
+    * Configuración: base de datos {@code testdb}, usuario {@code test},
+    * contraseña {@code test}.
+    * </p>
+    *
+    * @author Equipo de desarrollo Adulto Funcional
+    */
+
   @Container
   static MariaDBContainer<?> mariadb = new MariaDBContainer<>("mariadb:11.8")
       .withDatabaseName("testdb")
@@ -45,10 +52,13 @@ class AdultoFuncionalServerApplicationTests {
       .withPassword("test");
 
   /**
-   * Inyecta las propiedades de conexión del contenedor en el contexto de Spring.
-   *
-   * @param registry registro de propiedades dinámicas
-   */
+    * Inyecta las propiedades de conexión del contenedor en el contexto de Spring.
+    *
+    * @param registry registro de propiedades dinámicas
+    *
+    * @author Equipo de desarrollo Adulto Funcional
+    */
+
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
     registry.add("spring.datasource.url", mariadb::getJdbcUrl);
@@ -58,8 +68,11 @@ class AdultoFuncionalServerApplicationTests {
   }
 
   /**
-   * Verifica que el contexto de Spring Boot se carga sin errores.
-   */
+    * Verifica que el contexto de Spring Boot se carga sin errores.
+    *
+    * @author Equipo de desarrollo Adulto Funcional
+    */
+
   @Test
   void contextLoads() {
   }

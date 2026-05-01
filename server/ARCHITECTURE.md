@@ -69,21 +69,22 @@ org.adultofuncional.main
 
 ```
 
+```
 ┌─────────────────────────────────────────────────────────────┐
-│ SHARED (COMPONENTES COMPARTIDOS) │
-│ (Elementos transversales usados por todos los módulos) │
-│ ┌────────────┐ ┌────────────┐ ┌─────────────────────┐ │
-│ │ constants/ │ │ exception/ │ │ response/ │ │
-│ │ (Constantes│ │ (GlobalExc.│ │ (ApiResponse) │ │
-│ │ globales) │ │ Handler) │ │ │ │
-│ └────────────┘ └────────────┘ └─────────────────────┘ │
-│ ┌────────────────────────────────────────────────────┐ │
-│ │ util/ (Clases de utilidad general - pendiente) │ │
-│ └────────────────────────────────────────────────────┘ │
+│               SHARED (COMPONENTES COMPARTIDOS)              │
+│   (Elementos transversales usados por todos los módulos)    │
+│ ┌────────────┐    ┌────────────┐    ┌─────────────────────┐ │
+│ │ constants/ │    │ exception/ │    │       response/     │ │
+│ │ (Constantes│    │ (GlobalExc.│    │    (ApiResponse)    │ │
+│ │  globales) │    │  Handler)  │    │                     │ │
+│ └────────────┘    └────────────┘    └─────────────────────┘ │
+│   ┌────────────────────────────────────────────────────┐    │
+│   │ util/ (Clases de utilidad general - pendiente)     │    │
+│   └────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────┘
-
 ```
 
+```
 ## Capa de Dominio (`domain`)
 
 Es el núcleo del sistema. Contiene las entidades y reglas de negocio puras.
@@ -518,4 +519,3 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 - [ ] Tests de integración con Testcontainers
 - [ ] Documentación OpenAPI/Swagger
 - [ ] Implementar refresh tokens para JWT
-

@@ -153,6 +153,50 @@ O directamente con Spring Boot Maven plugin:
 ./mvnw spring-boot:run
 ```
 
+## Testing
+
+El proyecto utiliza **JUnit 5**, **Spring Boot Test**, **Mockito** y **Testcontainers** para pruebas automatizadas.
+
+### Tipos de tests
+
+**1. Test de arranque (`AdultoFuncionalServerApplicationTests`)**
+
+- Levanta un contenedor Docker con **MariaDB 11.8** usando Testcontainers
+- Configura dinámicamente las propiedades del DataSource vía `@DynamicPropertySource`
+- Verifica que el contexto de Spring Boot se carga sin errores
+- Flyway se deshabilita para un arranque rápido
+
+**2. Tests de integración web**
+
+- Usa `@WebMvcTest` para cargar solo la capa web (controladores, validación)
+- Simula los casos de uso con Mockito (`@MockitoBean`)
+- Deshabilita la seguridad con `TestSecurityConfig` (`@Import`)
+- Verifica respuestas HTTP, códigos de estado y validación de DTOs
+
+### Comandos de test
+
+```bash
+# Ejecutar todos los tests
+./mvnw test
+
+# Ejecutar tests con reporte detallado
+./mvnw test -Dtest.verbose=true
+
+# Ejecutar un test específico
+./mvnw test -Dtest=AdultoFuncionalServerApplicationTests
+
+# Ejecutar tests de un paquete específico
+./mvnw test -Dtest=org.adultofuncional.main.account.infrastructure.controller.*
+
+# Verificar y ejecutar tests de integración (Testcontainers requiere Docker)
+./mvnw verify
+
+# Ejecutar tests saltando la compilación
+./mvnw surefire:test
+```
+
+**Nota**: Los tests que usan Testcontainers requieren Docker instalado y en ejecución.
+
 ## Ejecución con Docker
 
 ### 1. Construir y levantar los servicios

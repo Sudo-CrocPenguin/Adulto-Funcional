@@ -37,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Este enfoque carga solo la capa web (controladores, validación, conversión de mensajes)
  * y simula los casos de uso con Mockito. Es más rápido que {@code @SpringBootTest}
  * porque no carga la configuración completa de Spring ni la base de datos.
+ * </p>
  *
  * <p>
  * Endpoints probados:
@@ -45,7 +46,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *   <li>{@code PATCH /api/account/{id}} — actualizar cuenta</li>
  *   <li>{@code DELETE /api/account/{id}} — eliminar cuenta</li>
  * </ul>
+ * </p>
  *
+ * @author Equipo de desarrollo Adulto Funcional
  * @since 0.0.1
  */
 @WebMvcTest(AccountController.class)
