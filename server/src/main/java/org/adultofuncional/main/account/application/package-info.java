@@ -10,7 +10,7 @@
  *   <li>{@code usecase} — Casos de uso: {@code GetAccountUseCase}, {@code UpdateAccountUseCase}</li>
  *   <li>{@code dto} — Objetos de transferencia: {@code AccountResponse}, {@code UpdateAccountRequest}</li>
  * </ul>
- * </p>
+
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1

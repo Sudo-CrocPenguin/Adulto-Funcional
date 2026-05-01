@@ -4,8 +4,8 @@
  * <p>
  * Permite a los usuarios gestionar sus eventos personales con
  * soporte para recordatorios, prioridades, estados y recurrencia.
- * </p>
  *
+ * 
  * <p>
  * Características de eventos:
  * <ul>
@@ -14,15 +14,15 @@
  * <li>Recurrencia configurable en días (0 = único, 1 = diario, etc.)</li>
  * <li>Recordatorios con fecha y hora específica</li>
  * </ul>
- * </p>
  *
+ * 
  * <p>
  * Tabla asociada: {@code events} con FK a {@code accounts}
  * y opcionalmente a {@code categories}.
- * </p>
  *
+ * 
  * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
- *         Miguel Angel Blandon Montes
+ *         Miguel Angel Blandon Montes, Daniel Salazar
  * @since 0.0.1
  */
 package org.adultofuncional.main.agenda;

@@ -4,8 +4,8 @@
  * <p>
  * Gestiona movimientos financieros, gastos fijos y categorías
  * de clasificación bajo la arquitectura limpia.
- * </p>
  *
+ * 
  * <p>
  * Entidades principales:
  * <ul>
@@ -14,15 +14,15 @@
  * servicios)</li>
  * <li>{@code CategoryEntity} — Clasificación (soporta soft delete)</li>
  * </ul>
- * </p>
  *
+ * 
  * <p>
  * Tablas asociadas: {@code movements}, {@code fixed_expenses},
  * {@code categories}. Todas usan UUID v7 como clave primaria.
- * </p>
  *
+ * 
  * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
- *         Miguel Angel Blandon Montes
+ *         Miguel Angel Blandon Montes, Daniel Salazar
  * @since 0.0.1
  */
 package org.adultofuncional.main.finances;

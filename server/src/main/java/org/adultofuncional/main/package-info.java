@@ -5,8 +5,8 @@
  * Backend construido con Spring Boot 3.5.13 y Java 21 que implementa
  * una arquitectura limpia (Clean Architecture) para la gestión financiera
  * personal, agenda y almacenamiento seguro de contraseñas.
- * </p>
  *
+ * 
  * <p>
  * Tecnologías principales:
  * <ul>
@@ -17,14 +17,14 @@
  * <li>Lombok para reducción de código repetitivo</li>
  * <li>Spring Boot Actuator para health checks</li>
  * </ul>
- * </p>
  *
+ * 
  * <p>
  * Base de datos: MariaDB con las siguientes entidades principales:
  * {@code accounts}, {@code categories}, {@code movements},
  * {@code fixed_expenses}, {@code events}, {@code passwords}.
- * </p>
  *
+ * 
  * <p>
  * Organización de paquetes:
  * <ul>
@@ -39,10 +39,10 @@
  * <li>{@code shared} — Componentes transversales (excepciones, respuestas
  * API)</li>
  * </ul>
- * </p>
  *
+ * 
  * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
- *         Miguel Angel Blandon Montes
+ *         Miguel Angel Blandon Montes, Daniel Salazar
  * @since 0.0.1
  */
 package org.adultofuncional.main;

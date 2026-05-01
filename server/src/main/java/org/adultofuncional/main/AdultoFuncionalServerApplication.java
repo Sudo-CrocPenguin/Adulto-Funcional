@@ -27,7 +27,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * </ul>
  * 
  * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
- *         Miguel Angel Blandon Montes
+ *         Miguel Angel Blandon Montes, Daniel Salazar
  * @since 0.0.1
  */
 @SpringBootApplication

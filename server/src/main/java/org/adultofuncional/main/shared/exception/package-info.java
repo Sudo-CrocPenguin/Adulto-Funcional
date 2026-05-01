@@ -13,7 +13,7 @@
  *   <li>{@link ConflictException} — Conflicto de datos (HTTP 409)</li>
  *   <li>{@link ForbiddenException} — Acceso denegado (HTTP 403)</li>
  * </ul>
- * </p>
+
  *
  * @since 0.0.1
  */

@@ -4,8 +4,8 @@
  * <p>
  * Implementa la capa de dominio, aplicación, infraestructura y
  * presentación para el manejo de cuentas bajo Clean Architecture.
- * </p>
  *
+ * 
  * <p>
  * Responsabilidades:
  * <ul>
@@ -13,14 +13,14 @@
  * <li>Consulta de información no sensible (sin password ni master key)</li>
  * <li>Validación de unicidad de correo electrónico</li>
  * </ul>
- * </p>
  *
+ * 
  * <p>
  * Tabla asociada: {@code accounts} con identificador UUID v7.
- * </p>
  *
+ * 
  * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
- *         Miguel Angel Blandon Montes
+ *         Miguel Angel Blandon Montes, Daniel Salazar
  * @since 0.0.1
  */
 package org.adultofuncional.main.account;
