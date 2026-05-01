@@ -46,15 +46,17 @@ public class AccountMapper {
         entity.getAccountLastNames(),
         entity.getAccountEmail(),
         entity.getAccountPhone(),
-        entity.getAccountCreatedAt());
+        entity.getAccountCreatedAt(),
+        entity.getAccountPassword());
   }
 
   /**
    * Convierte el modelo de dominio {@link Account} a {@link AccountEntity}.
    *
    * <p>
-   * No copia {@code account_password} ni {@code account_master_key} —
-   * esos campos los gestiona exclusivamente la capa de seguridad.
+   * Copia {@code account_password} desde el modelo de dominio como hash Argon2.
+   * El campo {@code account_master_key} lo gestiona exclusivamente el módulo
+   * de seguridad y no se incluye en esta conversión.
    *
    * @param account modelo de dominio. Si es {@code null} retorna {@code null}.
    * @return entidad JPA lista para persistir.
@@ -62,7 +64,6 @@ public class AccountMapper {
   public AccountEntity toEntity(Account account) {
     if (account == null)
       return null;
-
     AccountEntity entity = new AccountEntity();
     entity.setAccountId(account.getId());
     entity.setAccountNames(account.getNames());
@@ -70,6 +71,7 @@ public class AccountMapper {
     entity.setAccountEmail(account.getEmail());
     entity.setAccountPhone(account.getPhone());
     entity.setAccountCreatedAt(account.getCreatedAt());
+    entity.setAccountPassword(account.getPasswordHash());
     return entity;
   }
 
