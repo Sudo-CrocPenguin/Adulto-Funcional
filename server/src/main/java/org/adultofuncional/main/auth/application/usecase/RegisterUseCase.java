@@ -1,17 +1,13 @@
 package org.adultofuncional.main.auth.application.usecase;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.auth.application.dto.AuthResponse;
 import org.adultofuncional.main.auth.application.dto.RegisterRequest;
+import org.adultofuncional.main.config.security.JwtService;
 import org.adultofuncional.main.shared.exception.BusinessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-//TODO: descomentar cuando JwtService esté implementado
-//import org.adultofuncional.main.config.security.JwtService;
 
 /**
  * Caso de uso encargado de registrar un nuevo usuario en el sistema.
@@ -56,8 +52,8 @@ public class RegisterUseCase {
     private final PasswordEncoder passwordEncoder;
 
     /** Servicio para generar y gestionar tokens JWT. */
-    //private final JwtService jwtService;
-    //agregarlo al contructor 
+    private final JwtService jwtService;
+ 
 
 
     /**
@@ -68,11 +64,11 @@ public class RegisterUseCase {
      * @param jwtService        servicio de generación de tokens JWT
      */
 
-    public RegisterUseCase(AccountRepository accountRepository, PasswordEncoder passwordEncoder) {
+    public RegisterUseCase(AccountRepository accountRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
 
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
-        //this.jwtService = jwtService;
+        this.jwtService = jwtService;
     }
 
     /**
@@ -100,36 +96,28 @@ public class RegisterUseCase {
         //TODO: igual que hashedPassword, masterKey no se persiste aun
         String hashedMasterKey = hasMasterKey ? passwordEncoder.encode(request.getMasterKey()) : null;
 
-        //Crear el modelo de dominio Account
-        Account account = Account.reconstitute(
-            UUID.randomUUID(),
+        //Crear el modelo de dominio Account - Account.create() genera UUIDv7 y createdAt
+        Account account = Account.create(
             request.getNames(),
             request.getLastnames(),
             request.getEmail(),
             request.getPhone(),
-            LocalDateTime.now()
+            hashedPassword
         );
 
         //Persistir la cuenta
-        // TODO: AccountRepository.save(Account) no persiste password ni masterKey
-        // porque Account (dominio) no tiene esos campos — están en AccountEntity.
-        // Debemos definir cómo pasar hashedPassword y hashedMasterKey
-        // al repositorio. Opciones:
-        //   a) Agregar register(Account, String password, String masterKey) al repositorio
-        //   b) Delegar esta responsabilidad a AuthDomainService
+        //TODO: hashedMasterKey no se persiste aún — Account no tiene ese campo
+        // Definir cómo almacenarlo (AccountEntity sí puede tenerlo)
         Account savedAccount = accountRepository.save(account);
 
         // Generar token JWT usando el email como subject
-        //TODO: generar token JWT cuando JwtService esté implementado
-        //String token = jwtService.generateToken(savedAccount.getEmail());
+        String token = jwtService.generateToken(savedAccount.getId().toString(), savedAccount.getEmail());
 
-        // Construir y retornar la respuesta
+        //Construir y retornar la respuesta
         return AuthResponse.builder()
-            //TODO: asignar token real cuando JwtService esté listo
-            .token(null)
+            .token(token)
             .tokenType("Bearer")
-            //TODO: asignar expiresIn desde jwtService.getExpirationTime()
-            .expiresIn(null)
+            .expiresIn(jwtService.getExpiration())
             .accountId(savedAccount.getId())
             .names(savedAccount.getNames())
             .lastnames(savedAccount.getLastnames())
