@@ -46,7 +46,6 @@ Adulto Funcional Server implementa **Clean Architecture** (Arquitectura Limpia) 
 ```
 
 ```
-
 org.adultofuncional.main
 ├── account/            # Módulo de cuentas de usuario
 │   ├── domain/         # Modelo de dominio y puertos
@@ -65,8 +64,6 @@ org.adultofuncional.main
     ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
     ├── response/       # Formato estándar de respuestas API (ApiResponse)
     └── util/           # Clases de utilidad general (pendiente)
-
-
 ```
 
 ```
@@ -84,19 +81,18 @@ org.adultofuncional.main
 └─────────────────────────────────────────────────────────────┘
 ```
 
-```
 ## Capa de Dominio (`domain`)
 
 Es el núcleo del sistema. Contiene las entidades y reglas de negocio puras.
 
 ### Responsabilidades
+
 - Definir el modelo de negocio (`Account`, futuros: `Movement`, `Event`, `Password`)
 - Declarar puertos de salida (interfaces de repositorio)
 - Encapsular invariantes de negocio
 - Validar reglas de integridad (ej. `id` y `createdAt` no nulos en `Account`)
 
 ### Ejemplo: `Account.java`
-```
 
 ```java
 public class Account {
