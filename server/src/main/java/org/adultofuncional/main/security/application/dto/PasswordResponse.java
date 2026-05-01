@@ -85,8 +85,11 @@ public class PasswordResponse {
      *   <li>Este campo nunca debe ser logueado por el servidor</li>
      * </ul>
      *
-     * //TODO: Agregar campo para indicar si la contraseña necesita ser rotada (antigüedad > 90 días)
+     * 
      */
+
+    //TODO: Agregar campo para indicar si la contraseña necesita ser rotada (antigüedad > 90 días)
+    
     private String password;
 
     /**

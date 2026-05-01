@@ -64,8 +64,11 @@ public class PasswordRequest {
      * Obligatorio. Mínimo 1 carácter, máximo 35.
      * Ejemplos: "Gmail", "Netflix", "GitHub", "Banco XYZ".
      *
-     * //TODO: Considerar agregar validación para evitar nombres duplicados por cuenta
+     * 
      */
+
+    //TODO: Considerar agregar validación para evitar nombres duplicados por cuenta
+
     @NotBlank(message = "El nombre de la aplicación es obligatorio")
     @Size(max = 35, message = "El nombre de la aplicación no puede exceder 35 caracteres")
     private String applicationName;
@@ -86,10 +89,13 @@ public class PasswordRequest {
      * <p><strong>⚠️ IMPORTANTE:</strong>
      * Este campo NUNCA debe ser logueado ni almacenado en texto plano.
      * Solo se usa temporalmente para la encriptación.
-     *
-     * //TODO: Agregar validación de fortaleza de contraseña (recomendaciones de seguridad)
-     * //TODO: Agregar validación para evitar contraseñas comunes o débiles
+     * 
      */
+
+    //TODO: Agregar validación para evitar contraseñas comunes o débiles
+    //TODO: Agregar validación de fortaleza de contraseña (recomendaciones de seguridad)
+
+
     @NotBlank(message = "La contraseña es obligatoria")
     @Size(min = 1, message = "La contraseña no puede estar vacía")
     private String password;
@@ -102,8 +108,9 @@ public class PasswordRequest {
      *
      * <p><strong>Formato esperado:</strong>
      * ISO-8601 sin hora: {@code YYYY-MM-DD} (ej. 2025-05-01)
-     *
-     * //TODO: Agregar validación para que la fecha no sea futura
      */
+
+    //TODO: Agregar validación para que la fecha no sea futura
+
     private LocalDate lastChangeDate;
 }
