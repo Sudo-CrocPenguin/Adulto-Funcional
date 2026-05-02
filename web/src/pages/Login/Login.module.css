@@ -1,0 +1,147 @@
+.title {
+    font-family: var(--font-secondary);
+    color: var(--color-primary);
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.authError {
+    background: #fef2f2;
+    color: var(--color-error);
+    border: 1px solid var(--color-error-light);
+    border-radius: var(--radius-md);
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.formGroup {
+    margin-bottom: 18px;
+}
+
+.formGroup label {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.formGroup input {
+    width: 100%;
+    padding: 11px 15px;
+    border: 1px solid var(--color-gray-light);
+    border-radius: 0.70rem;
+    background-color: var(--color-background);
+    transition: all 0.3s;
+}
+
+.formGroup input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(46, 76, 126, 0.15);
+}
+
+.inputError {
+    border-color: var(--color-error) !important;
+    box-shadow: 0 0 0 3px rgba(255, 49, 49, 0.15) !important;
+}
+
+.errorMsg {
+    display: block;
+    color: var(--color-error);
+    font-size: 0.82rem;
+    margin-top: 4px;
+}
+
+.passwordWrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.passwordWrapper input {
+    padding-right: 42px;
+}
+
+.eyeIcon {
+    position: absolute;
+    right: 12px;
+    color: var(--color-celeste-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.eyeIcon:hover {
+    color: var(--color-primary);
+}
+
+.rememberMe {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.rememberMe input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+}
+
+.rememberMe label {
+    color: var(--color-text-primary);
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.btnPrimary {
+    width: 100%;
+    padding: 13px;
+    background-color: var(--color-primary);
+    color: var(--color-white);
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin-top: 8px;
+}
+
+.btnPrimary:hover {
+    background-color: var(--color-primary-4);
+}
+
+.forgotPassword {
+    text-align: center;
+    margin-top: 16px;
+    font-size: 0.95rem;
+}
+
+.forgotPassword a {
+    color: var(--color-error-2);
+    font-weight: 600;
+}
+
+.forgotPassword a:hover {
+    color: var(--color-error);
+}
+
+.registerLink {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.95rem;
+    color: var(--color-text-secondary);
+}
+
+.registerLink a{
+    color: var(--color-celeste);
+    font-weight: 600;
+}
