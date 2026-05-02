@@ -56,7 +56,7 @@ public class LoginUseCase {
         .lastnames(account.getLastnames())
         .phone(account.getPhone())
         .createdAt(account.getCreatedAt())
-        .hasMasterKey(false) // TODO: cuando se implemente el módulo de seguridad
+        .hasMasterKey(account.getMasterKeyHash() != null) // TODO: cuando se implemente el módulo de seguridad
         .build();
   }
 }

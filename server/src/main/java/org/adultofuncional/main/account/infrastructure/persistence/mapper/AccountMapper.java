@@ -47,7 +47,8 @@ public class AccountMapper {
         entity.getAccountEmail(),
         entity.getAccountPhone(),
         entity.getAccountCreatedAt(),
-        entity.getAccountPassword());
+        entity.getAccountPassword(),
+        entity.getAccountMasterKey());
   }
 
   /**
@@ -65,13 +66,15 @@ public class AccountMapper {
     if (account == null)
       return null;
     AccountEntity entity = new AccountEntity();
-    entity.setAccountId(account.getId());
+    // Solo asignar el ID si no es null (cuenta existente)
+    entity.setAccountId(account.getId()); // siempre tiene ID (nunca null)
     entity.setAccountNames(account.getNames());
     entity.setAccountLastNames(account.getLastnames());
     entity.setAccountEmail(account.getEmail());
     entity.setAccountPhone(account.getPhone());
     entity.setAccountCreatedAt(account.getCreatedAt());
     entity.setAccountPassword(account.getPasswordHash());
+    entity.setAccountMasterKey(account.getMasterKeyHash());
     return entity;
   }
 

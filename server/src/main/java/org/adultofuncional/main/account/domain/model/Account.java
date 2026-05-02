@@ -40,6 +40,7 @@ public class Account {
   String email;
   String phone;
   String passwordHash;
+  String masterKeyHash;
 
   final LocalDateTime createdAt;
 
@@ -47,8 +48,12 @@ public class Account {
    * Constructor privado. Usar los métodos de fábrica.
    */
   private Account(UUID id, String names, String lastnames, String email,
-      String phone, LocalDateTime createdAt, String passwordHash) {
-    validateId(id);
+      String phone, LocalDateTime createdAt, String passwordHash, String masterKeyHash) {
+
+    if (id != null) {
+      validateId(id);
+    }
+
     validateCreatedAt(createdAt);
 
     this.id = id;
@@ -58,6 +63,7 @@ public class Account {
     this.phone = phone;
     this.createdAt = createdAt;
     this.passwordHash = passwordHash;
+    this.masterKeyHash = masterKeyHash;
   }
 
   /**
@@ -78,7 +84,14 @@ public class Account {
       String email, String phone, String passwordHash) {
     UUID id = Generators.timeBasedEpochGenerator().generate(); // UUID v7
     LocalDateTime now = LocalDateTime.now();
-    return new Account(id, names, lastnames, email, phone, now, passwordHash);
+    return new Account(id, names, lastnames, email, phone, now, passwordHash, null);
+  }
+
+  public static Account create(String names, String lastnames, String email,
+      String phone, String passwordHash, String masterKeyHash) {
+    UUID id = Generators.timeBasedEpochGenerator().generate();
+    LocalDateTime now = LocalDateTime.now();
+    return new Account(id, names, lastnames, email, phone, now, passwordHash, masterKeyHash);
   }
 
   /**
@@ -94,8 +107,8 @@ public class Account {
    * @return instancia de Account reconstituida
    */
   public static Account reconstitute(UUID id, String names, String lastnames,
-      String email, String phone, LocalDateTime createdAt, String passwordHash) {
-    return new Account(id, names, lastnames, email, phone, createdAt, passwordHash);
+      String email, String phone, LocalDateTime createdAt, String passwordHash, String masterKeyHash) {
+    return new Account(id, names, lastnames, email, phone, createdAt, passwordHash, masterKeyHash);
   }
 
   /**

@@ -25,30 +25,35 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoginRequest {
 
-    /**
-     * Correo electrónico del usuario.
-     * Obligatorio, debe tener formato válido y máximo 255 caracteres.
-     * Se usa como username para la autenticación con Spring Security.
-     *
-     * //TODO: Considerar agregar validación de dominios permitidos (ej. solo correos corporativos)
-     */
-    @NotBlank(message = "El email es obligatorio")
-    @Email(message = "Debe ser un email válido")
-    @Size(max = 255, message = "El email no puede exceder 255 caracteres")
-    private String email;
+  /**
+   * Correo electrónico del usuario.
+   * Obligatorio, debe tener formato válido y máximo 255 caracteres.
+   * Se usa como username para la autenticación con Spring Security.
+   *
+   * //TODO: Considerar agregar validación de dominios permitidos (ej. solo
+   * correos corporativos)
+   */
+  // TODO: faltan validaciones de emails validos
+  @NotBlank(message = "El email es obligatorio")
+  @Email(message = "Debe ser un email válido") // TODO: el mensaje no especifica que es un email valido
+  @Size(max = 255, message = "El email no puede exceder 255 caracteres")
+  private String email;
 
-    /**
-     * Contraseña del usuario en texto plano.
-     * Obligatoria, mínimo 8 caracteres por seguridad.
-     * Se comparará con el hash almacenado en {@code account_password} usando Argon2.
-     *
-     * <p><strong>⚠️ IMPORTANTE:</strong>
-     * Este campo NUNCA debe ser logueado ni almacenado. Solo se usa para
-     * verificar la contraseña durante el proceso de autenticación.
-     *
-     * //TODO: Agregar validación de fortaleza de contraseña (mayúsculas, números, símbolos)
-     */
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 8, max = 60, message = "La contraseña debe tener entre 8 y 60 caracteres")
-    private String password;
+  /**
+   * Contraseña del usuario en texto plano.
+   * Obligatoria, mínimo 8 caracteres por seguridad.
+   * Se comparará con el hash almacenado en {@code account_password} usando
+   * Argon2.
+   *
+   * <p>
+   * <strong>⚠️ IMPORTANTE:</strong>
+   * Este campo NUNCA debe ser logueado ni almacenado. Solo se usa para
+   * verificar la contraseña durante el proceso de autenticación.
+   *
+   * //TODO: Agregar validación de fortaleza de contraseña (mayúsculas, números,
+   * símbolos)
+   */
+  @NotBlank(message = "La contraseña es obligatoria")
+  @Size(min = 8, max = 24, message = "La contraseña debe tener entre 8 y 24 caracteres")
+  private String password;
 }
