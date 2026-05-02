@@ -1,5 +1,9 @@
-/* Página para recuperar contraseña
-el usuario ingresa su correo  recibe instrucciones por email*/
+/**
+ * Página de recuperación de contraseña.
+ * El usuario ingresa su correo y recibe instrucciones por email.
+ * Por seguridad, el mensaje de éxito es genérico - no revela si el correo está
+ * o no registrado en el sistema.
+ */
 
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -16,6 +20,10 @@ function ForgotPassword() {
   const [errors, setErrors ]= useState<ForgotPasswordErrors>({})
   const [successMsg, setSuccessMsg] = useState<string>('')
 
+  /**
+   * Valida el campo de correo electrónico.
+   * @returns Objeto con el mensaje de error si el correo es inválido
+   */
   const validate = (): ForgotPasswordErrors => {
     const newErrors: ForgotPasswordErrors = {}
 
@@ -27,6 +35,11 @@ function ForgotPassword() {
     return newErrors
   }
 
+  /**
+   * Maneja el envío del formulario.
+   * Si la validación pasa, muestra el mensaje genérico de éxito
+   * y oculta el formulario.
+   */
   const handleSubmit = () => {
     const newErrors = validate()
 

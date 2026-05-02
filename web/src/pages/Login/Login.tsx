@@ -1,3 +1,11 @@
+/**
+ * Página de inicio de sesión.
+ * Permite al usuario autenticarse con email y contraseña. 
+ * Incluye opción "Recuerdame", toggle de visibilidad de contraseña,
+ * y manejo de error de credenciales incorrectas desde el backend.
+ */
+
+
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {Eye, EyeOff } from 'lucide-react'
@@ -32,6 +40,9 @@ function Login() {
   //error general de autenticacion (credenciales incorrectas desde el backend )
   const [authError, setAuthError] = useState<string>('')
 
+  /**
+   * Maneja los cambios en los campos del formulario.
+   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type,checked } = e.target
     setForm({ ...form, [name]: type === 'checkbox' ? checked : value })
@@ -42,6 +53,10 @@ function Login() {
     }
   }
 
+  /**
+   * Valida los campos del formulario antes de enviar.
+   * @returns Objeto con los mensajes de error encontrados por campo.
+   */
   const validate = (): LoginErrors => {
 
     const newErrors: LoginErrors = {}
@@ -60,6 +75,11 @@ function Login() {
 
   }
 
+  /**
+   * Maneja el envío del formulario de login.
+   * Si hay errores de validación los muestra y detiene el proceso.
+   * Si las credenciales son incorrectas, muestra authError desde el backend.
+   */
   const handleSubmit = () => {
     const newErrors = validate()
 

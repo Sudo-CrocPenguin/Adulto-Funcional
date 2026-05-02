@@ -1,6 +1,8 @@
-/*Pagina de registro de usuario, permite crear una nueva cuenta con validaciones 
-en tiempo real
-campos: nombres, apellidos, telefono, correo, contraseñas, confirmar contraseña */
+/**
+ * Pagina de registro de usuario, permite crear una nueva cuenta con validaciones 
+ * en tiempo real
+ * campos: nombres, apellidos, telefono, correo, contraseñas, confirmar contraseña 
+ * */
 
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -8,7 +10,10 @@ import { Eye, EyeOff } from 'lucide-react'
 import AuthLayout from '../../components/AuthLayout/AuthLayout'
 import styles from './Register.module.css'
 
-/* interfaz que define la estructura del formulario de registro*/
+/**
+ * Estructura del formulario de registro.
+ * Contiene todos los campos que el usuario completa para crear una cuenta.
+ */
 interface RegisterForm {
     firstName: string
     lastName: string
@@ -19,7 +24,9 @@ interface RegisterForm {
     acceptTerms: boolean
 }
 
-/* interfaz para los errores de validacion de cada campo */
+/**Errores de validación del formulario de registro.
+ * Cada campo es opcional - solo se define si hay error en ese campo
+ */
 interface RegisterErrors {
     firstName?: string
     lastName?: string
@@ -56,11 +63,13 @@ function Register() {
     const [showPassword, setShowPassword] = useState<boolean>(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false)
 
-    //maneja los cambios en los campos del formulario
-    /*aplica validaciones en tiempo real;
-    nombres y apellidos no permite numeros
-    telefono solo permite numeros maximo 10 digitos
-    limpia el error del campo al escribir */
+    /**
+     * Maneja los cambios en los campos del formulario.
+     * -Bloquea números en nombre y apellidos.
+     * -Restringe el teléfono a números con máximo 10 dígitos.
+     * -Limpia el error del campo en cuanto el usuario empieza a corregirlo.
+     *  
+     */
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value, type, checked } = e.target
@@ -84,12 +93,10 @@ function Register() {
         }
     }
 
-    /*valida todos los campos del formulario
-    retorna un objeto conlos errores encontrados
-    validaciones:
-    campos obligatorios, formato de correo valido, telefono exactamente 10 digitos,
-    contraseña de minimo 8 caracteres, mayuscula, minuscula y numero,
-    confirmacion de contraseña coincida */
+    /**
+     * Valida todos los campos del formulario antes de enviar.
+     * @returns Objeto con los mensajes de error encontrados por campo.
+     */
 
     const validate = (): RegisterErrors => {
         const newErrors: RegisterErrors = {}
@@ -134,8 +141,11 @@ function Register() {
         return newErrors
     }
 
-    /* maneja el envio del formulario
-    si hay errores los muestra, si no muestra éxito y redirige al login */
+    /**
+     * Maneja el envío del formulario.
+     * Si hay errores de validación los muestra y detiene el proceso.
+     * Si todo es válido, muestra mensaje de éxito y regirige al login.
+     */
 
     const handleSubmit = () => {
         const newErrors = validate()
@@ -146,7 +156,7 @@ function Register() {
             return
         }
 
-        //aqui conexion con back para registrar el usuario
+        //TODO: conectar con el backend - POST /api/auth/register
 
         //muestra mensaje de éxito y redirige al login despues de 2 segundos
         setSuccessMsg('¡Cuenta creada exitosamente! Redirigiendo al login...')
