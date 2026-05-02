@@ -102,6 +102,39 @@
     color: var(--color-primary);
 }
 
+.termsGroup {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.termsGroup input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.termsGroup label {
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    line-height: 1.4;
+}
+
+.termsLink {
+    color: var(--color-celeste);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.termsLink:hover {
+    color: var(--color-primary);
+}
+
 .btnPrimary {
     width: 100%;
     padding: 13px;

@@ -16,6 +16,7 @@ interface RegisterForm {
     email: string
     password: string
     confirmPassword: string
+    acceptTerms: boolean
 }
 
 /* interfaz para los errores de validacion de cada campo */
@@ -26,6 +27,7 @@ interface RegisterErrors {
     email?: string
     password?: string
     confirmPassword?: string
+    acceptTerms?: string
 }
 
 function Register() {
@@ -41,6 +43,7 @@ function Register() {
         email: '',
         password: '',
         confirmPassword: '',
+        acceptTerms: false,
     })
 
     //estado de errores de validacion por campo
@@ -60,7 +63,7 @@ function Register() {
     limpia el error del campo al escribir */
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target
+        const { name, value, type, checked } = e.target
 
         //no permite numeros en nombres ni apellidos
         if (name === 'firstName' && /\d/.test(value)) return
@@ -73,7 +76,12 @@ function Register() {
         }
 
         //actualiza el estado del formulario
-        setForm({ ...form, [name]: value})
+        setForm({ ...form, [name]: type === "checkbox" ? checked : value})
+
+        //limpia el error del campo al escribir
+        if (errors[name as keyof RegisterErrors]) {
+            setErrors({ ...errors, [name]: undefined})
+        }
     }
 
     /*valida todos los campos del formulario
@@ -119,6 +127,9 @@ function Register() {
             newErrors.confirmPassword = "Confirma tu contraseña."
         else if (form.password !== form.confirmPassword)
             newErrors.confirmPassword = "Las contraseñas no coinciden."
+
+        if (!form.acceptTerms)
+            newErrors.acceptTerms = "Debe aceptar los términos y condiciones."
 
         return newErrors
     }
@@ -276,6 +287,27 @@ function Register() {
                 {errors.confirmPassword && (
                     <span className={styles.errorMsg}>{errors.confirmPassword}</span>                   
                 )}     
+            </div>
+
+            {/**checkbox terminos y condiciones  */}
+            <div className={styles.termsGroup}>
+                <input 
+                    type="checkbox"
+                    id="acceptTerms"
+                    name="acceptTerms"
+                    checked={form.acceptTerms}
+                    onChange={handleChange}
+                    className={errors.acceptTerms ? styles.inputError : ''} 
+                />
+
+                <label htmlFor="acceptTerms">
+                    Acepto los {' '}
+                    {/*TODO: Agregar link al documento de términos y condiciones */}
+                    <span className={styles.termsLink}>Términos y Condiciones</span>
+                    {' '}y la{' '}
+                    {/*TODO: agregar link al documento de politica de privacidad */}
+                    <span className={styles.termsLink}>Política de Privacidad</span>
+                </label>
             </div>
 
             {/* boton para crear la cuenta */}
