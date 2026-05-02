@@ -17,6 +17,9 @@ Register, Login, ForgotPassword*/
     border-bottom: 3px solid var(--color-border);
     box-shadow: var(--shadow-banner);
     width: 100%;
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 /* contenido del banner*/

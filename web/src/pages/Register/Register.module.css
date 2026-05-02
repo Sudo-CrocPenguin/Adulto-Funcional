@@ -26,13 +26,12 @@
     border-radius: 0.70rem;
     background-color: var(--color-background);
     transition: all 0.3s;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
 }
 
 .formGroup input:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgba(46, 76, 126, 0.15);
+    box-shadow: 0 0 0 3px rgba(46, 76, 126, 0.15);
 }
 
 .inputError {
