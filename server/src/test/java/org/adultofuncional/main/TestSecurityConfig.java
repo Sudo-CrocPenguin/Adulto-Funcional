@@ -16,7 +16,8 @@ import org.springframework.security.web.SecurityFilterChain;
  * </p>
  *
  * <p>
- * Se usa junto con {@code @Import(TestSecurityConfig.class)} en las clases de test.
+ * Se usa junto con {@code @Import(TestSecurityConfig.class)} en las clases de
+ * test.
  * </p>
  *
  * @author Equipo de desarrollo Adulto Funcional

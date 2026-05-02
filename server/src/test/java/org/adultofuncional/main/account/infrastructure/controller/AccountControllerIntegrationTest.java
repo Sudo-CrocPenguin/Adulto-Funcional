@@ -1,25 +1,5 @@
 package org.adultofuncional.main.account.infrastructure.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.adultofuncional.main.account.application.dto.AccountResponse;
-import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
-import org.adultofuncional.main.account.application.usecase.GetAccountUseCase;
-import org.adultofuncional.main.account.application.usecase.UpdateAccountUseCase;
-import org.adultofuncional.main.shared.exception.BusinessException;
-import org.adultofuncional.main.shared.exception.NotFoundException;
-import org.adultofuncional.main.TestSecurityConfig;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -30,21 +10,45 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import org.adultofuncional.main.TestSecurityConfig;
+import org.adultofuncional.main.account.application.dto.AccountResponse;
+import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
+import org.adultofuncional.main.account.application.usecase.GetAccountUseCase;
+import org.adultofuncional.main.account.application.usecase.UpdateAccountUseCase;
+import org.adultofuncional.main.shared.exception.BusinessException;
+import org.adultofuncional.main.shared.exception.NotFoundException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
- * Tests de integración para {@link AccountController} usando {@link WebMvcTest}.
+ * Tests de integración para {@link AccountController} usando
+ * {@link WebMvcTest}.
  *
  * <p>
- * Este enfoque carga solo la capa web (controladores, validación, conversión de mensajes)
- * y simula los casos de uso con Mockito. Es más rápido que {@code @SpringBootTest}
+ * Este enfoque carga solo la capa web (controladores, validación, conversión de
+ * mensajes)
+ * y simula los casos de uso con Mockito. Es más rápido que
+ * {@code @SpringBootTest}
  * porque no carga la configuración completa de Spring ni la base de datos.
  * </p>
  *
  * <p>
  * Endpoints probados:
  * <ul>
- *   <li>{@code GET /api/account/{id}} — obtener cuenta</li>
- *   <li>{@code PATCH /api/account/{id}} — actualizar cuenta</li>
- *   <li>{@code DELETE /api/account/{id}} — eliminar cuenta</li>
+ * <li>{@code GET /api/account/{id}} — obtener cuenta</li>
+ * <li>{@code PATCH /api/account/{id}} — actualizar cuenta</li>
+ * <li>{@code DELETE /api/account/{id}} — eliminar cuenta</li>
  * </ul>
  * </p>
  *
@@ -83,7 +87,7 @@ class AccountControllerIntegrationTest {
     given(getAccountUseCase.execute(accountId)).willReturn(response);
 
     mockMvc.perform(get("/api/account/{id}", accountId)
-            .accept(MediaType.APPLICATION_JSON))
+        .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(accountId.toString()))
         .andExpect(jsonPath("$.names").value("Juan"))
@@ -102,7 +106,7 @@ class AccountControllerIntegrationTest {
         .willThrow(new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
     mockMvc.perform(get("/api/account/{id}", accountId)
-            .accept(MediaType.APPLICATION_JSON))
+        .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.status").value(404))
         .andExpect(jsonPath("$.message").value("Cuenta no encontrada con id: " + accountId))
@@ -113,7 +117,7 @@ class AccountControllerIntegrationTest {
   @DisplayName("GET /api/account/{id} debe retornar 500 cuando el ID tiene formato inválido")
   void getAccount_shouldReturn500WhenIdIsInvalid() throws Exception {
     mockMvc.perform(get("/api/account/{id}", "invalid-uuid")
-            .accept(MediaType.APPLICATION_JSON))
+        .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isInternalServerError())
         .andExpect(jsonPath("$.status").value(500))
         .andExpect(jsonPath("$.message").exists());
@@ -143,9 +147,9 @@ class AccountControllerIntegrationTest {
         .willReturn(response);
 
     mockMvc.perform(patch("/api/account/{id}", accountId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request))
-            .accept(MediaType.APPLICATION_JSON))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))
+        .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.id").value(accountId.toString()))
         .andExpect(jsonPath("$.names").value("Maria Fernanda"))
@@ -169,9 +173,9 @@ class AccountControllerIntegrationTest {
         .willThrow(new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
     mockMvc.perform(patch("/api/account/{id}", accountId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request))
-            .accept(MediaType.APPLICATION_JSON))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))
+        .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.status").value(404))
         .andExpect(jsonPath("$.message").value("Cuenta no encontrada con id: " + accountId));
@@ -192,9 +196,9 @@ class AccountControllerIntegrationTest {
         .willThrow(new BusinessException("El email existing@example.com ya está registrado por otra cuenta"));
 
     mockMvc.perform(patch("/api/account/{id}", accountId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request))
-            .accept(MediaType.APPLICATION_JSON))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))
+        .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.message").value("El email existing@example.com ya está registrado por otra cuenta"));
@@ -212,9 +216,9 @@ class AccountControllerIntegrationTest {
         .build();
 
     mockMvc.perform(patch("/api/account/{id}", accountId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request))
-            .accept(MediaType.APPLICATION_JSON))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))
+        .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.message").value("Error de validación"))
@@ -233,9 +237,9 @@ class AccountControllerIntegrationTest {
         .build();
 
     mockMvc.perform(patch("/api/account/{id}", accountId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request))
-            .accept(MediaType.APPLICATION_JSON))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))
+        .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.data.email").value("Debe ser un email válido"));
   }
@@ -254,9 +258,9 @@ class AccountControllerIntegrationTest {
         .build();
 
     mockMvc.perform(patch("/api/account/{id}", accountId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request))
-            .accept(MediaType.APPLICATION_JSON))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request))
+        .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isBadRequest())
         .andExpect(jsonPath("$.data.names").value("El nombre no puede exceder 50 caracteres"));
   }
@@ -286,7 +290,7 @@ class AccountControllerIntegrationTest {
     given(getAccountUseCase.execute(accountId)).willReturn(response);
 
     mockMvc.perform(get("/api/account/{id}", accountId)
-            .accept(MediaType.APPLICATION_JSON))
+        .accept(MediaType.APPLICATION_JSON))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.password").doesNotExist())
         .andExpect(jsonPath("$.masterKey").doesNotExist())
@@ -339,8 +343,8 @@ class AccountControllerIntegrationTest {
         .willReturn(response);
 
     mockMvc.perform(patch("/api/account/{id}", accountId)
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(objectMapper.writeValueAsString(request)))
+        .contentType(MediaType.APPLICATION_JSON)
+        .content(objectMapper.writeValueAsString(request)))
         .andExpect(status().isOk());
 
     verify(updateAccountUseCase).execute(eq(accountId), any(UpdateAccountRequest.class));

@@ -2,6 +2,7 @@ package org.adultofuncional.main;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MariaDBContainer;
@@ -21,9 +22,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * <p>
  * Características:
  * <ul>
- *   <li>MariaDB 11.8 en contenedor Docker</li>
- *   <li>Propiedades inyectadas vía {@link DynamicPropertySource}</li>
- *   <li>Flyway deshabilitado para arranque rápido</li>
+ * <li>MariaDB 11.8 en contenedor Docker</li>
+ * <li>Propiedades inyectadas vía {@link DynamicPropertySource}</li>
+ * <li>Flyway deshabilitado para arranque rápido</li>
  * </ul>
  * </p>
  *
@@ -31,19 +32,20 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @since 0.0.1
  */
 @Testcontainers
+@ActiveProfiles("test")
 @SpringBootTest
 class AdultoFuncionalServerApplicationTests {
 
   /**
-    * Contenedor MariaDB 11.8 para pruebas de integración.
-    *
-    * <p>
-    * Configuración: base de datos {@code testdb}, usuario {@code test},
-    * contraseña {@code test}.
-    * </p>
-    *
-    * @author Equipo de desarrollo Adulto Funcional
-    */
+   * Contenedor MariaDB 11.8 para pruebas de integración.
+   *
+   * <p>
+   * Configuración: base de datos {@code testdb}, usuario {@code test},
+   * contraseña {@code test}.
+   * </p>
+   *
+   * @author Equipo de desarrollo Adulto Funcional
+   */
 
   @Container
   static MariaDBContainer<?> mariadb = new MariaDBContainer<>("mariadb:11.8")
@@ -52,12 +54,12 @@ class AdultoFuncionalServerApplicationTests {
       .withPassword("test");
 
   /**
-    * Inyecta las propiedades de conexión del contenedor en el contexto de Spring.
-    *
-    * @param registry registro de propiedades dinámicas
-    *
-    * @author Equipo de desarrollo Adulto Funcional
-    */
+   * Inyecta las propiedades de conexión del contenedor en el contexto de Spring.
+   *
+   * @param registry registro de propiedades dinámicas
+   *
+   * @author Equipo de desarrollo Adulto Funcional
+   */
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -68,10 +70,10 @@ class AdultoFuncionalServerApplicationTests {
   }
 
   /**
-    * Verifica que el contexto de Spring Boot se carga sin errores.
-    *
-    * @author Equipo de desarrollo Adulto Funcional
-    */
+   * Verifica que el contexto de Spring Boot se carga sin errores.
+   *
+   * @author Equipo de desarrollo Adulto Funcional
+   */
 
   @Test
   void contextLoads() {
