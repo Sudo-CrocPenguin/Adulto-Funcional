@@ -1,6 +1,5 @@
 package org.adultofuncional.main.auth.application.usecase;
 
-import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.auth.application.dto.AuthResponse;
@@ -10,6 +9,8 @@ import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.adultofuncional.main.shared.exception.UnauthorizedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Caso de uso para autenticar un usuario existente.
