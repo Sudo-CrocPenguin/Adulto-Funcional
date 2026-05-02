@@ -5,12 +5,10 @@ import java.time.LocalDate;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
-import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -30,7 +28,7 @@ import lombok.Setter;
  * Schema de la tabla {@code fixed_expenses}:
  * 
  * <pre>
- * fixed_expense_id              CHAR(36)      PRIMARY KEY DEFAULT(UUID_V7())
+ * fixed_expense_id              CHAR(36)      NOT NULL PRIMARY KEY
  * fixed_expense_name            VARCHAR(20)   NOT NULL
  * fixed_expense_frequency       VARCHAR(15)   NOT NULL      -- "Mensual", "Anual", etc.
  * fixed_expense_amount          DECIMAL(10,2) NOT NULL
@@ -59,8 +57,6 @@ public class FixedExpensesEntity {
    * Columna: {@code fixed_expense_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())}.
    */
   @Id
-  @GeneratedValue
-  @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "fixed_expense_id", columnDefinition = "CHAR(36)")
   private UUID fixedExpenseId;
 

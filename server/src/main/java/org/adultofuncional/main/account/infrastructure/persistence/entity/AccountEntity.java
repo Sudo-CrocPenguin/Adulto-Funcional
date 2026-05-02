@@ -9,12 +9,10 @@ import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEn
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.FixedExpensesEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.MovementEntity;
 import org.adultofuncional.main.security.infrastructure.persistence.entity.PasswordEntity;
-import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -35,14 +33,14 @@ import lombok.Setter;
  * Schema de la tabla {@code accounts}:
  * 
  * <pre>
- * account_id          CHAR(36)    PRIMARY KEY DEFAULT(UUID_V7())
- * account_names       VARCHAR(50) NOT NULL
- * account_lastnames   VARCHAR(50) NOT NULL
+ * account_id          CHAR(36)     PRIMARY KEY DEFAULT(UUID_V7())
+ * account_names       VARCHAR(50)  NOT NULL
+ * account_lastnames   VARCHAR(50)  NOT NULL
  * account_email       VARCHAR(255) NOT NULL UNIQUE
- * account_phone       VARCHAR(20) NOT NULL
- * account_password    VARCHAR(60) NOT NULL
- * account_master_key  VARCHAR(60) NULL
- * account_created_at  TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
+ * account_phone       VARCHAR(20)  NOT NULL
+ * account_password    VARCHAR(255) NOT NULL
+ * account_master_key  VARCHAR(255) NULL
+ * account_created_at  TIMESTAMP    NOT NULL
  * </pre>
  *
  * <p>
@@ -75,8 +73,6 @@ public class AccountEntity {
    * {@code UuidGenerator.Style.TIME}.
    */
   @Id
-  @GeneratedValue
-  @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "account_id", columnDefinition = "CHAR(36)")
   private UUID accountId;
   /**
@@ -116,10 +112,10 @@ public class AccountEntity {
    * Hash de la contraseña de inicio de sesión (Argon2).
    *
    * <p>
-   * Columna: {@code account_password VARCHAR(60) NOT NULL}.
+   * Columna: {@code account_password VARCHAR(255) NOT NULL}.
    * Nunca debe contener texto plano.
    */
-  @Column(name = "account_password", length = 60, nullable = false)
+  @Column(name = "account_password", length = 255, nullable = false)
   private String accountPassword;
   /**
    * Hash de la clave maestra para acceder al gestor de contraseñas.
@@ -127,15 +123,15 @@ public class AccountEntity {
    * contraseña de login.
    *
    * <p>
-   * Columna: {@code account_master_key VARCHAR(60) NULL}.
+   * Columna: {@code account_master_key VARCHAR(255) NULL}.
    */
-  @Column(name = "account_master_key", length = 60)
+  @Column(name = "account_master_key", length = 255)
   private String accountMasterKey;
   /**
    * Fecha y hora de creación de la cuenta.
    *
    * <p>
-   * Columna: {@code account_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP}.
+   * Columna: {@code account_created_at TIMESTAMP NOT NULL}.
    * Se establece automáticamente en {@link #onCreate()} y no es modificable.
    */
   @Column(name = "account_created_at", updatable = false)

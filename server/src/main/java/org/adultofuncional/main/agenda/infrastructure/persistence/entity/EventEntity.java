@@ -6,12 +6,10 @@ import java.util.UUID;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
-import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -31,7 +29,7 @@ import lombok.Setter;
  * Schema de la tabla {@code events}:
  * 
  * <pre>
- * event_id             CHAR(36)     PRIMARY KEY DEFAULT(UUID_V7())
+ * event_id             CHAR(36)     NOT NULL PRIMARY KEY
  * event_title          VARCHAR(35)  NOT NULL
  * event_priority       VARCHAR(15)  NULL DEFAULT 'Media'
  * event_date           DATE         NOT NULL
@@ -71,11 +69,9 @@ public class EventEntity {
    * Identificador único del evento.
    *
    * <p>
-   * Columna: {@code event_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())}.
+   * Columna: {@code event_id CHAR(36) NOT NULL PRIMARY KEY}.
    */
   @Id
-  @GeneratedValue
-  @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "event_id", columnDefinition = "CHAR(36)")
   private UUID eventId;
 

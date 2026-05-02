@@ -7,11 +7,9 @@ import java.util.UUID;
 
 import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEntity;
 import org.hibernate.annotations.SQLRestriction;
-import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -34,11 +32,11 @@ import lombok.Setter;
  * Schema de la tabla {@code categories}:
  * 
  * <pre>
- * category_id           CHAR(36)    PRIMARY KEY DEFAULT(UUID_V7())
- * category_name         VARCHAR(20) NOT NULL
- * category_type         VARCHAR(20) NOT NULL       -- "Finanzas" o "Agenda"
- * category_created_at   TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
- * category_deleted_at   TIMESTAMP   NULL
+ * category_id           CHAR(36)    NOT NULL PRIMARY KEY
+ * category_name         VARCHAR(50) NOT NULL
+ * category_type         VARCHAR(20) NOT NULL     
+ * category_created_at   TIMESTAMP   NOT NULL
+ * category_deleted_at   TIMESTAMP   NULL DEFAULT NULL
  * </pre>
  *
  * @author Juan Sebastian Rios
@@ -59,11 +57,9 @@ public class CategoryEntity {
    * Identificador único de la categoría.
    *
    * <p>
-   * Columna: {@code category_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())}.
+   * Columna: {@code category_id CHAR(36) NOT NULL PRIMARY KEY}.
    */
   @Id
-  @GeneratedValue
-  @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "category_id", columnDefinition = "CHAR(36)")
   private UUID categoryId;
 
@@ -74,7 +70,7 @@ public class CategoryEntity {
    * Columna: {@code category_name VARCHAR(20) NOT NULL}.
    * Ejemplos: "Alimentación", "Transporte", "Trabajo", "Salud".
    */
-  @Column(name = "category_name", length = 20, nullable = false)
+  @Column(name = "category_name", length = 50, nullable = false)
   private String categoryName;
 
   /**
