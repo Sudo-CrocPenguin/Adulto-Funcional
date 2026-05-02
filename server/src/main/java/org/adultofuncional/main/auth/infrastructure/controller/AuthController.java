@@ -1,12 +1,12 @@
 package org.adultofuncional.main.auth.infrastructure.controller;
 
-// import org.adultofuncional.main.auth.application.dto.AuthResponse;
-// import org.adultofuncional.main.auth.application.dto.LoginRequest;
-// import org.adultofuncional.main.auth.application.dto.RegisterRequest;
-// import org.adultofuncional.main.auth.application.usecase.LoginUseCase;
-// import org.adultofuncional.main.auth.application.usecase.RegisterUseCase;
-
+import org.adultofuncional.main.auth.application.dto.AuthResponse;
+import org.adultofuncional.main.auth.application.dto.LoginRequest;
+import org.adultofuncional.main.auth.application.dto.RegisterRequest;
+import org.adultofuncional.main.auth.application.usecase.LoginUseCase;
+import org.adultofuncional.main.auth.application.usecase.RegisterUseCase;
 import org.adultofuncional.main.shared.response.ApiResponse;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,101 +14,76 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 /**
- * Controlador REST encargado de gestionar las operaciones de autenticación.
+ * Controlador REST del módulo de autenticación.
  *
  * <p>
- * Expone los endpoints públicos de la API relacionados con el acceso al
- * sistema,
- * como el inicio de sesión y el registro de nuevos usuarios. Actúa como punto
- * de
- * entrada de las peticiones HTTP y delega la lógica de negocio a los casos de
- * uso
- * correspondientes.
- * </p>
+ * Expone los endpoints públicos para login y registro de usuarios.
+ * Delega la lógica de negocio a los casos de uso correspondientes.
+ * Todas las rutas están bajo el prefijo {@code /api/auth}.
  *
- * <p>
- * Todas las rutas de este controlador están disponibles bajo el prefijo
- * {@code /api/auth}.
- * </p>
- * 
+ * @author Lydis Esther Jaraba, Juan Sebastian Rios
+ * @since 0.0.1
  */
-
 @RestController
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
 
-  /** Caso de uso encargado de la lógica de inicio de sesión. */
-  // private final LoginUseCase loginUseCase;
-
-  /** Caso de uso encargado de la lógica de registro de nuevos usuarios. */
-  // private final RegisterUseCase registerUseCase;
-
-  /**
-   * Constructor que inyecta los casos de uso necesarios para la autenticación.
-   *
-   * <p>
-   * Spring inyecta automáticamente las dependencias al momento de crear
-   * el controlador.
-   * </p>
-   *
-   * @param loginUseCase    caso de uso para iniciar sesión
-   * @param registerUseCase caso de uso para registrar un nuevo usuario
-   */
-
-  // public AuthController(LoginUseCase loginUseCase, RegisterUseCase
-  // registerUseCase) {
-  //
-  // this.loginUseCase = loginUseCase;
-  // this.registerUseCase = registerUseCase;
-  // }
+  private final LoginUseCase loginUseCase;
+  private final RegisterUseCase registerUseCase;
 
   /**
    * Endpoint para iniciar sesión en la aplicación.
    *
    * <p>
-   * Recibe las credenciales del usuario (correo y contraseña), las valida
-   * y las delega al {@link LoginUseCase} para autenticar al usuario. Si la
-   * autenticación es exitosa, retorna un token de acceso junto con la
-   * información de la cuenta.
-   * </p>
+   * Recibe las credenciales del usuario, las valida y delega al
+   * {@link LoginUseCase}. Si la autenticación es exitosa, retorna
+   * un token JWT junto con los datos de la cuenta.
    *
-   * @param request objeto con las credenciales del usuario (correo y contraseña)
-   * @return respuesta con el token de autenticación y datos de la cuenta,
-   *         envueltos en un {@link ApiResponse}
+   * @param request objeto con email y contraseña del usuario
+   * @return 200 OK con token y datos de la cuenta
    */
+  @PostMapping("/login")
+  public ResponseEntity<ApiResponse<AuthResponse>> login(
+      @Valid @RequestBody LoginRequest request) {
 
-  // @PostMapping("/login")
-  // public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody
-  // LoginRequest request) {
-  //
-  // // TODO: implementar cuando LoginUseCase esté listo
-  //
-  // return null;
-  // }
+    AuthResponse response = loginUseCase.execute(request);
+
+    return ResponseEntity.ok(
+        ApiResponse.<AuthResponse>builder()
+            .status(HttpStatus.OK.value())
+            .message("Inicio de sesión exitoso")
+            .data(response)
+            .build());
+  }
 
   /**
    * Endpoint para registrar un nuevo usuario en la aplicación.
    *
    * <p>
-   * Recibe los datos del formulario de registro (nombres, apellidos, teléfono,
-   * correo y contraseña), los valida y los delega al {@link RegisterUseCase}
-   * para crear la cuenta. Si el correo ya está registrado, se lanzará una
-   * excepción de conflicto.
-   * </p>
+   * Recibe los datos del formulario de registro, los valida y delega
+   * al {@link RegisterUseCase}. Si el email ya está registrado,
+   * se lanza una excepción de conflicto (409).
    *
    * @param request objeto con los datos del nuevo usuario
-   * @return respuesta con el token de autenticación y datos de la cuenta recién
-   *         creada, envueltos en un {@link ApiResponse}
+   * @return 201 CREATED con token y datos de la cuenta recién creada
    */
+  @PostMapping("/register")
+  public ResponseEntity<ApiResponse<AuthResponse>> register(
+      @Valid @RequestBody RegisterRequest request) {
 
-  // @PostMapping("/register")
-  // public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody
-  // RegisterRequest request) {
-  //
-  // // TODO: implementar cuando RegisterUseCase esté listo
-  //
-  // return null;
-  // }
+    AuthResponse response = registerUseCase.execute(request);
+
+    return ResponseEntity
+        .status(HttpStatus.CREATED)
+        .body(
+            ApiResponse.<AuthResponse>builder()
+                .status(HttpStatus.CREATED.value())
+                .message("Cuenta creada exitosamente")
+                .data(response)
+                .build());
+  }
 }
