@@ -51,19 +51,19 @@ org.adultofuncional.main
 │   ├── domain/         # Modelo de dominio y puertos
 │   ├── application/    # Casos de uso y DTOs
 │   └── infrastructure/ # Adaptadores (JPA, REST)
-├── auth/               # Módulo de autenticación (JWT)
+├── auth/               # Módulo de autenticación
 ├── config/             # Configuraciones de Spring
-│   ├── beans/          # Configuración de beans (pendiente)
-│   ├── jackson/        # Configuración de Jackson JSON (pendiente)
-│   └── security/       # Configuración de Spring Security (pendiente)
+│   ├── beans/          # Configuración de beans
+│   ├── jackson/        # Configuración de Jackson JSON
+│   └── security/       # Configuración de Spring Security
 ├── finances/           # Módulo financiero (movimientos, gastos, categorías)
 ├── agenda/             # Módulo de agenda (eventos)
 ├── security/           # Gestor de contraseñas con Master Key
 └── shared/             # Componentes transversales
-    ├── constants/      # Constantes globales (pendiente)
+    ├── constants/      # Constantes globales
     ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
     ├── response/       # Formato estándar de respuestas API (ApiResponse)
-    └── util/           # Clases de utilidad general (pendiente)
+    └── util/           # Clases de utilidad general
 ```
 
 ```
@@ -466,9 +466,8 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 ## Testing
 
 - **Spring Boot Test**: Pruebas unitarias y de integración
-- **Testcontainers**: Contenedores efímeros de MariaDB para pruebas de integración
-- **H2 Database**: Base de datos en memoria para pruebas rápidas
-- **Spring Security Test**: Soporte para probar endpoints protegidos
+- **Testcontainers**: Contenedores efímeros de MariaDB 11.8 para pruebas de integración
+- **Spring Security Test**: Soporte para probar endpoints protegidos (usado en @WebMvcTest)
 
 ## Dependencias clave en pom.xml
 

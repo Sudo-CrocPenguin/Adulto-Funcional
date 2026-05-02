@@ -296,8 +296,8 @@ docker-compose restart app
 
 ### Autenticación (`/api/auth`)
 
-- `POST /api/auth/login` - Iniciar sesión (en desarrollo)
-- `POST /api/auth/register` - Registrar usuario (en desarrollo)
+- `POST /api/auth/login` - Iniciar sesión
+- `POST /api/auth/register` - Registrar usuario
 
 ## Formato de respuesta estándar
 
@@ -349,4 +349,4 @@ Este proyecto está bajo licencia propietaria. Todos los derechos reservados.
 
 ## Estado del proyecto
 
-🚧 **En desarrollo activo** - Los módulos de autenticación y eliminación de cuentas están parcialmente implementados (marcados con TODO en el código).
+🚧 **En desarrollo activo** - El módulo de autenticación está implementado. La eliminación de cuentas está pendiente (marcado con TODO en el código).

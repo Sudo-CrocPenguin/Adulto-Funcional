@@ -26,13 +26,13 @@ Almacena las cuentas de usuario (titulares). Es la entidad central del sistema.
 
 Categorías para clasificar movimientos, gastos fijos y eventos.
 
-| Columna             | Tipo        | Restricciones        | Descripción                                                  |
-| ------------------- | ----------- | -------------------- | ------------------------------------------------------------ |
-| category_id         | CHAR(36)    | NOT NULL PRIMARY KEY | Identificador único (UUID v7 generado por la aplicación).    |
-| category_name       | VARCHAR(50) | NOT NULL             | Nombre de la categoría (ej. "Alimentación", "Transporte").   |
-| category_type       | VARCHAR(20) | NOT NULL             | Tipo de categoría (puede ser INGRESO, GASTO, AHORRO, etc.).  |
-| category_created_at | TIMESTAMP   | NOT NULL             | Fecha de creación (asignada por la aplicación).              |
-| category_deleted_at | TIMESTAMP   | NULL DEFAULT NULL    | Fecha de borrado lógico (si NULL, la categoría está activa). |
+| Columna             | Tipo        | Restricciones        | Descripción                                                                                          |
+| ------------------- | ----------- | -------------------- | ---------------------------------------------------------------------------------------------------- |
+| category_id         | CHAR(36)    | NOT NULL PRIMARY KEY | Identificador único (UUID v7 generado por la aplicación).                                            |
+| category_name       | VARCHAR(50) | NOT NULL             | Nombre de la categoría (ej. "Alimentación", "Transporte").                                           |
+| category_type       | VARCHAR(20) | NOT NULL             | Tipo de categoría: "Finanzas" ("transporte","salud" etc..) o "Agenda" ("familiar", "trabajo" etc..). |
+| category_created_at | TIMESTAMP   | NOT NULL             | Fecha de creación (asignada por la aplicación).                                                      |
+| category_deleted_at | TIMESTAMP   | NULL DEFAULT NULL    | Fecha de borrado lógico (si NULL, la categoría está activa).                                         |
 
 ---
 
@@ -43,12 +43,12 @@ Registra los movimientos financieros (ingresos y gastos) de cada cuenta.
 | Columna                 | Tipo          | Restricciones        | Descripción                                     |
 | ----------------------- | ------------- | -------------------- | ----------------------------------------------- |
 | movement_id             | CHAR(36)      | NOT NULL PRIMARY KEY | Identificador único (UUID v7).                  |
-| movement_type           | VARCHAR(20)   | NOT NULL             | Tipo: INGRESO, GASTO, TRANSFERENCIA.            |
+| movement_type           | VARCHAR(20)   | NOT NULL             | Tipo: "Ingreso" o "Egreso".                     |
 | movement_amount         | DECIMAL(10,2) | NOT NULL             | Monto del movimiento.                           |
 | movement_register_date  | TIMESTAMP     | NOT NULL             | Fecha de registro (asignada por la aplicación). |
 | movement_description    | TEXT          | NULL                 | Descripción opcional del movimiento.            |
 | movement_date           | DATE          | NOT NULL             | Fecha en que ocurrió el movimiento.             |
-| movement_fk_account_id  | CHAR(36)      | NULL                 | Clave foránea a `accounts(account_id)`.         |
+| movement_fk_account_id  | CHAR(36)      | NOT NULL             | Clave foránea a `accounts(account_id)`.         |
 | movement_fk_category_id | CHAR(36)      | NULL                 | Clave foránea a `categories(category_id)`.      |
 
 ### Índices adicionales
@@ -62,16 +62,16 @@ Registra los movimientos financieros (ingresos y gastos) de cada cuenta.
 
 Gastos fijos recurrentes (mensuales, semanales, etc.) asociados a una cuenta.
 
-| Columna                      | Tipo          | Restricciones        | Descripción                                        |
-| ---------------------------- | ------------- | -------------------- | -------------------------------------------------- |
-| fixed_expense_id             | CHAR(36)      | NOT NULL PRIMARY KEY | Identificador único.                               |
-| fixed_expense_name           | VARCHAR(20)   | NOT NULL             | Nombre del gasto fijo (ej. "Netflix", "Arriendo"). |
-| fixed_expense_frequency      | VARCHAR(15)   | NOT NULL             | Frecuencia: MENSUAL, SEMANAL, QUINCENAL, ANUAL.    |
-| fixed_expense_amount         | DECIMAL(10,2) | NOT NULL             | Monto del gasto.                                   |
-| fixed_expense_status         | VARCHAR(15)   | NOT NULL             | Estado: ACTIVO, PAGADO, VENCIDO, CANCELADO.        |
-| fixed_expense_closing_date   | DATE          | NOT NULL             | Fecha de cierre o próxima fecha de pago.           |
-| fixed_expense_fk_category_id | CHAR(36)      | NULL                 | FK a `categories`.                                 |
-| fixed_expense_fk_account_id  | CHAR(36)      | NULL                 | FK a `accounts`.                                   |
+| Columna                      | Tipo          | Restricciones        | Descripción                                         |
+| ---------------------------- | ------------- | -------------------- | --------------------------------------------------- |
+| fixed_expense_id             | CHAR(36)      | NOT NULL PRIMARY KEY | Identificador único.                                |
+| fixed_expense_name           | VARCHAR(20)   | NOT NULL             | Nombre del gasto fijo (ej. "Netflix", "Arriendo").  |
+| fixed_expense_frequency      | VARCHAR(15)   | NOT NULL             | Frecuencia: "Mensual", "Semanal", "Quincenal", etc. |
+| fixed_expense_amount         | DECIMAL(10,2) | NOT NULL             | Monto del gasto.                                    |
+| fixed_expense_status         | VARCHAR(15)   | NOT NULL             | Estado: "Activo" o "Inactivo".                      |
+| fixed_expense_closing_date   | DATE          | NOT NULL             | Fecha de cierre o próxima fecha de pago.            |
+| fixed_expense_fk_category_id | CHAR(36)      | NULL                 | FK a `categories`.                                  |
+| fixed_expense_fk_account_id  | CHAR(36)      | NOT NULL             | FK a `accounts`.                                    |
 
 ### Índices adicionales
 
@@ -83,20 +83,20 @@ Gastos fijos recurrentes (mensuales, semanales, etc.) asociados a una cuenta.
 
 Eventos de la agenda (citas, recordatorios, tareas).
 
-| Columna              | Tipo        | Restricciones        | Descripción                               |
-| -------------------- | ----------- | -------------------- | ----------------------------------------- |
-| event_id             | CHAR(36)    | NOT NULL PRIMARY KEY | Identificador único.                      |
-| event_title          | VARCHAR(35) | NOT NULL             | Título del evento.                        |
-| event_priority       | VARCHAR(15) | NULL DEFAULT 'Media' | Prioridad: Alta, Media, Baja.             |
-| event_date           | DATE        | NOT NULL             | Fecha en que ocurre el evento.            |
-| event_frequency      | INT         | NOT NULL             | Días de recurrencia (0 = no recurrente).  |
-| event_reminder       | DATETIME    | NOT NULL             | Fecha/hora del recordatorio.              |
-| event_start_hour     | DATETIME    | NOT NULL             | Fecha/hora de inicio.                     |
-| event_end_hour       | DATETIME    | NOT NULL             | Fecha/hora de fin.                        |
-| event_description    | TEXT        | NULL                 | Descripción detallada.                    |
-| event_status         | VARCHAR(20) | DEFAULT 'Pendiente'  | Estado: Pendiente, Completado, Cancelado. |
-| event_fk_category_id | CHAR(36)    | NULL                 | FK a `categories`.                        |
-| event_fk_account_id  | CHAR(36)    | NULL                 | FK a `accounts`.                          |
+| Columna              | Tipo        | Restricciones        | Descripción                                                         |
+| -------------------- | ----------- | -------------------- | ------------------------------------------------------------------- |
+| event_id             | CHAR(36)    | NOT NULL PRIMARY KEY | Identificador único.                                                |
+| event_title          | VARCHAR(35) | NOT NULL             | Título del evento.                                                  |
+| event_priority       | VARCHAR(15) | NULL DEFAULT 'Media' | Prioridad: "Alta", "Media", "Baja".                                 |
+| event_date           | DATE        | NOT NULL             | Fecha en que ocurre el evento.                                      |
+| event_frequency      | INT         | NOT NULL             | Días entre repeticiones (0 = único, 1 = diario, 7 = semanal, etc.). |
+| event_reminder       | DATETIME    | NOT NULL             | Fecha/hora del recordatorio.                                        |
+| event_start_hour     | DATETIME    | NOT NULL             | Fecha/hora de inicio.                                               |
+| event_end_hour       | DATETIME    | NOT NULL             | Fecha/hora de fin.                                                  |
+| event_description    | TEXT        | NULL                 | Descripción detallada.                                              |
+| event_status         | VARCHAR(20) | DEFAULT 'Pendiente'  | Estado: "Pendiente", "Completado", "Cancelado".                     |
+| event_fk_category_id | CHAR(36)    | NULL                 | FK a `categories`.                                                  |
+| event_fk_account_id  | CHAR(36)    | NOT NULL             | FK a `accounts`.                                                    |
 
 ### Índices adicionales
 
@@ -117,7 +117,7 @@ Almacena las credenciales de aplicaciones externas cifradas con AES‑256 median
 | password_iv               | BINARY(16)      | NOT NULL             | Vector de inicialización (IV) de 16 bytes usado en el cifrado.                                                                 |
 | password_ciphertext       | VARBINARY(2048) | NOT NULL             | Texto cifrado (nombre de usuario + contraseña) protegido con AES‑256-GCM o CBC. Incluye el tag de autenticación si se usa GCM. |
 | password_last_change_date | DATE            | NULL                 | Fecha de la última modificación de esta credencial.                                                                            |
-| passwords_fk_account_id   | CHAR(36)        | NULL                 | FK a `accounts`.                                                                                                               |
+| passwords_fk_account_id   | CHAR(36)        | NOT NULL             | FK a `accounts`.                                                                                                               |
 
 ### Índices adicionales
 

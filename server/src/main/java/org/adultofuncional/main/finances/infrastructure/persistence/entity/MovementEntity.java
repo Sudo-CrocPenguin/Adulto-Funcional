@@ -33,10 +33,10 @@ import lombok.Setter;
  * movement_id             CHAR(36)      NOT NULL PRIMARY KEY
  * movement_type           VARCHAR(20)    NOT NULL          -- "Ingreso" o "Egreso"
  * movement_amount         DECIMAL(10,2) NOT NULL
- * movement_register_date  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+ * movement_register_date  TIMESTAMP     NOT NULL
  * movement_description    TEXT          NULL
  * movement_date           DATE          NOT NULL
- * movement_fk_account_id  CHAR(36)      FK → accounts(account_id)
+ * movement_fk_account_id  CHAR(36)      NOT NULL
  * movement_fk_category_id CHAR(36)      FK → categories(category_id)
  * </pre>
  *
@@ -82,14 +82,14 @@ public class MovementEntity {
   @Column(name = "movement_amount", precision = 10, scale = 2, nullable = false)
   private BigDecimal movementAmount;
 
-  /**
-   * Fecha y hora en que se registró el movimiento en el sistema.
-   *
-   * <p>
-   * Columna:
-   * {@code movement_register_date TIMESTAMP NOT NULL}.
-   * Se establece automáticamente en {@link #onCreate()} y no es modificable.
-   */
+   /**
+    * Fecha y hora en que se registró el movimiento en el sistema.
+    *
+    * <p>
+    * Columna:
+    * {@code movement_register_date TIMESTAMP NOT NULL}.
+    * Se establece automáticamente en {@link #onCreate()} y no es modificable.
+    */
   @Column(name = "movement_register_date", nullable = false, updatable = false)
   private LocalDateTime movementRegisterDate;
 

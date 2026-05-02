@@ -20,8 +20,9 @@ import lombok.experimental.FieldDefaults;
  * a los DTOs de la capa de aplicación.
  *
  * <p>
- * Campos sensibles como {@code account_password} y {@code account_master_key}
- * permanecen en la capa de infraestructura ({@code AccountEntity}).
+ * Los campos sensibles {@code passwordHash} y {@code masterKeyHash} se
+ * almacenan en el modelo de dominio para ser usados por los casos de uso,
+ * pero nunca se exponen en los DTOs de respuesta.
  *
  * @author Jeronimo Ospina Zapata
  * @since 0.0.1
@@ -87,6 +88,26 @@ public class Account {
     return new Account(id, names, lastnames, email, phone, now, passwordHash, null);
   }
 
+  /**
+   * Fábrica para crear una cuenta nueva (antes de persistirla), incluyendo
+   * la clave maestra opcional.
+   *
+   * <p>
+   * Genera el UUID v7 y el {@code createdAt} en la aplicación,
+   * garantizando que el dominio sea dueño de su identidad.
+   * Si se proporciona una clave maestra, se almacena su hash (Argon2)
+   * en el campo {@code masterKeyHash}; de lo contrario, se guarda como
+   * {@code null}.
+   *
+   * @param names         nombre(s) del titular
+   * @param lastnames     apellido(s) del titular
+   * @param email         correo electrónico
+   * @param phone         teléfono
+   * @param passwordHash  hash Argon2 de la contraseña (generado en el use case)
+   * @param masterKeyHash hash Argon2 de la clave maestra (opcional, puede ser
+   *                      {@code null})
+   * @return instancia de Account lista para persistir
+   */
   public static Account create(String names, String lastnames, String email,
       String phone, String passwordHash, String masterKeyHash) {
     UUID id = Generators.timeBasedEpochGenerator().generate();

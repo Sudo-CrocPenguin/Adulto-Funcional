@@ -33,7 +33,7 @@ import lombok.Setter;
  * Schema de la tabla {@code accounts}:
  * 
  * <pre>
- * account_id          CHAR(36)     PRIMARY KEY DEFAULT(UUID_V7())
+ * account_id          CHAR(36)     NOT NULL PRIMARY KEY
  * account_names       VARCHAR(50)  NOT NULL
  * account_lastnames   VARCHAR(50)  NOT NULL
  * account_email       VARCHAR(255) NOT NULL UNIQUE
@@ -67,10 +67,10 @@ public class AccountEntity {
   /**
    * Identificador único de la cuenta.
    *
-   * <p>
-   * Columna: {@code account_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())}.
-   * Generado como UUID v7 (ordenable temporalmente) mediante
-   * {@code UuidGenerator.Style.TIME}.
+ * <p>
+ * Columna: {@code account_id CHAR(36) NOT NULL PRIMARY KEY}.
+ * Generado como UUID v7 (ordenable temporalmente) por la aplicación
+ * en el modelo de dominio ({@code Account.create()}).
    */
   @Id
   @Column(name = "account_id", columnDefinition = "CHAR(36)")
