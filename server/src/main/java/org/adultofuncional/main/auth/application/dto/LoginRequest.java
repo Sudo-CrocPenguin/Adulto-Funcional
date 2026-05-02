@@ -9,38 +9,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO (Data Transfer Object) que representa la solicitud de inicio de sesión.
+ * DTO que representa la solicitud de inicio de sesión.
  *
- * <p><strong>¿Qué es?</strong><br>
- * Es un objeto que encapsula las credenciales que el cliente (frontend) envía
- * al servidor para autenticar a un usuario en el sistema.
- *
- * <p><strong>¿Para qué sirve?</strong><br>
- * Sirve para recibir y validar las credenciales de acceso (email y contraseña)
- * antes de que sean procesadas por el caso de uso {@code LoginUseCase}.
- * Este DTO asegura que los datos lleguen en el formato correcto y no estén vacíos.
- *
- * <p><strong>¿Cómo funciona?</strong><br>
- * El controlador {@code AuthController} recibe un objeto JSON en el cuerpo de la
- * petición POST a {@code /api/auth/login}, lo deserializa a {@code LoginRequest}
- * y aplica las validaciones de Bean Validation automáticamente.
- * Si pasa las validaciones, se pasa al caso de uso para autenticar al usuario.
- *
- * <p><strong>Campos incluidos:</strong>
- * <ul>
- *   <li>{@code email} - Correo electrónico del usuario (único en el sistema)</li>
- *   <li>{@code password} - Contraseña en texto plano (se enviará de forma segura por HTTPS)</li>
- * </ul>
- *
- * <p><strong>Seguridad:</strong>
- * La contraseña viaja en texto plano dentro del cuerpo JSON, pero se asume que
- * la comunicación es por HTTPS. Nunca se almacena ni se loguea en texto plano.
+ * <p>
+ * Encapsula las credenciales (email y contraseña) que el cliente envía
+ * para autenticar a un usuario. Las validaciones se aplican automáticamente
+ * mediante Bean Validation.
  *
  * @author Miguel Angel Blandon Montes
- * @version 1.0
  * @since 0.0.1
- * @see org.adultofuncional.main.auth.application.usecase.LoginUseCase
- * @see AuthResponse
  */
 @Data
 @Builder

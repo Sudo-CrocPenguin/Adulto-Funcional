@@ -9,45 +9,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * DTO (Data Transfer Object) que representa la solicitud de registro de un nuevo usuario.
+ * DTO que representa la solicitud de registro de un nuevo usuario.
  *
- * <p><strong>¿Qué es?</strong><br>
- * Es un objeto que encapsula todos los datos necesarios para crear una nueva
- * cuenta de usuario en el sistema.
- *
- * <p><strong>¿Para qué sirve?</strong><br>
- * Sirve para recibir y validar la información personal del usuario (nombres,
- * apellidos, teléfono, email y contraseña) antes de que sea procesada por el
- * caso de uso {@code RegisterUseCase} para crear una nueva cuenta.
- *
- * <p><strong>¿Cómo funciona?</strong><br>
- * El controlador {@code AuthController} recibe un objeto JSON en el cuerpo de la
- * petición POST a {@code /api/auth/register}, lo deserializa a {@code RegisterRequest}
- * y aplica las validaciones de Bean Validation automáticamente.
- * Si pasa las validaciones, se pasa al caso de uso para crear la cuenta.
- *
- * <p><strong>Campos incluidos:</strong>
- * <ul>
- *   <li>{@code names} - Nombres del titular (obligatorio, máx 50 caracteres)</li>
- *   <li>{@code lastnames} - Apellidos del titular (obligatorio, máx 50 caracteres)</li>
- *   <li>{@code phone} - Número de teléfono (obligatorio, máx 20 caracteres)</li>
- *   <li>{@code email} - Correo electrónico (obligatorio, único, máx 255 caracteres)</li>
- *   <li>{@code password} - Contraseña (obligatorio, mínimo 8 caracteres)</li>
- *   <li>{@code masterKey} - Clave maestra para el gestor de contraseñas (opcional)</li>
- * </ul>
- *
- * <p><strong>Reglas de negocio:</strong>
- * <ul>
- *   <li>El email debe ser único en todo el sistema</li>
- *   <li>La contraseña se almacenará como hash Argon2, nunca en texto plano</li>
- *   <li>La Master Key es opcional y también se almacena como hash Argon2</li>
- * </ul>
+ * <p>
+ * Encapsula los datos personales necesarios para crear una cuenta.
+ * Las validaciones se aplican automáticamente mediante Bean Validation.
+ * El email debe ser único en el sistema.
  *
  * @author Miguel Angel Blandon Montes
- * @version 1.0
  * @since 0.0.1
- * @see org.adultofuncional.main.auth.application.usecase.RegisterUseCase
- * @see AuthResponse
  */
 @Data
 @Builder

@@ -17,18 +17,14 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Controlador REST encargado de gestionar las operaciones de autenticación.
+ * Controlador REST del módulo de autenticación.
  *
  * <p>
- * Expone los endpoints públicos de la API relacionados con el acceso al
- * sistema, como el inicio de sesión y el registro de nuevos usuarios.
+ * Expone los endpoints públicos para login y registro de usuarios.
  * Delega la lógica de negocio a los casos de uso correspondientes.
+ * Todas las rutas están bajo el prefijo {@code /api/auth}.
  *
- * <p>
- * Todas las rutas están disponibles bajo el prefijo {@code /api/auth}
- * y son públicas (no requieren token JWT).
- *
- * @author Daniel Salazar
+ * @author Lydis Esther Jaraba, Juan Sebastian Rios
  * @since 0.0.1
  */
 @RestController

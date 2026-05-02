@@ -9,53 +9,15 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * DTO (Data Transfer Object) que representa la respuesta de autenticación.
+ * DTO que representa la respuesta de autenticación.
  *
  * <p>
- * <strong>¿Qué es?</strong><br>
- * Es un objeto que encapsula la información devuelta al cliente después de
- * una operación exitosa de autenticación (login o registro).
- *
- * <p>
- * <strong>¿Para qué sirve?</strong><br>
- * Sirve para enviar al frontend el token JWT necesario para las peticiones
- * autenticadas, junto con los datos básicos de la cuenta del usuario.
- * Excluye deliberadamente campos sensibles como contraseña y clave maestra.
- *
- * <p>
- * <strong>¿Cómo funciona?</strong><br>
- * Después de que {@code LoginUseCase} o {@code RegisterUseCase} autentican
- * o crean un usuario, generan un token JWT y lo combinan con los datos
- * de la cuenta (mapeados desde {@code Account}) para formar este DTO.
- * El controlador lo envuelve en un {@code ApiResponse} y lo retorna al cliente.
- *
- * <p>
- * <strong>Campos incluidos:</strong>
- * <ul>
- * <li>{@code token} - Token JWT para autenticación en endpoints protegidos</li>
- * <li>{@code tokenType} - Tipo de token (normalmente "Bearer")</li>
- * <li>{@code expiresIn} - Tiempo de expiración del token en milisegundos</li>
- * <li>{@code accountId} - Identificador UUID de la cuenta</li>
- * <li>{@code names} - Nombres del usuario</li>
- * <li>{@code lastnames} - Apellidos del usuario</li>
- * <li>{@code email} - Correo electrónico</li>
- * <li>{@code phone} - Teléfono de contacto</li>
- * <li>{@code createdAt} - Fecha de creación de la cuenta</li>
- * <li>{@code hasMasterKey} - Indica si el usuario tiene configurada una Master
- * Key</li>
- * </ul>
- *
- * <p>
- * <strong>Seguridad:</strong>
- * Este DTO nunca expone la contraseña ni la Master Key. El token JWT contiene
- * información mínima (generalmente solo el ID y email) y es firmado.
+ * Encapsula el token JWT y los datos básicos de la cuenta del usuario
+ * después de una operación exitosa de login o registro.
+ * Excluye campos sensibles como contraseña y clave maestra.
  *
  * @author Miguel Angel Blandon Montes
- * @version 1.0
  * @since 0.0.1
- * @see org.adultofuncional.main.auth.application.usecase.LoginUseCase
- * @see org.adultofuncional.main.auth.application.usecase.RegisterUseCase
- * @see org.adultofuncional.main.config.security.JwtService
  */
 @Data
 @Builder
@@ -139,27 +101,3 @@ public class AuthResponse {
   private boolean hasMasterKey;
 }
 
-// TODO: nececitamos para referencia ApiResponse.java (ya existe en
-// shared.response)
-
-// package org.adultofuncional.main.shared.response;
-
-// import lombok.AllArgsConstructor;
-// import lombok.Builder;
-// import lombok.Data;
-// TODO: import lombok.NoArgsConstructor;
-
-/**
- * Respuesta estándar de la API.
- *
- * @param <T> Tipo de dato contenido en la respuesta.
- */
-// @Data
-// @Builder
-// @NoArgsConstructor
-// @AllArgsConstructor
-// public class ApiResponse<T> {
-// private int status;
-// private String message;
-// private T data;
-// }

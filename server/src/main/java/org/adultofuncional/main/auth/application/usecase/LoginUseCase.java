@@ -16,8 +16,8 @@ import lombok.RequiredArgsConstructor;
  * Caso de uso para autenticar un usuario existente.
  *
  * <p>
- * Verifica las credenciales del usuario y genera un token JWT
- * si la autenticación es exitosa.
+ * Verifica las credenciales del usuario mediante email y contraseña,
+ * y genera un token JWT si la autenticación es exitosa.
  *
  * @author Juan Sebastian Rios
  * @since 0.0.1

@@ -10,36 +10,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 /**
- * Caso de uso encargado de registrar un nuevo usuario en el sistema.
- * 
- * <p><strong>¿Qué hace?</strong><br>
- * Orquesta el flujo completo de registro: valida que el correo no esté
- * en uso, hashea las credenciales sensibles, crea la cuenta en dominio,
- * la persiste y genera un token JWT para que el usuario quede autenticado
- * inmediatamente después de registrarse.
+ * Caso de uso para registrar un nuevo usuario en el sistema.
  *
- * <p><strong>Flujo:</strong>
- * <ol>
- *   <li>Verifica unicidad del correo electrónico.</li>
- *   <li>Hashea la contraseña (y la Master Key si se proporcionó).</li>
- *   <li>Crea el modelo de dominio {@link Account}.</li>
- *   <li>Persiste la cuenta mediante {@link AccountRepository}.</li>
- *   <li>Genera el token JWT con {@link JwtService}.</li>
- *   <li>Retorna un {@link AuthResponse} con el token y los datos de la cuenta.</li>
- * </ol>
+ * <p>
+ * Orquesta el flujo completo de registro: valida unicidad del correo,
+ * hashea las credenciales con Argon2, crea la cuenta y genera un
+ * token JWT para autenticación inmediata.
  *
- * <p><strong>Excepciones lanzadas:</strong>
- * <ul>
- *   <li>{@link BusinessException} si el correo ya está registrado.</li>
- * </ul>
- *
- * @author Lidys Jaraba
- * @version 1.0
+ * @author Lydis Ester Jaraba
  * @since 0.0.1
- * @see RegisterRequest
- * @see AuthResponse
- * @see AccountRepository
- * @see JwtService
  */
 
 @Service
