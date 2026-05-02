@@ -22,6 +22,7 @@ import Profile from './pages/Profile/Profile'
 import PasswordManagerAccess from './pages/PasswordManagerAccess/PasswordManagerAccess'
 import PasswordManagerReset from './pages/PasswordManagerReset/PasswordManagerReset'
 import PasswordManager from './pages/PasswordManager/PasswordManager'
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
 
 function App() {
   return (
@@ -35,16 +36,38 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Rutas protegidas - requieren autenticación, envueltas en Layout */}
-        <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
-        <Route path="/commitments" element={<Layout><Commitments /></Layout>} />
-        <Route path="/finances" element={<Layout><Finances /></Layout>} />
-        <Route path="/fixed-expenses" element={<Layout><FixedExpenses /></Layout>} />
-        <Route path="/profile" element={<Layout><Profile /></Layout>} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>
+        } />
+
+        <Route path="/commitments" element={
+          <ProtectedRoute><Layout><Commitments /></Layout></ProtectedRoute>
+        } />
+
+        <Route path="/finances" element={
+          <ProtectedRoute><Layout><Finances /></Layout></ProtectedRoute>
+        } />
+
+        <Route path="/fixed-expenses" element={
+          <ProtectedRoute><Layout><FixedExpenses /></Layout></ProtectedRoute>
+        } />
+
+        <Route path="/profile" element={
+          <ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>
+        } />
 
         {/* Rutas del gestor de contraseñas */}
-        <Route path="/password-manager" element={<Layout><PasswordManagerAccess /></Layout>} />
-        <Route path="/password-manager/reset" element={<Layout><PasswordManagerReset /></Layout>} />
-        <Route path="/password-manager/home" element={<Layout><PasswordManager /></Layout>} />
+        <Route path="/password-manager" element={
+          <ProtectedRoute><Layout><PasswordManagerAccess /></Layout></ProtectedRoute>
+        } />
+
+        <Route path="/password-manager/reset" element={
+          <ProtectedRoute><Layout><PasswordManagerReset /></Layout></ProtectedRoute>
+        } />
+
+        <Route path="/password-manager/home" element={
+          <ProtectedRoute><Layout><PasswordManager /></Layout></ProtectedRoute>
+        } />
 
       </Routes>
     </BrowserRouter>
