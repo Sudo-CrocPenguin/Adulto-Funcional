@@ -8,7 +8,6 @@
  * <p>
  * Responsabilidades:
  * <ul>
- * *
  * <li>La Master Key (hash Argon2 en {@code accounts}) debe verificarse
  * antes de acceder al gestor</li>
  * <li>El acceso se protege con

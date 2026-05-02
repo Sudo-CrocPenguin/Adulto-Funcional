@@ -18,6 +18,7 @@ import org.adultofuncional.main.account.application.dto.AccountResponse;
 import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
 import org.adultofuncional.main.account.application.usecase.GetAccountUseCase;
 import org.adultofuncional.main.account.application.usecase.UpdateAccountUseCase;
+import org.adultofuncional.main.config.security.JwtService;
 import org.adultofuncional.main.shared.exception.BusinessException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.junit.jupiter.api.DisplayName;
@@ -26,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -70,6 +72,12 @@ class AccountControllerIntegrationTest {
 
   @MockitoBean
   private UpdateAccountUseCase updateAccountUseCase;
+
+  @MockitoBean
+  private JwtService jwtService;
+
+  @MockitoBean
+  private UserDetailsService userDetailsService;
 
   @Test
   @DisplayName("GET /api/account/{id} debe retornar 200 con los datos de la cuenta cuando existe")
