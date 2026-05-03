@@ -9,6 +9,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import AuthLayout from '../../components/AuthLayout/AuthLayout'
 import styles from './Register.module.css'
+import { useAuth } from '../../context/AuthContext'
+import { register } from '../../services/auth.service'
+
 
 /**
  * Estructura del formulario de registro.
@@ -52,6 +55,8 @@ function Register() {
         confirmPassword: '',
         acceptTerms: false,
     })
+
+    const { login } = useAuth()
 
     //estado de errores de validacion por campo
     const [errors, setErrors] = useState<RegisterErrors>({})
@@ -147,7 +152,7 @@ function Register() {
      * Si todo es válido, muestra mensaje de éxito y regirige al login.
      */
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         const newErrors = validate()
 
         //si hay errores los muestra y detiene el proceso
@@ -156,11 +161,36 @@ function Register() {
             return
         }
 
-        //TODO: conectar con el backend - POST /api/auth/register
+        try {
+            const response = await register({
+                names: form.firstName,
+                lastnames: form.lastName,
+                phone: `+57${form.phone}`,
+                email: form.email,
+                password: form.password,
+            })
 
-        //muestra mensaje de éxito y redirige al login despues de 2 segundos
-        setSuccessMsg('¡Cuenta creada exitosamente! Redirigiendo al login...')
-        setTimeout(() => navigate('/login'), 2000)
+            login(response.token, {
+                accountId: response.accountId,
+                names: response.names,
+                lastnames: response.lastnames,
+                email: response.email,
+                phone: response.phone,
+                hasMasterKey: response.hasMasterKey,
+            })
+
+            //muestra mensaje de éxito y redirige al login despues de 2 segundos
+            setSuccessMsg('¡Cuenta creada exitosamente! Redirigiendo al login...')
+            setTimeout(() => navigate('/dashboard'), 2000)
+
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                setSuccessMsg('')
+                setErrors({ email: error.message})
+            }
+        }
+
+        
     }
 
     return (

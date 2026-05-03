@@ -16,7 +16,7 @@ interface AuthUser {
     lastnames: string
     email: string
     phone: string
-    hasMasterkey: boolean
+    hasMasterKey: boolean
 }
 
 /**
