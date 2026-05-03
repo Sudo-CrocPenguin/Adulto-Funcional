@@ -193,15 +193,20 @@ public class AccountController {
     private final UpdateAccountUseCase updateAccountUseCase;
 
     @GetMapping("/{id}")
-    public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID id) {
-        return ResponseEntity.ok(getAccountUseCase.execute(id));
+    public ResponseEntity<AccountResponse> getAccount(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal String loggedEmail) {
+      validateOwnership(id, loggedEmail);
+      return ResponseEntity.ok(getAccountUseCase.execute(id));
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<AccountResponse> updateAccount(
         @PathVariable UUID id,
-        @Valid @RequestBody UpdateAccountRequest request) {
-        return ResponseEntity.ok(updateAccountUseCase.execute(id, request));
+        @Valid @RequestBody UpdateAccountRequest request,
+        @AuthenticationPrincipal String loggedEmail) {
+      validateOwnership(id, loggedEmail);
+      return ResponseEntity.ok(updateAccountUseCase.execute(id, request));
     }
 }
 ```
@@ -335,6 +340,7 @@ AccountRepositoryImpl → SpringAccountJpaRepository → MariaDB
 ### Autenticación
 
 - **JWT (JSON Web Tokens)**: Autenticación stateless
+- **Token almacenado en HttpOnly Cookie** (SameSite=Strict) — nunca en localStorage ni sessionStorage, protegido contra XSS
 - **Argon2**: Hash de contraseñas de login en `account_password`
 - **Master Key**: Hash Argon2 opcional en `account_master_key` para proteger el gestor de contraseñas
 
@@ -445,7 +451,9 @@ Etapa 2 (runtime): eclipse-temurin:21-jre-alpine
 | `MARIADB_PASSWORD`      | Password del usuario          | userpass                       |
 | `SPRING_DATASOURCE_URL` | JDBC URL                      | jdbc:mariadb://mariadb:3306/db |
 | `JWT_SECRET`            | Clave secreta para firmar JWT | my-jwt-secret                  |
-| `JWT_EXPIRATION`        | Tiempo de expiración JWT (ms) | 86400000                       |
+| `JWT_EXPIRATION`        | Tiempo de expiración JWT (ms) | 3600000                        |
+| `CORS_ALLOWED_ORIGINS`  | Orígenes permitidos para CORS | <http://localhost:5173>        |
+| `COOKIE_SECURE`         | HTTPS obligatorio en cookie   | false                          |
 
 ## Manejo de excepciones
 
@@ -506,7 +514,9 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 
 ## Roadmap técnico
 
-- [ ] Completar módulo de autenticación (LoginUseCase, RegisterUseCase)
+- [x] Completar módulo de autenticación (LoginUseCase, RegisterUseCase)
+- [x] Autenticación con HttpOnly Cookie (SameSite=Strict)
+- [x] Validación de ownership en AccountController
 - [ ] Implementar DeleteAccountUseCase y conectar en AccountController
 - [ ] Módulo financiero: MovementUseCase, FixedExpenseUseCase, CategoryUseCase
 - [ ] Módulo agenda: EventUseCase con lógica de recurrencia

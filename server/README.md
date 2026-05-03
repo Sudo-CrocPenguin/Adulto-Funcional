@@ -69,6 +69,8 @@ El esquema se gestiona mediante Flyway (`src/main/resources/database/migrations/
 
 Todas las tablas usan `CHAR(36)` para UUID v7 y relaciones con llaves foráneas con eliminación en cascada desde `accounts`.
 
+Para la documentación detallada del esquema, columnas, índices y notas de seguridad, consulta [DATABASE.md](./DATABASE.md).
+
 ## Requisitos previos
 
 - Java 21 JDK
@@ -117,10 +119,13 @@ SPRING_FLYWAY_VALIDATE_ON_MIGRATE=true
 
 # JWT
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura
-JWT_EXPIRATION=86400000
+JWT_EXPIRATION=3600000
 
 # CORS
 CORS_ALLOWED_ORIGINS=http://localhost:3000
+
+# HttpOnly Cookie
+COOKIE_SECURE=false # true en producción con HTTPS
 ```
 
 O utilizar la plantilla del proyecto en lugar de crear el archivo manualmente
@@ -274,6 +279,9 @@ docker run -p 8080:8080 \
   -e SPRING_DATASOURCE_USERNAME=root \
   -e SPRING_DATASOURCE_PASSWORD=password \
   -e JWT_SECRET=secret \
+  -e JWT_EXPIRATION=3600000 \
+  -e CORS_ALLOWED_ORIGINS=http://localhost:3000 \
+  -e COOKIE_SECURE=false \
   adulto-funcional-server
 
 # Entrar al contenedor de la aplicación
@@ -301,6 +309,7 @@ docker-compose restart app
 
 - `POST /api/auth/login` - Iniciar sesión
 - `POST /api/auth/register` - Registrar usuario
+- `POST /api/auth/logout` - Cerrar sesión
 
 ## Formato de respuesta estándar
 
