@@ -6,7 +6,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -21,12 +20,10 @@ public class DatabaseUserDetailsService implements UserDetailsService {
         .orElseThrow(() -> new UsernameNotFoundException(
             "Usuario no encontrado: " + email));
 
-    String[] roles = account.getRoles().toArray(String[]::new);
-
     return User.builder()
         .username(account.getEmail())
         .password(account.getPasswordHash())
-        .roles(roles.length > 0 ? roles : new String[] { "USER" })
+        .roles("USER")
         .build();
   }
 }

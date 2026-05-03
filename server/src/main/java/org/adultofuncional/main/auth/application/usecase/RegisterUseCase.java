@@ -1,11 +1,14 @@
 package org.adultofuncional.main.auth.application.usecase;
 
+import java.util.List;
+
 import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.auth.application.dto.AuthResponse;
 import org.adultofuncional.main.auth.application.dto.RegisterRequest;
 import org.adultofuncional.main.config.security.JwtService;
 import org.adultofuncional.main.shared.exception.BusinessException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -89,7 +92,8 @@ public class RegisterUseCase {
     Account savedAccount = accountRepository.save(account);
 
     // Generar token JWT usando el email como subject
-    String token = jwtService.generateToken(savedAccount.getId().toString(), savedAccount.getEmail());
+    String token = jwtService.generateToken(savedAccount.getId().toString(), savedAccount.getEmail(),
+        List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
     // Construir y retornar la respuesta
     return AuthResponse.builder()
