@@ -23,13 +23,54 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * Filtro de autenticación JWT que intercepta cada request HTTP una única vez.
+ *
+ * <p>
+ * Extiende {@link OncePerRequestFilter} para garantizar una sola ejecución por
+ * request. Extrae el token JWT del header {@code Authorization} o de la cookie
+ * {@code HttpOnly} llamada {@code token}, lo valida y establece el contexto de
+ * seguridad de Spring si el token es válido.
+ *
+ * <p>
+ * <strong>Estrategia de extracción del token:</strong>
+ * <ol>
+ * <li>Busca primero en el header {@code Authorization: Bearer <token>}</li>
+ * <li>Si no lo encuentra, busca en la cookie {@code token} (HttpOnly)</li>
+ * <li>Si no hay token, continúa la cadena sin autenticar</li>
+ * </ol>
+ *
+ * <p>
+ * El token preferido es la cookie HttpOnly,
+ * que protege contra XSS. El soporte para header {@code Authorization} se
+ * mantiene
+ * para compatibilidad con clientes que no soporten cookies (ej. clientes
+ * móviles o CLI).
+ *
+ * @author Juan Sebastian Rios
+ * @since 0.0.1
+ * @see JwtService
+ * @see CookieUtils
+ * @see SecurityConfig
+ */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+  /** Servicio para parsear y validar tokens JWT. */
   private final JwtService jwtService;
 
+  /**
+   * Lógica principal del filtro. Extrae, valida el JWT y establece el contexto
+   * de seguridad si el token es válido.
+   *
+   * @param request     request HTTP entrante
+   * @param response    response HTTP saliente
+   * @param filterChain cadena de filtros de Spring Security
+   * @throws ServletException si ocurre un error en el procesamiento del servlet
+   * @throws IOException      si ocurre un error de I/O
+   */
   @Override
   protected void doFilterInternal(
       HttpServletRequest request,
@@ -86,6 +127,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     filterChain.doFilter(request, response);
   }
 
+  /**
+   * Extrae el JWT del header {@code Authorization} si tiene el formato
+   * {@code Bearer <token>}.
+   *
+   * @param request request HTTP entrante
+   * @return el token JWT sin el prefijo {@code Bearer }, o {@code null} si no
+   *         está presente
+   */
   private String extractFromHeader(HttpServletRequest request) {
     String authHeader = request.getHeader("Authorization");
     if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -94,6 +143,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     return null;
   }
 
+  /**
+   * Extrae el JWT de la cookie {@code HttpOnly} llamada {@code token}.
+   *
+   * @param request request HTTP entrante
+   * @return el valor de la cookie {@code token}, o {@code null} si no existe
+   */
   private String extractFromCookie(HttpServletRequest request) {
     Cookie[] cookies = request.getCookies();
     if (cookies == null)

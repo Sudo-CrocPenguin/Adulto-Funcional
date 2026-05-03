@@ -129,7 +129,8 @@ Almacena las credenciales de aplicaciones externas cifradas con AES‑256 median
 
 - **Generación de IDs**: Todos los `*_id` son UUID v7 generados en la aplicación (no por la base de datos). Esto permite controlar la identidad desde el dominio y garantiza ordenación temporal.
 - **Fechas**: Las columnas de tipo `TIMESTAMP` (`account_created_at`, `category_created_at`, `movement_register_date`, etc.) son asignadas por la aplicación mediante `@PrePersist` en las entidades JPA. La base de datos no aplica `DEFAULT CURRENT_TIMESTAMP` para mantener la coherencia.
-- **Borrado lógico**: En `categories`, la columna `category_deleted_at` permite borrado lógico sin pérdida de referencias históricas.
+- **Borrado lógico**: En `categories`, la columna `category_deleted_at` permite borrado lógico sin pérdida de referencias históricas. La entidad `CategoryEntity` usa `@SQLRestriction("category_deleted_at IS NULL")` para excluir automáticamente las categorías eliminadas de todas las consultas.
+- **Eliminación en cascada**: Las foreign keys en el SQL **no** tienen `ON DELETE CASCADE`. El borrado en cascada se maneja a nivel de JPA mediante `@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)` en `AccountEntity`. Esto significa que la cascada solo opera cuando se elimina a través de la aplicación (Spring Data JPA), no con DELETEs directos en la base de datos.
 - **Cifrado de contraseñas externas**:
   - La clave maestra del usuario se ingresa en cada sesión (o se deriva de la contraseña de login) y nunca se persiste.
   - Para cada credencial se genera un salt aleatorio, un IV aleatorio, y se deriva una clave AES de 256 bits usando HKDF (o PBKDF2) a partir de la clave maestra y el salt.

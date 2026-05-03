@@ -270,6 +270,36 @@ public class AccountRepositoryImpl implements AccountRepository {
 }
 ```
 
+## Módulos pendientes de desarrollo
+
+Los siguientes módulos tienen definidas sus entidades JPA y el esquema de base de datos, pero aún no cuentan con modelos de dominio, casos de uso ni controladores REST.
+
+### `finances/` — Módulo financiero
+
+Contiene las entidades JPA para la gestión financiera:
+
+- **`CategoryEntity`** — Categorías con soft delete (`@SQLRestriction`). Valores de `category_type`: `"Finanzas"` o `"Agenda"`. Ver `src/main/java/org/adultofuncional/main/finances/infrastructure/persistence/entity/CategoryEntity.java`
+- **`MovementEntity`** — Movimientos financieros (ingresos/egresos). Ver `src/main/java/org/adultofuncional/main/finances/infrastructure/persistence/entity/MovementEntity.java`
+- **`FixedExpensesEntity`** — Gastos fijos recurrentes (mensuales, semanales, etc.). Ver `src/main/java/org/adultofuncional/main/finances/infrastructure/persistence/entity/FixedExpensesEntity.java`
+
+**Pendiente**: domain models, repository ports, use cases, controllers y mappers.
+
+### `agenda/` — Módulo de agenda
+
+Contiene la entidad JPA para eventos:
+
+- **`EventEntity`** — Eventos con prioridad, recordatorios, recurrencia en días y estado. Ver `src/main/java/org/adultofuncional/main/agenda/infrastructure/persistence/entity/EventEntity.java`
+
+**Pendiente**: domain models, repository ports, use cases, controllers y mappers.
+
+### `security/` — Gestor de contraseñas
+
+Contiene la entidad JPA para el almacenamiento seguro de credenciales:
+
+- **`PasswordEntity`** — Credenciales cifradas con AES-256 (salt + IV + ciphertext). Ver `src/main/java/org/adultofuncional/main/security/infrastructure/persistence/entity/PasswordEntity.java`
+
+**Pendiente**: domain models, repository ports, use cases, controllers, mappers y servicio de encriptación AES-256.
+
 ## Componentes compartidos (`shared/`)
 
 Elementos transversales que no pertenecen a un módulo de negocio específico y son utilizados por todos los módulos.
@@ -361,20 +391,20 @@ accounts (ENTIDAD CENTRAL)
 ├── account_lastnames VARCHAR(50) NOT NULL
 ├── account_email VARCHAR(255) NOT NULL UNIQUE
 ├── account_phone VARCHAR(20) NOT NULL
-├── account_password VARCHAR(60) NOT NULL (Argon2 hash)
-├── account_master_key VARCHAR(60) NULL (Argon2 hash)
+├── account_password VARCHAR(255) NOT NULL (Argon2 hash)
+├── account_master_key VARCHAR(255) NULL (Argon2 hash)
 └── account_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 categories
 ├── category_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
-├── category_name VARCHAR(20) NOT NULL
+├── category_name VARCHAR(50) NOT NULL
 ├── category_type VARCHAR(20) NOT NULL ("Finanzas" | "Agenda")
 ├── category_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 └── category_deleted_at TIMESTAMP NULL (soft delete)
 
 movements
 ├── movement_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
-├── movement_type VARCHAR(7) NOT NULL ("Ingreso" | "Egreso")
+├── movement_type VARCHAR(20) NOT NULL ("Ingreso" | "Egreso")
 ├── movement_amount DECIMAL(10,2) NOT NULL
 ├── movement_register_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ├── movement_description TEXT NULL
@@ -409,7 +439,9 @@ events
 passwords
 ├── password_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
 ├── password_application_name VARCHAR(35) NOT NULL
-├── password_application TEXT NOT NULL (AES-256 en Base64)
+├── password_salt VARCHAR(255) NOT NULL (salt para derivar clave AES)
+├── password_iv BINARY(16) NOT NULL (IV de 16 bytes para cifrado AES)
+├── password_ciphertext VARBINARY(2048) NOT NULL (ciphertext + tag AES-GCM)
 ├── password_last_change_date DATE NULL
 └── passwords_fk_account_id CHAR(36) FK → accounts(account_id)
 ```
@@ -517,10 +549,10 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 - [x] Completar módulo de autenticación (LoginUseCase, RegisterUseCase)
 - [x] Autenticación con HttpOnly Cookie (SameSite=Strict)
 - [x] Validación de ownership en AccountController
+- [x] Tests de integración con Testcontainers
 - [ ] Implementar DeleteAccountUseCase y conectar en AccountController
 - [ ] Módulo financiero: MovementUseCase, FixedExpenseUseCase, CategoryUseCase
 - [ ] Módulo agenda: EventUseCase con lógica de recurrencia
 - [ ] Gestor de contraseñas: PasswordUseCase con encriptación AES-256
-- [ ] Tests de integración con Testcontainers
 - [ ] Documentación OpenAPI/Swagger
 - [ ] Implementar refresh tokens para JWT

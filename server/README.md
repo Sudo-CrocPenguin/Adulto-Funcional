@@ -301,15 +301,19 @@ docker-compose restart app
 
 ### Cuentas (`/api/account`)
 
-- `GET /api/account/{id}` - Obtener datos de una cuenta
-- `PATCH /api/account/{id}` - Actualizar datos de una cuenta
-- `DELETE /api/account/{id}` - Eliminar una cuenta (en desarrollo)
+- `GET /api/account/{id}` - Obtener datos de una cuenta (requiere autenticación + ownership)
+- `PATCH /api/account/{id}` - Actualizar datos de una cuenta (requiere autenticación + ownership)
+- `DELETE /api/account/{id}` - Eliminar una cuenta (endpoint existe, lógica pendiente — retorna 204 sin ejecutar delete)
 
 ### Autenticación (`/api/auth`)
 
-- `POST /api/auth/login` - Iniciar sesión
-- `POST /api/auth/register` - Registrar usuario
-- `POST /api/auth/logout` - Cerrar sesión
+- `POST /api/auth/login` - Iniciar sesión (JWT en HttpOnly cookie)
+- `POST /api/auth/register` - Registrar usuario (JWT en HttpOnly cookie)
+- `POST /api/auth/logout` - Cerrar sesión (limpia cookie)
+
+### Health Check
+
+- `GET /actuator/health` - Estado de la aplicación (público, usado por Docker)
 
 ## Formato de respuesta estándar
 
@@ -361,4 +365,14 @@ Este proyecto está bajo licencia propietaria. Todos los derechos reservados.
 
 ## Estado del proyecto
 
-🚧 **En desarrollo activo** - El módulo de autenticación está implementado. La eliminación de cuentas está pendiente (marcado con TODO en el código).
+En desarrollo activo. Estado por módulo:
+
+| Módulo           | Estado      | Detalle                                                              |
+| ---------------- | ----------- | -------------------------------------------------------------------- |
+| Autenticación    | Completado  | Login, registro, logout con JWT en HttpOnly cookie                   |
+| Cuentas          | Parcial     | GET y PATCH funcionales; DELETE pendiente de implementar lógica      |
+| Financiero       | Pendiente   | Solo entidades JPA definidas (Category, Movement, FixedExpenses)     |
+| Agenda           | Pendiente   | Solo entidad JPA definida (Event)                                    |
+| Gestor contraseñas | Pendiente | Solo entidad JPA definida (Password); AES-256 sin implementar        |
+
+**Próximos pasos**: Implementar `DeleteAccountUseCase`, módulo financiero, módulo de agenda y servicio de encriptación AES-256 para el gestor de contraseñas.

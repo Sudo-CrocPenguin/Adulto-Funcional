@@ -104,7 +104,7 @@ public class AccountController {
     return ResponseEntity.noContent().build();
   }
 
- /**
+  /**
    * Verifica que el usuario autenticado sea el propietario de la cuenta.
    * Consulta la cuenta por ID y compara el email con el del token JWT.
    *
@@ -115,4 +115,5 @@ public class AccountController {
     if (!account.getEmail().equals(loggedEmail)) {
       throw new UnauthorizedException("No tienes permiso para acceder a esta cuenta");
     }
+  }
 }

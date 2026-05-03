@@ -67,7 +67,7 @@ public class CategoryEntity {
    * Nombre de la categoría.
    *
    * <p>
-   * Columna: {@code category_name VARCHAR(20) NOT NULL}.
+   * Columna: {@code category_name VARCHAR(50) NOT NULL}.
    * Ejemplos: "Alimentación", "Transporte", "Trabajo", "Salud".
    */
   @Column(name = "category_name", length = 50, nullable = false)
@@ -88,8 +88,8 @@ public class CategoryEntity {
    * Fecha y hora de creación de la categoría.
    *
    * <p>
-   * Columna: {@code category_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP}.
-   * Se establece en {@link #onCreate()} y no es modificable.
+    * Columna: {@code category_created_at TIMESTAMP NOT NULL}.
+    * Se establece en {@link #onCreate()} y no es modificable.
    */
   @Column(name = "category_created_at", updatable = false)
   private LocalDateTime categoryCreatedAt;
