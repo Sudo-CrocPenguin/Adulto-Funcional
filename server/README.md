@@ -118,6 +118,9 @@ SPRING_FLYWAY_VALIDATE_ON_MIGRATE=true
 # JWT
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura
 JWT_EXPIRATION=86400000
+
+# CORS
+CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
 
 O utilizar la plantilla del proyecto en lugar de crear el archivo manualmente

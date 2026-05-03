@@ -1,54 +1,86 @@
 package org.adultofuncional.main.config.security;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private final JwtService jwtService;
-  private final UserDetailsService userDetailsService;
 
   @Override
-  protected void doFilterInternal(HttpServletRequest request,
+  protected void doFilterInternal(
+      HttpServletRequest request,
       HttpServletResponse response,
-      FilterChain filterChain) throws ServletException, IOException {
+      FilterChain filterChain)
+      throws ServletException, IOException {
 
     final String authHeader = request.getHeader("Authorization");
-    final String jwt;
-    final String userEmail;
 
     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
       filterChain.doFilter(request, response);
       return;
     }
 
-    jwt = authHeader.substring(7);
-    userEmail = jwtService.extractEmail(jwt); // extrae email del token
+    final String jwt = authHeader.substring(7);
 
-    if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-      UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
-      if (jwtService.isTokenValid(jwt)) { // valida firma y expiración
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null,
-            userDetails.getAuthorities());
+    try {
+      Claims claims = jwtService.parseAndValidate(jwt);
+      String userEmail = claims.get("email", String.class);
+
+      if (userEmail != null &&
+          SecurityContextHolder.getContext().getAuthentication() == null) {
+
+        List<String> roles = claims.get("roles", List.class);
+        List<SimpleGrantedAuthority> authorities = roles == null
+            ? List.of(new SimpleGrantedAuthority("ROLE_USER"))
+            : roles.stream().map(SimpleGrantedAuthority::new).toList();
+
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+            userEmail,
+            null,
+            authorities);
+
         authToken.setDetails(
-            new org.springframework.security.web.authentication.WebAuthenticationDetailsSource().buildDetails(request));
+            new WebAuthenticationDetailsSource().buildDetails(request));
+
         SecurityContextHolder.getContext().setAuthentication(authToken);
       }
+
+    } catch (ExpiredJwtException e) {
+      log.debug("Token JWT expirado para request {}: {}", request.getRequestURI(), e.getMessage());
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT expirado");
+      return;
+    } catch (SignatureException e) {
+      log.warn("Firma JWT inválida en request {}: {}", request.getRequestURI(), e.getMessage());
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Firma JWT inválida");
+      return;
+    } catch (JwtException | IllegalArgumentException e) {
+      log.warn("Token JWT inválido en request {}: {}", request.getRequestURI(), e.getMessage());
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT inválido");
+      return;
     }
+
     filterChain.doFilter(request, response);
   }
 }

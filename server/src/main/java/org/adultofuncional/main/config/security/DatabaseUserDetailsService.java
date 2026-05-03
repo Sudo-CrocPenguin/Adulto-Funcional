@@ -18,13 +18,15 @@ public class DatabaseUserDetailsService implements UserDetailsService {
   @Override
   public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
     var account = accountRepository.findByEmail(email)
-        .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + email));
+        .orElseThrow(() -> new UsernameNotFoundException(
+            "Usuario no encontrado: " + email));
 
-    // Convertir tu Account (dominio) a UserDetails de Spring Security
+    String[] roles = account.getRoles().toArray(String[]::new);
+
     return User.builder()
         .username(account.getEmail())
         .password(account.getPasswordHash())
-        .roles("USER") // Ajusta según los roles que tengas (puedes obtener de la BD)
+        .roles(roles.length > 0 ? roles : new String[] { "USER" })
         .build();
   }
 }
