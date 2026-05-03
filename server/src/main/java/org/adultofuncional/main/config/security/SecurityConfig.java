@@ -25,23 +25,19 @@ public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthFilter;
 
-  @Value("${CORS_ALLOWED_ORIGINS:http://localhost:3000}")
+  @Value("${CORS_ALLOWED_ORIGINS:http://localhost:5173}")
   private List<String> allowedOrigins;
 
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
-        .csrf(csrf -> csrf.disable())
-
+        .csrf(csrf -> csrf.disable()) // seguro porque usamos SameSite=Strict en la cookie
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
             .anyRequest().authenticated())
-
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
@@ -56,11 +52,11 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(allowedOrigins); // desde .env / application.yml
+    config.setAllowedOrigins(allowedOrigins);
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    config.setAllowedHeaders(List.of("Authorization", "Content-Type"));
-    config.setExposedHeaders(List.of("Authorization"));
-    config.setAllowCredentials(true);
+    config.setAllowedHeaders(List.of("Content-Type", "X-Requested-With")); // ya no necesitas Authorization
+    config.setExposedHeaders(List.of());
+    config.setAllowCredentials(true); // necesario para que el navegador envíe cookies
     config.setMaxAge(3600L);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

@@ -1,6 +1,7 @@
 package org.adultofuncional.main.config.security;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -16,6 +17,7 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -35,14 +37,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       FilterChain filterChain)
       throws ServletException, IOException {
 
-    final String authHeader = request.getHeader("Authorization");
+    // 1. Busca el token — primero en header, luego en cookie
+    String jwt = extractFromHeader(request);
+    if (jwt == null) {
+      jwt = extractFromCookie(request);
+    }
 
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+    if (jwt == null) {
       filterChain.doFilter(request, response);
       return;
     }
-
-    final String jwt = authHeader.substring(7);
 
     try {
       Claims claims = jwtService.parseAndValidate(jwt);
@@ -56,9 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             ? List.of(new SimpleGrantedAuthority("ROLE_USER"))
             : roles.stream().map(SimpleGrantedAuthority::new).toList();
 
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-            userEmail,
-            null,
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userEmail, null,
             authorities);
 
         authToken.setDetails(
@@ -82,5 +84,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     filterChain.doFilter(request, response);
+  }
+
+  private String extractFromHeader(HttpServletRequest request) {
+    String authHeader = request.getHeader("Authorization");
+    if (authHeader != null && authHeader.startsWith("Bearer ")) {
+      return authHeader.substring(7);
+    }
+    return null;
+  }
+
+  private String extractFromCookie(HttpServletRequest request) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies == null)
+      return null;
+    return Arrays.stream(cookies)
+        .filter(c -> "token".equals(c.getName()))
+        .map(Cookie::getValue)
+        .findFirst()
+        .orElse(null);
   }
 }
