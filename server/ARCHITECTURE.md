@@ -370,7 +370,7 @@ AccountRepositoryImpl → SpringAccountJpaRepository → MariaDB
 ### Autenticación
 
 - **JWT (JSON Web Tokens)**: Autenticación stateless
-- **Token almacenado en HttpOnly Cookie** (SameSite=Strict) — nunca en localStorage ni sessionStorage, protegido contra XSS
+- **Token almacenado en HttpOnly Cookie** (atributo `SameSite` definido por `APP_COOKIE_SAME_SITE`, típicamente `Lax`) — nunca en localStorage ni sessionStorage, protegido contra XSS
 - **Argon2**: Hash de contraseñas de login en `account_password`
 - **Master Key**: Hash Argon2 opcional en `account_master_key` para proteger el gestor de contraseñas
 
@@ -469,23 +469,25 @@ Etapa 2 (runtime): eclipse-temurin:21-jre-alpine
 ### Docker Compose
 
 - **Servicio mariadb**: Imagen oficial 11.8 con healthcheck nativo
-- **Servicio app**: Construido desde Dockerfile, expone puerto 8080
+- **Servicio app**: Construido desde Dockerfile
 - **Red**: `afs-network` (bridge) para comunicación entre contenedores
 - **Volumen**: `mariadb_data` para persistencia de datos
 
 ### Variables de entorno requeridas
 
-| Variable                | Descripción                   | Ejemplo                        |
-| ----------------------- | ----------------------------- | ------------------------------ |
-| `MARIADB_ROOT_PASSWORD` | Password de root de MariaDB   | mysecret                       |
-| `MARIADB_DATABASE`      | Nombre de la base de datos    | adulto_funcional               |
-| `MARIADB_USER`          | Usuario de la aplicación      | afs_user                       |
-| `MARIADB_PASSWORD`      | Password del usuario          | userpass                       |
-| `SPRING_DATASOURCE_URL` | JDBC URL                      | jdbc:mariadb://mariadb:3306/db |
-| `JWT_SECRET`            | Clave secreta para firmar JWT | my-jwt-secret                  |
-| `JWT_EXPIRATION`        | Tiempo de expiración JWT (ms) | 3600000                        |
-| `CORS_ALLOWED_ORIGINS`  | Orígenes permitidos para CORS | <http://localhost:5173>        |
-| `COOKIE_SECURE`         | HTTPS obligatorio en cookie   | false                          |
+| Variable                | Descripción                                             | Ejemplo                        |
+| ----------------------- | ------------------------------------------------------- | ------------------------------ |
+| `MARIADB_ROOT_PASSWORD` | Password de root de MariaDB                             | mysecret                       |
+| `MARIADB_DATABASE`      | Nombre de la base de datos                              | adulto_funcional               |
+| `MARIADB_USER`          | Usuario de la aplicación                                | afs_user                       |
+| `MARIADB_PASSWORD`      | Password del usuario                                    | userpass                       |
+| `SPRING_DATASOURCE_URL` | JDBC URL                                                | jdbc:mariadb://mariadb:3306/db |
+| `JWT_SECRET`            | Clave secreta para firmar JWT                           | my-jwt-secret                  |
+| `JWT_EXPIRATION`        | Tiempo de expiración JWT (ms)                           | 3600000                        |
+| `CORS_ALLOWED_ORIGINS`  | Orígenes permitidos para CORS                           | <http://localhost:5173>        |
+| `COOKIE_SECURE`         | HTTPS obligatorio en cookie                             | false                          |
+| `APP_COOKIE_SECURE`     | Atributo Secure de la cookie (true en producción HTTPS) | true                           |
+| `APP_COOKIE_SAME_SITE`  | Atributo SameSite de la cookie (Lax, Strict o None)     | Lax                            |
 
 ## Manejo de excepciones
 
@@ -547,7 +549,7 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 ## Roadmap técnico
 
 - [x] Completar módulo de autenticación (LoginUseCase, RegisterUseCase)
-- [x] Autenticación con HttpOnly Cookie (SameSite=Strict)
+- [x] Autenticación con HttpOnly Cookie (SameSite configurable vía `APP_COOKIE_SAME_SITE`)
 - [x] Validación de ownership en AccountController
 - [x] Tests de integración con Testcontainers
 - [ ] Implementar DeleteAccountUseCase y conectar en AccountController

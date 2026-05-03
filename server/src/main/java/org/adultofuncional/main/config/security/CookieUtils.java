@@ -43,6 +43,12 @@ public class CookieUtils {
   @Value("${COOKIE_SECURE}")
   private boolean secure;
 
+  @Value("${APP_COOKIE_SECURE}")
+  private boolean cookieSecure;
+
+  @Value("${APP_COOKIE_SAME_SITE}")
+  private String cookieSameSite;
+
   /**
    * Agrega la cookie {@code token} a la respuesta HTTP con el JWT del usuario.
    *
@@ -50,10 +56,12 @@ public class CookieUtils {
    * La cookie se configura con los siguientes atributos de seguridad:
    * <ul>
    * <li>{@code HttpOnly} — inaccesible desde JavaScript</li>
-   * <li>{@code Secure} — solo en HTTPS (si {@code COOKIE_SECURE=true})</li>
+   * <li>{@code Secure} — solo en HTTPS (según la variable de entorno
+   * {@code APP_COOKIE_SECURE})</li>
    * <li>{@code Path=/} — disponible en toda la aplicación</li>
    * <li>{@code Max-Age} — tiempo de vida derivado de {@code JWT_EXPIRATION}</li>
-   * <li>{@code SameSite=Strict} — protección contra CSRF</li>
+   * <li>{@code SameSite} — configurable mediante {@code APP_COOKIE_SAME_SITE}
+   * (ej. {@code Lax} para mismo-sitio, {@code None} para cross‑site)</li>
    * </ul>
    *
    * @param response     respuesta HTTP donde se agrega el header
@@ -64,10 +72,11 @@ public class CookieUtils {
    */
   public void addTokenCookie(HttpServletResponse response, String token, long expirationMs) {
     response.addHeader("Set-Cookie",
-        String.format("token=%s; HttpOnly; %sPath=/; Max-Age=%d; SameSite=Strict",
+        String.format("token=%s; HttpOnly; %sPath=/; Max-Age=%d; SameSite=%s",
             token,
-            secure ? "Secure; " : "",
-            (int) (expirationMs / 1000)));
+            cookieSecure ? "Secure; " : "",
+            (int) (expirationMs / 1000),
+            cookieSameSite));
   }
 
   /**

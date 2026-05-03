@@ -126,6 +126,8 @@ CORS_ALLOWED_ORIGINS=http://localhost:3000
 
 # HttpOnly Cookie
 COOKIE_SECURE=false # true en producción con HTTPS
+APP_COOKIE_SECURE=false # true en producción
+APP_COOKIE_SAME_SITE=None # Lax en producción
 ```
 
 O utilizar la plantilla del proyecto en lugar de crear el archivo manualmente
@@ -282,6 +284,8 @@ docker run -p 8080:8080 \
   -e JWT_EXPIRATION=3600000 \
   -e CORS_ALLOWED_ORIGINS=http://localhost:3000 \
   -e COOKIE_SECURE=false \
+  -e APP_COOKIE_SECURE=false \
+  -e APP_COOKIE_SAME_SITE=None \
   adulto-funcional-server
 
 # Entrar al contenedor de la aplicación
@@ -367,12 +371,12 @@ Este proyecto está bajo licencia propietaria. Todos los derechos reservados.
 
 En desarrollo activo. Estado por módulo:
 
-| Módulo           | Estado      | Detalle                                                              |
-| ---------------- | ----------- | -------------------------------------------------------------------- |
-| Autenticación    | Completado  | Login, registro, logout con JWT en HttpOnly cookie                   |
-| Cuentas          | Parcial     | GET y PATCH funcionales; DELETE pendiente de implementar lógica      |
-| Financiero       | Pendiente   | Solo entidades JPA definidas (Category, Movement, FixedExpenses)     |
-| Agenda           | Pendiente   | Solo entidad JPA definida (Event)                                    |
-| Gestor contraseñas | Pendiente | Solo entidad JPA definida (Password); AES-256 sin implementar        |
+| Módulo             | Estado     | Detalle                                                          |
+| ------------------ | ---------- | ---------------------------------------------------------------- |
+| Autenticación      | Completado | Login, registro, logout con JWT en HttpOnly cookie               |
+| Cuentas            | Parcial    | GET y PATCH funcionales; DELETE pendiente de implementar lógica  |
+| Financiero         | Pendiente  | Solo entidades JPA definidas (Category, Movement, FixedExpenses) |
+| Agenda             | Pendiente  | Solo entidad JPA definida (Event)                                |
+| Gestor contraseñas | Pendiente  | Solo entidad JPA definida (Password); AES-256 sin implementar    |
 
 **Próximos pasos**: Implementar `DeleteAccountUseCase`, módulo financiero, módulo de agenda y servicio de encriptación AES-256 para el gestor de contraseñas.
