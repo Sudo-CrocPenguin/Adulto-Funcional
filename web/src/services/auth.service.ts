@@ -67,6 +67,7 @@ export async function register(request: RegisterRequest): Promise<AuthResponse> 
     const response = await fetch(`${BASE_URL}/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(request),
     })
 
@@ -90,6 +91,7 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
     const response = await fetch(`${BASE_URL}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(request),
     })
 

@@ -53,7 +53,10 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
 
     const [token, setToken] = useState<string | null>(null)
-    const [user, setUser] = useState<AuthUser | null>(null)
+    
+    const [user, setUser] = useState<AuthUser | null>(
+        JSON.parse(sessionStorage.getItem('user') || 'null')
+    )
 
     /**
      * Guarda el token y los datos del usuario al autenticarse.
@@ -64,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = (token: string, user: AuthUser) => {
         setToken(token)
         setUser(user)
+        sessionStorage.setItem('user', JSON.stringify(user))
     }
 
      /**
@@ -72,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         setToken(null)
         setUser(null)
+        sessionStorage.removeItem('user')
     }
 
     return (
@@ -79,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         <AuthContext.Provider value={{
             token,
             user,
-            isAuthenticated: !!token,
+            isAuthenticated: !!user,
             login,
             logout,
         }}>
