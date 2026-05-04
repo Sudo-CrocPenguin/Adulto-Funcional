@@ -41,13 +41,13 @@ public class CookieUtils {
   // TODO: Asegurarse de que COOKIE_SECURE=true en el entorno
   // de producción.
   @Value("${COOKIE_SECURE}")
-  private boolean secure;
-
-  @Value("${APP_COOKIE_SECURE}")
   private boolean cookieSecure;
 
+  @Value("${APP_COOKIE_SECURE}")
+  private boolean appCookieSecure;
+
   @Value("${APP_COOKIE_SAME_SITE}")
-  private String cookieSameSite;
+  private String AppCookieSameSite;
 
   /**
    * Agrega la cookie {@code token} a la respuesta HTTP con el JWT del usuario.
@@ -74,9 +74,9 @@ public class CookieUtils {
     response.addHeader("Set-Cookie",
         String.format("token=%s; HttpOnly; %sPath=/; Max-Age=%d; SameSite=%s",
             token,
-            cookieSecure ? "Secure; " : "",
+            appCookieSecure ? "Secure; " : "",
             (int) (expirationMs / 1000),
-            cookieSameSite));
+            AppCookieSameSite));
   }
 
   /**
