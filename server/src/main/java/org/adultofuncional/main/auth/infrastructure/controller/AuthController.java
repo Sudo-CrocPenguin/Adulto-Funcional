@@ -5,6 +5,7 @@ import org.adultofuncional.main.auth.application.dto.LoginRequest;
 import org.adultofuncional.main.auth.application.dto.RegisterRequest;
 import org.adultofuncional.main.auth.application.usecase.LoginUseCase;
 import org.adultofuncional.main.auth.application.usecase.RegisterUseCase;
+import org.adultofuncional.main.config.security.ClientTypeResolver;
 import org.adultofuncional.main.config.security.CookieUtils;
 import org.adultofuncional.main.config.security.JwtService;
 import org.adultofuncional.main.shared.response.ApiResponse;
@@ -40,17 +41,7 @@ public class AuthController {
   private final RegisterUseCase registerUseCase;
   private final CookieUtils cookieUtils;
   private final JwtService jwtService;
-
-  /**
-   * Header que permite a los clientes no‑navegador solicitar el token JWT
-   * en el cuerpo de la respuesta además de (o en lugar de) la cookie.
-   *
-   * <p>
-   * Valores esperados: {@code web} (por defecto), {@code mobile},
-   * {@code desktop}. Si el header está ausente o vale {@code web},
-   * el token se envía únicamente en la cookie HttpOnly.
-   */
-  private static final String CLIENT_TYPE_HEADER = "X-Client-Type";
+  private final ClientTypeResolver clientTypeResolver;
 
   /**
    * Endpoint para iniciar sesión en la aplicación.
@@ -138,19 +129,5 @@ public class AuthController {
   public ResponseEntity<Void> logout(HttpServletResponse response) {
     cookieUtils.clearTokenCookie(response);
     return ResponseEntity.noContent().build();
-  }
-
-  /**
-   * Determina si el token JWT debe exponerse en el body de la respuesta.
-   *
-   * <p>
-   * Devuelve {@code true} si el header {@code X-Client-Type} está presente
-   * y su valor es {@code mobile} o {@code desktop}. En cualquier otro caso
-   * (ausente, vacío, o {@code web}) devuelve {@code false}.
-   */
-  private boolean shouldIncludeTokenInBody(HttpServletRequest request) {
-    String clientType = request.getHeader(CLIENT_TYPE_HEADER);
-    return "mobile".equalsIgnoreCase(clientType)
-        || "desktop".equalsIgnoreCase(clientType);
   }
 }
