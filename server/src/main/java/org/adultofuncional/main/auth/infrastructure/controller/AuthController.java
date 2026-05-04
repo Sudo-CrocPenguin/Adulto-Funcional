@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,17 @@ public class AuthController {
   private final JwtService jwtService;
 
   /**
+   * Header que permite a los clientes no‑navegador solicitar el token JWT
+   * en el cuerpo de la respuesta además de (o en lugar de) la cookie.
+   *
+   * <p>
+   * Valores esperados: {@code web} (por defecto), {@code mobile},
+   * {@code desktop}. Si el header está ausente o vale {@code web},
+   * el token se envía únicamente en la cookie HttpOnly.
+   */
+  private static final String CLIENT_TYPE_HEADER = "X-Client-Type";
+
+  /**
    * Endpoint para iniciar sesión en la aplicación.
    *
    * <p>
@@ -55,18 +67,24 @@ public class AuthController {
   @PostMapping("/login")
   public ResponseEntity<ApiResponse<AuthResponse>> login(
       @Valid @RequestBody LoginRequest request,
+      HttpServletRequest httpRequest,
       HttpServletResponse response) {
 
     AuthResponse auth = loginUseCase.execute(request);
 
-    // Token va en la cookie HttpOnly — no en el body
+    // La cookie siempre se establece (el cliente puede ignorarla si no la usa)
     cookieUtils.addTokenCookie(response, auth.getToken(), jwtService.getExpiration());
+
+    // Decide si el token debe aparecer en el body
+    AuthResponse responseData = shouldIncludeTokenInBody(httpRequest)
+        ? auth // incluye token
+        : auth.withoutToken(); // sin token (web)
 
     return ResponseEntity.ok(
         ApiResponse.<AuthResponse>builder()
             .status(HttpStatus.OK.value())
             .message("Inicio de sesión exitoso")
-            .data(auth.withoutToken()) // sin el token en el body
+            .data(responseData)
             .build());
   }
 
@@ -85,6 +103,7 @@ public class AuthController {
   @PostMapping("/register")
   public ResponseEntity<ApiResponse<AuthResponse>> register(
       @Valid @RequestBody RegisterRequest request,
+      HttpServletRequest httpRequest,
       HttpServletResponse response) {
 
     AuthResponse auth = registerUseCase.execute(request);
@@ -92,13 +111,17 @@ public class AuthController {
     // Token va en la cookie HttpOnly — no en el body
     cookieUtils.addTokenCookie(response, auth.getToken(), jwtService.getExpiration());
 
+    AuthResponse responseData = shouldIncludeTokenInBody(httpRequest)
+        ? auth
+        : auth.withoutToken();
+
     return ResponseEntity
         .status(HttpStatus.CREATED)
         .body(
             ApiResponse.<AuthResponse>builder()
                 .status(HttpStatus.CREATED.value())
                 .message("Cuenta creada exitosamente")
-                .data(auth.withoutToken()) // sin el token en el body
+                .data(responseData)
                 .build());
   }
 
@@ -115,5 +138,19 @@ public class AuthController {
   public ResponseEntity<Void> logout(HttpServletResponse response) {
     cookieUtils.clearTokenCookie(response);
     return ResponseEntity.noContent().build();
+  }
+
+  /**
+   * Determina si el token JWT debe exponerse en el body de la respuesta.
+   *
+   * <p>
+   * Devuelve {@code true} si el header {@code X-Client-Type} está presente
+   * y su valor es {@code mobile} o {@code desktop}. En cualquier otro caso
+   * (ausente, vacío, o {@code web}) devuelve {@code false}.
+   */
+  private boolean shouldIncludeTokenInBody(HttpServletRequest request) {
+    String clientType = request.getHeader(CLIENT_TYPE_HEADER);
+    return "mobile".equalsIgnoreCase(clientType)
+        || "desktop".equalsIgnoreCase(clientType);
   }
 }
