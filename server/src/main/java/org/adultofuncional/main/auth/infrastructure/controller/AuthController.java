@@ -25,12 +25,34 @@ import lombok.RequiredArgsConstructor;
  * Controlador REST del módulo de autenticación.
  *
  * <p>
- * Expone los endpoints públicos para login y registro de usuarios.
- * Delega la lógica de negocio a los casos de uso correspondientes.
- * Todas las rutas están bajo el prefijo {@code /api/auth}.
+ * Expone los endpoints públicos para login, registro y logout de usuarios.
+ * Delega la lógica de negocio a los casos de uso correspondientes y
+ * coordina la entrega del JWT según el tipo de cliente detectado por
+ * {@link ClientTypeResolver}.
+ *
+ * <p>
+ * <strong>Estrategia de entrega del JWT:</strong>
+ * <ul>
+ * <li>El token siempre se establece en una cookie {@code HttpOnly} mediante
+ * {@link CookieUtils}, independientemente del tipo de cliente.</li>
+ * <li>Los clientes nativos (móvil/desktop) identificados por
+ * {@link ClientTypeResolver#isNativeClient} reciben además el token
+ * en el body de la respuesta para facilitar su almacenamiento fuera
+ * del navegador.</li>
+ * <li>Los clientes web reciben el body sin token — deben usar la cookie.</li>
+ * </ul>
+ *
+ * <p>
+ * Todas las rutas están bajo el prefijo {@code /api/auth} y son públicas
+ * (no requieren autenticación previa). Ver
+ * {@link org.adultofuncional.main.config.security.SecurityConfig}.
  *
  * @author Lydis Esther Jaraba, Juan Sebastian Rios
  * @since 0.0.1
+ * @see LoginUseCase
+ * @see RegisterUseCase
+ * @see ClientTypeResolver
+ * @see CookieUtils
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -44,16 +66,20 @@ public class AuthController {
   private final ClientTypeResolver clientTypeResolver;
 
   /**
-   * Endpoint para iniciar sesión en la aplicación.
+   * Inicia sesión con las credenciales del usuario.
    *
    * <p>
-   * Recibe las credenciales del usuario, las valida y delega al
-   * {@link LoginUseCase}. Si la autenticación es exitosa, setea el token
-   * JWT en una HttpOnly cookie y retorna los datos de la cuenta sin el token.
+   * Delega la verificación de credenciales al {@link LoginUseCase}. Si son
+   * válidas, establece el JWT en la cookie {@code HttpOnly} y retorna los
+   * datos de la cuenta. El token se incluye en el body solo si el request
+   * proviene de un cliente nativo según
+   * {@link ClientTypeResolver#isNativeClient}.
    *
-   * @param request  objeto con email y contraseña del usuario
-   * @param response respuesta HTTP donde se agrega la cookie
-   * @return 200 OK con datos de la cuenta
+   * @param request     credenciales del usuario (email y contraseña)
+   * @param httpRequest request HTTP para detectar el tipo de cliente
+   * @param response    respuesta HTTP donde se escribe la cookie
+   * @return 200 OK con los datos de la cuenta; token en body solo para
+   *         clientes nativos
    */
   @PostMapping("/login")
   public ResponseEntity<ApiResponse<AuthResponse>> login(
@@ -63,13 +89,11 @@ public class AuthController {
 
     AuthResponse auth = loginUseCase.execute(request);
 
-    // La cookie siempre se establece (el cliente puede ignorarla si no la usa)
     cookieUtils.addTokenCookie(response, auth.getToken(), jwtService.getExpiration());
 
-    // Decide si el token debe aparecer en el body
-    AuthResponse responseData = shouldIncludeTokenInBody(httpRequest)
-        ? auth // incluye token
-        : auth.withoutToken(); // sin token (web)
+    AuthResponse responseData = clientTypeResolver.isNativeClient(httpRequest)
+        ? auth
+        : auth.withoutToken();
 
     return ResponseEntity.ok(
         ApiResponse.<AuthResponse>builder()
@@ -80,16 +104,20 @@ public class AuthController {
   }
 
   /**
-   * Endpoint para registrar un nuevo usuario en la aplicación.
+   * Registra un nuevo usuario en la aplicación.
    *
    * <p>
-   * Recibe los datos del formulario de registro, los valida y delega
-   * al {@link RegisterUseCase}. Si el email ya está registrado,
-   * se lanza una excepción de conflicto (409).
+   * Delega la creación de la cuenta al {@link RegisterUseCase}. Si el email
+   * ya está registrado, el caso de uso lanza una excepción de conflicto (409)
+   * que el {@code GlobalExceptionHandler} convierte en la respuesta adecuada.
+   * Si el registro es exitoso, establece el JWT en cookie y retorna los datos
+   * de la cuenta recién creada.
    *
-   * @param request  objeto con los datos del nuevo usuario
-   * @param response respuesta HTTP donde se agrega la cookie
-   * @return 201 CREATED con datos de la cuenta recién creada
+   * @param request     datos del nuevo usuario (nombre, email, contraseña, etc.)
+   * @param httpRequest request HTTP para detectar el tipo de cliente
+   * @param response    respuesta HTTP donde se escribe la cookie
+   * @return 201 CREATED con los datos de la cuenta; token en body solo para
+   *         clientes nativos
    */
   @PostMapping("/register")
   public ResponseEntity<ApiResponse<AuthResponse>> register(
@@ -99,10 +127,9 @@ public class AuthController {
 
     AuthResponse auth = registerUseCase.execute(request);
 
-    // Token va en la cookie HttpOnly — no en el body
     cookieUtils.addTokenCookie(response, auth.getToken(), jwtService.getExpiration());
 
-    AuthResponse responseData = shouldIncludeTokenInBody(httpRequest)
+    AuthResponse responseData = clientTypeResolver.isNativeClient(httpRequest)
         ? auth
         : auth.withoutToken();
 
@@ -117,12 +144,14 @@ public class AuthController {
   }
 
   /**
-   * Endpoint para cerrar sesión.
+   * Cierra la sesión del usuario eliminando la cookie de autenticación.
    *
    * <p>
-   * Limpia la cookie del token en el cliente.
+   * Instruye al navegador a invalidar la cookie {@code token} estableciendo
+   * {@code Max-Age=0}. No requiere body ni autenticación activa — es seguro
+   * llamarlo aunque el token ya haya expirado.
    *
-   * @param response respuesta HTTP donde se limpia la cookie
+   * @param response respuesta HTTP donde se escribe el header de limpieza
    * @return 204 No Content
    */
   @PostMapping("/logout")
