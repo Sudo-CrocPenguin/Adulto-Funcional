@@ -170,6 +170,16 @@ function Register() {
                 password: form.password,
             })
 
+            sessionStorage.setItem('token', response.token)
+            sessionStorage.setItem('user', JSON.stringify({
+                accountId: response.accountId,
+                names: response.names,
+                lastnames: response.lastnames,
+                email: response.email,
+                phone: response.phone,
+                hasMasterKey: response.hasMasterKey,
+            }))
+
             login(response.token, {
                 accountId: response.accountId,
                 names: response.names,

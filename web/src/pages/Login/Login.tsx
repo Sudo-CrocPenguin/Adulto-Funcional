@@ -11,6 +11,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import {Eye, EyeOff } from 'lucide-react'
 import AuthLayout from '../../components/AuthLayout/AuthLayout'
 import styles from './Login.module.css'
+import { useAuth } from '../../context/AuthContext'
+import { login as loginService } from '../../services/auth.service'
 
 interface LoginForm {
   email: string
@@ -33,6 +35,8 @@ function Login() {
     password: '',
     rememberMe: false,
   })
+
+  const { login } = useAuth()
 
   const [errors, setErrors] = useState<LoginErrors>({})
   const [showPassword, setShowPassword] = useState<boolean>(false)
@@ -80,7 +84,8 @@ function Login() {
    * Si hay errores de validación los muestra y detiene el proceso.
    * Si las credenciales son incorrectas, muestra authError desde el backend.
    */
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    console.log('handleSubmit ejecutado')
     const newErrors = validate()
 
     if (Object.keys(newErrors).length > 0) {
@@ -91,12 +96,42 @@ function Login() {
 
     setAuthError('') //limpia error previo
 
-    //TODO: conectar con el backend - POST /api/auth/login
-    //Si el back responde 401:
-    //setAuthError('Correo o contraseña incorrectos.')
-    //return
+    try {
+      console.log('llamando al backend...')
+      const response = await loginService({
+        email: form.email,
+        password: form.password,
+      })
 
-    navigate('/dashboard')
+      console.log('respuesta del backend:', response)
+
+      sessionStorage.setItem('token', response.token)
+      sessionStorage.setItem('user', JSON.stringify({
+        accountId: response.accountId,
+        names: response.names,
+        lastnames: response.lastnames,
+        email: response.email,
+        phone: response.phone,
+        hasMasterKey: response.hasMasterKey,
+      }))
+
+      login(response.token, {
+        accountId: response.accountId,
+        names: response.names,
+        lastnames: response.lastnames,
+        email: response.email,
+        phone: response.phone,
+        hasMasterKey: response.hasMasterKey,
+      })
+
+      
+      navigate('/dashboard')
+
+    } catch (errors: unknown) {
+      if (errors instanceof Error) {
+        setAuthError(errors.message)
+      }
+    }
   }
 
 
