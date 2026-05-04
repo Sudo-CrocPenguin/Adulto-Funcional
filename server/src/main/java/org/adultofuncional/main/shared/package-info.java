@@ -9,7 +9,7 @@
  * <p>
  * Paquetes:
  * <ul>
- * <li>{@code constants} — Constantes globales del sistema (pendiente)</li>
+ * <li>{@code constants} — Constantes globales del sistema</li>
  * <li>{@code exception} — Jerarquía de excepciones de negocio
  * y {@code GlobalExceptionHandler}</li>
  * <li>{@code response} — Estructura estándar {@code ApiResponse}
@@ -25,8 +25,7 @@
  * {@link org.adultofuncional.main.shared.exception.GlobalExceptionHandler}.
  *
  * 
- * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
- *         Miguel Angel Blandon Montes, Daniel Salazar
+ * @author Equipo de desarrollo Adulto Funcional
  * @since 0.0.1
  */
 package org.adultofuncional.main.shared;

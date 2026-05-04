@@ -32,10 +32,12 @@ import lombok.Getter;
 @Builder
 public class UpdateAccountRequest {
 
+  // TODO: añadir validacion de nombres
   @NotBlank(message = "El nombre es obligatorio")
   @Size(max = 50, message = "El nombre no puede exceder 50 caracteres")
   private final String names;
 
+  // TODO: añadir validacion de apellidos
   @NotBlank(message = "Los apellidos son obligatorios")
   @Size(max = 50, message = "Los apellidos no pueden exceder 50 caracteres")
   private final String lastnames;

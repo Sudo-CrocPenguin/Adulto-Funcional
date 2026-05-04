@@ -1,19 +1,13 @@
 /**
- * Estructuras de respuesta estándar para la API REST.
+ * Formato estándar de respuestas para toda la API.
  *
- * <p>Define el formato uniforme de todas las respuestas HTTP
- * de la aplicación mediante {@link ApiResponse}.</p>
+ * <p>
+ * Define la clase {@link org.adultofuncional.main.shared.response.ApiResponse}
+ * que envuelve todas las respuestas de la API en un formato uniforme
+ * que incluye código de estado HTTP, mensaje descriptivo y datos del resultado.
  *
- * <p>Formato estándar:
- * <pre>
- * {
- *   "status": 200,
- *   "message": "Operación exitosa",
- *   "data": { ... }
- * }
- * </pre>
-
- *
+ * @see org.adultofuncional.main.shared.response.ApiResponse
+ * @author Equipo de desarrollo Adulto Funcional
  * @since 0.0.1
  */
 package org.adultofuncional.main.shared.response;

@@ -69,6 +69,8 @@ El esquema se gestiona mediante Flyway (`src/main/resources/database/migrations/
 
 Todas las tablas usan `CHAR(36)` para UUID v7 y relaciones con llaves foráneas con eliminación en cascada desde `accounts`.
 
+Para la documentación detallada del esquema, columnas, índices y notas de seguridad, consulta [DATABASE.md](./DATABASE.md).
+
 ## Requisitos previos
 
 - Java 21 JDK
@@ -117,7 +119,15 @@ SPRING_FLYWAY_VALIDATE_ON_MIGRATE=true
 
 # JWT
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura
-JWT_EXPIRATION=86400000
+JWT_EXPIRATION=3600000
+
+# CORS
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+
+# HttpOnly Cookie
+COOKIE_SECURE=false # true en producción con HTTPS
+APP_COOKIE_SECURE=false # true en producción
+APP_COOKIE_SAME_SITE=None # Lax en producción
 ```
 
 O utilizar la plantilla del proyecto en lugar de crear el archivo manualmente
@@ -271,6 +281,11 @@ docker run -p 8080:8080 \
   -e SPRING_DATASOURCE_USERNAME=root \
   -e SPRING_DATASOURCE_PASSWORD=password \
   -e JWT_SECRET=secret \
+  -e JWT_EXPIRATION=3600000 \
+  -e CORS_ALLOWED_ORIGINS=http://localhost:3000 \
+  -e COOKIE_SECURE=false \
+  -e APP_COOKIE_SECURE=false \
+  -e APP_COOKIE_SAME_SITE=None \
   adulto-funcional-server
 
 # Entrar al contenedor de la aplicación
@@ -290,14 +305,19 @@ docker-compose restart app
 
 ### Cuentas (`/api/account`)
 
-- `GET /api/account/{id}` - Obtener datos de una cuenta
-- `PATCH /api/account/{id}` - Actualizar datos de una cuenta
-- `DELETE /api/account/{id}` - Eliminar una cuenta (en desarrollo)
+- `GET /api/account/{id}` - Obtener datos de una cuenta (requiere autenticación + ownership)
+- `PATCH /api/account/{id}` - Actualizar datos de una cuenta (requiere autenticación + ownership)
+- `DELETE /api/account/{id}` - Eliminar una cuenta (endpoint existe, lógica pendiente — retorna 204 sin ejecutar delete)
 
 ### Autenticación (`/api/auth`)
 
-- `POST /api/auth/login` - Iniciar sesión (en desarrollo)
-- `POST /api/auth/register` - Registrar usuario (en desarrollo)
+- `POST /api/auth/login` - Iniciar sesión (JWT en HttpOnly cookie)
+- `POST /api/auth/register` - Registrar usuario (JWT en HttpOnly cookie)
+- `POST /api/auth/logout` - Cerrar sesión (limpia cookie)
+
+### Health Check
+
+- `GET /actuator/health` - Estado de la aplicación (público, usado por Docker)
 
 ## Formato de respuesta estándar
 
@@ -349,4 +369,14 @@ Este proyecto está bajo licencia propietaria. Todos los derechos reservados.
 
 ## Estado del proyecto
 
-🚧 **En desarrollo activo** - Los módulos de autenticación y eliminación de cuentas están parcialmente implementados (marcados con TODO en el código).
+En desarrollo activo. Estado por módulo:
+
+| Módulo             | Estado     | Detalle                                                          |
+| ------------------ | ---------- | ---------------------------------------------------------------- |
+| Autenticación      | Completado | Login, registro, logout con JWT en HttpOnly cookie               |
+| Cuentas            | Parcial    | GET y PATCH funcionales; DELETE pendiente de implementar lógica  |
+| Financiero         | Pendiente  | Solo entidades JPA definidas (Category, Movement, FixedExpenses) |
+| Agenda             | Pendiente  | Solo entidad JPA definida (Event)                                |
+| Gestor contraseñas | Pendiente  | Solo entidad JPA definida (Password); AES-256 sin implementar    |
+
+**Próximos pasos**: Implementar `DeleteAccountUseCase`, módulo financiero, módulo de agenda y servicio de encriptación AES-256 para el gestor de contraseñas.

@@ -1,5 +1,7 @@
 package org.adultofuncional.main.auth.application.usecase;
 
+import java.util.List;
+
 import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.auth.application.dto.AuthResponse;
@@ -7,6 +9,7 @@ import org.adultofuncional.main.auth.application.dto.LoginRequest;
 import org.adultofuncional.main.config.security.JwtService;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.adultofuncional.main.shared.exception.UnauthorizedException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -44,7 +47,7 @@ public class LoginUseCase {
     // 3. Generar token
     String token = jwtService.generateToken(
         account.getId().toString(),
-        account.getEmail());
+        account.getEmail(), List.of(new SimpleGrantedAuthority("ROLE_USER")));
 
     // 4. Retornar respuesta
     return AuthResponse.builder()
@@ -56,7 +59,7 @@ public class LoginUseCase {
         .lastnames(account.getLastnames())
         .phone(account.getPhone())
         .createdAt(account.getCreatedAt())
-        .hasMasterKey(false) // TODO: cuando se implemente el módulo de seguridad
+        .hasMasterKey(account.getMasterKeyHash() != null) // TODO: cuando se implemente el módulo de seguridad
         .build();
   }
 }

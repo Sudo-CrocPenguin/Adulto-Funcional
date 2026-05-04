@@ -51,19 +51,19 @@ org.adultofuncional.main
 │   ├── domain/         # Modelo de dominio y puertos
 │   ├── application/    # Casos de uso y DTOs
 │   └── infrastructure/ # Adaptadores (JPA, REST)
-├── auth/               # Módulo de autenticación (JWT)
+├── auth/               # Módulo de autenticación
 ├── config/             # Configuraciones de Spring
-│   ├── beans/          # Configuración de beans (pendiente)
-│   ├── jackson/        # Configuración de Jackson JSON (pendiente)
-│   └── security/       # Configuración de Spring Security (pendiente)
+│   ├── beans/          # Configuración de beans
+│   ├── jackson/        # Configuración de Jackson JSON
+│   └── security/       # Configuración de Spring Security
 ├── finances/           # Módulo financiero (movimientos, gastos, categorías)
 ├── agenda/             # Módulo de agenda (eventos)
 ├── security/           # Gestor de contraseñas con Master Key
 └── shared/             # Componentes transversales
-    ├── constants/      # Constantes globales (pendiente)
+    ├── constants/      # Constantes globales
     ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
     ├── response/       # Formato estándar de respuestas API (ApiResponse)
-    └── util/           # Clases de utilidad general (pendiente)
+    └── util/           # Clases de utilidad general
 ```
 
 ```
@@ -193,15 +193,20 @@ public class AccountController {
     private final UpdateAccountUseCase updateAccountUseCase;
 
     @GetMapping("/{id}")
-    public ResponseEntity<AccountResponse> getAccount(@PathVariable UUID id) {
-        return ResponseEntity.ok(getAccountUseCase.execute(id));
+    public ResponseEntity<AccountResponse> getAccount(
+        @PathVariable UUID id,
+        @AuthenticationPrincipal String loggedEmail) {
+      validateOwnership(id, loggedEmail);
+      return ResponseEntity.ok(getAccountUseCase.execute(id));
     }
 
     @PatchMapping("/{id}")
     public ResponseEntity<AccountResponse> updateAccount(
         @PathVariable UUID id,
-        @Valid @RequestBody UpdateAccountRequest request) {
-        return ResponseEntity.ok(updateAccountUseCase.execute(id, request));
+        @Valid @RequestBody UpdateAccountRequest request,
+        @AuthenticationPrincipal String loggedEmail) {
+      validateOwnership(id, loggedEmail);
+      return ResponseEntity.ok(updateAccountUseCase.execute(id, request));
     }
 }
 ```
@@ -264,6 +269,36 @@ public class AccountRepositoryImpl implements AccountRepository {
     // ...
 }
 ```
+
+## Módulos pendientes de desarrollo
+
+Los siguientes módulos tienen definidas sus entidades JPA y el esquema de base de datos, pero aún no cuentan con modelos de dominio, casos de uso ni controladores REST.
+
+### `finances/` — Módulo financiero
+
+Contiene las entidades JPA para la gestión financiera:
+
+- **`CategoryEntity`** — Categorías con soft delete (`@SQLRestriction`). Valores de `category_type`: `"Finanzas"` o `"Agenda"`. Ver `src/main/java/org/adultofuncional/main/finances/infrastructure/persistence/entity/CategoryEntity.java`
+- **`MovementEntity`** — Movimientos financieros (ingresos/egresos). Ver `src/main/java/org/adultofuncional/main/finances/infrastructure/persistence/entity/MovementEntity.java`
+- **`FixedExpensesEntity`** — Gastos fijos recurrentes (mensuales, semanales, etc.). Ver `src/main/java/org/adultofuncional/main/finances/infrastructure/persistence/entity/FixedExpensesEntity.java`
+
+**Pendiente**: domain models, repository ports, use cases, controllers y mappers.
+
+### `agenda/` — Módulo de agenda
+
+Contiene la entidad JPA para eventos:
+
+- **`EventEntity`** — Eventos con prioridad, recordatorios, recurrencia en días y estado. Ver `src/main/java/org/adultofuncional/main/agenda/infrastructure/persistence/entity/EventEntity.java`
+
+**Pendiente**: domain models, repository ports, use cases, controllers y mappers.
+
+### `security/` — Gestor de contraseñas
+
+Contiene la entidad JPA para el almacenamiento seguro de credenciales:
+
+- **`PasswordEntity`** — Credenciales cifradas con AES-256 (salt + IV + ciphertext). Ver `src/main/java/org/adultofuncional/main/security/infrastructure/persistence/entity/PasswordEntity.java`
+
+**Pendiente**: domain models, repository ports, use cases, controllers, mappers y servicio de encriptación AES-256.
 
 ## Componentes compartidos (`shared/`)
 
@@ -335,6 +370,7 @@ AccountRepositoryImpl → SpringAccountJpaRepository → MariaDB
 ### Autenticación
 
 - **JWT (JSON Web Tokens)**: Autenticación stateless
+- **Token almacenado en HttpOnly Cookie** (atributo `SameSite` definido por `APP_COOKIE_SAME_SITE`, típicamente `Lax`) — nunca en localStorage ni sessionStorage, protegido contra XSS
 - **Argon2**: Hash de contraseñas de login en `account_password`
 - **Master Key**: Hash Argon2 opcional en `account_master_key` para proteger el gestor de contraseñas
 
@@ -355,20 +391,20 @@ accounts (ENTIDAD CENTRAL)
 ├── account_lastnames VARCHAR(50) NOT NULL
 ├── account_email VARCHAR(255) NOT NULL UNIQUE
 ├── account_phone VARCHAR(20) NOT NULL
-├── account_password VARCHAR(60) NOT NULL (Argon2 hash)
-├── account_master_key VARCHAR(60) NULL (Argon2 hash)
+├── account_password VARCHAR(255) NOT NULL (Argon2 hash)
+├── account_master_key VARCHAR(255) NULL (Argon2 hash)
 └── account_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 
 categories
 ├── category_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
-├── category_name VARCHAR(20) NOT NULL
+├── category_name VARCHAR(50) NOT NULL
 ├── category_type VARCHAR(20) NOT NULL ("Finanzas" | "Agenda")
 ├── category_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 └── category_deleted_at TIMESTAMP NULL (soft delete)
 
 movements
 ├── movement_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
-├── movement_type VARCHAR(7) NOT NULL ("Ingreso" | "Egreso")
+├── movement_type VARCHAR(20) NOT NULL ("Ingreso" | "Egreso")
 ├── movement_amount DECIMAL(10,2) NOT NULL
 ├── movement_register_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 ├── movement_description TEXT NULL
@@ -403,7 +439,9 @@ events
 passwords
 ├── password_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
 ├── password_application_name VARCHAR(35) NOT NULL
-├── password_application TEXT NOT NULL (AES-256 en Base64)
+├── password_salt VARCHAR(255) NOT NULL (salt para derivar clave AES)
+├── password_iv BINARY(16) NOT NULL (IV de 16 bytes para cifrado AES)
+├── password_ciphertext VARBINARY(2048) NOT NULL (ciphertext + tag AES-GCM)
 ├── password_last_change_date DATE NULL
 └── passwords_fk_account_id CHAR(36) FK → accounts(account_id)
 ```
@@ -431,21 +469,25 @@ Etapa 2 (runtime): eclipse-temurin:21-jre-alpine
 ### Docker Compose
 
 - **Servicio mariadb**: Imagen oficial 11.8 con healthcheck nativo
-- **Servicio app**: Construido desde Dockerfile, expone puerto 8080
+- **Servicio app**: Construido desde Dockerfile
 - **Red**: `afs-network` (bridge) para comunicación entre contenedores
 - **Volumen**: `mariadb_data` para persistencia de datos
 
 ### Variables de entorno requeridas
 
-| Variable                | Descripción                   | Ejemplo                        |
-| ----------------------- | ----------------------------- | ------------------------------ |
-| `MARIADB_ROOT_PASSWORD` | Password de root de MariaDB   | mysecret                       |
-| `MARIADB_DATABASE`      | Nombre de la base de datos    | adulto_funcional               |
-| `MARIADB_USER`          | Usuario de la aplicación      | afs_user                       |
-| `MARIADB_PASSWORD`      | Password del usuario          | userpass                       |
-| `SPRING_DATASOURCE_URL` | JDBC URL                      | jdbc:mariadb://mariadb:3306/db |
-| `JWT_SECRET`            | Clave secreta para firmar JWT | my-jwt-secret                  |
-| `JWT_EXPIRATION`        | Tiempo de expiración JWT (ms) | 86400000                       |
+| Variable                | Descripción                                             | Ejemplo                        |
+| ----------------------- | ------------------------------------------------------- | ------------------------------ |
+| `MARIADB_ROOT_PASSWORD` | Password de root de MariaDB                             | mysecret                       |
+| `MARIADB_DATABASE`      | Nombre de la base de datos                              | adulto_funcional               |
+| `MARIADB_USER`          | Usuario de la aplicación                                | afs_user                       |
+| `MARIADB_PASSWORD`      | Password del usuario                                    | userpass                       |
+| `SPRING_DATASOURCE_URL` | JDBC URL                                                | jdbc:mariadb://mariadb:3306/db |
+| `JWT_SECRET`            | Clave secreta para firmar JWT                           | my-jwt-secret                  |
+| `JWT_EXPIRATION`        | Tiempo de expiración JWT (ms)                           | 3600000                        |
+| `CORS_ALLOWED_ORIGINS`  | Orígenes permitidos para CORS                           | <http://localhost:5173>        |
+| `COOKIE_SECURE`         | HTTPS obligatorio en cookie                             | false                          |
+| `APP_COOKIE_SECURE`     | Atributo Secure de la cookie (true en producción HTTPS) | true                           |
+| `APP_COOKIE_SAME_SITE`  | Atributo SameSite de la cookie (Lax, Strict o None)     | Lax                            |
 
 ## Manejo de excepciones
 
@@ -466,9 +508,8 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 ## Testing
 
 - **Spring Boot Test**: Pruebas unitarias y de integración
-- **Testcontainers**: Contenedores efímeros de MariaDB para pruebas de integración
-- **H2 Database**: Base de datos en memoria para pruebas rápidas
-- **Spring Security Test**: Soporte para probar endpoints protegidos
+- **Testcontainers**: Contenedores efímeros de MariaDB 11.8 para pruebas de integración
+- **Spring Security Test**: Soporte para probar endpoints protegidos (usado en @WebMvcTest)
 
 ## Dependencias clave en pom.xml
 
@@ -507,11 +548,13 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 
 ## Roadmap técnico
 
-- [ ] Completar módulo de autenticación (LoginUseCase, RegisterUseCase)
+- [x] Completar módulo de autenticación (LoginUseCase, RegisterUseCase)
+- [x] Autenticación con HttpOnly Cookie (SameSite configurable vía `APP_COOKIE_SAME_SITE`)
+- [x] Validación de ownership en AccountController
+- [x] Tests de integración con Testcontainers
 - [ ] Implementar DeleteAccountUseCase y conectar en AccountController
 - [ ] Módulo financiero: MovementUseCase, FixedExpenseUseCase, CategoryUseCase
 - [ ] Módulo agenda: EventUseCase con lógica de recurrencia
 - [ ] Gestor de contraseñas: PasswordUseCase con encriptación AES-256
-- [ ] Tests de integración con Testcontainers
 - [ ] Documentación OpenAPI/Swagger
 - [ ] Implementar refresh tokens para JWT

@@ -19,8 +19,7 @@
  * Tabla asociada: {@code accounts} con identificador UUID v7.
  *
  * 
- * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
- *         Miguel Angel Blandon Montes, Daniel Salazar
+ * @author Equipo de desarrollo Adulto Funcional
  * @since 0.0.1
  */
 package org.adultofuncional.main.account;

@@ -21,8 +21,7 @@
  * {@code categories}. Todas usan UUID v7 como clave primaria.
  *
  * 
- * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
- *         Miguel Angel Blandon Montes, Daniel Salazar
+ * @author Equipo de desarrollo Adulto Funcional
  * @since 0.0.1
  */
 package org.adultofuncional.main.finances;
