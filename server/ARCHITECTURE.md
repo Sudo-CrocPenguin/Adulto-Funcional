@@ -63,22 +63,27 @@ org.adultofuncional.main
     ├── constants/      # Constantes globales
     ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
     ├── response/       # Formato estándar de respuestas API (ApiResponse)
+    ├── security/       # Validación de ownership reutilizable
+    │   ├── OwnedResource.java       # Contrato para DTOs con propietario
+    │   └── OwnershipValidator.java  # Componente de validación de acceso
     └── util/           # Clases de utilidad general
 ```
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│               SHARED (COMPONENTES COMPARTIDOS)              │
-│   (Elementos transversales usados por todos los módulos)    │
-│ ┌────────────┐    ┌────────────┐    ┌─────────────────────┐ │
-│ │ constants/ │    │ exception/ │    │       response/     │ │
-│ │ (Constantes│    │ (GlobalExc.│    │    (ApiResponse)    │ │
-│ │  globales) │    │  Handler)  │    │                     │ │
-│ └────────────┘    └────────────┘    └─────────────────────┘ │
-│   ┌────────────────────────────────────────────────────┐    │
-│   │ util/ (Clases de utilidad general - pendiente)     │    │
-│   └────────────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│               SHARED (COMPONENTES COMPARTIDOS)                   │
+│   (Elementos transversales usados por todos los módulos)         │
+│ ┌────────────┐    ┌────────────┐    ┌─────────────────────────┐  │
+│ │ constants/ │    │ exception/ │    │       response/         │  │
+│ │ (Constantes│    │ (GlobalExc.│    │    (ApiResponse)        │  │
+│ │  globales) │    │  Handler)  │    │                         │  │
+│ └────────────┘    └────────────┘    └─────────────────────────┘  │
+│   ┌────────────────────┐    ┌──────────────────────────────────┐  │
+│   │ security/          │    │ util/ (Clases de utilidad gral)  │  │
+│   │ (OwnedResource,    │    │                                  │  │
+│   │  OwnershipValid.)  │    │                                  │  │
+│   └────────────────────┘    └──────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ## Capa de Dominio (`domain`)
@@ -191,13 +196,15 @@ Exponen los endpoints HTTP y validan la entrada:
 public class AccountController {
     private final GetAccountUseCase getAccountUseCase;
     private final UpdateAccountUseCase updateAccountUseCase;
+    private final OwnershipValidator ownershipValidator;
 
     @GetMapping("/{id}")
     public ResponseEntity<AccountResponse> getAccount(
         @PathVariable UUID id,
         @AuthenticationPrincipal String loggedEmail) {
-      validateOwnership(id, loggedEmail);
-      return ResponseEntity.ok(getAccountUseCase.execute(id));
+        AccountResponse account = getAccountUseCase.execute(id);
+        ownershipValidator.validate(account, loggedEmail);
+        return ResponseEntity.ok(account);
     }
 
     @PatchMapping("/{id}")
@@ -205,8 +212,9 @@ public class AccountController {
         @PathVariable UUID id,
         @Valid @RequestBody UpdateAccountRequest request,
         @AuthenticationPrincipal String loggedEmail) {
-      validateOwnership(id, loggedEmail);
-      return ResponseEntity.ok(updateAccountUseCase.execute(id, request));
+        AccountResponse account = getAccountUseCase.execute(id);
+        ownershipValidator.validate(account, loggedEmail);
+        return ResponseEntity.ok(updateAccountUseCase.execute(id, request));
     }
 }
 ```
@@ -300,6 +308,17 @@ Contiene la entidad JPA para el almacenamiento seguro de credenciales:
 
 **Pendiente**: domain models, repository ports, use cases, controllers, mappers y servicio de encriptación AES-256.
 
+## Configuración de seguridad (`config/security/`)
+
+Módulo responsable de toda la infraestructura de autenticación y autorización:
+
+- **`SecurityConfig`**: Cadena de filtros de Spring Security. Configura CSRF (deshabilitado para API stateless), sesiones stateless, CORS con credenciales y headers de seguridad (CSP, X-Frame-Options, X-XSS-Protection, X-Content-Type-Options, HSTS).
+- **`JwtService`**: Generación, validación y extracción de claims de tokens JWT.
+- **`JwtAuthenticationFilter`**: Filtro que intercepta cada request, extrae el token de la cookie HttpOnly o del header `Authorization`, lo valida y establece el contexto de seguridad de Spring.
+- **`DatabaseUserDetailsService`**: Implementación de `UserDetailsService` que carga las credenciales desde `accounts` en la base de datos, integrando Spring Security con el repositorio de cuentas.
+- **`CookieUtils`**: Gestión segura de la cookie `token` (crear/eliminar) con atributos HttpOnly, Secure (configurable) y SameSite.
+- **`ClientTypeResolver`**: Detecta si un request proviene de una app nativa (móvil/desktop) o de un navegador web mediante señales pasivas (User-Agent, ausencia de Origin) y un header declarativo (`X-Client-Type`). Determina si el token JWT se incluye en el body de la respuesta además de la cookie.
+
 ## Componentes compartidos (`shared/`)
 
 Elementos transversales que no pertenecen a un módulo de negocio específico y son utilizados por todos los módulos.
@@ -345,6 +364,13 @@ Paquete planificado para clases de utilidad general:
 - Encriptación/desencriptación AES-256
 - Manejo de fechas y zonas horarias
 
+### `security/`
+
+Componentes reutilizables para validación de acceso por ownership:
+
+- **`OwnedResource`**: Interfaz que deben implementar los DTOs de respuesta cuyos recursos pertenecen a un usuario específico. Expone el email del propietario mediante `getEmail()`, permitiendo que `OwnershipValidator` valide acceso sin acoplarse a ningún módulo concreto.
+- **`OwnershipValidator`**: Componente Spring que centraliza la lógica de validación de ownership. Compara el email del recurso (vía `OwnedResource`) con el email del usuario autenticado (extraído del JWT). Si no coinciden, lanza `UnauthorizedException` (HTTP 401) antes de que el caso de uso sea invocado. Elimina la necesidad de hacer una consulta duplicada por email.
+
 ## Flujo de datos típico
 
 ```
@@ -370,7 +396,7 @@ AccountRepositoryImpl → SpringAccountJpaRepository → MariaDB
 ### Autenticación
 
 - **JWT (JSON Web Tokens)**: Autenticación stateless
-- **Token almacenado en HttpOnly Cookie** (atributo `SameSite` definido por `APP_COOKIE_SAME_SITE`, típicamente `Lax`) — nunca en localStorage ni sessionStorage, protegido contra XSS
+- **Token siempre establecido en HttpOnly Cookie**. Los clientes nativos identificados por `ClientTypeResolver` lo reciben adicionalmente en el body de la respuesta. Nunca en localStorage ni sessionStorage.
 - **Argon2**: Hash de contraseñas de login en `account_password`
 - **Master Key**: Hash Argon2 opcional en `account_master_key` para proteger el gestor de contraseñas
 
@@ -485,7 +511,6 @@ Etapa 2 (runtime): eclipse-temurin:21-jre-alpine
 | `JWT_SECRET`            | Clave secreta para firmar JWT                           | my-jwt-secret                  |
 | `JWT_EXPIRATION`        | Tiempo de expiración JWT (ms)                           | 3600000                        |
 | `CORS_ALLOWED_ORIGINS`  | Orígenes permitidos para CORS                           | <http://localhost:5173>        |
-| `COOKIE_SECURE`         | HTTPS obligatorio en cookie                             | false                          |
 | `APP_COOKIE_SECURE`     | Atributo Secure de la cookie (true en producción HTTPS) | true                           |
 | `APP_COOKIE_SAME_SITE`  | Atributo SameSite de la cookie (Lax, Strict o None)     | Lax                            |
 
@@ -550,7 +575,7 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 
 - [x] Completar módulo de autenticación (LoginUseCase, RegisterUseCase)
 - [x] Autenticación con HttpOnly Cookie (SameSite configurable vía `APP_COOKIE_SAME_SITE`)
-- [x] Validación de ownership en AccountController
+- [x] Validación de ownership con OwnershipValidator reutilizable (shared/security/)
 - [x] Tests de integración con Testcontainers
 - [ ] Implementar DeleteAccountUseCase y conectar en AccountController
 - [ ] Módulo financiero: MovementUseCase, FixedExpenseUseCase, CategoryUseCase
