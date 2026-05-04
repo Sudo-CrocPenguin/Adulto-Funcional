@@ -33,7 +33,7 @@ import jakarta.servlet.http.HttpServletRequest;
  * con al menos una señal pasiva para ser considerada válida.</li>
  * </ol>
  *
- * @author Lydis Esther Jaraba, Juan Sebastian Rios
+ * @author Juan Sebastian Rios
  * @since 0.0.1
  */
 @Component

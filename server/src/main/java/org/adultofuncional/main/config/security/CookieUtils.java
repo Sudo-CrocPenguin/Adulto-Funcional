@@ -10,15 +10,21 @@ import jakarta.servlet.http.HttpServletResponse;
  * <p>
  * Centraliza la creación y eliminación de la cookie {@code token}, que almacena
  * el JWT del usuario de forma segura mediante los atributos {@code HttpOnly},
- * {@code SameSite=Strict} y opcionalmente {@code Secure} (en producción con
- * HTTPS).
+ * {@code SameSite} configurable y opcionalmente {@code Secure} en producción.
  *
  * <p>
- * El uso de {@code HttpOnly} impide que JavaScript acceda a la cookie,
- * protegiéndola
- * contra ataques XSS. El atributo {@code SameSite=Strict} mitiga ataques CSRF
- * al
- * restringir el envío de la cookie a peticiones del mismo origen.
+ * <strong>Atributos de seguridad:</strong>
+ * <ul>
+ * <li>{@code HttpOnly} — impide que JavaScript acceda a la cookie,
+ * protegiendo el token contra robo mediante XSS.</li>
+ * <li>{@code Secure} — restringe la cookie a conexiones HTTPS. Activado
+ * mediante {@code APP_COOKIE_SECURE=true} en producción.</li>
+ * <li>{@code SameSite} — controla en qué requests cross-site se envía la
+ * cookie. Configurable via {@code APP_COOKIE_SAME_SITE}:
+ * {@code Strict} para máxima protección CSRF, {@code Lax} para permitir
+ * navegación normal entre sitios, {@code None} para requests cross-site
+ * (requiere {@code Secure}).</li>
+ * </ul>
  *
  * @author Juan Sebastian Rios
  * @since 0.0.1
@@ -29,46 +35,56 @@ import jakarta.servlet.http.HttpServletResponse;
 public class CookieUtils {
 
   /**
-   * Indica si la cookie debe incluir el atributo {@code Secure}.
-   * Se configura mediante la variable de entorno {@code COOKIE_SECURE}.
+   * Activa el atributo {@code Secure} en la cookie, restringiendo su envío
+   * a conexiones HTTPS. Configurado via {@code APP_COOKIE_SECURE}.
    *
    * <ul>
    * <li>{@code false} — desarrollo local (HTTP permitido)</li>
-   * <li>{@code true} — producción (solo HTTPS)</li>
+   * <li>{@code true} — producción (solo HTTPS); obligatorio si
+   * {@code APP_COOKIE_SAME_SITE=None}</li>
    * </ul>
    *
+   * TODO: Verificar que {@code APP_COOKIE_SECURE=true} en producción.
    */
-  // TODO: Asegurarse de que COOKIE_SECURE=true en el entorno
-  // de producción.
-  @Value("${COOKIE_SECURE}")
-  private boolean cookieSecure;
-
   @Value("${APP_COOKIE_SECURE}")
   private boolean appCookieSecure;
 
+  /**
+   * Valor del atributo {@code SameSite} de la cookie. Configurable via
+   * {@code APP_COOKIE_SAME_SITE}. Valores válidos: {@code Strict},
+   * {@code Lax}, {@code None}.
+   *
+   * <p>
+   * Se aplica tanto al establecer como al eliminar la cookie para garantizar
+   * que el navegador procese correctamente el {@code Set-Cookie} en ambos casos.
+   */
   @Value("${APP_COOKIE_SAME_SITE}")
-  private String AppCookieSameSite;
+  private String appCookieSameSite;
 
   /**
    * Agrega la cookie {@code token} a la respuesta HTTP con el JWT del usuario.
    *
    * <p>
-   * La cookie se configura con los siguientes atributos de seguridad:
+   * La cookie se construye manualmente via el header {@code Set-Cookie} para
+   * poder incluir el atributo {@code SameSite}, que la API de
+   * {@link jakarta.servlet.http.Cookie} de Jakarta EE no soporta nativamente.
+   *
+   * <p>
+   * <strong>Atributos aplicados:</strong>
    * <ul>
-   * <li>{@code HttpOnly} — inaccesible desde JavaScript</li>
-   * <li>{@code Secure} — solo en HTTPS (según la variable de entorno
-   * {@code APP_COOKIE_SECURE})</li>
+   * <li>{@code HttpOnly} — siempre activo</li>
+   * <li>{@code Secure} — condicional según {@code APP_COOKIE_SECURE}</li>
    * <li>{@code Path=/} — disponible en toda la aplicación</li>
-   * <li>{@code Max-Age} — tiempo de vida derivado de {@code JWT_EXPIRATION}</li>
-   * <li>{@code SameSite} — configurable mediante {@code APP_COOKIE_SAME_SITE}
-   * (ej. {@code Lax} para mismo-sitio, {@code None} para cross‑site)</li>
+   * <li>{@code Max-Age} — derivado de {@code expirationMs}, alineado con
+   * la expiración del JWT para evitar cookies huérfanas</li>
+   * <li>{@code SameSite} — según {@code APP_COOKIE_SAME_SITE}</li>
    * </ul>
    *
-   * @param response     respuesta HTTP donde se agrega el header
+   * @param response     respuesta HTTP donde se escribe el header
    *                     {@code Set-Cookie}
-   * @param token        JWT generado por {@link JwtService#generateToken}
-   * @param expirationMs tiempo de vida del token en milisegundos (se convierte a
-   *                     segundos)
+   * @param token        JWT firmado generado por {@link JwtService#generateToken}
+   * @param expirationMs tiempo de vida del token en milisegundos; se convierte
+   *                     a segundos para {@code Max-Age}
    */
   public void addTokenCookie(HttpServletResponse response, String token, long expirationMs) {
     response.addHeader("Set-Cookie",
@@ -76,22 +92,28 @@ public class CookieUtils {
             token,
             appCookieSecure ? "Secure; " : "",
             (int) (expirationMs / 1000),
-            AppCookieSameSite));
+            appCookieSameSite));
   }
 
   /**
-   * Elimina la cookie {@code token} de la respuesta HTTP.
+   * Elimina la cookie {@code token} instruyendo al navegador a invalidarla
+   * inmediatamente.
    *
    * <p>
-   * Establece {@code Max-Age=0} para que el navegador invalide y elimine
-   * la cookie inmediatamente. Se usa al cerrar sesión
-   * ({@code POST /api/auth/logout}).
+   * Establece {@code Max-Age=0} y un valor vacío, lo que hace que el navegador
+   * descarte la cookie en cuanto procesa la respuesta. Se invoca desde
+   * {@code POST /api/auth/logout}. Los atributos {@code Secure} y
+   * {@code SameSite}
+   * deben coincidir con los de la cookie original — de lo contrario algunos
+   * navegadores ignoran la instrucción de borrado.
    *
-   * @param response respuesta HTTP donde se agrega el header {@code Set-Cookie}
-   *                 de limpieza
+   * @param response respuesta HTTP donde se escribe el header {@code Set-Cookie}
+   *                 de invalidación
    */
   public void clearTokenCookie(HttpServletResponse response) {
     response.addHeader("Set-Cookie",
-        "token=; HttpOnly; Path=/; Max-Age=0; SameSite=Strict");
+        String.format("token=; HttpOnly; %sPath=/; Max-Age=0; SameSite=%s",
+            appCookieSecure ? "Secure; " : "",
+            appCookieSameSite));
   }
 }

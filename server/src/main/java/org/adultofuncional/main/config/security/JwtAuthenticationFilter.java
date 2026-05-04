@@ -24,52 +24,94 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Filtro de autenticación JWT que intercepta cada request HTTP una única vez.
+ * Filtro de autenticación JWT que intercepta cada request HTTP exactamente
+ * una vez por ciclo de vida del request.
  *
  * <p>
- * Extiende {@link OncePerRequestFilter} para garantizar una sola ejecución por
- * request. Extrae el token JWT del header {@code Authorization} o de la cookie
- * {@code HttpOnly} llamada {@code token}, lo valida y establece el contexto de
- * seguridad de Spring si el token es válido.
+ * Extiende {@link OncePerRequestFilter} para garantizar una única ejecución
+ * incluso en cadenas de filtros complejas. Extrae el token JWT desde el
+ * header {@code Authorization} o desde la cookie {@code HttpOnly} llamada
+ * {@code token}, lo valida mediante {@link JwtService} y, si es válido,
+ * establece el contexto de autenticación de Spring Security para el resto
+ * del ciclo del request.
  *
  * <p>
- * <strong>Estrategia de extracción del token:</strong>
+ * <strong>Orden de extracción del token:</strong>
  * <ol>
- * <li>Busca primero en el header {@code Authorization: Bearer <token>}</li>
- * <li>Si no lo encuentra, busca en la cookie {@code token} (HttpOnly)</li>
- * <li>Si no hay token, continúa la cadena sin autenticar</li>
+ * <li>Header {@code Authorization: Bearer <token>} — usado por clientes
+ * nativos (móvil/desktop) que almacenan el token fuera del navegador.</li>
+ * <li>Cookie {@code token} (HttpOnly) — usado por clientes web; protege
+ * el token contra acceso desde JavaScript (XSS).</li>
+ * <li>Si ninguna fuente contiene un token, el request continúa sin
+ * autenticar y Spring Security aplicará las reglas de autorización
+ * definidas en {@link SecurityConfig}.</li>
  * </ol>
  *
  * <p>
- * El token preferido es la cookie HttpOnly,
- * que protege contra XSS. El soporte para header {@code Authorization} se
- * mantiene
- * para compatibilidad con clientes que no soporten cookies (ej. clientes
- * móviles o CLI).
+ * <strong>Manejo de errores:</strong> los errores de validación no se
+ * propagan como excepciones — se interceptan aquí y se convierten en
+ * respuestas {@code 401 Unauthorized} con un mensaje descriptivo, evitando
+ * que el {@code GlobalExceptionHandler} deba conocer detalles de JWT.
+ * Los tokens expirados se loguean en {@code DEBUG}; las firmas inválidas
+ * en {@code WARN}, ya que pueden indicar un intento de manipulación.
  *
  * @author Juan Sebastian Rios
  * @since 0.0.1
  * @see JwtService
  * @see CookieUtils
  * @see SecurityConfig
+ * @see ClientTypeResolver
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-  /** Servicio para parsear y validar tokens JWT. */
+  /**
+   * Nombre de la cookie HttpOnly que transporta el JWT en clientes web.
+   * Debe coincidir con el nombre usado en {@link CookieUtils}.
+   */
+  private static final String TOKEN_COOKIE_NAME = "token";
+
+  /**
+   * Prefijo estándar del header Authorization para tokens Bearer.
+   * El token JWT comienza en el índice 7 (longitud de "Bearer ").
+   */
+  private static final String BEARER_PREFIX = "Bearer ";
+
+  /** Servicio que parsea, firma y valida tokens JWT. */
   private final JwtService jwtService;
 
   /**
-   * Lógica principal del filtro. Extrae, valida el JWT y establece el contexto
-   * de seguridad si el token es válido.
+   * Ejecuta la lógica de autenticación JWT para cada request entrante.
+   *
+   * <p>
+   * <strong>Flujo completo:</strong>
+   * <ol>
+   * <li>Intenta extraer el JWT del header {@code Authorization}.</li>
+   * <li>Si no hay header, intenta extraerlo de la cookie {@code token}.</li>
+   * <li>Si no hay token en ninguna fuente, delega al siguiente filtro
+   * sin autenticar — Spring Security decidirá si el endpoint requiere
+   * autenticación.</li>
+   * <li>Si hay token, lo valida con {@link JwtService#parseAndValidate}.</li>
+   * <li>Si es válido y no hay autenticación previa en el contexto, construye
+   * un {@link UsernamePasswordAuthenticationToken} con el email como
+   * principal y los roles como autoridades, y lo registra en el
+   * {@link SecurityContextHolder}.</li>
+   * <li>Si el token es inválido, responde {@code 401} directamente sin
+   * continuar la cadena de filtros.</li>
+   * </ol>
+   *
+   * <p>
+   * Si el claim {@code roles} está ausente en el token, se asigna
+   * {@code ROLE_USER} por defecto para mantener compatibilidad con tokens
+   * emitidos antes de que el claim fuera introducido.
    *
    * @param request     request HTTP entrante
    * @param response    response HTTP saliente
    * @param filterChain cadena de filtros de Spring Security
    * @throws ServletException si ocurre un error en el procesamiento del servlet
-   * @throws IOException      si ocurre un error de I/O
+   * @throws IOException      si ocurre un error de I/O al escribir la respuesta
    */
   @Override
   protected void doFilterInternal(
@@ -78,7 +120,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       FilterChain filterChain)
       throws ServletException, IOException {
 
-    // 1. Busca el token — primero en header, luego en cookie
     String jwt = extractFromHeader(request);
     if (jwt == null) {
       jwt = extractFromCookie(request);
@@ -111,15 +152,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       }
 
     } catch (ExpiredJwtException e) {
-      log.debug("Token JWT expirado para request {}: {}", request.getRequestURI(), e.getMessage());
+      log.debug("Token JWT expirado para request {}: {}",
+          request.getRequestURI(), e.getMessage());
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT expirado");
       return;
     } catch (SignatureException e) {
-      log.warn("Firma JWT inválida en request {}: {}", request.getRequestURI(), e.getMessage());
+      log.warn("Firma JWT inválida en request {} — posible intento de manipulación: {}",
+          request.getRequestURI(), e.getMessage());
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Firma JWT inválida");
       return;
     } catch (JwtException | IllegalArgumentException e) {
-      log.warn("Token JWT inválido en request {}: {}", request.getRequestURI(), e.getMessage());
+      log.warn("Token JWT malformado o inválido en request {}: {}",
+          request.getRequestURI(), e.getMessage());
       response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT inválido");
       return;
     }
@@ -128,17 +172,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   }
 
   /**
-   * Extrae el JWT del header {@code Authorization} si tiene el formato
-   * {@code Bearer <token>}.
+   * Extrae el JWT del header {@code Authorization} si tiene formato Bearer.
+   *
+   * <p>
+   * Formato esperado: {@code Authorization: Bearer eyJhbGci...}. Si el header
+   * está ausente o no comienza con {@code "Bearer "}, retorna {@code null}
+   * y la extracción continúa con la cookie.
    *
    * @param request request HTTP entrante
-   * @return el token JWT sin el prefijo {@code Bearer }, o {@code null} si no
-   *         está presente
+   * @return token JWT sin el prefijo {@code "Bearer "}, o {@code null} si
+   *         el header está ausente o tiene formato incorrecto
    */
   private String extractFromHeader(HttpServletRequest request) {
     String authHeader = request.getHeader("Authorization");
-    if (authHeader != null && authHeader.startsWith("Bearer ")) {
-      return authHeader.substring(7);
+    if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+      return authHeader.substring(BEARER_PREFIX.length());
     }
     return null;
   }
@@ -146,15 +194,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   /**
    * Extrae el JWT de la cookie {@code HttpOnly} llamada {@code token}.
    *
+   * <p>
+   * Si el request no tiene cookies o ninguna se llama {@code token},
+   * retorna {@code null}. La cookie es establecida por {@link CookieUtils}
+   * en el login y el registro, y eliminada en el logout.
+   *
    * @param request request HTTP entrante
-   * @return el valor de la cookie {@code token}, o {@code null} si no existe
+   * @return valor de la cookie {@code token}, o {@code null} si no existe
    */
   private String extractFromCookie(HttpServletRequest request) {
     Cookie[] cookies = request.getCookies();
     if (cookies == null)
       return null;
     return Arrays.stream(cookies)
-        .filter(c -> "token".equals(c.getName()))
+        .filter(c -> TOKEN_COOKIE_NAME.equals(c.getName()))
         .map(Cookie::getValue)
         .findFirst()
         .orElse(null);

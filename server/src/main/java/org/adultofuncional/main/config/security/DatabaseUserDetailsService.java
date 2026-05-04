@@ -37,7 +37,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DatabaseUserDetailsService implements UserDetailsService {
 
-  /** Repositorio de cuentas para buscar el usuario por email. */
+  /**
+   * Puerto de dominio para consultar cuentas; se resuelve en tiempo de ejecución
+   * por
+   * {@link org.adultofuncional.main.account.infrastructure.repository.AccountRepositoryImpl}.
+   */
   private final AccountRepository accountRepository;
 
   /**
