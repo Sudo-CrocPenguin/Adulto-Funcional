@@ -2,21 +2,24 @@
  * Configuraciones de Spring Boot para la aplicación.
  *
  * <p>
- * Contiene clases de configuración que definen beans personalizados,
- * configuraciones de serialización y seguridad.
+ * Centraliza las clases de configuración que definen beans de infraestructura,
+ * seguridad, serialización JSON y otros aspectos transversales. Los beans
+ * declarados aquí son consumidos por los módulos de negocio sin que estos
+ * tengan que preocuparse por su instanciación.
  *
- * 
- * <p>
- * Subpaquetes:
+ * <h3>Subpaquetes</h3>
  * <ul>
- * <li>{@code beans} — Configuración de beans de Spring</li>
+ * <li>{@code beans} — Configuración de beans generales.
+ * {@link org.adultofuncional.main.config.beans.AppConfig} expone el
+ * {@code PasswordEncoder} (Argon2).</li>
  * <li>{@code jackson} — Configuración de serialización/deserialización
- * JSON con Jackson (pendiente)</li>
- * <li>{@code security} — Configuración de Spring Security, filtros
- * JWT y CORS (pendiente)</li>
+ * JSON con Jackson (módulo en preparación).</li>
+ * <li>{@code security} — Configuración completa de Spring Security:
+ * cadena de filtros, JWT, cookies HttpOnly, CORS y headers OWASP.
+ * Ver {@link org.adultofuncional.main.config.security.SecurityConfig}
+ * y las clases auxiliares que la acompañan.</li>
  * </ul>
  *
- * 
  * @author Juan Sebastian Rios
  * @since 0.0.1
  */

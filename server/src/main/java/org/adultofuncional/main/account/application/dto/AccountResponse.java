@@ -22,7 +22,7 @@ import java.util.UUID;
  * {@code account_master_key} — el filtrado ocurre en el mapper de la
  * capa de infraestructura al construir este objeto.
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see OwnedResource
  * @see org.adultofuncional.main.shared.security.OwnershipValidator

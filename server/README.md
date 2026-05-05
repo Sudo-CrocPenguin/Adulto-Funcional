@@ -11,6 +11,7 @@ Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una a
 - **Identificadores únicos**: UUID v7 (ordenable temporalmente) para todas las entidades
 - **Migraciones controladas**: Flyway para versionado de base de datos
 - **Seguridad HTTP**: Headers CSP, HSTS, X-Frame-Options, X-XSS-Protection configurados en SecurityConfig
+- **Protección anti‑XSS**: Validación de entrada con `@NoHtml` (Jsoup) en todos los campos de texto
 
 ## Stack tecnológico
 
@@ -29,6 +30,7 @@ Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una a
 | Testcontainers       | -       | Pruebas de integración                             |
 | Spring Boot Actuator | -       | Health checks para Docker                          |
 | Maven                | 3.9     | Gestión de dependencias                            |
+| Jsoup                | 1.17.2  | Validación anti‑HTML en entrada                    |
 
 ## Arquitectura
 
@@ -371,12 +373,12 @@ Este proyecto está bajo licencia propietaria. Todos los derechos reservados.
 
 En desarrollo activo. Estado por módulo:
 
-| Módulo             | Estado     | Detalle                                                                        |
-| ------------------ | ---------- | ------------------------------------------------------------------------------ |
-| Autenticación      | Completado | Login, registro, logout con JWT en HttpOnly cookie                             |
-| Cuentas            | Parcial    | GET y PATCH funcionales; DELETE retorna 501 Not Implemented (lógica pendiente) |
-| Financiero         | Pendiente  | Solo entidades JPA definidas (Category, Movement, FixedExpenses)               |
-| Agenda             | Pendiente  | Solo entidad JPA definida (Event)                                              |
-| Gestor contraseñas | Pendiente  | Solo entidad JPA definida (Password); AES-256 sin implementar                  |
+| Módulo             | Estado     | Detalle                                                                                                                           |
+| ------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Autenticación      | Completado | Login resistente a enumeración, registro con `ConflictException` (409), logout con `ApiResponse` 204, protección anti‑XSS en DTOs |
+| Cuentas            | Parcial    | GET y PATCH funcionales; DELETE retorna 501 Not Implemented (lógica pendiente)                                                    |
+| Financiero         | Pendiente  | Solo entidades JPA definidas (Category, Movement, FixedExpenses)                                                                  |
+| Agenda             | Pendiente  | Solo entidad JPA definida (Event)                                                                                                 |
+| Gestor contraseñas | Pendiente  | Solo entidad JPA definida (Password); AES-256 sin implementar                                                                     |
 
 **Próximos pasos**: Implementar `DeleteAccountUseCase`, módulo financiero, módulo de agenda y servicio de encriptación AES-256 para el gestor de contraseñas.
