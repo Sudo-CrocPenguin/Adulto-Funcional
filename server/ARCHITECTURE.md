@@ -64,8 +64,6 @@ org.adultofuncional.main
     ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
     ├── response/       # Formato estándar de respuestas API (ApiResponse)
     ├── security/       # Validación de ownership reutilizable
-    │   ├── OwnedResource.java       # Contrato para DTOs con propietario
-    │   └── OwnershipValidator.java  # Componente de validación de acceso
     └── util/           # Clases de utilidad general
 ```
 
@@ -78,11 +76,11 @@ org.adultofuncional.main
 │ │ (Constantes│    │ (GlobalExc.│    │    (ApiResponse)        │  │
 │ │  globales) │    │  Handler)  │    │                         │  │
 │ └────────────┘    └────────────┘    └─────────────────────────┘  │
-│   ┌────────────────────┐    ┌──────────────────────────────────┐  │
-│   │ security/          │    │ util/ (Clases de utilidad gral)  │  │
-│   │ (OwnedResource,    │    │                                  │  │
-│   │  OwnershipValid.)  │    │                                  │  │
-│   └────────────────────┘    └──────────────────────────────────┘  │
+│   ┌────────────────────┐    ┌──────────────────────────────────┐ │
+│   │ security/          │    │ util/ (Clases de utilidad gral)  │ │
+│   │ (OwnedResource,    │    │                                  │ │
+│   │  OwnershipValid.)  │    │                                  │ │
+│   └────────────────────┘    └──────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -162,7 +160,7 @@ public class UpdateAccountUseCase {
         // 2. Validar unicidad de email (regla de negocio)
         if (!account.getEmail().equals(request.getEmail())) {
             accountRepository.findByEmail(request.getEmail())
-                .ifPresent(existing -> throw new BusinessException(...));
+                .ifPresent(existing -> throw new ConflictException(...));
         }
 
         // 3. Aplicar cambios en el dominio
@@ -179,7 +177,7 @@ public class UpdateAccountUseCase {
 
 Objetos de transferencia de datos para la capa de aplicación:
 
-- **Request DTOs**: Entrada validada con Jakarta Validation (`@NotBlank`, `@Email`, `@Size`)
+- **Request DTOs**: Entrada validada con Jakarta Validation (`@NotBlank`, `@Email`, `@Size`, `@NoHtml`). La anotación `@NoHtml` protege contra Stored XSS usando Jsoup.
 - **Response DTOs**: Salida que nunca expone datos sensibles (password, masterKey)
 
 ## Capa de Infraestructura (`infrastructure`)
@@ -199,22 +197,33 @@ public class AccountController {
     private final OwnershipValidator ownershipValidator;
 
     @GetMapping("/{id}")
-    public ResponseEntity<AccountResponse> getAccount(
+    public ResponseEntity<ApiResponse<AccountResponse>> getAccount(
         @PathVariable UUID id,
         @AuthenticationPrincipal String loggedEmail) {
         AccountResponse account = getAccountUseCase.execute(id);
         ownershipValidator.validate(account, loggedEmail);
-        return ResponseEntity.ok(account);
+        return ResponseEntity.ok(
+            ApiResponse.<AccountResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message("Cuenta encontrada")
+                .data(account)
+                .build());
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<AccountResponse> updateAccount(
+    public ResponseEntity<ApiResponse<AccountResponse>> updateAccount(
         @PathVariable UUID id,
         @Valid @RequestBody UpdateAccountRequest request,
         @AuthenticationPrincipal String loggedEmail) {
         AccountResponse account = getAccountUseCase.execute(id);
         ownershipValidator.validate(account, loggedEmail);
-        return ResponseEntity.ok(updateAccountUseCase.execute(id, request));
+        AccountResponse updated = updateAccountUseCase.execute(id, request);
+        return ResponseEntity.ok(
+            ApiResponse.<AccountResponse>builder()
+                .status(HttpStatus.OK.value())
+                .message("Cuenta actualizada exitosamente")
+                .data(updated)
+                .build());
     }
 }
 ```
@@ -366,10 +375,12 @@ Paquete planificado para clases de utilidad general:
 
 ### `security/`
 
-Componentes reutilizables para validación de acceso por ownership:
+Componentes reutilizables para validación de acceso por ownership y protección anti‑XSS:
 
 - **`OwnedResource`**: Interfaz que deben implementar los DTOs de respuesta cuyos recursos pertenecen a un usuario específico. Expone el email del propietario mediante `getEmail()`, permitiendo que `OwnershipValidator` valide acceso sin acoplarse a ningún módulo concreto.
-- **`OwnershipValidator`**: Componente Spring que centraliza la lógica de validación de ownership. Compara el email del recurso (vía `OwnedResource`) con el email del usuario autenticado (extraído del JWT). Si no coinciden, lanza `UnauthorizedException` (HTTP 401) antes de que el caso de uso sea invocado. Elimina la necesidad de hacer una consulta duplicada por email.
+- **`OwnershipValidator`**: Componente Spring que centraliza la lógica de validación de ownership. Compara el email del recurso (vía `OwnedResource`) con el email del usuario autenticado (extraído del JWT). Si no coinciden, lanza `UnauthorizedException` (HTTP 401) antes de que el caso de uso sea invocado.
+- **`NoHtml`**: Anotación Jakarta Validation que restringe campos de texto para que no contengan HTML.
+- **`NoHtmlValidator`**: Validador que usa Jsoup con `Safelist.none()` para rechazar cualquier tag o atributo HTML. Si el texto limpio difiere del original, la validación falla.
 
 ## Flujo de datos típico
 
@@ -399,6 +410,9 @@ AccountRepositoryImpl → SpringAccountJpaRepository → MariaDB
 - **Token siempre establecido en HttpOnly Cookie**. Los clientes nativos identificados por `ClientTypeResolver` lo reciben adicionalmente en el body de la respuesta. Nunca en localStorage ni sessionStorage.
 - **Argon2**: Hash de contraseñas de login en `account_password`
 - **Master Key**: Hash Argon2 opcional en `account_master_key` para proteger el gestor de contraseñas
+- **No enumeración de usuarios**: El login no distingue entre email inexistente y contraseña incorrecta; ambos casos devuelven un error 401 genérico.
+- **Protección XSS en entrada**: Todos los DTOs de request anotan los campos de texto con `@NoHtml`, que utiliza Jsoup para rechazar cualquier HTML/script antes de que llegue al dominio.
+- **Errores uniformes del filtro JWT**: `JwtAuthenticationFilter` escribe errores 401 con `ApiResponse` para mantener la consistencia con el resto de la API.
 
 ### Gestor de contraseñas
 
@@ -560,6 +574,9 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 <artifactId>testcontainers-junit-jupiter</artifactId>
 <artifactId>testcontainers-mariadb</artifactId>
 <artifactId>h2</artifactId>
+
+<!-- Validación anti‑XSS -->
+<artifactId>jsoup</artifactId>
 ```
 
 ## Convenciones de código
@@ -577,6 +594,8 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 - [x] Autenticación con HttpOnly Cookie (SameSite configurable vía `APP_COOKIE_SAME_SITE`)
 - [x] Validación de ownership con OwnershipValidator reutilizable (shared/security/)
 - [x] Tests de integración con Testcontainers
+- [x] Protección anti‑XSS con `@NoHtml` en todos los DTOs de entrada
+- [x] Errores consistentes del `JwtAuthenticationFilter` con `ApiResponse`
 - [ ] Implementar DeleteAccountUseCase y conectar en AccountController
 - [ ] Módulo financiero: MovementUseCase, FixedExpenseUseCase, CategoryUseCase
 - [ ] Módulo agenda: EventUseCase con lógica de recurrencia

@@ -4,12 +4,17 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+import org.adultofuncional.main.shared.response.ApiResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -50,8 +55,9 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * <strong>Manejo de errores:</strong> los errores de validación no se
  * propagan como excepciones — se interceptan aquí y se convierten en
- * respuestas {@code 401 Unauthorized} con un mensaje descriptivo, evitando
- * que el {@code GlobalExceptionHandler} deba conocer detalles de JWT.
+ * respuestas {@code 401 Unauthorized} con formato {@link ApiResponse},
+ * manteniendo la consistencia con el resto de la API y evitando que el
+ * {@code GlobalExceptionHandler} deba conocer detalles de JWT.
  * Los tokens expirados se loguean en {@code DEBUG}; las firmas inválidas
  * en {@code WARN}, ya que pueden indicar un intento de manipulación.
  *
@@ -82,6 +88,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   /** Servicio que parsea, firma y valida tokens JWT. */
   private final JwtService jwtService;
 
+  /** Serializador JSON para escribir respuestas de error uniformes. */
+  private final ObjectMapper objectMapper;
+
   /**
    * Ejecuta la lógica de autenticación JWT para cada request entrante.
    *
@@ -98,8 +107,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
    * un {@link UsernamePasswordAuthenticationToken} con el email como
    * principal y los roles como autoridades, y lo registra en el
    * {@link SecurityContextHolder}.</li>
-   * <li>Si el token es inválido, responde {@code 401} directamente sin
-   * continuar la cadena de filtros.</li>
+   * <li>Si el token es inválido, responde {@code 401 Unauthorized} con
+   * un {@link ApiResponse} consistente, sin continuar la cadena de filtros.</li>
    * </ol>
    *
    * <p>
@@ -144,31 +153,51 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userEmail, null,
             authorities);
-
         authToken.setDetails(
             new WebAuthenticationDetailsSource().buildDetails(request));
-
         SecurityContextHolder.getContext().setAuthentication(authToken);
       }
 
     } catch (ExpiredJwtException e) {
       log.debug("Token JWT expirado para request {}: {}",
           request.getRequestURI(), e.getMessage());
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT expirado");
+      writeUnauthorizedResponse(response, "Token JWT expirado");
       return;
     } catch (SignatureException e) {
       log.warn("Firma JWT inválida en request {} — posible intento de manipulación: {}",
           request.getRequestURI(), e.getMessage());
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Firma JWT inválida");
+      writeUnauthorizedResponse(response, "Firma JWT inválida");
       return;
     } catch (JwtException | IllegalArgumentException e) {
       log.warn("Token JWT malformado o inválido en request {}: {}",
           request.getRequestURI(), e.getMessage());
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token JWT inválido");
+      writeUnauthorizedResponse(response, "Token JWT inválido");
       return;
     }
 
     filterChain.doFilter(request, response);
+  }
+
+  /**
+   * Escribe una respuesta 401 Unauthorized con formato {@link ApiResponse}.
+   *
+   * <p>
+   * Centraliza la creación de la respuesta de error para cualquier token
+   * inválido, expirado o con firma incorrecta, garantizando que el cliente
+   * reciba la misma estructura JSON que en los errores de capa de aplicación.
+   *
+   * @param response respuesta HTTP donde se escribe el error
+   * @param message  mensaje descriptivo para el cliente
+   * @throws IOException si ocurre un error al escribir el JSON
+   */
+  private void writeUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
+    ApiResponse<Void> apiResponse = ApiResponse.<Void>builder()
+        .status(HttpStatus.UNAUTHORIZED.value())
+        .message(message)
+        .build();
+    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+    objectMapper.writeValue(response.getWriter(), apiResponse);
   }
 
   /**

@@ -6,6 +6,7 @@ import org.adultofuncional.main.account.application.dto.AccountResponse;
 import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
 import org.adultofuncional.main.account.application.usecase.GetAccountUseCase;
 import org.adultofuncional.main.account.application.usecase.UpdateAccountUseCase;
+import org.adultofuncional.main.shared.response.ApiResponse;
 import org.adultofuncional.main.shared.security.OwnershipValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +45,7 @@ import lombok.RequiredArgsConstructor;
  * (pendiente de implementación)</li>
  * </ul>
  *
- * @author Lydis Ester Jaraba
+ * @author Lydis Esther Jaraba, Juan Sebastian Rios
  * @since 0.0.1
  * @see GetAccountUseCase
  * @see UpdateAccountUseCase
@@ -90,13 +91,19 @@ public class AccountController {
    *                                                                         propietario
    */
   @GetMapping("/{id}")
-  public ResponseEntity<AccountResponse> getAccount(
+  public ResponseEntity<ApiResponse<AccountResponse>> getAccount(
       @PathVariable UUID id,
       @AuthenticationPrincipal String loggedEmail) {
 
     AccountResponse account = getAccountUseCase.execute(id);
     ownershipValidator.validate(account, loggedEmail);
-    return ResponseEntity.ok(account);
+
+    return ResponseEntity.ok(
+        ApiResponse.<AccountResponse>builder()
+            .status(HttpStatus.OK.value())
+            .message("Cuenta encontrada")
+            .data(account)
+            .build());
   }
 
   /**
@@ -139,14 +146,21 @@ public class AccountController {
    *                                                                         cuenta
    */
   @PatchMapping("/{id}")
-  public ResponseEntity<AccountResponse> updateAccount(
+  public ResponseEntity<ApiResponse<AccountResponse>> updateAccount(
       @PathVariable UUID id,
       @Valid @RequestBody UpdateAccountRequest request,
       @AuthenticationPrincipal String loggedEmail) {
 
     AccountResponse account = getAccountUseCase.execute(id);
     ownershipValidator.validate(account, loggedEmail);
-    return ResponseEntity.ok(updateAccountUseCase.execute(id, request));
+    AccountResponse updated = updateAccountUseCase.execute(id, request);
+
+    return ResponseEntity.ok(
+        ApiResponse.<AccountResponse>builder()
+            .status(HttpStatus.OK.value())
+            .message("Cuenta actualizada exitosamente")
+            .data(updated)
+            .build());
   }
 
   /**
@@ -182,12 +196,17 @@ public class AccountController {
    *                                                                         propietario
    */
   @DeleteMapping("/{id}")
-  public ResponseEntity<Void> deleteAccount(
+  public ResponseEntity<ApiResponse<Void>> deleteAccount(
       @PathVariable UUID id,
       @AuthenticationPrincipal String loggedEmail) {
 
     AccountResponse account = getAccountUseCase.execute(id);
     ownershipValidator.validate(account, loggedEmail);
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED).build();
+
+    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
+        .body(ApiResponse.<Void>builder()
+            .status(HttpStatus.NOT_IMPLEMENTED.value())
+            .message("Eliminación de cuenta no implementada")
+            .build());
   }
 }

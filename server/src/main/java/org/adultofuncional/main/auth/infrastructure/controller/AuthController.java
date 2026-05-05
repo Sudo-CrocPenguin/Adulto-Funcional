@@ -43,6 +43,12 @@ import lombok.RequiredArgsConstructor;
  * </ul>
  *
  * <p>
+ * <strong>Protección contra XSS:</strong>
+ * Los DTOs de entrada ({@link LoginRequest}, {@link RegisterRequest}) están
+ * anotados con {@code @NoHtml} para rechazar cualquier intento de almacenar
+ * scripts maliciosos.
+ *
+ * <p>
  * Todas las rutas están bajo el prefijo {@code /api/auth} y son públicas
  * (no requieren autenticación previa). Ver
  * {@link org.adultofuncional.main.config.security.SecurityConfig}.
@@ -88,7 +94,6 @@ public class AuthController {
       HttpServletResponse response) {
 
     AuthResponse auth = loginUseCase.execute(request);
-
     cookieUtils.addTokenCookie(response, auth.getToken(), jwtService.getExpiration());
 
     AuthResponse responseData = clientTypeResolver.isNativeClient(httpRequest)
@@ -108,8 +113,9 @@ public class AuthController {
    *
    * <p>
    * Delega la creación de la cuenta al {@link RegisterUseCase}. Si el email
-   * ya está registrado, el caso de uso lanza una excepción de conflicto (409)
-   * que el {@code GlobalExceptionHandler} convierte en la respuesta adecuada.
+   * ya está registrado, el caso de uso lanza una
+   * {@link org.adultofuncional.main.shared.exception.ConflictException} (HTTP
+   * 409).
    * Si el registro es exitoso, establece el JWT en cookie y retorna los datos
    * de la cuenta recién creada.
    *
@@ -126,21 +132,18 @@ public class AuthController {
       HttpServletResponse response) {
 
     AuthResponse auth = registerUseCase.execute(request);
-
     cookieUtils.addTokenCookie(response, auth.getToken(), jwtService.getExpiration());
 
     AuthResponse responseData = clientTypeResolver.isNativeClient(httpRequest)
         ? auth
         : auth.withoutToken();
 
-    return ResponseEntity
-        .status(HttpStatus.CREATED)
-        .body(
-            ApiResponse.<AuthResponse>builder()
-                .status(HttpStatus.CREATED.value())
-                .message("Cuenta creada exitosamente")
-                .data(responseData)
-                .build());
+    return ResponseEntity.status(HttpStatus.CREATED)
+        .body(ApiResponse.<AuthResponse>builder()
+            .status(HttpStatus.CREATED.value())
+            .message("Cuenta creada exitosamente")
+            .data(responseData)
+            .build());
   }
 
   /**
@@ -152,11 +155,15 @@ public class AuthController {
    * llamarlo aunque el token ya haya expirado.
    *
    * @param response respuesta HTTP donde se escribe el header de limpieza
-   * @return 204 No Content
+   * @return 204 No Content con un {@link ApiResponse} vacío
    */
   @PostMapping("/logout")
-  public ResponseEntity<Void> logout(HttpServletResponse response) {
+  public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
     cookieUtils.clearTokenCookie(response);
-    return ResponseEntity.noContent().build();
+    return ResponseEntity.status(HttpStatus.NO_CONTENT)
+        .body(ApiResponse.<Void>builder()
+            .status(HttpStatus.NO_CONTENT.value())
+            .message("Sesión cerrada exitosamente")
+            .build());
   }
 }
