@@ -11,7 +11,7 @@ import java.util.UUID;
  * Por ahora, trabaja con identificadores UUID para mantener simplicidad.
  * </p>
  *
- * @author Adulto Funcional Team
+ * @author Daniel Salazar
  * @since 1.0
  */
 public interface FinancesRepository {
