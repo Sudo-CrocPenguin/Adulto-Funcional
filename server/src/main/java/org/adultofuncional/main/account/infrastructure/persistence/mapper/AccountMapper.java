@@ -33,8 +33,8 @@ public class AccountMapper {
    * Usa el método de fábrica {@code Account.reconstitute()} para respetar
    * el constructor privado del modelo de dominio.
    *
-   * @param entity entidad JPA. Si es {@code null} retorna {@code null}.
-   * @return modelo de dominio reconstituido.
+   * @param entity entidad JPA; si es {@code null} retorna {@code null}
+   * @return modelo de dominio reconstituido o {@code null}
    */
   public Account toDomain(AccountEntity entity) {
     if (entity == null)
@@ -66,7 +66,7 @@ public class AccountMapper {
       return null;
     AccountEntity entity = new AccountEntity();
     // Solo asignar el ID si no es null (cuenta existente)
-    entity.setAccountId(account.getId()); // siempre tiene ID (nunca null)
+    entity.setAccountId(account.getId()); // El ID siempre existe en el dominio (generado o reconstituido)
     entity.setAccountNames(account.getNames());
     entity.setAccountLastNames(account.getLastnames());
     entity.setAccountEmail(account.getEmail());

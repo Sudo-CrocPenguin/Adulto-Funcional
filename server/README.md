@@ -10,6 +10,8 @@ Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una a
 - **Autenticación segura**: JWT + Argon2 para contraseñas y acceso al gestor de contraseñas
 - **Identificadores únicos**: UUID v7 (ordenable temporalmente) para todas las entidades
 - **Migraciones controladas**: Flyway para versionado de base de datos
+- **Seguridad HTTP**: Headers CSP, HSTS, X-Frame-Options, X-XSS-Protection configurados en SecurityConfig
+- **Protección anti‑XSS**: Validación de entrada con `@NoHtml` (Jsoup) en todos los campos de texto
 
 ## Stack tecnológico
 
@@ -28,6 +30,7 @@ Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una a
 | Testcontainers       | -       | Pruebas de integración                             |
 | Spring Boot Actuator | -       | Health checks para Docker                          |
 | Maven                | 3.9     | Gestión de dependencias                            |
+| Jsoup                | 1.17.2  | Validación anti‑HTML en entrada                    |
 
 ## Arquitectura
 
@@ -43,7 +46,7 @@ org.adultofuncional.main
 ├── config/             # Configuraciones de Spring (beans, jackson, security)
 │   ├── beans/          # Configuración de beans de Spring
 │   ├── jackson/        # Configuración de serialización JSON
-│   └── security/       # Configuración de Spring Security
+│   └── security/       # Spring Security: JwtService, JwtAuthenticationFilter, CookieUtils, ClientTypeResolver, DatabaseUserDetailsService
 ├── finances/           # Módulo financiero (movimientos, gastos, categorías)
 ├── agenda/             # Módulo de agenda (eventos)
 ├── security/           # Gestor de contraseñas con Master Key
@@ -51,6 +54,7 @@ org.adultofuncional.main
     ├── constants/      # Constantes globales del sistema
     ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
     ├── response/       # Formato estándar de respuestas API (ApiResponse)
+    ├── security/       # Validación de ownership reutilizable (OwnedResource, OwnershipValidator)
     └── util/           # Clases de utilidad general
 ```
 
@@ -125,9 +129,8 @@ JWT_EXPIRATION=3600000
 CORS_ALLOWED_ORIGINS=http://localhost:3000
 
 # HttpOnly Cookie
-COOKIE_SECURE=false # true en producción con HTTPS
-APP_COOKIE_SECURE=false # true en producción
-APP_COOKIE_SAME_SITE=None # Lax en producción
+APP_COOKIE_SECURE=false # true en producción con HTTPS
+APP_COOKIE_SAME_SITE=Lax
 ```
 
 O utilizar la plantilla del proyecto en lugar de crear el archivo manualmente
@@ -283,9 +286,8 @@ docker run -p 8080:8080 \
   -e JWT_SECRET=secret \
   -e JWT_EXPIRATION=3600000 \
   -e CORS_ALLOWED_ORIGINS=http://localhost:3000 \
-  -e COOKIE_SECURE=false \
   -e APP_COOKIE_SECURE=false \
-  -e APP_COOKIE_SAME_SITE=None \
+  -e APP_COOKIE_SAME_SITE=Lax \
   adulto-funcional-server
 
 # Entrar al contenedor de la aplicación
@@ -307,12 +309,12 @@ docker-compose restart app
 
 - `GET /api/account/{id}` - Obtener datos de una cuenta (requiere autenticación + ownership)
 - `PATCH /api/account/{id}` - Actualizar datos de una cuenta (requiere autenticación + ownership)
-- `DELETE /api/account/{id}` - Eliminar una cuenta (endpoint existe, lógica pendiente — retorna 204 sin ejecutar delete)
+- `DELETE /api/account/{id}` - Eliminar una cuenta (endpoint existe, lógica pendiente — retorna 501 Not Implemented)
 
 ### Autenticación (`/api/auth`)
 
-- `POST /api/auth/login` - Iniciar sesión (JWT en HttpOnly cookie)
-- `POST /api/auth/register` - Registrar usuario (JWT en HttpOnly cookie)
+- `POST /api/auth/login` - Iniciar sesión (JWT en HttpOnly cookie; también en body para clientes nativos)
+- `POST /api/auth/register` - Registrar usuario (JWT en HttpOnly cookie; también en body para clientes nativos)
 - `POST /api/auth/logout` - Cerrar sesión (limpia cookie)
 
 ### Health Check
@@ -371,12 +373,12 @@ Este proyecto está bajo licencia propietaria. Todos los derechos reservados.
 
 En desarrollo activo. Estado por módulo:
 
-| Módulo             | Estado     | Detalle                                                          |
-| ------------------ | ---------- | ---------------------------------------------------------------- |
-| Autenticación      | Completado | Login, registro, logout con JWT en HttpOnly cookie               |
-| Cuentas            | Parcial    | GET y PATCH funcionales; DELETE pendiente de implementar lógica  |
-| Financiero         | Pendiente  | Solo entidades JPA definidas (Category, Movement, FixedExpenses) |
-| Agenda             | Pendiente  | Solo entidad JPA definida (Event)                                |
-| Gestor contraseñas | Pendiente  | Solo entidad JPA definida (Password); AES-256 sin implementar    |
+| Módulo             | Estado     | Detalle                                                                                                                           |
+| ------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Autenticación      | Completado | Login resistente a enumeración, registro con `ConflictException` (409), logout con `ApiResponse` 204, protección anti‑XSS en DTOs |
+| Cuentas            | Parcial    | GET y PATCH funcionales; DELETE retorna 501 Not Implemented (lógica pendiente)                                                    |
+| Financiero         | Pendiente  | Solo entidades JPA definidas (Category, Movement, FixedExpenses)                                                                  |
+| Agenda             | Pendiente  | Solo entidad JPA definida (Event)                                                                                                 |
+| Gestor contraseñas | Pendiente  | Solo entidad JPA definida (Password); AES-256 sin implementar                                                                     |
 
 **Próximos pasos**: Implementar `DeleteAccountUseCase`, módulo financiero, módulo de agenda y servicio de encriptación AES-256 para el gestor de contraseñas.
