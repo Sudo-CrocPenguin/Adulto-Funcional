@@ -8,7 +8,7 @@
  * financiera personal, agenda de eventos y almacenamiento seguro de
  * contraseñas.
  *
- * <h3>Características principales</h3>
+ * <h2>Características principales</h2>
  * <ul>
  * <li>Gestión financiera: movimientos (ingresos/egresos), gastos fijos y
  * categorías.</li>
@@ -25,7 +25,7 @@
  * <li>Migraciones de base de datos gestionadas con Flyway.</li>
  * </ul>
  *
- * <h3>Tecnologías</h3>
+ * <h2>Tecnologías</h2>
  * <ul>
  * <li>Spring Boot 3.5.13, Spring Data JPA, Spring Security</li>
  * <li>MariaDB 11.8</li>
@@ -38,14 +38,14 @@
  * <li>Testcontainers para pruebas de integración</li>
  * </ul>
  *
- * <h3>Base de datos</h3>
+ * <h2>Base de datos</h2>
  * <p>
  * Esquema principal: {@code accounts}, {@code categories}, {@code movements},
  * {@code fixed_expenses}, {@code events}, {@code passwords}. Todas las tablas
  * utilizan UUID v7 como clave primaria y mantienen integridad referencial con
  * eliminación en cascada controlada por JPA.
  *
- * <h3>Organización de paquetes</h3>
+ * <h2>Organización de paquetes</h2>
  * <ul>
  * <li>{@code account} — Módulo de cuentas de usuario (Clean Architecture
  * completa).</li>
@@ -59,7 +59,7 @@
  * {@code ApiResponse}, validación de ownership y anti‑XSS.</li>
  * </ul>
  *
- * <h3>Seguridad</h3>
+ * <h2>Seguridad</h2>
  * <ul>
  * <li>JWT siempre en cookie HttpOnly. Clientes nativos reciben además el token
  * en el body.</li>

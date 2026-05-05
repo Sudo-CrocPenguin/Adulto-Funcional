@@ -7,7 +7,7 @@
  * Ninguna clase de esta capa contiene reglas de negocio; toda la lógica
  * se limita a traducción, persistencia y exposición HTTP.
  *
- * <h3>Componentes</h3>
+ * <h2>Componentes</h2>
  * <ul>
  * <li><strong>controller</strong> — {@code AccountController}
  * <ul>

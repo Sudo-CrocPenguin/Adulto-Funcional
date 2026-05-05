@@ -6,7 +6,7 @@
  * inicio de sesión y registro. Los casos de uso coordinan el dominio
  * y la infraestructura sin exponer detalles de persistencia.
  *
- * <h3>Casos de uso</h3>
+ * <h2>Casos de uso</h2>
  * <ul>
  * <li>{@code LoginUseCase} — Autentica al usuario por email y contraseña.
  * No distingue entre email inexistente y contraseña incorrecta (lanza
@@ -17,7 +17,7 @@
  * Argon2, genera el modelo de dominio y emite un token JWT.</li>
  * </ul>
  *
- * <h3>DTOs</h3>
+ * <h2>DTOs</h2>
  * <ul>
  * <li>{@code AuthResponse} — Datos públicos de la cuenta más el token JWT
  * (solo para clientes nativos; los clientes web reciben una copia sin
@@ -31,7 +31,7 @@
  * aunque no se renderizan en el frontend.</li>
  * </ul>
  *
- * <h3>Seguridad</h3>
+ * <h2>Seguridad</h2>
  * <ul>
  * <li>Las contraseñas viajan en texto plano solo en el request; se comparan
  * o almacenan como hash Argon2.</li>

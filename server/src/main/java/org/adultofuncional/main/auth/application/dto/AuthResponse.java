@@ -32,7 +32,7 @@ import lombok.NoArgsConstructor;
  * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see CookieUtils
- * @see ClientTypeResolver
+ * @see org.adultofuncional.main.config.security.ClientTypeResolver
  */
 @Data
 @Builder

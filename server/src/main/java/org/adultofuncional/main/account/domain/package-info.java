@@ -11,7 +11,7 @@
  * garantizando la independencia de detalles externos.
  * </p>
  *
- * <h3>Modelo de dominio</h3>
+ * <h2>Modelo de dominio</h2>
  * {@code Account} representa la cuenta de usuario y protege sus invariantes de
  * estado:
  * <ul>
@@ -44,7 +44,7 @@
  * DTOs de la capa de aplicación y no se repiten aquí.</li>
  * </ul>
  *
- * <h3>Puerto de repositorio</h3>
+ * <h2>Puerto de repositorio</h2>
  * {@code AccountRepository} define las operaciones de persistencia que necesita
  * el dominio:
  * <ul>

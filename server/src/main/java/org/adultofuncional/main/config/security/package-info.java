@@ -7,7 +7,7 @@
  * stateless, los headers de protección OWASP, la política CORS y los servicios
  * de generación/validación de tokens.
  *
- * <h3>Componentes principales</h3>
+ * <h2>Componentes principales</h2>
  * <ul>
  * <li>{@link org.adultofuncional.main.config.security.SecurityConfig} —
  * Cadena de filtros, reglas de autorización, headers de seguridad
@@ -30,7 +30,7 @@
  * Security.</li>
  * </ul>
  *
- * <h3>Flujo de autenticación</h3>
+ * <h2>Flujo de autenticación</h2>
  * <ol>
  * <li>El usuario hace login → {@code AuthController} →
  * {@code LoginUseCase}.</li>

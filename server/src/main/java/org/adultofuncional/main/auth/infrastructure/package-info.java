@@ -7,7 +7,7 @@
  * Actúa como adaptador entre el protocolo HTTP y la capa de aplicación,
  * sin contener reglas de negocio ni acceso directo a datos.
  *
- * <h3>Componentes</h3>
+ * <h2>Componentes</h2>
  * <ul>
  * <li>{@code controller} — {@code AuthController}
  * <ul>

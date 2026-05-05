@@ -5,7 +5,7 @@
  * Contiene definiciones de beans de Spring que no pertenecen a un módulo
  * de negocio específico, sino que son transversales a toda la aplicación.
  *
- * <h3>Beans disponibles</h3>
+ * <h2>Beans disponibles</h2>
  * <ul>
  * <li>{@link org.adultofuncional.main.config.beans.AppConfig#passwordEncoder()
  * PasswordEncoder} — codificador de contraseñas con Argon2. Usa los

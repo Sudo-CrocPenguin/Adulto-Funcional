@@ -27,14 +27,11 @@ import jakarta.validation.Payload;
  * <p>
  * <strong>Uso típico:</strong>
  * 
- * <pre>
- * {
- *   &#64;code
- *   &#64;NotBlank
+ * <pre>{@code
+ *   @NotBlank
  *   @NoHtml
  *   private String names;
- * }
- * </pre>
+ * }</pre>
  *
  * <p>
  * Esta anotación forma parte de la estrategia de defensa en profundidad
@@ -54,18 +51,24 @@ public @interface NoHtml {
   /**
    * Mensaje de error mostrado cuando la validación falla.
    * Por defecto informa que el campo contiene HTML no permitido.
+   *
+   * @return mensaje de error predeterminado
    */
   String message() default "El campo contiene HTML no permitido";
 
   /**
    * Grupos de validación a los que pertenece esta restricción.
    * Permite aplicar validaciones de forma condicional según el grupo.
+   *
+   * @return arreglo de grupos, vacío por defecto
    */
   Class<?>[] groups() default {};
 
   /**
    * Carga útil adicional que puede ser usada por clientes del API
    * de validación para extender la información del error.
+   *
+   * @return arreglo de payloads, vacío por defecto
    */
   Class<? extends Payload>[] payload() default {};
 }

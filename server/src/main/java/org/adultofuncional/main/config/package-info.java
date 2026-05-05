@@ -7,7 +7,7 @@
  * declarados aquí son consumidos por los módulos de negocio sin que estos
  * tengan que preocuparse por su instanciación.
  *
- * <h3>Subpaquetes</h3>
+ * <h2>Subpaquetes</h2>
  * <ul>
  * <li>{@code beans} — Configuración de beans generales.
  * {@link org.adultofuncional.main.config.beans.AppConfig} expone el

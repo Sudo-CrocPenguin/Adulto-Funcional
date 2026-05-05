@@ -6,7 +6,7 @@
  * Clean Architecture, distribuyendo las responsabilidades en las capas de
  * dominio, aplicación e infraestructura.
  *
- * <h3>Responsabilidades</h3>
+ * <h2>Responsabilidades</h2>
  * <ul>
  * <li>Registro de nuevas cuentas (a través del módulo de autenticación).</li>
  * <li>Actualización de datos personales (nombres, apellidos, teléfono,
@@ -22,7 +22,7 @@
  * DTOs de entrada.</li>
  * </ul>
  *
- * <h3>Estructura</h3>
+ * <h2>Estructura</h2>
  * 
  * <pre>
  * account/
@@ -44,7 +44,7 @@
  * └── infrastructure/    → Controlador REST, entidad JPA, mapeador y repositorio concreto
  * </pre>
  *
- * <h3>Seguridad</h3>
+ * <h2>Seguridad</h2>
  * <ul>
  * <li>Todos los endpoints requieren autenticación JWT.</li>
  * <li>La validación de ownership se ejecuta antes de cualquier operación.</li>
@@ -54,7 +54,7 @@
  * HTML/scripts maliciosos.</li>
  * </ul>
  *
- * <h3>Tabla asociada</h3>
+ * <h2>Tabla asociada</h2>
  * {@code accounts} — identificador UUID v7, email único, hashes Argon2.
  *
  * @author Equipo de desarrollo Adulto Funcional

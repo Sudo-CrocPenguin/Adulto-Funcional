@@ -22,7 +22,6 @@
  * </ul>
  * </li>
  * </ul>
- * </p>
  *
  * <p>
  * Seguridad: La validación anti-XSS se aplica mediante la anotación
