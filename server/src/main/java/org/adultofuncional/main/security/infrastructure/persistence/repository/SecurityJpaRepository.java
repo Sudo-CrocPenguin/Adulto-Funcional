@@ -25,7 +25,7 @@ public interface SecurityJpaRepository extends JpaRepository<PasswordEntity, UUI
      * @param accountId el ID de la cuenta (UUID)
      * @return lista de contraseñas de esa cuenta
      */
-    List<PasswordEntity> findByAccount_IdAccount(UUID accountId);
+    List<PasswordEntity> findByAccount_AccountId(UUID accountId);
 
     /**
      * Busca una contraseña por su ID
