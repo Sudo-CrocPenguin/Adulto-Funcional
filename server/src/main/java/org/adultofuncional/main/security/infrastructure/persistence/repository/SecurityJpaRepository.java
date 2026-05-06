@@ -6,12 +6,12 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Repositorio Spring Data JPA para la entidad {@link PasswordEntity}.
- * <p>
- * Proporciona métodos de acceso a la tabla {@code passwords} sin exponer
- * la implementación concreta al dominio. Este repositorio es utilizado
- * por el adaptador {@link JpaSecurityRepositoryAdapter}.
- * </p>
+* Repositorio Spring Data JPA para la entidad {@link PasswordEntity}.
+* <p>
+* Proporciona métodos de acceso a la tabla {@code passwords} sin exponer
+* la implementación concreta al dominio. Este repositorio es utilizado
+* por el adaptador correspondiente en la capa de infraestructura.
+* </p>
  *
  * @author Daniel Salazar
  * @see PasswordEntity
