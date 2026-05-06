@@ -22,8 +22,21 @@ import lombok.experimental.FieldDefaults;
  * a una categoría dentro del sistema.
  *
  * <p>
- * Este modelo encapsula únicamente las invariantes de negocio.
- * Las validaciones de formato pertenecen a los DTOs de la capa de aplicación.
+ * Encapsula únicamente las invariantes de negocio relacionadas con el movimiento:
+ * <ul>
+ *   <li>El monto debe ser mayor que cero</li>
+ *   <li>La fecha del movimiento no puede ser nula</li>
+ *   <li>La fecha de creación no puede ser nula ni futura</li>
+ * </ul>
+ *
+ * <p>
+ * Las validaciones de formato (longitud de la descripción, caracteres especiales)
+ * pertenecen a los DTOs de la capa de aplicación. La descripción es opcional
+ * y puede ser {@code null}.
+ *
+ * <p>
+ * Este modelo no contiene campos sensibles, por lo que se puede exponer
+ * completamente en los DTOs de respuesta.
  *
  * @author Jeronimo Ospina Zapata
  * @since 0.0.1
@@ -46,7 +59,7 @@ public class Movement {
   final LocalDateTime createdAt;
 
   /**
-   * Constructor privado. Usar métodos de fábrica.
+   * Constructor privado. Usar los métodos de fábrica.
    */
   private Movement(UUID id, MovementType type, BigDecimal amount,
       UUID categoryId, String description, LocalDateTime date,
@@ -70,39 +83,43 @@ public class Movement {
   }
 
   /**
-   * Fábrica para crear un nuevo movimiento (antes de persistir).
+   * Fábrica para crear un nuevo movimiento (antes de persistirlo).
    *
    * <p>
-   * Genera el UUID v7 y el {@code createdAt} en el dominio,
-   * garantizando que este sea dueño de su identidad.
+   * Genera el UUID v7 y el {@code createdAt} en la aplicación,
+   * garantizando que el dominio sea dueño de su identidad.
    *
-   * @param type        tipo de movimiento (Ingreso o Egreso)
-   * @param amount      monto del movimiento
-   * @param categoryId  identificador de la categoría
-   * @param description descripción opcional
-   * @param date        fecha del movimiento
+   * @param type        tipo de movimiento (ingreso o egreso, no puede ser nulo)
+   * @param amount      monto del movimiento (debe ser mayor que cero)
+   * @param categoryId  identificador de la categoría asociada (puede ser nulo si
+   *                    el movimiento no se clasifica, aunque normalmente se espera
+   *                    una categoría válida)
+   * @param description descripción opcional (puede ser {@code null})
+   * @param date        fecha en que ocurrió el movimiento (no puede ser nula)
    * @return instancia de Movement lista para persistir
+   * @throws IllegalArgumentException si {@code amount} es nulo o ≤ 0,
+   *                                  o si {@code date} es nulo
    */
   public static Movement create(MovementType type, BigDecimal amount,
       UUID categoryId, String description, LocalDateTime date) {
 
-    UUID id = Generators.timeBasedEpochGenerator().generate();
+    UUID id = Generators.timeBasedEpochGenerator().generate(); // UUID v7
     LocalDateTime now = LocalDateTime.now();
 
     return new Movement(id, type, amount, categoryId, description, date, now);
   }
 
   /**
-   * Fábrica para reconstituir un movimiento desde persistencia.
+   * Fábrica para reconstituir un movimiento existente desde persistencia.
    *
-   * @param id          identificador del movimiento
-   * @param type        tipo
+   * @param id          UUID tal como está en la base de datos
+   * @param type        tipo de movimiento
    * @param amount      monto
-   * @param categoryId  categoría asociada
-   * @param description descripción
+   * @param categoryId  UUID de la categoría asociada
+   * @param description descripción (puede ser {@code null})
    * @param date        fecha del movimiento
    * @param createdAt   fecha de creación original
-   * @return instancia reconstituida
+   * @return instancia de Movement reconstituida
    */
   public static Movement reconstitute(UUID id, MovementType type,
       BigDecimal amount, UUID categoryId, String description,
@@ -114,11 +131,17 @@ public class Movement {
   /**
    * Actualiza los datos del movimiento.
    *
-   * @param type        nuevo tipo
-   * @param amount      nuevo monto
-   * @param categoryId  nueva categoría
-   * @param description nueva descripción
-   * @param date        nueva fecha
+   * <p>
+   * Permite modificar todos los campos editables del movimiento.
+   * La validación del monto y la fecha se aplica antes de la actualización.
+   *
+   * @param type        nuevo tipo (no puede ser nulo)
+   * @param amount      nuevo monto (debe ser mayor que cero)
+   * @param categoryId  nuevo identificador de categoría (puede ser nulo)
+   * @param description nueva descripción (puede ser {@code null})
+   * @param date        nueva fecha (no puede ser nula)
+   * @throws IllegalArgumentException si {@code amount} es nulo o ≤ 0,
+   *                                  o si {@code date} es nulo
    */
   public void update(MovementType type, BigDecimal amount,
       UUID categoryId, String description, LocalDateTime date) {
