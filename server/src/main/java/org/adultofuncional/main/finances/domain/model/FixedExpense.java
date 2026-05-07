@@ -1,7 +1,7 @@
 package org.adultofuncional.main.finances.domain.model;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.domain.enums.Frequency;
@@ -16,32 +16,18 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
 /**
- * Modelo de dominio que representa un gasto fijo.
+ * Modelo de dominio que representa un gasto fijo recurrente.
  *
  * <p>
- * Un gasto fijo es un egreso recurrente que ocurre con una frecuencia
- * determinada (mensual, semanal, quincenal, etc.). Por ejemplo: alquiler,
- * suscripciones, servicios públicos.
+ * Un gasto fijo es un egreso que se repite con una frecuencia determinada
+ * (mensual, semanal, etc.). El modelo encapsula las invariantes de negocio
+ * relacionadas con el ciclo de recurrencia, el estado y los importes.
  *
  * <p>
- * Encapsula únicamente las invariantes de negocio relacionadas con el gasto fijo:
- * <ul>
- *   <li>El nombre no puede ser nulo ni vacío</li>
- *   <li>El monto debe ser mayor que cero</li>
- *   <li>La frecuencia no puede ser nula</li>
- *   <li>El estado no puede ser nulo (se inicializa siempre como ACTIVE)</li>
- *   <li>La fecha de inicio no puede ser nula</li>
- *   <li>La fecha de fin, si existe, no puede ser anterior a la fecha de inicio</li>
- *   <li>La fecha de creación no puede ser nula ni futura</li>
- * </ul>
- *
- * <p>
- * Las validaciones de formato (longitud del nombre, caracteres especiales)
- * pertenecen a los DTOs de la capa de aplicación.
- *
- * <p>
- * Este modelo no contiene campos sensibles, por lo que se puede exponer
- * completamente en los DTOs de respuesta.
+ * La columna {@code fixed_expense_next_due_date} se recalcula en la capa de
+ * aplicación cada vez que se registra un pago, mientras que
+ * {@code fixed_expense_reminder_days} indica cuántos días antes debe generarse
+ * un aviso.
  *
  * @author Jeronimo Ospina Zapata
  * @since 0.0.1
@@ -61,18 +47,17 @@ public class FixedExpense {
   Frequency frequency;
   Status status;
 
-  LocalDateTime startDate;
-  LocalDateTime endDate;
-
-  final LocalDateTime createdAt;
+  LocalDate startDate;
+  LocalDate nextDueDate;
+  int reminderDays;
 
   /**
    * Constructor privado. Usar los métodos de fábrica.
    */
   private FixedExpense(UUID id, String name, BigDecimal amount,
       UUID categoryId, Frequency frequency, Status status,
-      LocalDateTime startDate, LocalDateTime endDate,
-      LocalDateTime createdAt) {
+      LocalDate startDate, LocalDate nextDueDate,
+      int reminderDays) {
 
     if (id != null) {
       validateId(id);
@@ -82,8 +67,8 @@ public class FixedExpense {
     validateAmount(amount);
     validateFrequency(frequency);
     validateStatus(status);
-    validateDates(startDate, endDate);
-    validateCreatedAt(createdAt);
+    validateDates(startDate, nextDueDate);
+    validateReminderDays(reminderDays);
 
     this.id = id;
     this.name = name;
@@ -92,8 +77,8 @@ public class FixedExpense {
     this.frequency = frequency;
     this.status = status;
     this.startDate = startDate;
-    this.endDate = endDate;
-    this.createdAt = createdAt;
+    this.nextDueDate = nextDueDate;
+    this.reminderDays = reminderDays;
   }
 
   /**
@@ -104,27 +89,31 @@ public class FixedExpense {
    * garantizando que el dominio sea dueño de su identidad.
    * El estado se establece automáticamente como {@code ACTIVE}.
    *
-   * @param name        nombre del gasto fijo (no puede ser nulo ni vacío)
-   * @param amount      monto del gasto (debe ser mayor que cero)
-   * @param categoryId  identificador de la categoría asociada (puede ser nulo
-   *                    si no se clasifica, aunque normalmente se espera una categoría)
-   * @param frequency   frecuencia de recurrencia (no puede ser nula)
-   * @param startDate   fecha de inicio del gasto fijo (no puede ser nula)
-   * @param endDate     fecha de finalización (opcional, puede ser {@code null}).
-   *                    Si se proporciona, no puede ser anterior a {@code startDate}
+   * @param name       nombre del gasto fijo (no puede ser nulo ni vacío)
+   * @param amount     monto del gasto (debe ser mayor que cero)
+   * @param categoryId identificador de la categoría asociada (puede ser nulo
+   *                   si no se clasifica, aunque normalmente se espera una
+   *                   categoría)
+   * @param frequency  frecuencia de recurrencia (no puede ser nula)
+   * @param startDate  fecha de inicio del gasto fijo (no puede ser nula)
+   * @param endDate    fecha de finalización (opcional, puede ser {@code null}).
+   *                   Si se proporciona, no puede ser anterior a
+   *                   {@code startDate}
    * @return instancia de FixedExpense lista para persistir
    * @throws IllegalArgumentException si {@code name} es nulo o vacío,
    *                                  si {@code amount} es nulo o ≤ 0,
    *                                  si {@code frequency} es nulo,
    *                                  si {@code startDate} es nulo,
-   *                                  o si {@code endDate} es anterior a {@code startDate}
+   *                                  o si {@code endDate} es anterior a
+   *                                  {@code startDate}
+   * 
    */
   public static FixedExpense create(String name, BigDecimal amount,
       UUID categoryId, Frequency frequency,
-      LocalDateTime startDate, LocalDateTime endDate) {
+      LocalDate startDate, LocalDate nextDueDate,
+      int reminderDays) {
 
-    UUID id = Generators.timeBasedEpochGenerator().generate(); // UUID v7
-    LocalDateTime now = LocalDateTime.now();
+    UUID id = Generators.timeBasedEpochGenerator().generate();
 
     return new FixedExpense(
         id,
@@ -134,31 +123,23 @@ public class FixedExpense {
         frequency,
         Status.ACTIVE,
         startDate,
-        endDate,
-        now);
+        nextDueDate,
+        reminderDays);
   }
 
   /**
-   * Fábrica para reconstituir un gasto fijo existente desde persistencia.
-   *
-   * @param id          UUID tal como está en la base de datos
-   * @param name        nombre del gasto fijo
-   * @param amount      monto
-   * @param categoryId  UUID de la categoría asociada
-   * @param frequency   frecuencia
-   * @param status      estado actual (ACTIVE o INACTIVE)
-   * @param startDate   fecha de inicio
-   * @param endDate     fecha de finalización (puede ser {@code null})
-   * @param createdAt   fecha de creación original
-   * @return instancia de FixedExpense reconstituida
+   * 
+   * Fábrica para reconstituir un gasto fijo desde persistencia.
+   * 
    */
   public static FixedExpense reconstitute(UUID id, String name,
-      BigDecimal amount, UUID categoryId, Frequency frequency,
-      Status status, LocalDateTime startDate,
-      LocalDateTime endDate, LocalDateTime createdAt) {
+      BigDecimal amount, UUID categoryId,
+      Frequency frequency, Status status,
+      LocalDate startDate, LocalDate nextDueDate,
+      int reminderDays) {
 
     return new FixedExpense(id, name, amount, categoryId, frequency,
-        status, startDate, endDate, createdAt);
+        status, startDate, nextDueDate, reminderDays);
   }
 
   /**
@@ -169,30 +150,34 @@ public class FixedExpense {
    * (que se controla con {@link #activate()} y {@link #deactivate()}).
    * Se aplican las mismas validaciones que en la creación.
    *
-   * @param name        nuevo nombre (no puede ser nulo ni vacío)
-   * @param amount      nuevo monto (debe ser mayor que cero)
-   * @param categoryId  nuevo identificador de categoría (puede ser nulo)
-   * @param frequency   nueva frecuencia (no puede ser nula)
-   * @param startDate   nueva fecha de inicio (no puede ser nula)
-   * @param endDate     nueva fecha de finalización (puede ser {@code null},
-   *                    pero si se especifica no puede ser anterior a {@code startDate})
+   * @param name       nuevo nombre (no puede ser nulo ni vacío)
+   * @param amount     nuevo monto (debe ser mayor que cero)
+   * @param categoryId nuevo identificador de categoría (puede ser nulo)
+   * @param frequency  nueva frecuencia (no puede ser nula)
+   * @param startDate  nueva fecha de inicio (no puede ser nula)
+   * @param endDate    nueva fecha de finalización (puede ser {@code null},
+   *                   pero si se especifica no puede ser anterior a
+   *                   {@code startDate})
    * @throws IllegalArgumentException si alguna validación falla
    */
   public void update(String name, BigDecimal amount,
       UUID categoryId, Frequency frequency,
-      LocalDateTime startDate, LocalDateTime endDate) {
+      LocalDate startDate, LocalDate nextDueDate,
+      int reminderDays) {
 
     validateName(name);
     validateAmount(amount);
     validateFrequency(frequency);
-    validateDates(startDate, endDate);
+    validateDates(startDate, nextDueDate);
+    validateReminderDays(reminderDays);
 
     this.name = name;
     this.amount = amount;
     this.categoryId = categoryId;
     this.frequency = frequency;
     this.startDate = startDate;
-    this.endDate = endDate;
+    this.nextDueDate = nextDueDate;
+    this.reminderDays = reminderDays;
   }
 
   /**
@@ -219,8 +204,9 @@ public class FixedExpense {
 
   /**
    * Indica si el gasto fijo está activo.
-   *
-   * @return {@code true} si el estado es {@code ACTIVE}, {@code false} en caso contrario
+   * 
+   * @return {@code true} si el estado es {@code ACTIVE}, {@code false} en caso
+   *         contrario
    */
   public boolean isActive() {
     return Status.ACTIVE.equals(this.status);
@@ -261,22 +247,21 @@ public class FixedExpense {
     }
   }
 
-  private static void validateDates(LocalDateTime startDate, LocalDateTime endDate) {
+  private static void validateDates(LocalDate startDate, LocalDate nextDueDate) {
     if (startDate == null) {
       throw new IllegalArgumentException("Start date cannot be null");
     }
-
-    if (endDate != null && endDate.isBefore(startDate)) {
-      throw new IllegalArgumentException("End date cannot be before start date");
+    if (nextDueDate == null) {
+      throw new IllegalArgumentException("Next due date cannot be null");
+    }
+    if (nextDueDate.isBefore(startDate)) {
+      throw new IllegalArgumentException("Next due date cannot be before start date");
     }
   }
 
-  private static void validateCreatedAt(LocalDateTime createdAt) {
-    if (createdAt == null) {
-      throw new IllegalArgumentException("CreatedAt cannot be null");
-    }
-    if (createdAt.isAfter(LocalDateTime.now())) {
-      throw new IllegalArgumentException("CreatedAt cannot be in the future");
+  private static void validateReminderDays(int reminderDays) {
+    if (reminderDays < 0) {
+      throw new IllegalArgumentException("Reminder days cannot be negative");
     }
   }
 }

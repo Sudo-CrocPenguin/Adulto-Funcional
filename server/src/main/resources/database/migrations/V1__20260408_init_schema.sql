@@ -42,11 +42,13 @@ CREATE TABLE fixed_expenses
 (
 	fixed_expense_id              CHAR(36)          NOT NULL          PRIMARY KEY,
 
-  fixed_expense_name            VARCHAR(20)       NOT NULL,
+  fixed_expense_name            VARCHAR(50)       NOT NULL,
   fixed_expense_frequency       VARCHAR(15)       NOT NULL,
   fixed_expense_amount          DECIMAL(10,2)     NOT NULL,
   fixed_expense_status          VARCHAR(15)       NOT NULL,
-  fixed_expense_closing_date    DATE              NOT NULL,
+  fixed_expense_start_date      DATE              NOT NULL,
+  fixed_expense_next_due_date   DATE              NOT NULL,
+  fixed_expense_reminder_days   INT               NOT NULL,
 
   fixed_expense_fk_account_id   CHAR(36)          NOT NULL,
   fixed_expense_fk_category_id  CHAR(36),

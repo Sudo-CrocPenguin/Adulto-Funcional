@@ -1,6 +1,7 @@
 package org.adultofuncional.main.finances.domain.model;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -53,8 +54,9 @@ public class Movement {
   MovementType type;
   BigDecimal amount;
   UUID categoryId;
+  UUID accountId;
   String description;
-  LocalDateTime date;
+  LocalDate date;
 
   final LocalDateTime createdAt;
 
@@ -62,7 +64,7 @@ public class Movement {
    * Constructor privado. Usar los métodos de fábrica.
    */
   private Movement(UUID id, MovementType type, BigDecimal amount,
-      UUID categoryId, String description, LocalDateTime date,
+      UUID categoryId, UUID accountId, String description, LocalDate date,
       LocalDateTime createdAt) {
 
     if (id != null) {
@@ -70,6 +72,7 @@ public class Movement {
     }
 
     validateAmount(amount);
+    validateAccountId(accountId);
     validateDate(date);
     validateCreatedAt(createdAt);
 
@@ -77,6 +80,7 @@ public class Movement {
     this.type = type;
     this.amount = amount;
     this.categoryId = categoryId;
+    this.accountId = accountId;
     this.description = description;
     this.date = date;
     this.createdAt = createdAt;
@@ -101,12 +105,12 @@ public class Movement {
    *                                  o si {@code date} es nulo
    */
   public static Movement create(MovementType type, BigDecimal amount,
-      UUID categoryId, String description, LocalDateTime date) {
+      UUID categoryId, UUID accountId, String description, LocalDate date) {
 
     UUID id = Generators.timeBasedEpochGenerator().generate(); // UUID v7
     LocalDateTime now = LocalDateTime.now();
 
-    return new Movement(id, type, amount, categoryId, description, date, now);
+    return new Movement(id, type, amount, categoryId, accountId, description, date, now);
   }
 
   /**
@@ -122,10 +126,12 @@ public class Movement {
    * @return instancia de Movement reconstituida
    */
   public static Movement reconstitute(UUID id, MovementType type,
-      BigDecimal amount, UUID categoryId, String description,
-      LocalDateTime date, LocalDateTime createdAt) {
+      BigDecimal amount, UUID categoryId,
+      UUID accountId, String description,
+      LocalDate date, LocalDateTime createdAt) {
 
-    return new Movement(id, type, amount, categoryId, description, date, createdAt);
+    return new Movement(id, type, amount, categoryId, accountId,
+        description, date, createdAt);
   }
 
   /**
@@ -144,7 +150,8 @@ public class Movement {
    *                                  o si {@code date} es nulo
    */
   public void update(MovementType type, BigDecimal amount,
-      UUID categoryId, String description, LocalDateTime date) {
+      UUID categoryId, String description,
+      LocalDate date) {
 
     validateAmount(amount);
     validateDate(date);
@@ -173,7 +180,13 @@ public class Movement {
     }
   }
 
-  private static void validateDate(LocalDateTime date) {
+  private static void validateAccountId(UUID accountId) {
+    if (accountId == null) {
+      throw new IllegalArgumentException("AccountId cannot be null");
+    }
+  }
+
+  private static void validateDate(LocalDate date) {
     if (date == null) {
       throw new IllegalArgumentException("Date cannot be null");
     }
