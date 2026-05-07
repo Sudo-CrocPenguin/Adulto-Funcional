@@ -75,12 +75,10 @@ public class MovementRepositoryImpl implements MovementRepository {
    */
 
     @Override
+    
     public Movement save(Movement movement) {
 
-        // TODO: reemplazar movement.getId() con el accountId real cuando
-        // CreateMovementUseCase esté implementado.
-
-        MovementEntity entity = mapper.toEntity(movement, movement.getId());
+        MovementEntity entity = mapper.toEntity(movement);
         MovementEntity saved = jpaRepository.save(entity);
 
         return mapper.toDomain(saved);
