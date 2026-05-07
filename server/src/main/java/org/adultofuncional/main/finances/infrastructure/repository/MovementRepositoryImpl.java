@@ -8,7 +8,7 @@ import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.MovementEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.mapper.MovementMapper;
-import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringMovementJpaRepository;
+import org.adultofuncional.main.finances.infrastructure.persistence.repository.FinancesJpaRepository;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MovementRepositoryImpl implements MovementRepository {
     
-    private final SpringMovementJpaRepository jpaRepository;
+    private final FinancesJpaRepository jpaRepository;
     private final MovementMapper mapper;
 
     @Override
@@ -29,7 +29,7 @@ public class MovementRepositoryImpl implements MovementRepository {
 
     @Override
     public List<Movement> findAllByAccountId(UUID accountId) {
-        return jpaRepository.findAllByAccount_AccountId(accountId)
+        return jpaRepository.findByAccount_AccountId(accountId)
         .stream().map(mapper::toDomain).toList();
     }
 
