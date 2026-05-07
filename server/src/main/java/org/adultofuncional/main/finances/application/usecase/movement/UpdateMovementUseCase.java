@@ -1,79 +1,90 @@
 package org.adultofuncional.main.finances.application.usecase.movement;
 
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
-import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
 import org.adultofuncional.main.finances.application.dto.movement.UpdateMovementRequest;
+import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
-import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
-import org.adultofuncional.main.finances.infrastructure.persistence.entity.MovementEntity;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.UUID;
-
-/**
- * Caso de uso: Actualizar un movimiento existente.
- *
- * @author Miguel Angel Blandon Montes
- * @since 0.0.1
- */
 @Service
 @RequiredArgsConstructor
 public class UpdateMovementUseCase {
-
     private final MovementRepository movementRepository;
     private final CategoryRepository categoryRepository;
 
     @Transactional
     public MovementResponse execute(UUID accountId, UUID movementId, UpdateMovementRequest request) {
-        MovementEntity entity = movementRepository.findByIdAndAccountId(movementId, accountId)
-                .orElseThrow(() -> new NotFoundException("Movimiento no encontrado: " + movementId));
+        Movement movement = movementRepository.findById(movementId)
+            .orElseThrow(() -> new NotFoundException("Movimiento no encontrado con id: " + movementId));
 
+        if (!movement.getAccountId().equals(accountId)) {
+            throw new NotFoundException("Movimiento no pertenece a la cuenta");
+        }
+
+        // Solo actualizar campos presentes
         if (request.getMovementType() != null) {
-            entity.setMovementType(request.getMovementType().name());
+            movement.update(
+                request.getMovementType(),
+                movement.getAmount(),
+                movement.getCategoryId(),
+                movement.getDescription(),
+                movement.getDate()
+            );
         }
         if (request.getAmount() != null) {
-            entity.setMovementAmount(request.getAmount());
+            movement.update(
+                movement.getType(),
+                request.getAmount(),
+                movement.getCategoryId(),
+                movement.getDescription(),
+                movement.getDate()
+            );
+        }
+        if (StringUtils.hasText(request.getDescription())) {
+            movement.update(
+                movement.getType(),
+                movement.getAmount(),
+                movement.getCategoryId(),
+                request.getDescription(),
+                movement.getDate()
+            );
         }
         if (request.getMovementDate() != null) {
-            entity.setMovementDate(request.getMovementDate());
-        }
-        if (request.getDescription() != null) {
-            entity.setMovementDescription(request.getDescription());
+            movement.update(
+                movement.getType(),
+                movement.getAmount(),
+                movement.getCategoryId(),
+                movement.getDescription(),
+                request.getMovementDate()
+            );
         }
         if (request.getCategoryId() != null) {
-            CategoryEntity category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new NotFoundException("Categoría no encontrada: " + request.getCategoryId()));
-            entity.setCategory(category);
+            // Verificar que la categoría existe
+            categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + request.getCategoryId()));
+            movement.update(
+                movement.getType(),
+                movement.getAmount(),
+                request.getCategoryId(),
+                movement.getDescription(),
+                movement.getDate()
+            );
         }
 
-        MovementEntity updated = movementRepository.save(entity);
-        return mapToResponse(updated);
-    }
-
-    private MovementResponse mapToResponse(MovementEntity entity) {
-        CategoryResponse categoryResponse = null;
-        if (entity.getCategory() != null) {
-            categoryResponse = CategoryResponse.builder()
-                    .id(entity.getCategory().getCategoryId())
-                    .name(entity.getCategory().getCategoryName())
-                    .type(org.adultofuncional.main.finances.domain.enums.CategoryType.valueOf(entity.getCategory().getCategoryType()))
-                    .createdAt(entity.getCategory().getCategoryCreatedAt())
-                    .deleted(entity.getCategory().getCategoryDeletedAt() != null)
-                    .build();
-        }
+        Movement saved = movementRepository.save(movement);
         return MovementResponse.builder()
-                .id(entity.getMovementId())
-                .movementType(org.adultofuncional.main.finances.domain.enums.MovementType.valueOf(entity.getMovementType()))
-                .amount(entity.getMovementAmount())
-                .registerDate(entity.getMovementRegisterDate())
-                .description(entity.getMovementDescription())
-                .movementDate(entity.getMovementDate())
-                .category(categoryResponse)
-                .build();
+            .id(saved.getId())
+            .movementType(saved.getType())
+            .amount(saved.getAmount())
+            .registerDate(saved.getCreatedAt())
+            .description(saved.getDescription())
+            .movementDate(saved.getDate())
+            .category(null)
+            .build();
     }
 }

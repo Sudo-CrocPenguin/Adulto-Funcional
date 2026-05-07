@@ -1,82 +1,69 @@
 package org.adultofuncional.main.finances.application.usecase.fixedexpense;
 
+import java.time.LocalDate;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.UpdateFixedExpenseRequest;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.FixedExpenseRepository;
-import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
-import org.adultofuncional.main.finances.infrastructure.persistence.entity.FixedExpensesEntity;
+import org.adultofuncional.main.shared.exception.BusinessException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.UUID;
-
-/**
- * Caso de uso: Actualizar un gasto fijo existente.
- *
- * @author Miguel Angel Blandon Montes
- * @since 0.0.1
- */
 @Service
 @RequiredArgsConstructor
 public class UpdateFixedExpenseUseCase {
-
     private final FixedExpenseRepository fixedExpenseRepository;
     private final CategoryRepository categoryRepository;
 
     @Transactional
     public FixedExpenseResponse execute(UUID accountId, UUID expenseId, UpdateFixedExpenseRequest request) {
-        FixedExpensesEntity entity = fixedExpenseRepository.findByIdAndAccountId(expenseId, accountId)
-                .orElseThrow(() -> new NotFoundException("Gasto fijo no encontrado: " + expenseId));
+        FixedExpense expense = fixedExpenseRepository.findById(expenseId)
+            .orElseThrow(() -> new NotFoundException("Gasto fijo no encontrado con id: " + expenseId));
 
-        if (StringUtils.hasText(request.getName())) {
-            entity.setFixedExpenseName(request.getName());
-        }
-        if (request.getFrequency() != null) {
-            entity.setFixedExpenseFrequency(request.getFrequency().name());
-        }
-        if (request.getAmount() != null) {
-            entity.setFixedExpenseAmount(request.getAmount());
-        }
-        if (request.getStatus() != null) {
-            entity.setFixedExpenseStatus(request.getStatus().name());
-        }
+        // Actualizar campos (usando el método update del modelo)
+        String name = expense.getName();
+        BigDecimal amount = expense.getAmount();
+        UUID categoryId = expense.getCategoryId();
+        var frequency = expense.getFrequency();
+        var status = expense.getStatus();
+        LocalDate startDate = expense.getStartDate();
+        LocalDate nextDueDate = expense.getNextDueDate();
+        int reminderDays = expense.getReminderDays();
+
+        if (StringUtils.hasText(request.getName())) name = request.getName();
+        if (request.getAmount() != null) amount = request.getAmount();
+        if (request.getFrequency() != null) frequency = request.getFrequency();
+        if (request.getStatus() != null) status = request.getStatus();
         if (request.getClosingDate() != null) {
-            entity.setFixedExpenseClosingDate(request.getClosingDate());
+            if (request.getClosingDate().isBefore(LocalDate.now()))
+                throw new BusinessException("La fecha de cierre debe ser futura");
+            nextDueDate = request.getClosingDate();
         }
         if (request.getCategoryId() != null) {
-            CategoryEntity category = categoryRepository.findById(request.getCategoryId())
-                    .orElseThrow(() -> new NotFoundException("Categoría no encontrada: " + request.getCategoryId()));
-            entity.setCategory(category);
+            categoryRepository.findById(request.getCategoryId())
+                .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
+            categoryId = request.getCategoryId();
         }
 
-        FixedExpensesEntity updated = fixedExpenseRepository.save(entity);
-        return mapToResponse(updated);
-    }
-
-    private FixedExpenseResponse mapToResponse(FixedExpensesEntity entity) {
-        CategoryResponse categoryResponse = null;
-        if (entity.getCategory() != null) {
-            categoryResponse = CategoryResponse.builder()
-                    .id(entity.getCategory().getCategoryId())
-                    .name(entity.getCategory().getCategoryName())
-                    .type(org.adultofuncional.main.finances.domain.enums.CategoryType.valueOf(entity.getCategory().getCategoryType()))
-                    .createdAt(entity.getCategory().getCategoryCreatedAt())
-                    .deleted(entity.getCategory().getCategoryDeletedAt() != null)
-                    .build();
+        expense.update(name, amount, categoryId, frequency, startDate, nextDueDate, reminderDays);
+        if (request.getStatus() != null) {
+            if (request.getStatus() == Status.ACTIVE) expense.activate();
+            else expense.deactivate();
         }
+
+        FixedExpense saved = fixedExpenseRepository.save(expense);
         return FixedExpenseResponse.builder()
-                .id(entity.getFixedExpenseId())
-                .name(entity.getFixedExpenseName())
-                .frequency(org.adultofuncional.main.finances.domain.enums.FixedExpenseFrequency.valueOf(entity.getFixedExpenseFrequency()))
-                .amount(entity.getFixedExpenseAmount())
-                .status(org.adultofuncional.main.finances.domain.enums.FixedExpenseStatus.valueOf(entity.getFixedExpenseStatus()))
-                .closingDate(entity.getFixedExpenseClosingDate())
-                .category(categoryResponse)
-                .build();
+            .id(saved.getId())
+            .name(saved.getName())
+            .frequency(saved.getFrequency())
+            .amount(saved.getAmount())
+            .status(saved.getStatus())
+            .closingDate(saved.getNextDueDate())
+            .category(null)
+            .build();
     }
 }

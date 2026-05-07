@@ -1,26 +1,20 @@
 package org.adultofuncional.main.finances.application.dto.category;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
 import org.adultofuncional.main.finances.domain.enums.CategoryType;
-
+import org.adultofuncional.main.shared.security.OwnedResource;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-/**
- * DTO de respuesta para una categoría.
- *
- * @author Miguel Angel Blandon Montes
- * @since 0.0.1
- */
 @Getter
 @Builder
-public class CategoryResponse {
-
+public class CategoryResponse implements OwnedResource {
     private UUID id;
     private String name;
     private CategoryType type;
     private LocalDateTime createdAt;
-    private boolean deleted; // soft delete flag
+    private boolean deleted;
+    @Override
+    public String getEmail() { return null; }
 }
