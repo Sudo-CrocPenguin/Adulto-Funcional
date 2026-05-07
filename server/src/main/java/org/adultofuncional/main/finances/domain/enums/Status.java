@@ -14,8 +14,8 @@ package org.adultofuncional.main.finances.domain.enums;
  */
 public enum Status {
   /** El gasto fijo se aplica normalmente. */
-  ACTIVO,
+  ACTIVE,
 
   /** El gasto fijo está pausado o cancelado. */
-  INACTIVO
+  INACTIVE
 }

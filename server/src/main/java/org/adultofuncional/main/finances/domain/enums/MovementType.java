@@ -13,8 +13,8 @@ package org.adultofuncional.main.finances.domain.enums;
  */
 public enum MovementType {
   /** Entrada de dinero. */
-  INGRESO,
+  INCOME,
 
   /** Salida de dinero. */
-  EGRESO
+  EXPENSE
 }

@@ -13,20 +13,15 @@ package org.adultofuncional.main.finances.domain.enums;
  */
 public enum Frequency {
   /** Una vez por semana. */
-  SEMANAL,
-
+  WEEKLY,
   /** Cada dos semanas. */
-  QUINCENAL,
-
+  BIWEEKLY,
   /** Una vez al mes. */
-  MENSUAL,
-
-  /** Una vez cada tres meses. */
-  TRIMESTRAL,
-
-  /** Una vez cada seis meses. */
-  SEMESTRAL,
-
+  MONTHLY,
+  /** Cada tres meses. */
+  QUARTERLY,
+  /** Cada seis meses. */
+  SEMIANNUAL,
   /** Una vez al año. */
-  ANUAL
+  ANNUAL
 }
