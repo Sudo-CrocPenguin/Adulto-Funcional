@@ -50,7 +50,7 @@ public class MovementRepositoryImpl implements MovementRepository {
    * Lista todos los movimientos asociados a una cuenta.
    *
    * <p>
-   * Delega en {@link FinancesJpaRepository#findByAccount_AccountId(UUID)},
+   * Delega en {@link SpringMovementJpaRepository#findByAccount_AccountId(UUID)},
    * que Spring Data traduce a una consulta por FK {@code movement_fk_account_id}.
    *
    * @param accountId UUID de la cuenta propietaria; no puede ser {@code null}
