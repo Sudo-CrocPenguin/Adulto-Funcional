@@ -8,7 +8,7 @@ import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.MovementEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.mapper.MovementMapper;
-import org.adultofuncional.main.finances.infrastructure.persistence.repository.FinancesJpaRepository;
+import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringMovementJpaRepository;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MovementRepositoryImpl implements MovementRepository {
     
-    private final FinancesJpaRepository jpaRepository;
+    private final SpringMovementJpaRepository jpaRepository;
     private final MovementMapper mapper;
 
     /**
