@@ -65,11 +65,13 @@ Gastos fijos recurrentes (mensuales, semanales, etc.) asociados a una cuenta.
 | Columna                      | Tipo          | Restricciones        | Descripción                                         |
 | ---------------------------- | ------------- | -------------------- | --------------------------------------------------- |
 | fixed_expense_id             | CHAR(36)      | NOT NULL PRIMARY KEY | Identificador único.                                |
-| fixed_expense_name           | VARCHAR(20)   | NOT NULL             | Nombre del gasto fijo (ej. "Netflix", "Arriendo").  |
+| fixed_expense_name           | VARCHAR(50)   | NOT NULL             | Nombre del gasto fijo (ej. "Netflix", "Arriendo").  |
 | fixed_expense_frequency      | VARCHAR(15)   | NOT NULL             | Frecuencia: "Mensual", "Semanal", "Quincenal", etc. |
 | fixed_expense_amount         | DECIMAL(10,2) | NOT NULL             | Monto del gasto.                                    |
 | fixed_expense_status         | VARCHAR(15)   | NOT NULL             | Estado: "Activo" o "Inactivo".                      |
-| fixed_expense_closing_date   | DATE          | NOT NULL             | Fecha de cierre o próxima fecha de pago.            |
+| fixed_expense_start_date     | DATE          | NOT NULL             | Fecha de inicio de la recurrencia.                  |
+| fixed_expense_next_due_date  | DATE          | NOT NULL             | Próxima fecha de vencimiento.                       |
+| fixed_expense_reminder_days  | INT           | NOT NULL             | Días de antelación para generar recordatorio.       |
 | fixed_expense_fk_category_id | CHAR(36)      | NULL                 | FK a `categories`.                                  |
 | fixed_expense_fk_account_id  | CHAR(36)      | NOT NULL             | FK a `accounts`.                                    |
 

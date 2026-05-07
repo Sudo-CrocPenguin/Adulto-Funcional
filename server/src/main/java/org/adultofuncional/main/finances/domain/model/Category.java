@@ -21,8 +21,13 @@ import lombok.experimental.FieldDefaults;
  * (por ejemplo: comida, transporte, salario, etc.).
  *
  * <p>
- * Este modelo encapsula únicamente las invariantes de negocio.
- * Las validaciones de formato pertenecen a los DTOs.
+ * Encapsula únicamente las invariantes de negocio relacionadas con la categoría.
+ * Las validaciones de formato (longitud del nombre, caracteres especiales) pertenecen
+ * a los DTOs de la capa de aplicación.
+ *
+ * <p>
+ * Este modelo no contiene campos sensibles, por lo que se puede exponer
+ * completamente en los DTOs de respuesta sin restricciones adicionales.
  *
  * @author Jeronimo Ospina Zapata
  * @since 0.0.1
@@ -42,7 +47,7 @@ public class Category {
   final LocalDateTime createdAt;
 
   /**
-   * Constructor privado. Usar métodos de fábrica.
+   * Constructor privado. Usar los métodos de fábrica.
    */
   private Category(UUID id, String name, CategoryType type, LocalDateTime createdAt) {
 
@@ -61,42 +66,43 @@ public class Category {
   }
 
   /**
-   * Fábrica para crear una nueva categoría.
+   * Fábrica para crear una nueva categoría (antes de persistirla).
    *
    * <p>
-   * Genera el UUID v7 y el {@code createdAt} en el dominio.
+   * Genera el UUID v7 y el {@code createdAt} en la aplicación,
+   * garantizando que el dominio sea dueño de su identidad.
    *
-   * @param name nombre de la categoría
-   * @param type tipo de categoría
-   * @return instancia lista para persistir
+   * @param name nombre de la categoría (no puede ser nulo ni vacío)
+   * @param type tipo de categoría (ingreso o gasto, no puede ser nulo)
+   * @return instancia de Category lista para persistir
+   * @throws IllegalArgumentException si {@code name} es nulo o vacío,
+   *                                  o si {@code type} es nulo
    */
   public static Category create(String name, CategoryType type) {
-
-    UUID id = Generators.timeBasedEpochGenerator().generate();
+    UUID id = Generators.timeBasedEpochGenerator().generate(); // UUID v7
     LocalDateTime now = LocalDateTime.now();
-
     return new Category(id, name, type, now);
   }
 
   /**
-   * Fábrica para reconstituir una categoría desde persistencia.
+   * Fábrica para reconstituir una categoría existente desde persistencia.
    *
-   * @param id        identificador
-   * @param name      nombre
-   * @param type      tipo
-   * @param createdAt fecha de creación
-   * @return instancia reconstituida
+   * @param id        UUID tal como está en la base de datos
+   * @param name      nombre de la categoría
+   * @param type      tipo de categoría
+   * @param createdAt fecha de creación original
+   * @return instancia de Category reconstituida
    */
   public static Category reconstitute(UUID id, String name,
       CategoryType type, LocalDateTime createdAt) {
-
     return new Category(id, name, type, createdAt);
   }
 
   /**
    * Actualiza el nombre de la categoría.
    *
-   * @param name nuevo nombre
+   * @param name nuevo nombre (no puede ser nulo ni vacío)
+   * @throws IllegalArgumentException si {@code name} es nulo o vacío
    */
   public void updateName(String name) {
     validateName(name);
@@ -106,7 +112,8 @@ public class Category {
   /**
    * Actualiza el tipo de la categoría.
    *
-   * @param type nuevo tipo
+   * @param type nuevo tipo (no puede ser nulo)
+   * @throws IllegalArgumentException si {@code type} es nulo
    */
   public void updateType(CategoryType type) {
     validateType(type);
