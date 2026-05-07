@@ -20,24 +20,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface SpringFixedExpenseJpaRepository extends JpaRepository<FixedExpensesEntity, UUID> {
 
-    /**
-     * Busca todos los gastos fijos asociados a una cuenta específica.
-     *
-     * @param accountId el identificador de la cuenta (UUID)
-     * @return lista de entidades {@code FixedExpensesEntity} de esa cuenta,
-     *         puede estar vacía si no hay gastos fijos registrados
-     */
-    List<FixedExpensesEntity> findByAccount_AccountId(UUID accountId);
-
-    /**
-     * Busca un gasto fijo por su identificador único.
-     * <p>
-     * Método explícito similar a {@link #findById(Object)} pero con nombre
-     * más semántico.
-     * </p>
-     *
-     * @param fixedExpenseId el UUID del gasto fijo
-     * @return la entidad si existe, o {@code null} si no se encuentra
-     */
-    FixedExpensesEntity findByFixedExpenseId(UUID fixedExpenseId);
+  /**
+   * Busca todos los gastos fijos asociados a una cuenta específica.
+   *
+   * @param accountId el identificador de la cuenta (UUID)
+   * @return lista de entidades {@code FixedExpensesEntity} de esa cuenta,
+   *         puede estar vacía si no hay gastos fijos registrados
+   */
+  List<FixedExpensesEntity> findByAccount_AccountId(UUID accountId);
 }

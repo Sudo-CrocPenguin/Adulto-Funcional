@@ -26,27 +26,25 @@ import lombok.RequiredArgsConstructor;
  * @see MovementRepository
  * @see MovementMapper
  */
-
 @Repository
 @RequiredArgsConstructor
 public class MovementRepositoryImpl implements MovementRepository {
-    
-    private final SpringMovementJpaRepository jpaRepository;
-    private final MovementMapper mapper;
 
-    /**
+  private final SpringMovementJpaRepository jpaRepository;
+  private final MovementMapper mapper;
+
+  /**
    * Busca un movimiento por su identificador UUID.
    *
    * @param id identificador del movimiento; no puede ser {@code null}
    * @return {@link Optional} con el movimiento si existe, vacío si no
    */
+  @Override
+  public Optional<Movement> findById(UUID id) {
+    return jpaRepository.findById(id).map(mapper::toDomain);
+  }
 
-    @Override
-    public Optional<Movement> findById(UUID id) {
-        return jpaRepository.findById(id).map(mapper::toDomain);
-    }
-
-    /**
+  /**
    * Lista todos los movimientos asociados a una cuenta.
    *
    * <p>
@@ -56,14 +54,13 @@ public class MovementRepositoryImpl implements MovementRepository {
    * @param accountId UUID de la cuenta propietaria; no puede ser {@code null}
    * @return lista de movimientos; vacía si no hay ninguno
    */
-
-    @Override
-    public List<Movement> findAllByAccountId(UUID accountId) {
-        return jpaRepository.findByAccount_AccountId(accountId)
+  @Override
+  public List<Movement> findAllByAccountId(UUID accountId) {
+    return jpaRepository.findByAccount_AccountId(accountId)
         .stream().map(mapper::toDomain).toList();
-    }
+  }
 
-     /**
+  /**
    * Guarda o actualiza un movimiento.
    *
    * <p>
@@ -73,25 +70,20 @@ public class MovementRepositoryImpl implements MovementRepository {
    * @param movement modelo de dominio a persistir; no puede ser {@code null}
    * @return modelo de dominio con los campos actualizados tras la persistencia
    */
+  @Override
+  public Movement save(Movement movement) {
+    MovementEntity entity = mapper.toEntity(movement);
+    MovementEntity saved = jpaRepository.save(entity);
+    return mapper.toDomain(saved);
+  }
 
-    @Override
-    
-    public Movement save(Movement movement) {
-
-        MovementEntity entity = mapper.toEntity(movement);
-        MovementEntity saved = jpaRepository.save(entity);
-
-        return mapper.toDomain(saved);
-    }
-
-    /**
+  /**
    * Elimina físicamente un movimiento por su identificador.
    *
    * @param id identificador del movimiento a eliminar; no puede ser {@code null}
    */
-  
-    @Override
-    public void deleteById(UUID id) {
-        jpaRepository.deleteById(id);
-    }
+  @Override
+  public void deleteById(UUID id) {
+    jpaRepository.deleteById(id);
+  }
 }
