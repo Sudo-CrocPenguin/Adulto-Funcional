@@ -20,19 +20,11 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface SpringCategoryJpaRepository extends JpaRepository<CategoryEntity, UUID> {
 
-    /**
-     * Busca categorías por su tipo (Ingreso o Egreso).
-     *
-     * @param categoryType el tipo de categoría (ej: "Ingreso", "Egreso")
-     * @return lista de categorías que coinciden con el tipo (puede estar vacía)
-     */
-    List<CategoryEntity> findByCategoryType(String categoryType);
-
-    /**
-     * Busca una categoría por su identificador único.
-     *
-     * @param categoryId el UUID de la categoría
-     * @return la entidad si existe, o {@code null} si no se encuentra
-     */
-    CategoryEntity findByCategoryId(UUID categoryId);
+  /**
+   * Busca categorías por su tipo (Ingreso o Egreso).
+   *
+   * @param categoryType el tipo de categoría (ej: "Ingreso", "Egreso")
+   * @return lista de categorías que coinciden con el tipo (puede estar vacía)
+   */
+  List<CategoryEntity> findByCategoryType(String categoryType);
 }
