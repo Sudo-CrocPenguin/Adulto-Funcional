@@ -9,7 +9,12 @@ import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.mapper.CategoryMapper;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringCategoryJpaRepository;
+import org.springframework.stereotype.Repository;
 
+import lombok.RequiredArgsConstructor;
+
+@Repository
+@RequiredArgsConstructor
 public class CategoryRepositoryImpl implements CategoryRepository {
 
   private final SpringCategoryJpaRepository categoryJpaRepository;
