@@ -19,9 +19,8 @@ import org.springframework.stereotype.Component;
  * </ul>
  *
  * <p>
- * El modelo de dominio {@link Movement} no almacena el {@code accountId}
- * directamente, por lo que {@link #toEntity(Movement, UUID)} lo recibe
- * como parámetro separado para construir la referencia JPA.
+ * El {@code accountId} se obtiene directamente del modelo de dominio
+ * {@link Movement} para construir la referencia JPA.
  *
  * <p>
  * El método {@code toResponse()} se implementará cuando los DTOs
@@ -59,17 +58,25 @@ public class MovementMapper {
     public Movement toDomain(MovementEntity entity) {
         if (entity == null) return null;
 
-        UUID categoryId = entity.getCategory() != null ? entity.getCategory().getCategoryId() : null;
+        UUID categoryId = entity.getCategory() != null
+            ? entity.getCategory().getCategoryId()
+            : null;
+
+        UUID accountId = entity.getAccount() != null
+            ? entity.getAccount().getAccountId()
+            : null;
 
         return Movement.reconstitute(
             entity.getMovementId(),
             MovementType.valueOf(entity.getMovementType()),
             entity.getMovementAmount(),
             categoryId,
+            accountId,
             entity.getMovementDescription(),
-            entity.getMovementDate().atStartOfDay(),
+            entity.getMovementDate(),
             entity.getMovementRegisterDate()
         );
+
     }
 
 
@@ -77,21 +84,20 @@ public class MovementMapper {
    * Convierte el modelo de dominio {@link Movement} a {@link MovementEntity}.
    *
    * <p>
-   * Recibe el {@code accountId} como parámetro separado porque el dominio
-   * no lo almacena. Se construyen referencias JPA con solo el ID para
-   * {@code account} y {@code category}, suficiente para que Hibernate
-   * resuelva las FK al persistir.
+   * El {@code accountId} se obtiene directamente de {@link Movement#getAccountId()}.
+   * Se construyen referencias JPA con solo el ID para {@code account} y
+   * {@code category}, suficiente para que Hibernate resuelva las FK al persistir.
    *
    * <p>
    * El campo {@code movementRegisterDate} no se asigna aquí porque la entidad
    * lo establece automáticamente mediante {@code @PrePersist}.
    *
    * @param movement  modelo de dominio; si es {@code null} retorna {@code null}
-   * @param accountId UUID de la cuenta propietaria del movimiento
    * @return entidad JPA lista para persistir
    */
 
-    public MovementEntity toEntity(Movement movement, UUID accountId) {
+    public MovementEntity toEntity(Movement movement) {
+        
         if (movement == null) return null;
 
         MovementEntity entity = new MovementEntity();
@@ -99,24 +105,20 @@ public class MovementMapper {
         entity.setMovementType(movement.getType().name());
         entity.setMovementAmount(movement.getAmount());
         entity.setMovementDescription(movement.getDescription());
-        entity.setMovementDate(movement.getDate().toLocalDate());
+        entity.setMovementDate(movement.getDate());
 
         if (movement.getCategoryId() != null) {
             CategoryEntity categoryRef = new CategoryEntity();
-
             categoryRef.setCategoryId(movement.getCategoryId());
             entity.setCategory(categoryRef);
         }
 
-        // TODO: el accountId actualmente se obtiene desde el use case al momento
-        // de invocar este método. Cómo se pasa el accountId desde 
-        // CreateMovementUseCase una vez implementado.
-        
         AccountEntity accountRef = new AccountEntity();
-        accountRef.setAccountId(accountId);
+        accountRef.setAccountId(movement.getAccountId());
         entity.setAccount(accountRef);
 
         return entity;
+
 
     }
 }
