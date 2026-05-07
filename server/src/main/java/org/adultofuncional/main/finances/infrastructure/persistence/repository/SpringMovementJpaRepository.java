@@ -20,24 +20,12 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface SpringMovementJpaRepository extends JpaRepository<MovementEntity, UUID> {
 
-    /**
-     * Busca todos los movimientos financieros asociados a una cuenta específica.
-     *
-     * @param accountId el identificador de la cuenta (UUID)
-     * @return lista de entidades {@code MovementEntity} pertenecientes a la cuenta,
-     *         puede estar vacía si no hay movimientos registrados
-     */
-    List<MovementEntity> findByAccount_AccountId(UUID accountId);
-
-    /**
-     * Busca un movimiento por su identificador único.
-     * <p>
-     * Método explícito similar a {@link #findById(Object)} pero con nombre
-     * más semántico.
-     * </p>
-     *
-     * @param movementId el UUID del movimiento
-     * @return la entidad si existe, o {@code null} si no se encuentra
-     */
-    MovementEntity findByMovementId(UUID movementId);
+  /**
+   * Busca todos los movimientos financieros asociados a una cuenta específica.
+   *
+   * @param accountId el identificador de la cuenta (UUID)
+   * @return lista de entidades {@code MovementEntity} pertenecientes a la cuenta,
+   *         puede estar vacía si no hay movimientos registrados
+   */
+  List<MovementEntity> findByAccount_AccountId(UUID accountId);
 }
