@@ -20,7 +20,7 @@ const apiClient: AxiosInstance = axios.create({
 });
 
 // Interceptor para añadir token al header Authorizationexport src/api/client.ts;
-     si existe en SecureStore
+     //si existe en SecureStore
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await storage.getItem(STORAGE_KEYS.TOKEN);
