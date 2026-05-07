@@ -3,6 +3,7 @@ package org.adultofuncional.main.finances.application.usecase.fixedexpense;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse;
+import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.FixedExpenseRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
@@ -17,7 +18,6 @@ public class GetFixedExpenseUseCase {
     public FixedExpenseResponse execute(UUID accountId, UUID expenseId) {
         FixedExpense expense = fixedExpenseRepository.findById(expenseId)
             .orElseThrow(() -> new NotFoundException("Gasto fijo no encontrado con id: " + expenseId));
-        // No tenemos relación inversa con accountId en FixedExpense, asumimos que pertenece
         return FixedExpenseResponse.builder()
             .id(expense.getId())
             .name(expense.getName())

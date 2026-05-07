@@ -1,10 +1,13 @@
 package org.adultofuncional.main.finances.application.usecase.fixedexpense;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.UpdateFixedExpenseRequest;
+import org.adultofuncional.main.finances.domain.enums.Status;
+import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.FixedExpenseRepository;
 import org.adultofuncional.main.shared.exception.BusinessException;
@@ -24,7 +27,6 @@ public class UpdateFixedExpenseUseCase {
         FixedExpense expense = fixedExpenseRepository.findById(expenseId)
             .orElseThrow(() -> new NotFoundException("Gasto fijo no encontrado con id: " + expenseId));
 
-        // Actualizar campos (usando el método update del modelo)
         String name = expense.getName();
         BigDecimal amount = expense.getAmount();
         UUID categoryId = expense.getCategoryId();

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseFilterRequest;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse;
+import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.FixedExpenseRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;

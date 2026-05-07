@@ -21,29 +21,27 @@ public class CreateMovementUseCase {
 
     @Transactional
     public MovementResponse execute(UUID accountId, CreateMovementRequest request) {
-        // Verificar cuenta
         accountRepository.findById(accountId)
             .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-        // Categoría opcional
-        UUID categoryId = null;
+        UUID finalCategoryId = null;
         if (request.getCategoryId() != null) {
-            categoryId = request.getCategoryId();
-            categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + categoryId));
+            finalCategoryId = request.getCategoryId();
+            final UUID categoryIdToCheck = finalCategoryId;
+            categoryRepository.findById(categoryIdToCheck)
+                .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + categoryIdToCheck));
         }
 
         Movement movement = Movement.create(
             request.getMovementType(),
             request.getAmount(),
-            categoryId,
+            finalCategoryId,
             accountId,
             request.getDescription(),
             request.getMovementDate()
         );
 
         Movement saved = movementRepository.save(movement);
-
         return MovementResponse.builder()
             .id(saved.getId())
             .movementType(saved.getType())
@@ -51,7 +49,7 @@ public class CreateMovementUseCase {
             .registerDate(saved.getCreatedAt())
             .description(saved.getDescription())
             .movementDate(saved.getDate())
-            .category(null) // por simplicidad, no cargamos la categoría aquí
+            .category(null)
             .build();
     }
 }

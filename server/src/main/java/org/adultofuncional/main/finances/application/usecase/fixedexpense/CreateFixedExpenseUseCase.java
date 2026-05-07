@@ -30,16 +30,16 @@ public class CreateFixedExpenseUseCase {
             throw new BusinessException("La fecha de cierre debe ser posterior a la fecha actual");
         }
 
-        UUID categoryId = null;
+        // Categoría: obtenemos el ID y validamos
+        UUID finalCategoryId = null;
         if (request.getCategoryId() != null) {
-            categoryId = request.getCategoryId();
-            categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + categoryId));
+            finalCategoryId = request.getCategoryId();
+            // Para evitar el problema de la lambda, extraemos el ID en una variable final
+            final UUID categoryIdToCheck = finalCategoryId;
+            categoryRepository.findById(categoryIdToCheck)
+                .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + categoryIdToCheck));
         }
 
-        // Nota: el modelo FixedExpense requiere startDate, nextDueDate, reminderDays.
-        // Como el DTO solo tiene closingDate, usaremos closingDate como nextDueDate
-        // y startDate como hoy. reminderDays por defecto 0.
         LocalDate startDate = LocalDate.now();
         LocalDate nextDueDate = request.getClosingDate();
         int reminderDays = 0;
@@ -47,7 +47,7 @@ public class CreateFixedExpenseUseCase {
         FixedExpense expense = FixedExpense.create(
             request.getName(),
             request.getAmount(),
-            categoryId,
+            finalCategoryId,
             request.getFrequency(),
             startDate,
             nextDueDate,
@@ -61,7 +61,7 @@ public class CreateFixedExpenseUseCase {
             .frequency(saved.getFrequency())
             .amount(saved.getAmount())
             .status(saved.getStatus())
-            .closingDate(saved.getNextDueDate()) // usamos nextDueDate como closingDate
+            .closingDate(saved.getNextDueDate())
             .category(null)
             .build();
     }

@@ -2,6 +2,7 @@ package org.adultofuncional.main.finances.application.usecase.movement;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;

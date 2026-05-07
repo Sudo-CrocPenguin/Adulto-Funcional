@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.finances.application.dto.movement.MovementFilterRequest;
 import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
+import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
@@ -25,8 +26,6 @@ public class ListMovementsUseCase {
             .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
         List<Movement> movements = movementRepository.findAllByAccountId(accountId);
-
-        // filtros manuales (sencillos)
         if (filter != null) {
             if (filter.getMovementType() != null) {
                 movements = movements.stream()
@@ -55,7 +54,6 @@ public class ListMovementsUseCase {
                     .collect(Collectors.toList());
             }
         }
-
         return movements.stream()
             .map(m -> MovementResponse.builder()
                 .id(m.getId())

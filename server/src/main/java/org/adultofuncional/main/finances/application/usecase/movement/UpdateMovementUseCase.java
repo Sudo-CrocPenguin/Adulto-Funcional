@@ -2,8 +2,9 @@ package org.adultofuncional.main.finances.application.usecase.movement;
 
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.adultofuncional.main.finances.application.dto.movement.UpdateMovementRequest;
 import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
+import org.adultofuncional.main.finances.application.dto.movement.UpdateMovementRequest;
+import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
@@ -21,12 +22,10 @@ public class UpdateMovementUseCase {
     public MovementResponse execute(UUID accountId, UUID movementId, UpdateMovementRequest request) {
         Movement movement = movementRepository.findById(movementId)
             .orElseThrow(() -> new NotFoundException("Movimiento no encontrado con id: " + movementId));
-
         if (!movement.getAccountId().equals(accountId)) {
             throw new NotFoundException("Movimiento no pertenece a la cuenta");
         }
 
-        // Solo actualizar campos presentes
         if (request.getMovementType() != null) {
             movement.update(
                 request.getMovementType(),
@@ -64,7 +63,6 @@ public class UpdateMovementUseCase {
             );
         }
         if (request.getCategoryId() != null) {
-            // Verificar que la categoría existe
             categoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + request.getCategoryId()));
             movement.update(
