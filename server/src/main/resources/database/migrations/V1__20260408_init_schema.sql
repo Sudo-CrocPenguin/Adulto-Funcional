@@ -16,9 +16,7 @@ CREATE TABLE categories
   category_id                   CHAR(36)          NOT NULL          PRIMARY KEY,
 
   category_name                 VARCHAR(50)       NOT NULL,
-  category_type                 VARCHAR(20)       NOT NULL,
-  category_created_at           TIMESTAMP         NOT NULL,
-  category_deleted_at           TIMESTAMP         NULL DEFAULT NULL
+  category_type                 VARCHAR(20)       NOT NULL
 );
 
 CREATE TABLE movements
@@ -32,7 +30,7 @@ CREATE TABLE movements
   movement_date                 DATE              NOT NULL,
 
   movement_fk_account_id        CHAR(36)          NOT NULL,
-  movement_fk_category_id       CHAR(36),
+  movement_fk_category_id       CHAR(36)          NOT NULL,
 
   FOREIGN KEY (movement_fk_account_id)            REFERENCES        accounts      (account_id),
   FOREIGN KEY (movement_fk_category_id)           REFERENCES        categories    (category_id)
@@ -51,7 +49,7 @@ CREATE TABLE fixed_expenses
   fixed_expense_reminder_days   INT               NOT NULL,
 
   fixed_expense_fk_account_id   CHAR(36)          NOT NULL,
-  fixed_expense_fk_category_id  CHAR(36),
+  fixed_expense_fk_category_id  CHAR(36)          NOT NULL,
 
   FOREIGN KEY (fixed_expense_fk_account_id)       REFERENCES        accounts      (account_id),
   FOREIGN KEY (fixed_expense_fk_category_id)      REFERENCES        categories    (category_id)

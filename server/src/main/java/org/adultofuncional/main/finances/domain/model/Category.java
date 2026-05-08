@@ -1,6 +1,5 @@
 package org.adultofuncional.main.finances.domain.model;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.domain.enums.CategoryType;
@@ -21,8 +20,10 @@ import lombok.experimental.FieldDefaults;
  * (por ejemplo: comida, transporte, salario, etc.).
  *
  * <p>
- * Encapsula únicamente las invariantes de negocio relacionadas con la categoría.
- * Las validaciones de formato (longitud del nombre, caracteres especiales) pertenecen
+ * Encapsula únicamente las invariantes de negocio relacionadas con la
+ * categoría.
+ * Las validaciones de formato (longitud del nombre, caracteres especiales)
+ * pertenecen
  * a los DTOs de la capa de aplicación.
  *
  * <p>
@@ -44,25 +45,18 @@ public class Category {
   String name;
   CategoryType type;
 
-  final LocalDateTime createdAt;
-
   /**
    * Constructor privado. Usar los métodos de fábrica.
    */
-  private Category(UUID id, String name, CategoryType type, LocalDateTime createdAt) {
+  private Category(UUID id, String name, CategoryType type) {
 
-    if (id != null) {
-      validateId(id);
-    }
-
+    validateId(id);
     validateName(name);
     validateType(type);
-    validateCreatedAt(createdAt);
 
     this.id = id;
     this.name = name;
     this.type = type;
-    this.createdAt = createdAt;
   }
 
   /**
@@ -80,8 +74,7 @@ public class Category {
    */
   public static Category create(String name, CategoryType type) {
     UUID id = Generators.timeBasedEpochGenerator().generate(); // UUID v7
-    LocalDateTime now = LocalDateTime.now();
-    return new Category(id, name, type, now);
+    return new Category(id, name, type);
   }
 
   /**
@@ -94,8 +87,8 @@ public class Category {
    * @return instancia de Category reconstituida
    */
   public static Category reconstitute(UUID id, String name,
-      CategoryType type, LocalDateTime createdAt) {
-    return new Category(id, name, type, createdAt);
+      CategoryType type) {
+    return new Category(id, name, type);
   }
 
   /**
@@ -137,15 +130,6 @@ public class Category {
   private static void validateType(CategoryType type) {
     if (type == null) {
       throw new IllegalArgumentException("Type cannot be null");
-    }
-  }
-
-  private static void validateCreatedAt(LocalDateTime createdAt) {
-    if (createdAt == null) {
-      throw new IllegalArgumentException("CreatedAt cannot be null");
-    }
-    if (createdAt.isAfter(LocalDateTime.now())) {
-      throw new IllegalArgumentException("CreatedAt cannot be in the future");
     }
   }
 }

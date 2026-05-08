@@ -44,6 +44,7 @@ public class FixedExpense {
   String name;
   BigDecimal amount;
   UUID categoryId;
+  UUID accountId;
   Frequency frequency;
   Status status;
 
@@ -55,14 +56,13 @@ public class FixedExpense {
    * Constructor privado. Usar los métodos de fábrica.
    */
   private FixedExpense(UUID id, String name, BigDecimal amount,
-      UUID categoryId, Frequency frequency, Status status,
+      UUID categoryId, UUID accountId, Frequency frequency, Status status,
       LocalDate startDate, LocalDate nextDueDate,
       int reminderDays) {
 
-    if (id != null) {
-      validateId(id);
-    }
-
+    validateId(id);
+    validateCategoryId(categoryId);
+    validateAccountId(accountId);
     validateName(name);
     validateAmount(amount);
     validateFrequency(frequency);
@@ -74,6 +74,7 @@ public class FixedExpense {
     this.name = name;
     this.amount = amount;
     this.categoryId = categoryId;
+    this.accountId = accountId;
     this.frequency = frequency;
     this.status = status;
     this.startDate = startDate;
@@ -109,7 +110,7 @@ public class FixedExpense {
    * 
    */
   public static FixedExpense create(String name, BigDecimal amount,
-      UUID categoryId, Frequency frequency,
+      UUID categoryId, UUID accountId, Frequency frequency,
       LocalDate startDate, LocalDate nextDueDate,
       int reminderDays) {
 
@@ -120,6 +121,7 @@ public class FixedExpense {
         name,
         amount,
         categoryId,
+        accountId,
         frequency,
         Status.ACTIVE,
         startDate,
@@ -133,12 +135,12 @@ public class FixedExpense {
    * 
    */
   public static FixedExpense reconstitute(UUID id, String name,
-      BigDecimal amount, UUID categoryId,
+      BigDecimal amount, UUID categoryId, UUID accountId,
       Frequency frequency, Status status,
       LocalDate startDate, LocalDate nextDueDate,
       int reminderDays) {
 
-    return new FixedExpense(id, name, amount, categoryId, frequency,
+    return new FixedExpense(id, name, amount, categoryId, accountId, frequency,
         status, startDate, nextDueDate, reminderDays);
   }
 
@@ -160,13 +162,13 @@ public class FixedExpense {
    *                   {@code startDate})
    * @throws IllegalArgumentException si alguna validación falla
    */
-  public void update(String name, BigDecimal amount,
-      UUID categoryId, Frequency frequency,
+  public void update(String name, BigDecimal amount, UUID categoryId, Frequency frequency,
       LocalDate startDate, LocalDate nextDueDate,
       int reminderDays) {
 
     validateName(name);
     validateAmount(amount);
+    validateCategoryId(categoryId);
     validateFrequency(frequency);
     validateDates(startDate, nextDueDate);
     validateReminderDays(reminderDays);
@@ -214,9 +216,21 @@ public class FixedExpense {
 
   // ── Invariantes de negocio ────────────────────────────────────────────────
 
-  private static void validateId(UUID id) {
-    if (id == null) {
+  private static void validateId(UUID fixedExpenseId) {
+    if (fixedExpenseId == null) {
       throw new IllegalArgumentException("Id cannot be null");
+    }
+  }
+
+  private static void validateCategoryId(UUID categoryId) {
+    if (categoryId == null) {
+      throw new IllegalArgumentException("categoryId cannot be null");
+    }
+  }
+
+  private static void validateAccountId(UUID accountId) {
+    if (accountId == null) {
+      throw new IllegalArgumentException("accountId cannot be null");
     }
   }
 

@@ -23,15 +23,17 @@ import lombok.experimental.FieldDefaults;
  * a una categoría dentro del sistema.
  *
  * <p>
- * Encapsula únicamente las invariantes de negocio relacionadas con el movimiento:
+ * Encapsula únicamente las invariantes de negocio relacionadas con el
+ * movimiento:
  * <ul>
- *   <li>El monto debe ser mayor que cero</li>
- *   <li>La fecha del movimiento no puede ser nula</li>
- *   <li>La fecha de creación no puede ser nula ni futura</li>
+ * <li>El monto debe ser mayor que cero</li>
+ * <li>La fecha del movimiento no puede ser nula</li>
+ * <li>La fecha de creación no puede ser nula ni futura</li>
  * </ul>
  *
  * <p>
- * Las validaciones de formato (longitud de la descripción, caracteres especiales)
+ * Las validaciones de formato (longitud de la descripción, caracteres
+ * especiales)
  * pertenecen a los DTOs de la capa de aplicación. La descripción es opcional
  * y puede ser {@code null}.
  *
@@ -67,12 +69,11 @@ public class Movement {
       UUID categoryId, UUID accountId, String description, LocalDate date,
       LocalDateTime createdAt) {
 
-    if (id != null) {
-      validateId(id);
-    }
-
-    validateAmount(amount);
+    validateId(id);
+    validateType(type);
+    validateCategoryId(categoryId);
     validateAccountId(accountId);
+    validateAmount(amount);
     validateDate(date);
     validateCreatedAt(createdAt);
 
@@ -96,7 +97,8 @@ public class Movement {
    * @param type        tipo de movimiento (ingreso o egreso, no puede ser nulo)
    * @param amount      monto del movimiento (debe ser mayor que cero)
    * @param categoryId  identificador de la categoría asociada (puede ser nulo si
-   *                    el movimiento no se clasifica, aunque normalmente se espera
+   *                    el movimiento no se clasifica, aunque normalmente se
+   *                    espera
    *                    una categoría válida)
    * @param description descripción opcional (puede ser {@code null})
    * @param date        fecha en que ocurrió el movimiento (no puede ser nula)
@@ -153,7 +155,9 @@ public class Movement {
       UUID categoryId, String description,
       LocalDate date) {
 
+    validateType(type);
     validateAmount(amount);
+    validateCategoryId(categoryId);
     validateDate(date);
 
     this.type = type;
@@ -168,6 +172,12 @@ public class Movement {
   private static void validateId(UUID id) {
     if (id == null) {
       throw new IllegalArgumentException("Id cannot be null");
+    }
+  }
+
+  private static void validateCategoryId(UUID categoryId) {
+    if (categoryId == null) {
+      throw new IllegalArgumentException("CategoryId cannot be null");
     }
   }
 
@@ -198,6 +208,12 @@ public class Movement {
     }
     if (createdAt.isAfter(LocalDateTime.now())) {
       throw new IllegalArgumentException("CreatedAt cannot be in the future");
+    }
+  }
+
+  private static void validateType(MovementType type) {
+    if (type == null) {
+      throw new IllegalArgumentException("Movement type cannot be null");
     }
   }
 }

@@ -6,7 +6,8 @@ import org.adultofuncional.main.finances.infrastructure.persistence.entity.Categ
 import org.springframework.stereotype.Component;
 
 /**
- * Componente que convierte entre las diferentes representaciones de una categoria.
+ * Componente que convierte entre las diferentes representaciones de una
+ * categoria.
  * 
  * <p>
  * Traduce entre:
@@ -15,7 +16,8 @@ import org.springframework.stereotype.Component;
  * </ul>
  *
  * <p>
- * La conversión del tipo de categoría entre {@code String} y {@link CategoryType}
+ * La conversión del tipo de categoría entre {@code String} y
+ * {@link CategoryType}
  * asume que los valores almacenados en base de datos coinciden exactamente con
  * los nombres de las constantes del enum (sensible a mayúsculas).
  * 
@@ -32,7 +34,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class CategoryMapper {
 
-    /**
+  /**
    * Convierte una {@link CategoryEntity} al modelo de dominio {@link Category}.
    *
    * <p>
@@ -42,19 +44,18 @@ public class CategoryMapper {
    * @param entity entidad JPA; si es {@code null} retorna {@code null}
    * @return modelo de dominio reconstituido o {@code null}
    */
-    
-    public Category toDomain(CategoryEntity entity) {
-        if (entity == null) return null;
 
-        return Category.reconstitute(
-            entity.getCategoryId(),
-            entity.getCategoryName(),
-            CategoryType.valueOf(entity.getCategoryType()),
-            entity.getCategoryCreatedAt()
-        );
-    }
+  public Category toDomain(CategoryEntity entity) {
+    if (entity == null)
+      return null;
 
-    /**
+    return Category.reconstitute(
+        entity.getCategoryId(),
+        entity.getCategoryName(),
+        CategoryType.valueOf(entity.getCategoryType()));
+  }
+
+  /**
    * Convierte el modelo de dominio {@link Category} a {@link CategoryEntity}.
    *
    * <p>
@@ -64,15 +65,16 @@ public class CategoryMapper {
    * @param category modelo de dominio; si es {@code null} retorna {@code null}
    * @return entidad JPA lista para persistir
    */
-  
-    public CategoryEntity toEntity(Category category) {
-        if (category == null) return null;
 
-        CategoryEntity entity = new CategoryEntity();
-        entity.setCategoryId(category.getId());
-        entity.setCategoryName(category.getName());
-        entity.setCategoryType(category.getType().name());
+  public CategoryEntity toEntity(Category category) {
+    if (category == null)
+      return null;
 
-        return entity;
-    }
+    CategoryEntity entity = new CategoryEntity();
+    entity.setCategoryId(category.getId());
+    entity.setCategoryName(category.getName());
+    entity.setCategoryType(category.getType().name());
+
+    return entity;
+  }
 }

@@ -45,4 +45,12 @@ public class CategoryRepositoryImpl implements CategoryRepository {
     categoryJpaRepository.deleteById(id);
   }
 
+  @Override
+  public List<Category> findAllById(Iterable<UUID> ids) {
+    List<CategoryEntity> entities = categoryJpaRepository.findAllById(ids);
+    return entities.stream()
+        .map(categoryMapper::toDomain)
+        .toList();
+  }
+
 }

@@ -150,7 +150,7 @@ public class FixedExpensesEntity {
    * {@code categories(category_id)}.
    */
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "fixed_expense_fk_category_id")
+  @JoinColumn(name = "fixed_expense_fk_category_id", nullable = false)
   private CategoryEntity category;
 
   /**

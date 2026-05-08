@@ -14,29 +14,35 @@ import java.util.UUID;
  */
 public interface CategoryRepository {
 
-    /**
-     * Busca una categoría por su identificador.
-     * @param id el UUID de la categoría
-     * @return Optional con la categoría si existe
-     */
-    Optional<Category> findById(UUID id);
+  /**
+   * Busca una categoría por su identificador.
+   * 
+   * @param id el UUID de la categoría
+   * @return Optional con la categoría si existe
+   */
+  Optional<Category> findById(UUID id);
 
-    /**
-     * Lista todas las categorías disponibles.
-     * @return lista de categorías
-     */
-    List<Category> findAll();
+  /**
+   * Lista todas las categorías disponibles.
+   * 
+   * @return lista de categorías
+   */
+  List<Category> findAll();
 
-    /**
-     * Guarda una categoría (nueva o actualizada).
-     * @param category la categoría a guardar
-     * @return la categoría guardada
-     */
-    Category save(Category category);
+  List<Category> findAllById(Iterable<UUID> ids);
 
-    /**
-     * Elimina una categoría por su ID.
-     * @param id el UUID de la categoría
-     */
-    void deleteById(UUID id);
+  /**
+   * Guarda una categoría (nueva o actualizada).
+   * 
+   * @param category la categoría a guardar
+   * @return la categoría guardada
+   */
+  Category save(Category category);
+
+  /**
+   * Elimina una categoría por su ID.
+   * 
+   * @param id el UUID de la categoría
+   */
+  void deleteById(UUID id);
 }
