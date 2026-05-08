@@ -33,8 +33,8 @@ public class AccountMapper {
    * Usa el método de fábrica {@code Account.reconstitute()} para respetar
    * el constructor privado del modelo de dominio.
    *
-   * @param entity entidad JPA. Si es {@code null} retorna {@code null}.
-   * @return modelo de dominio reconstituido.
+   * @param entity entidad JPA; si es {@code null} retorna {@code null}
+   * @return modelo de dominio reconstituido o {@code null}
    */
   public Account toDomain(AccountEntity entity) {
     if (entity == null)
@@ -47,16 +47,16 @@ public class AccountMapper {
         entity.getAccountEmail(),
         entity.getAccountPhone(),
         entity.getAccountCreatedAt(),
-        entity.getAccountPassword());
+        entity.getAccountPassword(),
+        entity.getAccountMasterKey());
   }
 
   /**
    * Convierte el modelo de dominio {@link Account} a {@link AccountEntity}.
    *
    * <p>
-   * Copia {@code account_password} desde el modelo de dominio como hash Argon2.
-   * El campo {@code account_master_key} lo gestiona exclusivamente el módulo
-   * de seguridad y no se incluye en esta conversión.
+   * Copia {@code account_password} y {@code account_master_key} desde el
+   * modelo de dominio. Ambos se almacenan como hash Argon2.
    *
    * @param account modelo de dominio. Si es {@code null} retorna {@code null}.
    * @return entidad JPA lista para persistir.
@@ -65,13 +65,15 @@ public class AccountMapper {
     if (account == null)
       return null;
     AccountEntity entity = new AccountEntity();
-    entity.setAccountId(account.getId());
+    // Solo asignar el ID si no es null (cuenta existente)
+    entity.setAccountId(account.getId()); // El ID siempre existe en el dominio (generado o reconstituido)
     entity.setAccountNames(account.getNames());
     entity.setAccountLastNames(account.getLastnames());
     entity.setAccountEmail(account.getEmail());
     entity.setAccountPhone(account.getPhone());
     entity.setAccountCreatedAt(account.getCreatedAt());
     entity.setAccountPassword(account.getPasswordHash());
+    entity.setAccountMasterKey(account.getMasterKeyHash());
     return entity;
   }
 

@@ -1,30 +1,28 @@
 /**
- * Módulo de seguridad y gestor de contraseñas.
+ * Módulo de gestor de contraseñas con Master Key.
  *
  * <p>
- * Proporciona almacenamiento seguro de credenciales de servicios
- * externos mediante encriptación AES-256 protegida con una Master Key.
+ * Implementa la capa de infraestructura para almacenar credenciales
+ * de servicios externos de forma segura usando encriptación AES-256.
  *
- * 
  * <p>
- * Características de seguridad:
+ * Responsabilidades:
  * <ul>
- * <li>Las contraseñas se encriptan con AES-256 antes de persistirse</li>
  * <li>La Master Key (hash Argon2 en {@code accounts}) debe verificarse
  * antes de acceder al gestor</li>
  * <li>El acceso se protege con
  * {@link org.adultofuncional.main.shared.exception.ForbiddenException} (HTTP
  * 403)
  * si no se verifica la Master Key</li>
+ * <li>Almacenamiento seguro de contraseñas con encriptación AES-256</li>
+ * <li>Derivación de claves usando la Master Key del usuario</li>
+ * <li>Gestión de salts e IV únicos por credencial</li>
  * </ul>
  *
- * 
  * <p>
- * Tabla asociada: {@code passwords} con FK a {@code accounts}.
+ * Tabla asociada: {@code passwords}.
  *
- * 
- * @author Jeronimo Ospina Zapata, Lydis Ester Jaraba, Juan Sebastian Rios,
- *         Miguel Angel Blandon Montes, Daniel Salazar
+ * @author Equipo de desarrollo Adulto Funcional
  * @since 0.0.1
  */
 package org.adultofuncional.main.security;

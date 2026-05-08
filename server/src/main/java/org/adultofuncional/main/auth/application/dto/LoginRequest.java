@@ -1,5 +1,7 @@
 package org.adultofuncional.main.auth.application.dto;
 
+import org.adultofuncional.main.shared.security.NoHtml;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -14,9 +16,14 @@ import lombok.NoArgsConstructor;
  * <p>
  * Encapsula las credenciales (email y contraseña) que el cliente envía
  * para autenticar a un usuario. Las validaciones se aplican automáticamente
- * mediante Bean Validation.
+ * mediante Bean Validation (Jakarta).
  *
- * @author Miguel Angel Blandon Montes
+ * <p>
+ * <strong>Protección contra XSS:</strong>
+ * Ambos campos están anotados con {@link NoHtml} para rechazar cualquier
+ * intento de incluir HTML/scripts en las credenciales.
+ *
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  */
 @Data
@@ -25,30 +32,26 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class LoginRequest {
 
-    /**
-     * Correo electrónico del usuario.
-     * Obligatorio, debe tener formato válido y máximo 255 caracteres.
-     * Se usa como username para la autenticación con Spring Security.
-     *
-     * //TODO: Considerar agregar validación de dominios permitidos (ej. solo correos corporativos)
-     */
-    @NotBlank(message = "El email es obligatorio")
-    @Email(message = "Debe ser un email válido")
-    @Size(max = 255, message = "El email no puede exceder 255 caracteres")
-    private String email;
+  /**
+   * Correo electrónico del usuario (usado como username).
+   * Obligatorio, formato de email válido y máximo 255 caracteres.
+   *
+   * // TODO: Validar dominios permitidos según políticas de negocio (ej. solo
+   * correos corporativos).
+   */
+  @NotBlank(message = "El email es obligatorio")
+  @Email(message = "El formato del email no es válido")
+  @Size(max = 255, message = "El email no puede exceder 255 caracteres")
+  @NoHtml
+  private String email;
 
-    /**
-     * Contraseña del usuario en texto plano.
-     * Obligatoria, mínimo 8 caracteres por seguridad.
-     * Se comparará con el hash almacenado en {@code account_password} usando Argon2.
-     *
-     * <p><strong>⚠️ IMPORTANTE:</strong>
-     * Este campo NUNCA debe ser logueado ni almacenado. Solo se usa para
-     * verificar la contraseña durante el proceso de autenticación.
-     *
-     * //TODO: Agregar validación de fortaleza de contraseña (mayúsculas, números, símbolos)
-     */
-    @NotBlank(message = "La contraseña es obligatoria")
-    @Size(min = 8, max = 60, message = "La contraseña debe tener entre 8 y 60 caracteres")
-    private String password;
+  /**
+   * Contraseña en texto plano.
+   * Obligatoria, entre 8 y 24 caracteres.
+   * Será verificada contra el hash Argon2 almacenado.
+   *
+   */
+  @NotBlank(message = "La contraseña es obligatoria")
+  @Size(min = 8, max = 24, message = "La contraseña debe tener entre 8 y 24 caracteres")
+  private String password;
 }

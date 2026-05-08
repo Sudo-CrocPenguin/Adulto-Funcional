@@ -1,23 +1,38 @@
 package org.adultofuncional.main.auth.application.dto;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import org.adultofuncional.main.config.security.CookieUtils;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 /**
  * DTO que representa la respuesta de autenticación.
  *
  * <p>
  * Encapsula el token JWT y los datos básicos de la cuenta del usuario
- * después de una operación exitosa de login o registro.
- * Excluye campos sensibles como contraseña y clave maestra.
+ * tras un login o registro exitoso. Excluye campos sensibles como
+ * el hash de contraseña y la master key.
  *
- * @author Miguel Angel Blandon Montes
+ * <p>
+ * <strong>Estrategia de entrega del token:</strong>
+ * <ul>
+ * <li>El token <b>siempre</b> se establece en una cookie HttpOnly
+ * mediante {@link CookieUtils}.</li>
+ * <li>Adicionalmente, los clientes nativos (móvil/escritorio)
+ * reciben el token en este DTO para su almacenamiento local.
+ * Los clientes web reciben una copia sin token mediante
+ * {@link #withoutToken()}.</li>
+ * </ul>
+ *
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
+ * @see CookieUtils
+ * @see org.adultofuncional.main.config.security.ClientTypeResolver
  */
 @Data
 @Builder
@@ -26,17 +41,22 @@ import java.util.UUID;
 public class AuthResponse {
 
   /**
-   * Token JWT (JSON Web Token) para autenticación stateless.
-   * El cliente debe incluirlo en el header {@code Authorization: Bearer <token>}
-   * para todas las peticiones a endpoints protegidos.
+   * Token JWT para autenticación stateless.
    *
    * <p>
-   * <strong>Contenido típico del token:</strong>
+   * Se incluye en esta respuesta <b>solo para clientes nativos</b>
+   * (móvil/escritorio). Los clientes web reciben el token únicamente
+   * en una cookie HttpOnly; en ese caso este campo llega {@code null}
+   * (ver {@link #withoutToken()}).
+   *
+   * <p>
+   * <strong>Claims del token:</strong>
    * <ul>
-   * <li>{@code sub} (subject) - ID de la cuenta</li>
-   * <li>{@code email} - Correo electrónico del usuario</li>
-   * <li>{@code iat} (issued at) - Fecha de emisión</li>
-   * <li>{@code exp} (expiration) - Fecha de expiración</li>
+   * <li>{@code sub} — ID de la cuenta</li>
+   * <li>{@code email} — correo electrónico</li>
+   * <li>{@code roles} — roles del usuario</li>
+   * <li>{@code iat} — timestamp de emisión</li>
+   * <li>{@code exp} — timestamp de expiración</li>
    * </ul>
    */
   private String token;
@@ -99,5 +119,24 @@ public class AuthResponse {
    * //TODO: Agregar campos adicionales para roles o permisos en el futuro
    */
   private boolean hasMasterKey;
-}
 
+  /**
+   * Retorna una copia de este objeto sin el token JWT.
+   * Usado para no exponer el token en el body de la respuesta
+   * cuando se usa HttpOnly cookie.
+   */
+  public AuthResponse withoutToken() {
+    return AuthResponse.builder()
+        .token(null)
+        .tokenType(null)
+        .expiresIn(this.expiresIn)
+        .accountId(this.accountId)
+        .names(this.names)
+        .lastnames(this.lastnames)
+        .email(this.email)
+        .phone(this.phone)
+        .createdAt(this.createdAt)
+        .hasMasterKey(this.hasMasterKey)
+        .build();
+  }
+}

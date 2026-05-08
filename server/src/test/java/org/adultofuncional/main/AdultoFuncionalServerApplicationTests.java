@@ -66,7 +66,6 @@ class AdultoFuncionalServerApplicationTests {
     registry.add("spring.datasource.url", mariadb::getJdbcUrl);
     registry.add("spring.datasource.username", mariadb::getUsername);
     registry.add("spring.datasource.password", mariadb::getPassword);
-    registry.add("spring.flyway.enabled", () -> false);
   }
 
   /**

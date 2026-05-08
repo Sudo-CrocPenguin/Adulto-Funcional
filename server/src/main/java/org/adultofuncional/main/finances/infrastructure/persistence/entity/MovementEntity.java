@@ -6,12 +6,10 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
-import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -26,20 +24,20 @@ import lombok.Setter;
  *
  * <p>
  * Representa una transacción financiera (ingreso o egreso) asociada a una
- * cuenta y opcionalmente a una categoría.
+ * cuenta y <b>obligatoriamente</b> a una categoría.
  *
  * <p>
  * Schema de la tabla {@code movements}:
  * 
  * <pre>
- * movement_id             CHAR(36)      PRIMARY KEY DEFAULT(UUID_V7())
- * movement_type           VARCHAR(7)    NOT NULL          -- "Ingreso" o "Egreso"
+ * movement_id             CHAR(36)      NOT NULL PRIMARY KEY
+ * movement_type           VARCHAR(20)   NOT NULL          -- "Ingreso" o "Egreso"
  * movement_amount         DECIMAL(10,2) NOT NULL
- * movement_register_date  TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+ * movement_register_date  TIMESTAMP     NOT NULL
  * movement_description    TEXT          NULL
  * movement_date           DATE          NOT NULL
- * movement_fk_account_id  CHAR(36)      FK → accounts(account_id)
- * movement_fk_category_id CHAR(36)      FK → categories(category_id)
+ * movement_fk_account_id  CHAR(36)      NOT NULL
+ * movement_fk_category_id CHAR(36)      NOT NULL  -- referencia obligatoria a categories
  * </pre>
  *
  * @author Juan Sebastian Rios
@@ -58,11 +56,9 @@ public class MovementEntity {
    * Identificador único del movimiento.
    *
    * <p>
-   * Columna: {@code movement_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())}.
+   * Columna: {@code movement_id CHAR(36) NOT NULL PRIMARY KEY}.
    */
   @Id
-  @GeneratedValue
-  @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "movement_id", columnDefinition = "CHAR(36)")
   private UUID movementId;
 
@@ -70,10 +66,10 @@ public class MovementEntity {
    * Tipo de movimiento.
    *
    * <p>
-   * Columna: {@code movement_type VARCHAR(7) NOT NULL}.
+   * Columna: {@code movement_type VARCHAR(20) NOT NULL}.
    * Valores: {@code "Ingreso"} o {@code "Egreso"}.
    */
-  @Column(name = "movement_type", length = 7, nullable = false)
+  @Column(name = "movement_type", length = 20, nullable = false)
   private String movementType;
 
   /**
@@ -91,7 +87,7 @@ public class MovementEntity {
    *
    * <p>
    * Columna:
-   * {@code movement_register_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP}.
+   * {@code movement_register_date TIMESTAMP NOT NULL}.
    * Se establece automáticamente en {@link #onCreate()} y no es modificable.
    */
   @Column(name = "movement_register_date", nullable = false, updatable = false)
@@ -127,14 +123,14 @@ public class MovementEntity {
   private AccountEntity account;
 
   /**
-   * Categoría asociada al movimiento (opcional).
+   * Categoría asociada al movimiento (obligatoria).
    *
    * <p>
    * FK: {@code movement_fk_category_id CHAR(36)} →
    * {@code categories(category_id)}.
    */
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "movement_fk_category_id")
+  @JoinColumn(name = "movement_fk_category_id", nullable = false)
   private CategoryEntity category;
 
   /**
