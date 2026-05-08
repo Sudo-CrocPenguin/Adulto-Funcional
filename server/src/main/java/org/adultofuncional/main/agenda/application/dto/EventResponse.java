@@ -1,146 +1,129 @@
 package org.adultofuncional.main.agenda.application.dto;
 
-import lombok.Builder;
-import lombok.Getter;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+
+import lombok.Builder;
+import lombok.Getter;
+
 /**
- * DTO de respuesta para un evento.
+ * DTO de respuesta que expone los datos de un evento de la agenda.
  *
- * <p><strong>¿Qué es?</strong><br>
- * Objeto que devuelve la información completa de un evento.
+ * <p>
+ * Proyecta la información completa de un evento hacia los clientes de la API
+ * después de ejecutar operaciones de consulta, creación o actualización.
+ * Incluye la categoría asociada como un objeto anidado
+ * {@link CategoryResponse} cuando el evento tiene una categoría vinculada,
+ * evitando que el cliente deba realizar consultas adicionales para obtener
+ * sus datos.
  *
- * <p><strong>¿Para qué sirve?</strong><br>
- * Expone los datos no sensibles del evento al cliente.
+ * <p>
+ * Nunca expone campos de infraestructura como marcas de auditoría ni
+ * referencias internas a entidades JPA. Los datos retornados se limitan
+ * a los atributos de negocio definidos en el modelo de dominio
+ * {@link org.adultofuncional.main.agenda.domain.model.Event}.
+ *
+ * <h2>Campos expuestos</h2>
+ * <ul>
+ * <li>{@link #id} — identificador único (UUID v7).</li>
+ * <li>{@link #title} — título del evento.</li>
+ * <li>{@link #priority} — prioridad ({@code Baja}, {@code Media},
+ * {@code Alta}).</li>
+ * <li>{@link #eventDate} — fecha calendario del evento.</li>
+ * <li>{@link #frequency} — frecuencia de repetición en días (0 = único).</li>
+ * <li>{@link #reminder} — fecha y hora del recordatorio programado.</li>
+ * <li>{@link #startHour} — hora de inicio.</li>
+ * <li>{@link #endHour} — hora de finalización.</li>
+ * <li>{@link #description} — descripción textual (opcional, puede ser
+ * {@code null}).</li>
+ * <li>{@link #status} — estado ({@code Pendiente}, {@code Completado},
+ * {@code Cancelado}, {@code Pospuesto}).</li>
+ * <li>{@link #category} — categoría asociada (puede ser {@code null}).</li>
+ * </ul>
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
+ * @see org.adultofuncional.main.agenda.application.usecase.CreateEventUseCase
+ * @see org.adultofuncional.main.agenda.application.usecase.GetEventUseCase
+ * @see org.adultofuncional.main.agenda.application.usecase.ListEventsUseCase
+ * @see org.adultofuncional.main.agenda.application.usecase.UpdateEventUseCase
+ * @see CategoryResponse
  */
 @Getter
 @Builder
 public class EventResponse {
 
-    private UUID id;
-    private String title;
-    private String priority;
-    private LocalDate eventDate;
-    private Integer frequency;
-    private LocalDateTime reminder;
-    private LocalDateTime startHour;
-    private LocalDateTime endHour;
-    private String description;
-    private String status;
-    private EventCategoryDTO category;
-}
-cat > src/main/java/org/adultofuncional/main/agenda/application/usecase/CreateEventUseCase.java << 'EOF'
-package org.adultofuncional.main.agenda.application.usecase;
+  /**
+   * Identificador único del evento (UUID v7).
+   * Generado por el dominio al crear el evento.
+   */
+  private UUID id;
 
-import lombok.RequiredArgsConstructor;
-import org.adultofuncional.main.account.domain.repository.AccountRepository;
-import org.adultofuncional.main.agenda.application.dto.EventCategoryDTO;
-import org.adultofuncional.main.agenda.application.dto.EventRequest;
-import org.adultofuncional.main.agenda.application.dto.EventResponse;
-import org.adultofuncional.main.agenda.domain.model.Event;
-import org.adultofuncional.main.agenda.domain.repository.EventRepository;
-import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
-import org.adultofuncional.main.shared.exception.BusinessException;
-import org.adultofuncional.main.shared.exception.NotFoundException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+  /**
+   * Título del evento.
+   * Ejemplos: "Reunión de equipo", "Cita médica", "Cumpleaños de Julia".
+   */
+  private String title;
 
-import java.util.UUID;
+  /**
+   * Prioridad del evento.
+   * Valores posibles: {@code "Baja"}, {@code "Media"}, {@code "Alta"}.
+   * Por defecto {@code "Media"} si no se especificó en la creación.
+   */
+  private String priority;
 
-/**
- * Caso de uso: Crear un nuevo evento.
- *
- * <p><strong>¿Qué es?</strong><br>
- * Servicio que registra un evento en la agenda de un usuario.
- *
- * <p><strong>¿Para qué sirve?</strong><br>
- * Valida la existencia de la cuenta y la categoría (opcional), y que la hora
- * de inicio sea anterior a la hora de fin. Establece valores por defecto.
- *
- * @author Miguel Angel Blandon Montes
- * @since 0.0.1
- */
-@Service
-@RequiredArgsConstructor
-public class CreateEventUseCase {
+  /**
+   * Fecha calendario del evento.
+   * Representa el día en que ocurre el evento, sin información de hora.
+   */
+  private LocalDate eventDate;
 
-    private final EventRepository eventRepository;
-    private final AccountRepository accountRepository;
-    private final CategoryRepository categoryRepository;
+  /**
+   * Frecuencia de repetición del evento en días.
+   * {@code 0} indica evento único; valores positivos indican repetición
+   * periódica (1 = diario, 7 = semanal, 30 = mensual, 365 = anual).
+   */
+  private Integer frequency;
 
-    // TODO: Validar valores de frecuencia permitidos (0,1,7,30,365)
-    // TODO: Validar que el recordatorio sea anterior a la fecha del evento
+  /**
+   * Fecha y hora programada para el recordatorio del evento.
+   */
+  private LocalDateTime reminder;
 
-    @Transactional
-    public EventResponse execute(UUID accountId, EventRequest request) {
-        // 1. Verificar cuenta
-        accountRepository.findById(accountId)
-                .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
+  /**
+   * Hora de inicio del evento.
+   * Incluye fecha y hora para eventos que pueden extenderse por varios días.
+   */
+  private LocalDateTime startHour;
 
-        // 2. Validar horario
-        if (request.getStartHour().isAfter(request.getEndHour()) || request.getStartHour().isEqual(request.getEndHour())) {
-            throw new BusinessException("La hora de inicio debe ser anterior a la hora de fin");
-        }
+  /**
+   * Hora de finalización del evento.
+   * Siempre es posterior a {@link #startHour}.
+   */
+  private LocalDateTime endHour;
 
-        // 3. Buscar categoría (opcional)
-        var category = request.getCategoryId() != null
-                ? categoryRepository.findById(request.getCategoryId())
-                        .orElseThrow(() -> new NotFoundException("Categoría no encontrada"))
-                : null;
+  /**
+   * Descripción detallada del evento.
+   * Campo opcional; {@code null} si no se proporcionó descripción.
+   */
+  private String description;
 
-        // 4. Valores por defecto
-        String priority = request.getPriority() != null ? request.getPriority() : "Media";
-        String status = request.getStatus() != null ? request.getStatus() : "Pendiente";
+  /**
+   * Estado actual del evento.
+   * Valores posibles: {@code "Pendiente"}, {@code "Completado"},
+   * {@code "Cancelado"}, {@code "Pospuesto"}.
+   * Por defecto {@code "Pendiente"} si no se especificó en la creación.
+   */
+  private String status;
 
-        // 5. Crear modelo de dominio
-        Event event = Event.create(
-                accountId,
-                request.getTitle(),
-                priority,
-                request.getEventDate(),
-                request.getFrequency(),
-                request.getReminder(),
-                request.getStartHour(),
-                request.getEndHour(),
-                request.getDescription(),
-                status,
-                category != null ? category.getCategoryId() : null
-        );
-
-        Event saved = eventRepository.save(event);
-
-        // 6. Mapear respuesta
-        return mapToResponse(saved, category);
-    }
-
-    private EventResponse mapToResponse(Event event, org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity category) {
-        EventCategoryDTO catDto = null;
-        if (category != null) {
-            catDto = EventCategoryDTO.builder()
-                    .id(category.getCategoryId())
-                    .name(category.getCategoryName())
-                    .type(category.getCategoryType())
-                    .createdAt(category.getCategoryCreatedAt())
-                    .build();
-        }
-        return EventResponse.builder()
-                .id(event.getId())
-                .title(event.getTitle())
-                .priority(event.getPriority())
-                .eventDate(event.getEventDate())
-                .frequency(event.getFrequency())
-                .reminder(event.getReminder())
-                .startHour(event.getStartHour())
-                .endHour(event.getEndHour())
-                .description(event.getDescription())
-                .status(event.getStatus())
-                .category(catDto)
-                .build();
-    }
+  /**
+   * Categoría financiera asociada al evento.
+   * Contiene los datos completos de la categoría como un
+   * {@link CategoryResponse} anidado.
+   * Es {@code null} si el evento no tiene categoría asociada.
+   */
+  private CategoryResponse category;
 }
