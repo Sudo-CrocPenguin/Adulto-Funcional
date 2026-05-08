@@ -31,7 +31,7 @@ import lombok.experimental.FieldDefaults;
  * <li>Permitir la actualización de todos sus campos editables mediante
  * {@link #update}, con revalidación de invariantes.</li>
  * <li>Proveer el método {@link #reconstitute} para reconstruir instancias
- * desde persistencia sin regenerar UUID ni marcas de tiempo.</li>
+ * desde persistencia sin regenerar UUID.</li>
  * </ul>
  *
  * <p>
@@ -104,19 +104,13 @@ public class Event {
   UUID accountId;
 
   /**
-   * Fecha y hora exacta en que el evento fue registrado en el sistema.
-   * Se genera automáticamente en {@link #create} y es inmutable.
-   */
-  final LocalDateTime createdAt;
-
-  /**
    * Constructor privado. Usar {@link #create} o {@link #reconstitute}.
    */
   private Event(UUID id, String title, String description,
       String priority, LocalDate date, int frequency,
       LocalDateTime reminder, LocalDateTime startHour,
       LocalDateTime endHour, String status,
-      UUID categoryId, UUID accountId, LocalDateTime createdAt) {
+      UUID categoryId, UUID accountId) {
 
     validateId(id);
     validateTitle(title);
@@ -128,7 +122,6 @@ public class Event {
     validateStatus(status);
     validateCategoryId(categoryId);
     validateAccountId(accountId);
-    validateCreatedAt(createdAt);
 
     this.id = id;
     this.title = title;
@@ -142,16 +135,14 @@ public class Event {
     this.status = status;
     this.categoryId = categoryId;
     this.accountId = accountId;
-    this.createdAt = createdAt;
   }
 
   /**
    * Método de fábrica para crear un nuevo evento antes de persistirlo.
    *
    * <p>
-   * Genera un UUID v7 y establece {@code createdAt} con la fecha y hora
-   * actuales. La cuenta y la categoría deben haber sido validadas en la capa
-   * de aplicación.
+   * Genera un UUID v7. La cuenta y la categoría deben haber sido validadas
+   * en la capa de aplicación.
    *
    * @param title       título del evento (no nulo ni vacío).
    * @param description descripción opcional.
@@ -176,7 +167,6 @@ public class Event {
       UUID categoryId, UUID accountId) {
 
     UUID id = Generators.timeBasedEpochGenerator().generate();
-    LocalDateTime now = LocalDateTime.now();
 
     return new Event(
         id,
@@ -190,8 +180,7 @@ public class Event {
         endHour,
         status,
         categoryId,
-        accountId,
-        now);
+        accountId);
   }
 
   /**
@@ -210,27 +199,24 @@ public class Event {
    * @param status      estado.
    * @param categoryId  categoría asociada.
    * @param accountId   cuenta propietaria.
-   * @param createdAt   fecha de registro original.
    * @return instancia reconstituida.
    */
   public static Event reconstitute(UUID id, String title,
       String description, String priority, LocalDate date,
       int frequency, LocalDateTime reminder,
       LocalDateTime startHour, LocalDateTime endHour,
-      String status, UUID categoryId, UUID accountId,
-      LocalDateTime createdAt) {
+      String status, UUID categoryId, UUID accountId) {
 
     return new Event(id, title, description, priority, date,
         frequency, reminder, startHour, endHour, status,
-        categoryId, accountId, createdAt);
+        categoryId, accountId);
   }
 
   /**
    * Actualiza todos los datos editables del evento.
    *
    * <p>
-   * Se aplican las mismas validaciones que en la creación. La fecha de
-   * registro {@code createdAt} no se modifica.
+   * Se aplican las mismas validaciones que en la creación.
    *
    * @param title       nuevo título (no nulo ni vacío).
    * @param description nueva descripción (puede ser nula).
@@ -337,15 +323,6 @@ public class Event {
   private static void validateAccountId(UUID accountId) {
     if (accountId == null) {
       throw new IllegalArgumentException("AccountId cannot be null");
-    }
-  }
-
-  private static void validateCreatedAt(LocalDateTime createdAt) {
-    if (createdAt == null) {
-      throw new IllegalArgumentException("CreatedAt cannot be null");
-    }
-    if (createdAt.isAfter(LocalDateTime.now())) {
-      throw new IllegalArgumentException("CreatedAt cannot be in the future");
     }
   }
 }
