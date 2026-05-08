@@ -24,20 +24,20 @@ import lombok.Setter;
  *
  * <p>
  * Representa una transacción financiera (ingreso o egreso) asociada a una
- * cuenta y opcionalmente a una categoría.
+ * cuenta y <b>obligatoriamente</b> a una categoría.
  *
  * <p>
  * Schema de la tabla {@code movements}:
  * 
  * <pre>
  * movement_id             CHAR(36)      NOT NULL PRIMARY KEY
- * movement_type           VARCHAR(20)    NOT NULL          -- "Ingreso" o "Egreso"
+ * movement_type           VARCHAR(20)   NOT NULL          -- "Ingreso" o "Egreso"
  * movement_amount         DECIMAL(10,2) NOT NULL
  * movement_register_date  TIMESTAMP     NOT NULL
  * movement_description    TEXT          NULL
  * movement_date           DATE          NOT NULL
  * movement_fk_account_id  CHAR(36)      NOT NULL
- * movement_fk_category_id CHAR(36)      FK → categories(category_id)
+ * movement_fk_category_id CHAR(36)      NOT NULL  -- referencia obligatoria a categories
  * </pre>
  *
  * @author Juan Sebastian Rios
@@ -82,14 +82,14 @@ public class MovementEntity {
   @Column(name = "movement_amount", precision = 10, scale = 2, nullable = false)
   private BigDecimal movementAmount;
 
-   /**
-    * Fecha y hora en que se registró el movimiento en el sistema.
-    *
-    * <p>
-    * Columna:
-    * {@code movement_register_date TIMESTAMP NOT NULL}.
-    * Se establece automáticamente en {@link #onCreate()} y no es modificable.
-    */
+  /**
+   * Fecha y hora en que se registró el movimiento en el sistema.
+   *
+   * <p>
+   * Columna:
+   * {@code movement_register_date TIMESTAMP NOT NULL}.
+   * Se establece automáticamente en {@link #onCreate()} y no es modificable.
+   */
   @Column(name = "movement_register_date", nullable = false, updatable = false)
   private LocalDateTime movementRegisterDate;
 
@@ -123,14 +123,14 @@ public class MovementEntity {
   private AccountEntity account;
 
   /**
-   * Categoría asociada al movimiento (opcional).
+   * Categoría asociada al movimiento (obligatoria).
    *
    * <p>
    * FK: {@code movement_fk_category_id CHAR(36)} →
    * {@code categories(category_id)}.
    */
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "movement_fk_category_id")
+  @JoinColumn(name = "movement_fk_category_id", nullable = false)
   private CategoryEntity category;
 
   /**

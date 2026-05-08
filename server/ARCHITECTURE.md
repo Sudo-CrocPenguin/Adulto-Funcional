@@ -426,44 +426,44 @@ AccountRepositoryImpl → SpringAccountJpaRepository → MariaDB
 
 ```
 accounts (ENTIDAD CENTRAL)
-├── account_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
+├── account_id CHAR(36) PRIMARY KEY
 ├── account_names VARCHAR(50) NOT NULL
 ├── account_lastnames VARCHAR(50) NOT NULL
 ├── account_email VARCHAR(255) NOT NULL UNIQUE
 ├── account_phone VARCHAR(20) NOT NULL
 ├── account_password VARCHAR(255) NOT NULL (Argon2 hash)
 ├── account_master_key VARCHAR(255) NULL (Argon2 hash)
-└── account_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+└── account_created_at TIMESTAMP NOT NULL
 
 categories
-├── category_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
+├── category_id CHAR(36) PRIMARY KEY
 ├── category_name VARCHAR(50) NOT NULL
-├── category_type VARCHAR(20) NOT NULL ("Finanzas" | "Agenda")
-├── category_created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-└── category_deleted_at TIMESTAMP NULL (soft delete)
+└── category_type VARCHAR(20) NOT NULL ("Finanzas" | "Agenda")
 
 movements
-├── movement_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
+├── movement_id CHAR(36) PRIMARY KEY
 ├── movement_type VARCHAR(20) NOT NULL ("Ingreso" | "Egreso")
 ├── movement_amount DECIMAL(10,2) NOT NULL
-├── movement_register_date TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+├── movement_register_date TIMESTAMP NOT NULL
 ├── movement_description TEXT NULL
 ├── movement_date DATE NOT NULL
 ├── movement_fk_account_id CHAR(36) FK → accounts(account_id)
-└── movement_fk_category_id CHAR(36) FK → categories(category_id)
+└── movement_fk_category_id CHAR(36) NOT NULL FK → categories(category_id)
 
 fixed_expenses
-├── fixed_expense_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
-├── fixed_expense_name VARCHAR(20) NOT NULL
+├── fixed_expense_id CHAR(36) PRIMARY KEY
+├── fixed_expense_name VARCHAR(50) NOT NULL
 ├── fixed_expense_frequency VARCHAR(15) NOT NULL
 ├── fixed_expense_amount DECIMAL(10,2) NOT NULL
 ├── fixed_expense_status VARCHAR(15) NOT NULL ("Activo" | "Inactivo")
-├── fixed_expense_closing_date DATE NOT NULL
-├── fixed_expense_fk_category_id CHAR(36) FK → categories(category_id)
+├── fixed_expense_start_date DATE NOT NULL
+├── fixed_expense_next_due_date DATE NOT NULL
+├── fixed_expense_reminder_days INT NOT NULL
+├── fixed_expense_fk_category_id CHAR(36) NOT NULL FK → categories(category_id)
 └── fixed_expense_fk_account_id CHAR(36) FK → accounts(account_id)
 
 events
-├── event_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
+├── event_id CHAR(36) PRIMARY KEY
 ├── event_title VARCHAR(35) NOT NULL
 ├── event_priority VARCHAR(15) NULL DEFAULT 'Media'
 ├── event_date DATE NOT NULL
@@ -473,11 +473,11 @@ events
 ├── event_end_hour DATETIME NOT NULL
 ├── event_description TEXT NULL
 ├── event_status VARCHAR(20) DEFAULT 'Pendiente'
-├── event_fk_category_id CHAR(36) FK → categories(category_id)
+├── event_fk_category_id CHAR(36) NOT NULL FK → categories(category_id)
 └── event_fk_account_id CHAR(36) FK → accounts(account_id)
 
 passwords
-├── password_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())
+├── password_id CHAR(36) PRIMARY KEY
 ├── password_application_name VARCHAR(35) NOT NULL
 ├── password_salt VARCHAR(255) NOT NULL (salt para derivar clave AES)
 ├── password_iv BINARY(16) NOT NULL (IV de 16 bytes para cifrado AES)
@@ -488,10 +488,11 @@ passwords
 
 ### Características del esquema
 
-- **UUID v7**: Identificadores ordenables temporalmente (mejor rendimiento en índices B-tree)
-- **Eliminación en cascada**: Al eliminar una cuenta, se eliminan todos sus datos relacionados
-- **Soft delete**: Las categorías soportan borrado lógico mediante `category_deleted_at`
-- **Relaciones**: Todas las entidades referencian a `accounts` como propietario
+- **UUID v7**: Identificadores ordenables temporalmente, generados por la aplicación (no por la base de datos).
+- **Eliminación en cascada**: Al eliminar una cuenta, se eliminan todos sus datos relacionados. La cascada se implementa a nivel de JPA, **no** en las restricciones SQL.
+- **Categorías obligatorias**: `movements.movement_fk_category_id` y `events.event_fk_category_id` son `NOT NULL`; todos los movimientos y eventos deben tener una categoría asignada.
+- **Relaciones**: Todas las entidades referencian a `accounts` como propietario.
+- **Índices**: Se crean índices sobre las claves foráneas (`movement_fk_account_id`, `fixed_expense_fk_account_id`, etc.) y sobre las columnas de fecha (`movement_date`, `event_date`) para optimizar las consultas más frecuentes.
 
 ## Configuración de Docker
 

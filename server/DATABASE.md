@@ -26,13 +26,11 @@ Almacena las cuentas de usuario (titulares). Es la entidad central del sistema.
 
 Categorías para clasificar movimientos, gastos fijos y eventos.
 
-| Columna             | Tipo        | Restricciones        | Descripción                                                                                          |
-| ------------------- | ----------- | -------------------- | ---------------------------------------------------------------------------------------------------- |
-| category_id         | CHAR(36)    | NOT NULL PRIMARY KEY | Identificador único (UUID v7 generado por la aplicación).                                            |
-| category_name       | VARCHAR(50) | NOT NULL             | Nombre de la categoría (ej. "Alimentación", "Transporte").                                           |
-| category_type       | VARCHAR(20) | NOT NULL             | Tipo de categoría: "Finanzas" ("transporte","salud" etc..) o "Agenda" ("familiar", "trabajo" etc..). |
-| category_created_at | TIMESTAMP   | NOT NULL             | Fecha de creación (asignada por la aplicación).                                                      |
-| category_deleted_at | TIMESTAMP   | NULL DEFAULT NULL    | Fecha de borrado lógico (si NULL, la categoría está activa).                                         |
+| Columna       | Tipo        | Restricciones        | Descripción                                                                                          |
+| ------------- | ----------- | -------------------- | ---------------------------------------------------------------------------------------------------- |
+| category_id   | CHAR(36)    | NOT NULL PRIMARY KEY | Identificador único (UUID v7 generado por la aplicación).                                            |
+| category_name | VARCHAR(50) | NOT NULL             | Nombre de la categoría (ej. "Alimentación", "Transporte").                                           |
+| category_type | VARCHAR(20) | NOT NULL             | Tipo de categoría: "Finanzas" ("transporte","salud" etc..) o "Agenda" ("familiar", "trabajo" etc..). |
 
 ---
 
@@ -40,16 +38,16 @@ Categorías para clasificar movimientos, gastos fijos y eventos.
 
 Registra los movimientos financieros (ingresos y gastos) de cada cuenta.
 
-| Columna                 | Tipo          | Restricciones        | Descripción                                     |
-| ----------------------- | ------------- | -------------------- | ----------------------------------------------- |
-| movement_id             | CHAR(36)      | NOT NULL PRIMARY KEY | Identificador único (UUID v7).                  |
-| movement_type           | VARCHAR(20)   | NOT NULL             | Tipo: "Ingreso" o "Egreso".                     |
-| movement_amount         | DECIMAL(10,2) | NOT NULL             | Monto del movimiento.                           |
-| movement_register_date  | TIMESTAMP     | NOT NULL             | Fecha de registro (asignada por la aplicación). |
-| movement_description    | TEXT          | NULL                 | Descripción opcional del movimiento.            |
-| movement_date           | DATE          | NOT NULL             | Fecha en que ocurrió el movimiento.             |
-| movement_fk_account_id  | CHAR(36)      | NOT NULL             | Clave foránea a `accounts(account_id)`.         |
-| movement_fk_category_id | CHAR(36)      | NULL                 | Clave foránea a `categories(category_id)`.      |
+| Columna                 | Tipo          | Restricciones        | Descripción                                              |
+| ----------------------- | ------------- | -------------------- | -------------------------------------------------------- |
+| movement_id             | CHAR(36)      | NOT NULL PRIMARY KEY | Identificador único (UUID v7).                           |
+| movement_type           | VARCHAR(20)   | NOT NULL             | Tipo: "Ingreso" o "Egreso".                              |
+| movement_amount         | DECIMAL(10,2) | NOT NULL             | Monto del movimiento.                                    |
+| movement_register_date  | TIMESTAMP     | NOT NULL             | Fecha de registro (asignada por la aplicación).          |
+| movement_description    | TEXT          | NULL                 | Descripción opcional del movimiento.                     |
+| movement_date           | DATE          | NOT NULL             | Fecha en que ocurrió el movimiento.                      |
+| movement_fk_account_id  | CHAR(36)      | NOT NULL             | Clave foránea a `accounts(account_id)`.                  |
+| movement_fk_category_id | CHAR(36)      | **NOT NULL**         | Clave foránea a `categories(category_id)` (obligatoria). |
 
 ### Índices adicionales
 
@@ -62,16 +60,18 @@ Registra los movimientos financieros (ingresos y gastos) de cada cuenta.
 
 Gastos fijos recurrentes (mensuales, semanales, etc.) asociados a una cuenta.
 
-| Columna                      | Tipo          | Restricciones        | Descripción                                         |
-| ---------------------------- | ------------- | -------------------- | --------------------------------------------------- |
-| fixed_expense_id             | CHAR(36)      | NOT NULL PRIMARY KEY | Identificador único.                                |
-| fixed_expense_name           | VARCHAR(20)   | NOT NULL             | Nombre del gasto fijo (ej. "Netflix", "Arriendo").  |
-| fixed_expense_frequency      | VARCHAR(15)   | NOT NULL             | Frecuencia: "Mensual", "Semanal", "Quincenal", etc. |
-| fixed_expense_amount         | DECIMAL(10,2) | NOT NULL             | Monto del gasto.                                    |
-| fixed_expense_status         | VARCHAR(15)   | NOT NULL             | Estado: "Activo" o "Inactivo".                      |
-| fixed_expense_closing_date   | DATE          | NOT NULL             | Fecha de cierre o próxima fecha de pago.            |
-| fixed_expense_fk_category_id | CHAR(36)      | NULL                 | FK a `categories`.                                  |
-| fixed_expense_fk_account_id  | CHAR(36)      | NOT NULL             | FK a `accounts`.                                    |
+| Columna                      | Tipo            | Restricciones        | Descripción                                         |
+| ---------------------------- | --------------- | -------------------- | --------------------------------------------------- |
+| fixed_expense_id             | CHAR(36)        | NOT NULL PRIMARY KEY | Identificador único.                                |
+| fixed_expense_name           | **VARCHAR(50)** | NOT NULL             | Nombre del gasto fijo (ej. "Netflix", "Arriendo").  |
+| fixed_expense_frequency      | VARCHAR(15)     | NOT NULL             | Frecuencia: "Mensual", "Semanal", "Quincenal", etc. |
+| fixed_expense_amount         | DECIMAL(10,2)   | NOT NULL             | Monto del gasto.                                    |
+| fixed_expense_status         | VARCHAR(15)     | NOT NULL             | Estado: "Activo" o "Inactivo".                      |
+| fixed_expense_start_date     | DATE            | NOT NULL             | Fecha de inicio de la recurrencia.                  |
+| fixed_expense_next_due_date  | DATE            | NOT NULL             | Próxima fecha de vencimiento.                       |
+| fixed_expense_reminder_days  | INT             | NOT NULL             | Días de antelación para generar recordatorio.       |
+| fixed_expense_fk_category_id | CHAR(36)        | **NOT NULL**         | FK a `categories` (obligatoria).                    |
+| fixed_expense_fk_account_id  | CHAR(36)        | NOT NULL             | FK a `accounts`.                                    |
 
 ### Índices adicionales
 
@@ -95,7 +95,7 @@ Eventos de la agenda (citas, recordatorios, tareas).
 | event_end_hour       | DATETIME    | NOT NULL             | Fecha/hora de fin.                                                  |
 | event_description    | TEXT        | NULL                 | Descripción detallada.                                              |
 | event_status         | VARCHAR(20) | DEFAULT 'Pendiente'  | Estado: "Pendiente", "Completado", "Cancelado".                     |
-| event_fk_category_id | CHAR(36)    | NULL                 | FK a `categories`.                                                  |
+| event_fk_category_id | CHAR(36)    | **NOT NULL**         | FK a `categories` (obligatoria).                                    |
 | event_fk_account_id  | CHAR(36)    | NOT NULL             | FK a `accounts`.                                                    |
 
 ### Índices adicionales
@@ -128,8 +128,8 @@ Almacena las credenciales de aplicaciones externas cifradas con AES‑256 median
 ## Notas de diseño y seguridad
 
 - **Generación de IDs**: Todos los `*_id` son UUID v7 generados en la aplicación (no por la base de datos). Esto permite controlar la identidad desde el dominio y garantiza ordenación temporal.
-- **Fechas**: Las columnas de tipo `TIMESTAMP` (`account_created_at`, `category_created_at`, `movement_register_date`, etc.) son asignadas por la aplicación mediante `@PrePersist` en las entidades JPA. La base de datos no aplica `DEFAULT CURRENT_TIMESTAMP` para mantener la coherencia.
-- **Borrado lógico**: En `categories`, la columna `category_deleted_at` permite borrado lógico sin pérdida de referencias históricas. La entidad `CategoryEntity` usa `@SQLRestriction("category_deleted_at IS NULL")` para excluir automáticamente las categorías eliminadas de todas las consultas.
+- **Fechas**: Las columnas de tipo `TIMESTAMP` (`account_created_at`, `movement_register_date`, etc.) son asignadas por la aplicación mediante `@PrePersist` en las entidades JPA. La base de datos no aplica `DEFAULT CURRENT_TIMESTAMP` para mantener la coherencia.
+- **Categorías obligatorias**: `movements.movement_fk_category_id` y `events.event_fk_category_id` son `NOT NULL`; todo movimiento y evento debe estar asociado a una categoría.
 - **Eliminación en cascada**: Las foreign keys en el SQL **no** tienen `ON DELETE CASCADE`. El borrado en cascada se maneja a nivel de JPA mediante `@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)` en `AccountEntity`. Esto significa que la cascada solo opera cuando se elimina a través de la aplicación (Spring Data JPA), no con DELETEs directos en la base de datos.
 - **Cifrado de contraseñas externas**:
   - La clave maestra del usuario se ingresa en cada sesión (o se deriva de la contraseña de login) y nunca se persiste.
