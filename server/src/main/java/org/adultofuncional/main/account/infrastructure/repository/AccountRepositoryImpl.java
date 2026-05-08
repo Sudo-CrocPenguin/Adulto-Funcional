@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
  * convirtiendo entre {@link Account} (modelo de dominio) y
  * {@link AccountEntity} (entidad JPA) mediante {@link AccountMapper}.
  *
- * @author Jeronimo Ospina Zapata
+ * @author Jeronimo Ospina Zapata,Miguel Angel Blandon Montes
  * @since 0.0.1
  */
 @Repository
@@ -47,7 +47,7 @@ public class AccountRepositoryImpl implements AccountRepository {
     AccountEntity saved = jpaRepository.save(entity);
     return mapper.toDomain(saved);
   }
-
+ 
   /**
    * Busca una cuenta por su identificador UUID.
    *
@@ -60,7 +60,7 @@ public class AccountRepositoryImpl implements AccountRepository {
         .map(mapper::toDomain);
   }
 
-  /**
+/**
    * Busca una cuenta por su correo electrónico.
    *
    * <p>
@@ -99,5 +99,10 @@ public class AccountRepositoryImpl implements AccountRepository {
   @Override
   public void deleteById(UUID id) {
     jpaRepository.deleteById(id);
+  }
+
+  @Override
+  public boolean existsById(UUID id) {
+    return jpaRepository.existsById(id);
   }
 }

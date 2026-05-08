@@ -13,8 +13,8 @@
  * email).</li>
  * <li>Consulta de información no sensible (sin {@code password_hash} ni
  * {@code master_key_hash}).</li>
- * <li>Eliminación de cuenta y todos sus datos asociados en cascada (pendiente
- * de implementación).</li>
+ * <li>Eliminación de cuenta y todos sus datos asociados en cascada (implementado
+ * en {@code DeleteAccountUseCase}).</li>
  * <li>Validación de unicidad de correo electrónico.</li>
  * <li>Validación de ownership: un usuario solo puede acceder o modificar su
  * propia cuenta.</li>
@@ -41,6 +41,10 @@
  * }, {@code
  * UpdateAccountRequest
  * })
+ * ├── domain/            → Modelo {@code Account}, invariantes y puerto {@code AccountRepository}
+ * ├── application/       → Casos de uso ({@code GetAccountUseCase}, {@code UpdateAccountUseCase},
+ *                           {@code DeleteAccountUseCase}) y DTOs ({@code AccountResponse},
+ *                           {@code UpdateAccountRequest})
  * └── infrastructure/    → Controlador REST, entidad JPA, mapeador y repositorio concreto
  * </pre>
  *
