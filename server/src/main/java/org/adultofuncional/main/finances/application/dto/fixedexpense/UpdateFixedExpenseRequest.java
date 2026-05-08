@@ -142,7 +142,7 @@ public class UpdateFixedExpenseRequest {
      * </ul>
      */
     @Future(message = "La fecha de cierre debe ser futura")
-    private LocalDate closingDate;
+    private LocalDate nextDueDate;
 
     /**
      * Identificador de la nueva categoría financiera que se desea asociar
