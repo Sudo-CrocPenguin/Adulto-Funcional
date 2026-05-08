@@ -49,30 +49,114 @@ import org.springframework.web.bind.annotation.RestController;
 import lombok.RequiredArgsConstructor;
 
 
+/**
+ * Controlador REST del módulo de finanzas personales.
+ *
+ * <p>Expone endpoints para gestionar movimientos, categorías y gastos fijos
+ * bajo la ruta base {@code /api/finances}. Delega la lógica de negocio a los
+ * casos de uso correspondientes y retorna respuestas envueltas en
+ * {@link ApiResponse}.</p>
+ *
+ * <p>Los endpoints que operan sobre recursos de una cuenta resuelven el
+ * {@code accountId} del usuario autenticado a partir de su correo electrónico
+ * mediante {@link #resolveAccountId(String)}. Las categorías son globales y
+ * no requieren esta resolución.</p>
+ *
+ * @author Lidys Jaraba
+ * @since 0.0.1
+ */
+
 @RestController
 @RequestMapping("/api/finances")
 @RequiredArgsConstructor
 public class FinancesController {
 
+     /**
+     * Caso de uso para registrar un nuevo movimiento financiero.
+     */
     private final CreateMovementUseCase createMovementUseCase;
+    /**
+     * Caso de uso para obtener un movimiento financiero por su identificador.
+     */
     private final GetMovementUseCase getMovementUseCase;
+    /**
+     * Caso de uso para obtener un movimiento financiero por su identificador.
+     */
     private final ListMovementsUseCase listMovementUseCase;
+    /**
+     * Caso de uso para actualizar parcialmente un movimiento financiero.
+     */
     private final UpdateMovementUseCase updateMovementUseCase;
+    /**
+     * Caso de uso para eliminar un movimiento financiero.
+     */
     private final DeleteMovementUseCase deleteMovementUseCase;
 
+    /**
+     * Caso de uso para crear una nueva categoría financiera.
+     */
     private final CreateCategoryUseCase createCategoryUseCase;
+    /**
+     * Caso de uso para obtener una categoría financiera por su identificador.
+     */
     private final GetCategoryUseCase getCategoryUseCase;
+    /**
+     * Caso de uso para listar las categorías financieras del sistema.
+     */
     private final ListCategoriesUseCase listCategoriesUseCase;
+    /**
+     * Caso de uso para actualizar parcialmente una categoría financiera.
+     */
     private final UpdateCategoryUseCase updateCategoryUseCase;
+    /**
+     * Caso de uso para eliminar una categoría financiera.
+     */
     private final DeleteCategoryUseCase deleteCategoryUseCase;
 
+    /**
+     * Caso de uso para registrar un nuevo gasto fijo.
+     */
     private final CreateFixedExpenseUseCase createFixedExpenseUseCase;
+    /**
+     * Caso de uso para obtener un gasto fijo por su identificador.
+     */
     private final GetFixedExpenseUseCase getFixedExpenseUseCase;
+    /**
+     * Caso de uso para listar los gastos fijos de una cuenta.
+     */
     private final ListFixedExpensesUseCase listFixedExpensesUseCase;
+     /**
+     * Caso de uso para actualizar parcialmente un gasto fijo.
+     */
     private final UpdateFixedExpenseUseCase updateFixedExpenseUseCase;
+    /**
+     * Caso de uso para eliminar un gasto fijo.
+     */
     private final DeleteFixedExpenseUseCase deleteFixedExpenseUseCase;
 
+    /**
+     * Repositorio de cuentas utilizado para resolver el UUID de la cuenta
+     * a partir del correo electrónico del usuario autenticado.
+     */
     private final AccountRepository accountRepository;
+
+
+     /**
+     * Resuelve el identificador único de la cuenta a partir del correo
+     * electrónico del usuario autenticado.
+     *
+     * <p>Consulta el {@link AccountRepository} buscando la cuenta asociada
+     * al correo proporcionado. Si no existe una cuenta registrada con ese
+     * correo, lanza una {@link NotFoundException} interrumpiendo el flujo
+     * del endpoint invocante.</p>
+     *
+     * @param email correo electrónico del usuario autenticado, obtenido
+     *              desde el contexto de seguridad mediante
+     *              {@code @AuthenticationPrincipal}.
+     * @return UUID de la cuenta asociada al correo electrónico.
+     * @throws NotFoundException si no existe ninguna cuenta registrada
+     *                           con el correo electrónico proporcionado.
+     */
 
     private UUID resolveAccountId(String email) {
         return accountRepository.findByEmail(email)
@@ -81,6 +165,18 @@ public class FinancesController {
     }
 
     //Movimientos
+
+    /**
+     * Registra un nuevo movimiento financiero (ingreso o egreso) en la cuenta
+     * del usuario autenticado.
+     *
+     * @param request    objeto {@link CreateMovementRequest} con los datos
+     *                   validados del movimiento a registrar.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 201 Created} y el
+     *         {@link MovementResponse} del movimiento creado.
+     * @throws NotFoundException si la cuenta del usuario no existe.
+     */
 
     @PostMapping("/movements")
     public ResponseEntity<ApiResponse<MovementResponse>> createMovement(@Validated @RequestBody CreateMovementRequest request,
@@ -95,6 +191,18 @@ public class FinancesController {
             .data(response)
             .build());
     }
+
+    /**
+     * Obtiene el detalle de un movimiento financiero específico de la cuenta
+     * del usuario autenticado.
+     *
+     * @param id          UUID del movimiento que se desea consultar.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} y el
+     *         {@link MovementResponse} del movimiento encontrado.
+     * @throws NotFoundException si el movimiento no existe o no pertenece
+     *                           a la cuenta del usuario.
+     */
 
     @GetMapping("/movements/{id}")
     public ResponseEntity<ApiResponse<MovementResponse>> getMovement(@PathVariable UUID id,
@@ -111,6 +219,19 @@ public class FinancesController {
     }
 
 
+     /**
+     * Lista los movimientos financieros de la cuenta del usuario autenticado,
+     * con soporte de filtrado opcional por tipo, categoría, rango de fechas
+     * y término de búsqueda.
+     *
+     * @param filter      objeto {@link MovementFilterRequest} con los criterios
+     *                    de filtrado opcionales. Puede ser {@code null}.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} y la lista de
+     *         {@link MovementResponse} que cumplen los criterios del filtro.
+     * @throws NotFoundException si la cuenta del usuario no existe.
+     */
+
     @GetMapping("/movements")
     public ResponseEntity<ApiResponse<List<MovementResponse>>> listMovements(MovementFilterRequest filter, 
         @AuthenticationPrincipal String loggedEmail) {
@@ -125,6 +246,19 @@ public class FinancesController {
             .build());
     }
 
+    /**
+     * Actualiza parcialmente un movimiento financiero existente en la cuenta
+     * del usuario autenticado.
+     *
+     * @param id          UUID del movimiento que se desea actualizar.
+     * @param request     objeto {@link UpdateMovementRequest} con los campos
+     *                    a modificar. Los campos no enviados permanecen sin cambios.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} y el
+     *         {@link MovementResponse} con los datos actualizados.
+     * @throws NotFoundException si el movimiento no existe o no pertenece
+     *                           a la cuenta del usuario.
+     */
 
     @PatchMapping("/movements/{id}")
     public ResponseEntity<ApiResponse<MovementResponse>> updateMovement(@PathVariable UUID id, @Validated @RequestBody 
@@ -140,6 +274,16 @@ public class FinancesController {
             .build());
     }
 
+    /**
+     * Elimina un movimiento financiero de la cuenta del usuario autenticado.
+     *
+     * @param id          UUID del movimiento que se desea eliminar.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} confirmando
+     *         la eliminación.
+     * @throws NotFoundException si el movimiento no existe o no pertenece
+     *                           a la cuenta del usuario.
+     */
 
     @DeleteMapping("/movements/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteMovement(@PathVariable UUID id, @AuthenticationPrincipal String loggedEmail) {
@@ -155,6 +299,20 @@ public class FinancesController {
 
     //Categorias
 
+    /**
+     * Crea una nueva categoría financiera en el sistema.
+     *
+     * <p>Las categorías son globales y no están vinculadas a una cuenta
+     * específica, por lo que no se requiere resolver el {@code accountId}
+     * del usuario autenticado.</p>
+     *
+     * @param request     objeto {@link CreateCategoryRequest} con los datos
+     *                    validados de la categoría a crear.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 201 Created} y el
+     *         {@link CategoryResponse} de la categoría creada.
+     */
+
     @PostMapping("/categories")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Validated @RequestBody 
         CreateCategoryRequest request, @AuthenticationPrincipal String loggedEmail) {
@@ -168,6 +326,16 @@ public class FinancesController {
             .build());
     }
 
+    /**
+     * Obtiene el detalle de una categoría financiera por su identificador.
+     *
+     * @param id          UUID de la categoría que se desea consultar.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} y el
+     *         {@link CategoryResponse} de la categoría encontrada.
+     * @throws NotFoundException si no existe ninguna categoría con el
+     *                           identificador proporcionado.
+     */
 
     @GetMapping("/categories/{id}")
     public ResponseEntity<ApiResponse<CategoryResponse>> getCategory(@PathVariable UUID id, @AuthenticationPrincipal String loggedEmail) {
@@ -181,6 +349,15 @@ public class FinancesController {
             .build());
     }
 
+    /**
+     * Lista las categorías financieras del sistema con filtrado opcional por tipo.
+     *
+     * @param filter      objeto {@link CategoryFilterRequest} con los criterios
+     *                    de filtrado opcionales. Puede ser {@code null}.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} y la lista de
+     *         {@link CategoryResponse} que cumplen los criterios del filtro.
+     */
 
     @GetMapping("/categories")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> listCategory(CategoryFilterRequest filter, 
@@ -195,6 +372,19 @@ public class FinancesController {
             .build());
     }
 
+    /**
+     * Actualiza parcialmente una categoría financiera existente.
+     *
+     * @param id          UUID de la categoría que se desea actualizar.
+     * @param request     objeto {@link UpdateCategoryRequest} con los campos
+     *                    a modificar. Los campos no enviados permanecen sin cambios.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} y el
+     *         {@link CategoryResponse} con los datos actualizados.
+     * @throws NotFoundException si no existe ninguna categoría con el
+     *                           identificador proporcionado.
+     */
+
     @PatchMapping("/categories/{id}")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable UUID id, @Validated
         @RequestBody UpdateCategoryRequest request, @AuthenticationPrincipal String loggedEmail) {
@@ -208,6 +398,16 @@ public class FinancesController {
             .build());
     }
 
+    /**
+     * Elimina una categoría financiera del sistema.
+     *
+     * @param id          UUID de la categoría que se desea eliminar.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} confirmando
+     *         la eliminación.
+     * @throws NotFoundException si no existe ninguna categoría con el
+     *                           identificador proporcionado.
+     */
 
     @DeleteMapping("/categories/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable UUID id, @AuthenticationPrincipal String loggedEmail) {
@@ -223,6 +423,17 @@ public class FinancesController {
 
     //Gastos fijos
 
+    /**
+     * Registra un nuevo gasto fijo recurrente en la cuenta del usuario autenticado.
+     *
+     * @param request     objeto {@link CreateFixedExpenseRequest} con los datos
+     *                    validados del gasto fijo a registrar.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 201 Created} y el
+     *         {@link FixedExpenseResponse} del gasto fijo creado.
+     * @throws NotFoundException si la cuenta del usuario no existe.
+     */
+
     @PostMapping("/fixed-expenses")
     public ResponseEntity<ApiResponse<FixedExpenseResponse>> createFixedExpense(@Validated @RequestBody 
         CreateFixedExpenseRequest request, @AuthenticationPrincipal String loggedEmail) {
@@ -237,6 +448,16 @@ public class FinancesController {
             .build());
     }
 
+     /**
+     * Obtiene el detalle de un gasto fijo específico de la cuenta del usuario
+     * autenticado.
+     *
+     * @param id          UUID del gasto fijo que se desea consultar.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} y el
+     *         {@link FixedExpenseResponse} del gasto fijo encontrado.
+     * @throws NotFoundException si el gasto fijo no existe.
+     */
 
     @GetMapping("/fixed-expenses/{id}")
     public ResponseEntity<ApiResponse<FixedExpenseResponse>> getFixedExpense(@PathVariable UUID id, @AuthenticationPrincipal String loggedEmail) {
@@ -250,6 +471,18 @@ public class FinancesController {
             .data(response)
             .build());
     }
+
+    /**
+     * Lista los gastos fijos de la cuenta del usuario autenticado, con soporte
+     * de filtrado opcional por estado, categoría y término de búsqueda.
+     *
+     * @param filter      objeto {@link FixedExpenseFilterRequest} con los criterios
+     *                    de filtrado opcionales. Puede ser {@code null}.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} y la lista de
+     *         {@link FixedExpenseResponse} que cumplen los criterios del filtro.
+     * @throws NotFoundException si la cuenta del usuario no existe.
+     */
 
 
     @GetMapping("/fixed-expenses")
@@ -267,6 +500,18 @@ public class FinancesController {
             .build());
     }
 
+     /**
+     * Actualiza parcialmente un gasto fijo existente en la cuenta del usuario
+     * autenticado.
+     *
+     * @param id          UUID del gasto fijo que se desea actualizar.
+     * @param request     objeto {@link UpdateFixedExpenseRequest} con los campos
+     *                    a modificar. Los campos no enviados permanecen sin cambios.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} y el
+     *         {@link FixedExpenseResponse} con los datos actualizados.
+     * @throws NotFoundException si el gasto fijo no existe.
+     */
 
     @PatchMapping("/fixed-expenses/{id}")
     public ResponseEntity<ApiResponse<FixedExpenseResponse>> updateFixedExpense(@PathVariable UUID id, @Validated
@@ -282,6 +527,16 @@ public class FinancesController {
             .build());
     }
 
+    /**
+     * Elimina un gasto fijo de la cuenta del usuario autenticado.
+     *
+     * @param id          UUID del gasto fijo que se desea eliminar.
+     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @return {@link ResponseEntity} con estado {@code 200 OK} confirmando
+     *         la eliminación.
+     * @throws NotFoundException si el gasto fijo no existe.
+     */
+
 
     @DeleteMapping("/fixed-expenses/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteFixedExpense(@PathVariable UUID id, @AuthenticationPrincipal String loggedEmail) {
@@ -295,6 +550,4 @@ public class FinancesController {
             .build());
     }
     
-
-
 }
