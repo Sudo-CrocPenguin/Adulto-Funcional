@@ -317,6 +317,32 @@ docker-compose restart app
 - `POST /api/auth/register` - Registrar usuario (JWT en HttpOnly cookie; también en body para clientes nativos)
 - `POST /api/auth/logout` - Cerrar sesión (limpia cookie)
 
+### Finanzas (`/api/finances`)
+
+- `GET /api/finances/movements` - Listar movimientos (filtros opcionales)
+- `POST /api/finances/movements` - Registrar un movimiento
+- `GET /api/finances/movements/{id}` - Obtener un movimiento
+- `PATCH /api/finances/movements/{id}` - Actualizar un movimiento
+- `DELETE /api/finances/movements/{id}` - Eliminar un movimiento
+- `GET /api/finances/categories` - Listar categorías (filtro opcional)
+- `POST /api/finances/categories` - Crear categoría
+- `GET /api/finances/categories/{id}` - Obtener categoría
+- `PATCH /api/finances/categories/{id}` - Actualizar categoría
+- `DELETE /api/finances/categories/{id}` - Eliminar categoría
+- `GET /api/finances/fixed-expenses` - Listar gastos fijos (filtros opcionales)
+- `POST /api/finances/fixed-expenses` - Registrar gasto fijo
+- `GET /api/finances/fixed-expenses/{id}` - Obtener gasto fijo
+- `PATCH /api/finances/fixed-expenses/{id}` - Actualizar gasto fijo
+- `DELETE /api/finances/fixed-expenses/{id}` - Eliminar gasto fijo
+
+### Agenda (`/api/agenda`)
+
+- `GET /api/agenda/events` - Listar eventos (filtros opcionales)
+- `POST /api/agenda/events` - Crear evento
+- `GET /api/agenda/events/{id}` - Obtener evento
+- `PATCH /api/agenda/events/{id}` - Actualizar evento
+- `DELETE /api/agenda/events/{id}` - Eliminar evento
+
 ### Health Check
 
 - `GET /actuator/health` - Estado de la aplicación (público, usado por Docker)

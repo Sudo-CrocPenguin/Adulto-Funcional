@@ -287,35 +287,36 @@ public class AccountRepositoryImpl implements AccountRepository {
 }
 ```
 
-## Módulos pendientes de desarrollo
+## Módulos implementados y pendientes
 
-Los siguientes módulos tienen definidas sus entidades JPA y el esquema de base de datos, pero aún no cuentan con modelos de dominio, casos de uso ni controladores REST.
+### `finances/` — Módulo financiero (COMPLETADO)
 
-### `finances/` — Módulo financiero
+Implementa la funcionalidad de movimientos, gastos fijos y categorías.  
+Incluye:
 
-Contiene las entidades JPA para la gestión financiera:
+- Modelos de dominio `Category`, `FixedExpense`, `Movement`.
+- Puertos de repositorio `CategoryRepository`, `FixedExpenseRepository`, `MovementRepository`.
+- Casos de uso (`CreateCategoryUseCase`, `GetCategoryUseCase`, `UpdateCategoryUseCase`, `DeleteCategoryUseCase`, `ListCategoriesUseCase`, y los correspondientes para movimientos y gastos fijos).
+- DTOs de entrada y salida (con `@NoHtml` en campos de texto).
+- Controlador REST `FinancesController` bajo `/api/finances`.
+- Entidades JPA, mappers y adaptadores de repositorio.
 
-- **`CategoryEntity`** — Categorías con soft delete (`@SQLRestriction`). Valores de `category_type`: `"Finanzas"` o `"Agenda"`. Ver `src/main/java/org/adultofuncional/main/finances/infrastructure/persistence/entity/CategoryEntity.java`
-- **`MovementEntity`** — Movimientos financieros (ingresos/egresos). Ver `src/main/java/org/adultofuncional/main/finances/infrastructure/persistence/entity/MovementEntity.java`
-- **`FixedExpensesEntity`** — Gastos fijos recurrentes (mensuales, semanales, etc.). Ver `src/main/java/org/adultofuncional/main/finances/infrastructure/persistence/entity/FixedExpensesEntity.java`
+### `agenda/` — Módulo de agenda (COMPLETADO)
 
-**Pendiente**: domain models, repository ports, use cases, controllers y mappers.
+Implementa la gestión de eventos con recurrencia, prioridad y estado.  
+Incluye:
 
-### `agenda/` — Módulo de agenda
+- Modelo de dominio `Event`.
+- Puerto de repositorio `EventRepository`.
+- Casos de uso (`CreateEventUseCase`, `GetEventUseCase`, `UpdateEventUseCase`, `DeleteEventUseCase`, `ListEventsUseCase`).
+- DTOs de entrada y salida (con `@NoHtml` en campos de texto).
+- Controlador REST bajo `/api/agenda` (pendiente de definir ruta exacta).
+- Entidades JPA, mappers y adaptadores de repositorio.
 
-Contiene la entidad JPA para eventos:
+### `security/` — Gestor de contraseñas (PENDIENTE)
 
-- **`EventEntity`** — Eventos con prioridad, recordatorios, recurrencia en días y estado. Ver `src/main/java/org/adultofuncional/main/agenda/infrastructure/persistence/entity/EventEntity.java`
-
-**Pendiente**: domain models, repository ports, use cases, controllers y mappers.
-
-### `security/` — Gestor de contraseñas
-
-Contiene la entidad JPA para el almacenamiento seguro de credenciales:
-
-- **`PasswordEntity`** — Credenciales cifradas con AES-256 (salt + IV + ciphertext). Ver `src/main/java/org/adultofuncional/main/security/infrastructure/persistence/entity/PasswordEntity.java`
-
-**Pendiente**: domain models, repository ports, use cases, controllers, mappers y servicio de encriptación AES-256.
+Solo existe la entidad JPA `PasswordEntity`.  
+Falta: modelo de dominio, puerto de repositorio, casos de uso, controlador, mapper y servicio de encriptación AES‑256.
 
 ## Configuración de seguridad (`config/security/`)
 
@@ -597,9 +598,7 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 - [x] Tests de integración con Testcontainers
 - [x] Protección anti‑XSS con `@NoHtml` en todos los DTOs de entrada
 - [x] Errores consistentes del `JwtAuthenticationFilter` con `ApiResponse`
-- [ ] Implementar DeleteAccountUseCase y conectar en AccountController
-- [ ] Módulo financiero: MovementUseCase, FixedExpenseUseCase, CategoryUseCase
-- [ ] Módulo agenda: EventUseCase con lógica de recurrencia
+- [x] Implementar DeleteAccountUseCase y conectar en AccountController
+- [x] Módulo financiero: todos los casos de uso, DTOs y controladores
+- [x] Módulo agenda: todos los casos de uso, DTOs y controladores
 - [ ] Gestor de contraseñas: PasswordUseCase con encriptación AES-256
-- [ ] Documentación OpenAPI/Swagger
-- [ ] Implementar refresh tokens para JWT
