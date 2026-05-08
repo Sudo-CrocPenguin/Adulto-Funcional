@@ -42,7 +42,8 @@ import lombok.RequiredArgsConstructor;
  * <ul>
  * <li>{@code GET    /api/account/{id}} — obtener datos de una cuenta</li>
  * <li>{@code PATCH  /api/account/{id}} — actualizar datos de una cuenta</li>
- * <li>{@code DELETE /api/account/{id}} — eliminar cuenta y todos sus datos asociados</li>
+ * <li>{@code DELETE /api/account/{id}} — eliminar cuenta y todos sus datos
+ * asociados</li>
  * </ul>
  *
  * @author Lydis Esther Jaraba, Juan Sebastian Rios, Miguel Angel Blandon Montes
@@ -173,7 +174,7 @@ public class AccountController {
    *
    * @param id          UUID de la cuenta a eliminar
    * @param loggedEmail email del usuario autenticado, extraído del JWT
-   * @return 204 No Content si la eliminación fue exitosa
+   * @return 200 No Content si la eliminación fue exitosa
    * @throws org.adultofuncional.main.shared.exception.NotFoundException
    *                                                                         si no
    *                                                                         existe
@@ -199,9 +200,9 @@ public class AccountController {
     ownershipValidator.validate(account, loggedEmail);
     deleteAccountUseCase.execute(id);
 
-    return ResponseEntity.status(HttpStatus.NO_CONTENT)
-        .body(ApiResponse.<Void>builder()
-            .status(HttpStatus.NO_CONTENT.value())
+    return ResponseEntity.ok(
+        ApiResponse.<Void>builder()
+            .status(HttpStatus.OK.value())
             .message("Cuenta eliminada exitosamente")
             .build());
   }
