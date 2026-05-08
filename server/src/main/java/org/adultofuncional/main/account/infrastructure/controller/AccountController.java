@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import org.adultofuncional.main.account.application.dto.AccountResponse;
 import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
+import org.adultofuncional.main.account.application.usecase.DeleteAccountUseCase;
 import org.adultofuncional.main.account.application.usecase.GetAccountUseCase;
 import org.adultofuncional.main.account.application.usecase.UpdateAccountUseCase;
 import org.adultofuncional.main.shared.response.ApiResponse;
@@ -41,14 +42,15 @@ import lombok.RequiredArgsConstructor;
  * <ul>
  * <li>{@code GET    /api/account/{id}} — obtener datos de una cuenta</li>
  * <li>{@code PATCH  /api/account/{id}} — actualizar datos de una cuenta</li>
- * <li>{@code DELETE /api/account/{id}} — eliminar cuenta y datos asociados
- * (pendiente de implementación)</li>
+ * <li>{@code DELETE /api/account/{id}} — eliminar cuenta y todos sus datos
+ * asociados</li>
  * </ul>
  *
- * @author Lydis Esther Jaraba, Juan Sebastian Rios
+ * @author Lydis Esther Jaraba, Juan Sebastian Rios, Miguel Angel Blandon Montes
  * @since 0.0.1
  * @see GetAccountUseCase
  * @see UpdateAccountUseCase
+ * @see DeleteAccountUseCase
  * @see OwnershipValidator
  */
 @RestController
@@ -58,9 +60,8 @@ public class AccountController {
 
   private final GetAccountUseCase getAccountUseCase;
   private final UpdateAccountUseCase updateAccountUseCase;
+  private final DeleteAccountUseCase deleteAccountUseCase;
   private final OwnershipValidator ownershipValidator;
-
-  // TODO: Inyectar DeleteAccountUseCase cuando esté implementado
 
   /**
    * Obtiene los datos de una cuenta por su ID.
@@ -167,18 +168,13 @@ public class AccountController {
    * Elimina una cuenta y todos sus datos asociados en cascada.
    *
    * <p>
-   * Pendiente de implementación — retorna {@code 501 Not Implemented} hasta
-   * que {@code DeleteAccountUseCase} esté disponible. La validación de
-   * ownership se ejecuta igualmente para no exponer la existencia de una
-   * cuenta a usuarios no autorizados.
-   *
-   * <p>
-   * TODO: Conectar con {@code DeleteAccountUseCase} cuando esté implementado
-   * y cambiar el status de retorno a {@code 204 No Content}.
+   * La validación de ownership se ejecuta antes de la eliminación para
+   * evitar que un usuario no autorizado pueda eliminar una cuenta ajena.
+   * Una vez eliminada la cuenta, no se puede recuperar.
    *
    * @param id          UUID de la cuenta a eliminar
    * @param loggedEmail email del usuario autenticado, extraído del JWT
-   * @return 501 Not Implemented hasta que el caso de uso esté disponible
+   * @return 200 No Content si la eliminación fue exitosa
    * @throws org.adultofuncional.main.shared.exception.NotFoundException
    *                                                                         si no
    *                                                                         existe
@@ -202,11 +198,12 @@ public class AccountController {
 
     AccountResponse account = getAccountUseCase.execute(id);
     ownershipValidator.validate(account, loggedEmail);
+    deleteAccountUseCase.execute(id);
 
-    return ResponseEntity.status(HttpStatus.NOT_IMPLEMENTED)
-        .body(ApiResponse.<Void>builder()
-            .status(HttpStatus.NOT_IMPLEMENTED.value())
-            .message("Eliminación de cuenta no implementada")
+    return ResponseEntity.ok(
+        ApiResponse.<Void>builder()
+            .status(HttpStatus.OK.value())
+            .message("Cuenta eliminada exitosamente")
             .build());
   }
 }
