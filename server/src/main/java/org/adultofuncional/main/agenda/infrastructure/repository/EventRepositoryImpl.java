@@ -30,8 +30,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventRepositoryImpl implements EventRepository {
 
-  SpringEventJpaRepository jpaRepository;
-  EventMapper mapper;
+  final SpringEventJpaRepository jpaRepository;
+  final EventMapper mapper;
 
   /**
    * Persiste un evento en la base de datos.
@@ -41,9 +41,7 @@ public class EventRepositoryImpl implements EventRepository {
    */
   @Override
   public Event save(Event event) {
-
     EventEntity entity = mapper.toEntity(event);
-
     EventEntity savedEntity = jpaRepository.save(entity);
 
     return mapper.toDomain(savedEntity);
