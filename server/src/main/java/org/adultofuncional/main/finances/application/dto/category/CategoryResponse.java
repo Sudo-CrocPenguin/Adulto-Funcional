@@ -27,7 +27,7 @@ import lombok.Getter;
  * @since 0.0.1
  * @see OwnedResource
  * @see org.adultofuncional.main.shared.security.OwnershipValidator
- * @see org.adultofuncional.main.finances.application.usecase.GetCategoryUseCase
+ * @see org.adultofuncional.main.finances.application.usecase.category.GetCategoryUseCase
  */
 @Getter
 @Builder

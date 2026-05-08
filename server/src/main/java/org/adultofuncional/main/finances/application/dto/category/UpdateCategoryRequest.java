@@ -36,7 +36,7 @@ import lombok.Getter;
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
- * @see org.adultofuncional.main.finances.application.usecase.UpdateCategoryUseCase
+ * @see org.adultofuncional.main.finances.application.usecase.category.UpdateCategoryUseCase
  * @see NoHtml
  */
 @Getter

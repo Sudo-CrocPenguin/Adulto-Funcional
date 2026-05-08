@@ -78,7 +78,7 @@ public class FixedExpenseMapper {
    *
    * <p>
    * Obtiene el {@code accountId} directamente del modelo de dominio
-   * {@link FixedExpense#getAccountId()} para construir la referencia JPA.
+    * {@link FixedExpense} para construir la referencia JPA.
    * Se crean referencias JPA con solo el ID para {@code account} y
    * {@code category}, suficiente para que Hibernate resuelva las FK al
    * persistir.

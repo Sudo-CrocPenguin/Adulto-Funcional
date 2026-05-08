@@ -22,8 +22,8 @@ import lombok.Getter;
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
- * @see org.adultofuncional.main.finances.application.usecase.GetMovementUseCase
- * @see org.adultofuncional.main.finances.application.usecase.CreateMovementUseCase
+ * @see org.adultofuncional.main.finances.application.usecase.movement.GetMovementUseCase
+ * @see org.adultofuncional.main.finances.application.usecase.movement.CreateMovementUseCase
  * @see CategoryResponse
  */
 @Getter

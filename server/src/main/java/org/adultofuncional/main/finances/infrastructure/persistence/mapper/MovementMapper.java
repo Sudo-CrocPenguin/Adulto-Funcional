@@ -74,7 +74,7 @@ public class MovementMapper {
    *
    * <p>
    * El {@code accountId} se obtiene directamente de
-   * {@link Movement#getAccountId()}.
+    * {@link Movement}.
    * Se construyen referencias JPA con solo el ID para {@code account} y
    * {@code category}, suficiente para que Hibernate resuelva las FK al persistir.
    *

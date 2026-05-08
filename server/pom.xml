@@ -271,7 +271,6 @@
         <artifactId>maven-javadoc-plugin</artifactId>
         <configuration>
           <outputDirectory>${project.basedir}/doc</outputDirectory>
-          <reportOutputDirectory>${project.basedir}/doc</reportOutputDirectory>
         </configuration>
       </plugin>
 
