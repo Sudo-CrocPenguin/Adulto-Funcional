@@ -1,212 +1,178 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Modal, Switch } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { router } from 'expo-router';
 import { useDashboard } from '../../src/hooks/useDashboard';
 import { Colors } from '../../src/constants/Colors';
+import { useAuth } from '../../src/contexts/AuthContext';
+import { BottomNav } from '../../src/components/common/BottomNav';
+import { LineChart } from 'react-native-chart-kit';
+import { Dimensions } from 'react-native';
+
+const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
   const { data, loading, error } = useDashboard();
-  const [showSettings, setShowSettings] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState({
-    compromisos: true,
-    finanzas: true,
-    gastosFijos: true,
-  });
+  const { user } = useAuth();
+  const [showNotifications, setShowNotifications] = useState(false);
 
   if (loading) return <View style={styles.centered}><Text>Cargando...</Text></View>;
   if (error) return <View style={styles.centered}><Text>Error: {error}</Text></View>;
 
+  // Datos para el gráfico (ingresos, egresos, osio, ahorros)
+  const chartData = {
+    labels: ['Ene', 'Feb', 'Mar'],
+    datasets: [
+      { data: [3200, 3500, 3800], color: () => Colors.success, strokeWidth: 2 },
+      { data: [1200, 1000, 800], color: () => Colors.error, strokeWidth: 2 },
+    ],
+    legend: ['Ingresos', 'Egresos'],
+  };
+
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Notificaciones (solo en diseño #5) */}
-      {data.notifications && data.notifications.length > 0 && (
-        <View style={styles.notificationsCard}>
-          <Text style={styles.notifTitle}>Notificaciones</Text>
-          {data.notifications.map(n => (
-            <View key={n.id} style={styles.notifItem}>
-              <Text style={styles.notifType}>{n.type}</Text>
-              <Text style={styles.notifMsg}>{n.message}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      {/* Tarjetas de resumen (saldo, compromisos, gastos, contraseñas) */}
-      <View style={styles.summaryGrid}>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>SALDO ACTUAL</Text>
-          <Text style={styles.summaryValue}>${data.balance.toFixed(2)}</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>COMPROMISOS PENDIENTES</Text>
-          <Text style={styles.summaryValue}>{data.pendingCommitments}</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>PRÓXIMOS GASTOS</Text>
-          <Text style={styles.summaryValue}>{data.upcomingExpensesCount}</Text>
-        </View>
-        <View style={styles.summaryCard}>
-          <Text style={styles.summaryLabel}>CONTRASEÑAS</Text>
-          <Text style={styles.summaryValue}>{data.passwordsCount}</Text>
-        </View>
-      </View>
-
-      {/* Racha de Compromisos */}
-      <View style={styles.streakCard}>
-        <Text style={styles.streakTitle}>Racha de Compromisos</Text>
-        <Text style={styles.streakNumber}>{data.streakDays} Días Activos</Text>
-        <View style={styles.dotsRow}>
-          {data.streakDots.map((day, i) => (
-            <View key={i} style={styles.dotContainer}>
-              <Text style={styles.dotNumber}>{day}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
-
-      {/* Gastos Fijos con botón Ver */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>GASTOS FIJOS</Text>
-          <TouchableOpacity onPress={() => console.log('Ver todos gastos fijos')}>
-            <Text style={styles.seeAll}>Ver</Text>
-          </TouchableOpacity>
-        </View>
-        {data.fixedExpenses.slice(0, 2).map(item => (
-          <View key={item.id} style={styles.expenseItem}>
-            <Text style={styles.expenseName}>{item.name}</Text>
-            <Text style={styles.expenseDate}>{item.dueDate}</Text>
-            <TouchableOpacity onPress={() => console.log('Ver detalle', item.id)}>
-              <Text style={styles.seeButton}>Ver</Text>
+    <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <Text style={styles.welcome}>Hola, {user?.names || 'Usuario'}</Text>
+            <TouchableOpacity onPress={() => router.push('/(app)/profile/settings')}>
+              <Text style={styles.settingsIcon}>⚙️</Text>
             </TouchableOpacity>
           </View>
-        ))}
-      </View>
-
-      {/* Compromisos con botón Ver */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>COMPROMISOS</Text>
-          <TouchableOpacity onPress={() => console.log('Ver todos compromisos')}>
-            <Text style={styles.seeAll}>Ver</Text>
-          </TouchableOpacity>
-        </View>
-        {data.commitments.slice(0, 2).map(item => (
-          <View key={item.id} style={styles.commitmentItem}>
-            <Text style={styles.commitmentTitle}>{item.title}</Text>
-            <Text style={styles.commitmentDate}>{item.date}</Text>
-            <TouchableOpacity onPress={() => console.log('Ver detalle', item.id)}>
-              <Text style={styles.seeButton}>Ver</Text>
-            </TouchableOpacity>
+          <View style={styles.balanceCard}>
+            <Text style={styles.balanceLabel}>SALDO ACTUAL</Text>
+            <Text style={styles.balanceValue}>${data.balance.toFixed(2)}</Text>
           </View>
-        ))}
-      </View>
-
-      {/* Reporte estadístico */}
-      <View style={styles.reportCard}>
-        <Text style={styles.reportTitle}>Reporte estadístico</Text>
-        <Text style={styles.reportPeriod}>Últimos 3 meses</Text>
-        <View style={styles.legendRow}>
-          <Text style={[styles.legendText, { color: Colors.success }]}>Ingresos</Text>
-          <Text style={[styles.legendText, { color: Colors.error }]}>Egresos</Text>
-          <Text style={[styles.legendText, { color: Colors.warning }]}>Osio</Text>
-          <Text style={[styles.legendText, { color: Colors.primary }]}>Ahorros</Text>
-        </View>
-        <View style={styles.chartContainer}>
-          {data.stats.monthlyData.map((value, idx) => (
-            <View key={idx} style={styles.barWrapper}>
-              <View style={[styles.bar, { height: Math.min(value / 35, 80) }]} />
-              <Text style={styles.barLabel}>{value}</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statBox}>
+              <Text style={styles.statNumber}>{data.upcomingFixedExpenses.length}</Text>
+              <Text style={styles.statLabel}>PRÓXIMOS GASTOS</Text>
             </View>
-          ))}
+            <View style={styles.statBox}>
+              <Text style={styles.statNumber}>{data.upcomingEvents.length}</Text>
+              <Text style={styles.statLabel}>COMPROMISOS PENDIENTES</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statNumber}>12</Text>
+              <Text style={styles.statLabel}>CONTRASEÑAS</Text>
+            </View>
+          </View>
         </View>
-        <Text style={styles.chartHint}>Ingresos  Egresos  Osio  Ahorros</Text>
-      </View>
 
-      {/* Botón de configuración (diseños #6 y #7) */}
-      <TouchableOpacity style={styles.settingsButton} onPress={() => setShowSettings(!showSettings)}>
-        <Text style={styles.settingsButtonText}>⚙️ Configuración</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.notifButton} onPress={() => setShowNotifications(true)}>
+          <Text style={styles.notifText}>🔔 Notificaciones</Text>
+        </TouchableOpacity>
 
-      {/* Modal de configuración (básico) */}
-      <Modal visible={showSettings} animationType="slide" transparent>
+        <View style={styles.streakCard}>
+          <Text style={styles.streakTitle}>Racha de Compromisos</Text>
+          <Text style={styles.streakNumber}>{data.streak} días activos</Text>
+          <View style={styles.dotsRow}>
+            {[7, 15, 23, 30].map(day => <Text key={day} style={styles.dot}>{day}</Text>)}
+          </View>
+        </View>
+
+        <View style={styles.row}>
+          <View style={styles.halfCard}>
+            <Text style={styles.cardTitle}>GASTOS FIJOS</Text>
+            {data.upcomingFixedExpenses.slice(0, 1).map(item => (
+              <View key={item.id}>
+                <Text style={styles.itemName}>{item.name}</Text>
+                <Text style={styles.itemDate}>{new Date(item.nextDueDate).toLocaleDateString()}</Text>
+              </View>
+            ))}
+            <TouchableOpacity onPress={() => router.push('/(app)/fixed-expenses')}><Text style={styles.ver}>Ver ➔</Text></TouchableOpacity>
+          </View>
+          <View style={styles.halfCard}>
+            <Text style={styles.cardTitle}>COMPROMISOS</Text>
+            {data.upcomingEvents.slice(0, 1).map(item => (
+              <View key={item.id}>
+                <Text style={styles.itemName}>{item.title}</Text>
+                <Text style={styles.itemDate}>{new Date(item.eventDate).toLocaleDateString()}</Text>
+              </View>
+            ))}
+            <TouchableOpacity onPress={() => router.push('/(app)/compromises')}><Text style={styles.ver}>Ver ➔</Text></TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.reportCard}>
+          <Text style={styles.reportTitle}>Reporte estadístico</Text>
+          <View style={styles.legend}>
+            <Text style={styles.legendIncome}>Ingresos</Text>
+            <Text style={styles.legendExpense}>Egresos</Text>
+            <Text style={styles.legendLeisure}>Osio</Text>
+            <Text style={styles.legendSaving}>Ahorros</Text>
+          </View>
+          <LineChart
+            data={chartData}
+            width={screenWidth - 40}
+            height={200}
+            chartConfig={{
+              backgroundColor: '#fff',
+              backgroundGradientFrom: '#fff',
+              backgroundGradientTo: '#fff',
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              style: { borderRadius: 16 },
+            }}
+            bezier
+            style={{ marginVertical: 8, borderRadius: 16 }}
+          />
+          <Text style={styles.reportPeriod}>Últimos 3 meses</Text>
+        </View>
+      </ScrollView>
+
+      <Modal visible={showNotifications} transparent animationType="slide">
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Configuración</Text>
-            <View style={styles.settingItem}>
-              <Text>Verificación en dos pasos</Text>
-              <Switch value={false} onValueChange={() => {}} />
-            </View>
-            <View style={styles.settingItem}>
-              <Text>Respaldo automático</Text>
-              <Switch value={true} onValueChange={() => {}} />
-            </View>
-            <View style={styles.settingItem}>
-              <Text>Notificaciones de Compromisos</Text>
-              <Switch value={notificationsEnabled.compromisos} onValueChange={(val) => setNotificationsEnabled({...notificationsEnabled, compromisos: val})} />
-            </View>
-            <View style={styles.settingItem}>
-              <Text>Notificaciones de Finanzas</Text>
-              <Switch value={notificationsEnabled.finanzas} onValueChange={(val) => setNotificationsEnabled({...notificationsEnabled, finanzas: val})} />
-            </View>
-            <View style={styles.settingItem}>
-              <Text>Notificaciones de Gastos Fijos</Text>
-              <Switch value={notificationsEnabled.gastosFijos} onValueChange={(val) => setNotificationsEnabled({...notificationsEnabled, gastosFijos: val})} />
-            </View>
-            <TouchableOpacity style={styles.closeModal} onPress={() => setShowSettings(false)}>
-              <Text style={styles.closeModalText}>Cerrar</Text>
-            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Notificaciones</Text>
+            <Text>• Gastos Fijos: Tienes una notificación</Text>
+            <Text>• Finanzas: Tienes una notificación</Text>
+            <TouchableOpacity onPress={() => setShowNotifications(false)} style={styles.closeModal}><Text>Cerrar</Text></TouchableOpacity>
           </View>
         </View>
       </Modal>
-    </ScrollView>
+
+      <BottomNav />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background, paddingHorizontal: 16 },
+  container: { flex: 1, backgroundColor: Colors.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  notificationsCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginVertical: 12 },
-  notifTitle: { fontWeight: 'bold', fontSize: 16, marginBottom: 8 },
-  notifItem: { marginBottom: 8 },
-  notifType: { fontWeight: '600', fontSize: 14 },
-  notifMsg: { fontSize: 12, color: Colors.textSecondary },
-  summaryGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginVertical: 12 },
-  summaryCard: { backgroundColor: '#fff', borderRadius: 20, padding: 12, width: '48%', marginBottom: 12, alignItems: 'center' },
-  summaryLabel: { fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
-  summaryValue: { fontSize: 20, fontWeight: 'bold', color: Colors.primary, marginTop: 4 },
-  streakCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginVertical: 12, alignItems: 'center' },
-  streakTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.text },
+  header: { backgroundColor: Colors.primary, paddingTop: 50, paddingBottom: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 20 },
+  welcome: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
+  settingsIcon: { fontSize: 24, color: '#fff' },
+  balanceCard: { alignItems: 'center', marginBottom: 20 },
+  balanceLabel: { color: '#fff', fontSize: 14 },
+  balanceValue: { color: '#fff', fontSize: 36, fontWeight: 'bold' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  statBox: { alignItems: 'center' },
+  statNumber: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
+  statLabel: { color: '#fff', fontSize: 12, textAlign: 'center' },
+  notifButton: { backgroundColor: '#fff', marginHorizontal: 16, marginTop: 16, padding: 12, borderRadius: 20, alignItems: 'center', shadowOpacity: 0.05 },
+  notifText: { fontWeight: 'bold', color: Colors.primary },
+  streakCard: { backgroundColor: '#fff', margin: 16, padding: 16, borderRadius: 24, alignItems: 'center', shadowOpacity: 0.05 },
+  streakTitle: { fontSize: 16, fontWeight: 'bold' },
   streakNumber: { fontSize: 28, fontWeight: 'bold', color: Colors.primary, marginVertical: 8 },
-  dotsRow: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginTop: 8 },
-  dotContainer: { width: 40, alignItems: 'center' },
-  dotNumber: { fontSize: 14, color: Colors.textSecondary },
-  section: { marginVertical: 12 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.text },
-  seeAll: { color: Colors.link, fontSize: 14 },
-  expenseItem: { backgroundColor: '#fff', borderRadius: 16, padding: 12, marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  expenseName: { fontWeight: 'bold', fontSize: 14 },
-  expenseDate: { fontSize: 12, color: Colors.textSecondary },
-  seeButton: { color: Colors.link, fontSize: 14 },
-  commitmentItem: { backgroundColor: '#fff', borderRadius: 16, padding: 12, marginBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  commitmentTitle: { fontWeight: 'bold', fontSize: 14 },
-  commitmentDate: { fontSize: 12, color: Colors.textSecondary },
-  reportCard: { backgroundColor: '#fff', borderRadius: 20, padding: 16, marginVertical: 12, alignItems: 'center' },
-  reportTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 4 },
-  reportPeriod: { fontSize: 12, color: Colors.textSecondary, marginBottom: 16 },
-  legendRow: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginBottom: 16 },
-  legendText: { fontSize: 12, fontWeight: '500' },
-  chartContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', height: 100, marginVertical: 8 },
-  barWrapper: { alignItems: 'center', width: 30 },
-  bar: { width: 20, backgroundColor: Colors.primary, borderRadius: 4 },
-  barLabel: { fontSize: 10, marginTop: 4 },
-  chartHint: { fontSize: 10, color: Colors.textSecondary, marginTop: 8 },
-  settingsButton: { backgroundColor: Colors.primary, borderRadius: 30, paddingVertical: 12, marginVertical: 16, alignItems: 'center' },
-  settingsButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-  modalContainer: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 16 },
-  settingItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  closeModal: { backgroundColor: Colors.primary, borderRadius: 30, paddingVertical: 12, alignItems: 'center', marginTop: 16 },
-  closeModalText: { color: '#fff', fontWeight: 'bold' },
+  dotsRow: { flexDirection: 'row', justifyContent: 'space-around', width: '100%' },
+  dot: { fontSize: 14, color: Colors.textSecondary },
+  row: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 16 },
+  halfCard: { flex: 1, backgroundColor: '#fff', borderRadius: 24, padding: 12, marginHorizontal: 4, shadowOpacity: 0.05 },
+  cardTitle: { fontWeight: 'bold', fontSize: 14, marginBottom: 8 },
+  itemName: { fontSize: 14, fontWeight: '500' },
+  itemDate: { fontSize: 12, color: Colors.textSecondary },
+  ver: { color: Colors.link, marginTop: 8, fontSize: 12, textAlign: 'right' },
+  reportCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 100, padding: 16, borderRadius: 24 },
+  reportTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  legend: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16 },
+  legendIncome: { color: Colors.success },
+  legendExpense: { color: Colors.error },
+  legendLeisure: { color: Colors.warning },
+  legendSaving: { color: Colors.primary },
+  reportPeriod: { textAlign: 'center', marginTop: 12, fontSize: 12, color: Colors.textSecondary },
+  modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
+  modalContent: { backgroundColor: '#fff', padding: 20, borderRadius: 20, width: '80%' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+  closeModal: { marginTop: 20, alignSelf: 'center', padding: 10, backgroundColor: Colors.primary, borderRadius: 10, width: '50%', alignItems: 'center' },
 });
