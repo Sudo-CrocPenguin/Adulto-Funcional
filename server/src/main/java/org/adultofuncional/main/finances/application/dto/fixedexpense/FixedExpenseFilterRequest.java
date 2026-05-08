@@ -8,94 +8,81 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * DTO (Data Transfer Object) que representa los filtros disponibles
- * para la consulta y búsqueda de gastos fijos en el sistema financiero.
+ * DTO que encapsula los filtros opcionales para la consulta de gastos fijos.
  *
- * <p>Esta clase encapsula los criterios de filtrado que el cliente puede
- * enviar al sistema para acotar los resultados al listar gastos fijos.
- * Se utiliza como parámetro de entrada en los casos de uso y servicios
- * de consulta de gastos fijos.</p>
+ * <p>
+ * Permite filtrar por {@link Status}, categoría y un término de búsqueda
+ * libre sobre el nombre del gasto. Todos los filtros son opcionales y
+ * pueden combinarse libremente; los campos nulos no se aplican en la
+ * consulta al repositorio.
  *
- * <p><b>¿Qué es?</b><br>
- * Un objeto de transferencia de datos inmutable que agrupa los parámetros
- * de filtro aplicables sobre el catálogo de gastos fijos del usuario,
- * combinando filtros estructurados (estado, categoría) con búsqueda
- * por texto libre.</p>
+ * <p>
+ * <strong>Filtros disponibles:</strong>
+ * <ul>
+ * <li>{@link #status} — filtra por el estado operativo (ej. {@code ACTIVE},
+ * {@code PAUSED}).</li>
+ * <li>{@link #categoryId} — filtra por la categoría asociada.</li>
+ * <li>{@link #searchTerm} — búsqueda textual sobre el nombre del gasto
+ * (máximo 50 caracteres, sin HTML).</li>
+ * </ul>
  *
- * <p><b>¿Para qué sirve?</b><br>
- * Permite al cliente filtrar los gastos fijos por su estado operativo,
- * por la categoría a la que pertenecen, o mediante un término de búsqueda
- * libre sobre el nombre u otros campos textuales. Cada campo es opcional,
- * por lo que pueden combinarse libremente o usarse de forma independiente.</p>
- *
- * <p><b>¿Cómo funciona?</b><br>
- * Se construye mediante el patrón Builder generado por Lombok ({@code @Builder}),
- * lo que permite crear instancias de forma legible y flexible. Los valores
- * son accesibles a través de los getters generados por {@code @Getter}.
- * La capa de aplicación recibe esta instancia y aplica los filtros no nulos
- * sobre el repositorio de gastos fijos. La anotación {@code @NoHtml} sobre
- * el término de búsqueda previene la inyección de etiquetas HTML,
- * y {@code @Size} limita su longitud máxima para proteger el rendimiento
- * de las consultas.</p>
- *
- * <p><b>Ejemplo de uso:</b></p>
- * <pre>{@code
- * // Filtrar por estado y categoría
- * FixedExpenseFilterRequest filtro = FixedExpenseFilterRequest.builder()
- *         .status(Status.ACTIVE)
- *         .categoryId(UUID.fromString("..."))
- *         .build();
- *
- * // Búsqueda por término libre
- * FixedExpenseFilterRequest filtro = FixedExpenseFilterRequest.builder()
- *         .searchTerm("Netflix")
- *         .build();
- * }</pre>
+ * <p>
+ * <strong>Protección contra XSS:</strong>
+ * El campo {@code searchTerm} está anotado con {@link NoHtml}, rechazando
+ * cualquier contenido HTML y previniendo Stored XSS a través de los filtros
+ * de búsqueda.
  *
  * @author Miguel Angel Blandon Montes
+ * @since 0.0.1
+ * @see org.adultofuncional.main.finances.application.usecase.ListFixedExpensesUseCase
+ * @see NoHtml
  */
 @Getter
 @Builder
 public class FixedExpenseFilterRequest {
 
-    /**
-     * Estado operativo por el cual se desea filtrar los gastos fijos.
-     *
-     * <p>Campo opcional que corresponde a un valor del enumerado {@link Status},
-     * el cual define la situación actual del gasto fijo dentro del sistema
-     * (por ejemplo: activo, pausado, cancelado, entre otros).
-     * Si es {@code null}, no se aplica filtro por estado y se retornan
-     * gastos fijos de cualquier estado.</p>
-     */
-    private Status status;
+  /**
+   * Estado operativo por el cual se desea filtrar los gastos fijos.
+   *
+   * <p>
+   * Campo opcional que corresponde a un valor del enumerado {@link Status},
+   * el cual define la situación actual del gasto fijo dentro del sistema
+   * (por ejemplo: activo, pausado, cancelado, entre otros).
+   * Si es {@code null}, no se aplica filtro por estado y se retornan
+   * gastos fijos de cualquier estado.
+   */
+  private Status status;
 
-    /**
-     * Identificador de la categoría financiera por la cual se desea filtrar.
-     *
-     * <p>Campo opcional que permite acotar los resultados a los gastos fijos
-     * asociados a una categoría específica del sistema. Corresponde al UUID
-     * único de la categoría registrada.
-     * Si es {@code null}, no se aplica filtro por categoría y se retornan
-     * gastos fijos de todas las categorías.</p>
-     */
-    private UUID categoryId;
+  /**
+   * Identificador de la categoría financiera por la cual se desea filtrar.
+   *
+   * <p>
+   * Campo opcional que permite acotar los resultados a los gastos fijos
+   * asociados a una categoría específica del sistema. Corresponde al UUID
+   * único de la categoría registrada.
+   * Si es {@code null}, no se aplica filtro por categoría y se retornan
+   * gastos fijos de todas las categorías.
+   */
+  private UUID categoryId;
 
-    /**
-     * Término de búsqueda libre para localizar gastos fijos por texto.
-     *
-     * <p>Campo opcional que permite realizar búsquedas sobre campos textuales
-     * de los gastos fijos, como el nombre (por ejemplo: "Netflix", "Arriendo").
-     * La capa de aplicación determina sobre qué campos se aplica este término.</p>
-     *
-     * <p><b>Restricciones aplicadas cuando el valor es proporcionado:</b></p>
-     * <ul>
-     *   <li>{@code @Size(max = 50)}: el término de búsqueda no puede superar
-     *       los 50 caracteres, protegiendo el rendimiento de las consultas.</li>
-     *   <li>{@code @NoHtml}: no se permite contenido con etiquetas HTML,
-     *       previniendo ataques de inyección de código en este campo.</li>
-     * </ul>
-     */
-    @Size(max = 50, message = "Término de búsqueda demasiado largo")
-    @NoHtml
-    private String searchTerm;
+  /**
+   * Término de búsqueda libre para localizar gastos fijos por texto.
+   *
+   * <p>
+   * Campo opcional que permite realizar búsquedas sobre campos textuales
+   * de los gastos fijos, como el nombre (por ejemplo: "Netflix", "Arriendo").
+   * La capa de aplicación determina sobre qué campos se aplica este término.
+   *
+   * <p>
+   * <b>Restricciones aplicadas cuando el valor es proporcionado:</b>
+   * <ul>
+   * <li>{@code @Size(max = 50)}: el término de búsqueda no puede superar
+   * los 50 caracteres, protegiendo el rendimiento de las consultas.</li>
+   * <li>{@code @NoHtml}: no se permite contenido con etiquetas HTML,
+   * previniendo ataques de inyección de código en este campo.</li>
+   * </ul>
+   */
+  @Size(max = 50, message = "Término de búsqueda demasiado largo")
+  @NoHtml
+  private String searchTerm;
 }

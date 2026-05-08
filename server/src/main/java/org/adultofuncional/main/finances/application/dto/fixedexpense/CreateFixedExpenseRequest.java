@@ -15,62 +15,36 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * DTO (Data Transfer Object) que representa la solicitud de creación
- * de un nuevo gasto fijo en el sistema financiero.
+ * DTO que encapsula los datos que el cliente envía para crear
+ * un nuevo gasto fijo recurrente.
  *
  * <p>
- * Esta clase encapsula y valida todos los datos que el cliente debe
- * enviar para registrar un gasto fijo recurrente. Actúa como contrato
- * de entrada en el caso de uso de creación de gastos fijos.
- * </p>
+ * <strong>Validaciones aplicadas a cada campo:</strong>
+ * <ul>
+ * <li>{@code name} — obligatorio, máximo 20 caracteres.</li>
+ * <li>{@code frequency} — obligatorio, debe ser un valor válido de
+ * {@link Frequency}.</li>
+ * <li>{@code amount} — obligatorio, debe ser mayor a 0.01.</li>
+ * <li>{@code status} — obligatorio, debe ser un valor válido de
+ * {@link Status}.</li>
+ * <li>{@code nextDueDate} — obligatorio, debe ser una fecha futura.</li>
+ * <li>{@code categoryId} — obligatorio, referencia a una categoría
+ * existente.</li>
+ * </ul>
  *
  * <p>
- * <b>¿Qué es?</b><br>
- * Un objeto de transferencia de datos inmutable que agrupa y valida
- * los campos requeridos para crear un gasto fijo, aplicando restricciones
- * de validación mediante anotaciones de Bean Validation (Jakarta),
- * seguridad de contenido y reglas de negocio como montos mínimos
- * y fechas futuras.
- * </p>
- *
- * <p>
- * <b>¿Para qué sirve?</b><br>
- * Transporta desde el cliente hacia la capa de aplicación los datos
- * necesarios para registrar un gasto fijo recurrente: su nombre,
- * frecuencia de cobro, monto, estado, fecha de cierre y categoría
- * asociada opcional. Garantiza que los datos lleguen correctamente
- * formateados y validados antes de ser procesados por el sistema.
- * </p>
- *
- * <p>
- * <b>¿Cómo funciona?</b><br>
- * Se construye mediante el patrón Builder generado por Lombok
- * ({@code @Builder}),
- * y sus campos son accesibles a través de los getters generados por
- * {@code @Getter}.
- * Las anotaciones de validación de Jakarta Bean Validation son procesadas
- * automáticamente por el framework (Spring) al recibir la solicitud,
- * rechazando peticiones inválidas antes de llegar al caso de uso.
- * La anotación {@code @NoHtml} aplica una validación de seguridad personalizada
- * que previene la inyección de etiquetas HTML en los campos de texto.
- * </p>
- *
- * <p>
- * <b>Ejemplo de uso:</b>
- * </p>
- * 
- * <pre>{@code
- * CreateFixedExpenseRequest solicitud = CreateFixedExpenseRequest.builder()
- *     .name("Netflix")
- *     .frequency(Frequency.MONTHLY)
- *     .amount(new BigDecimal("15.99"))
- *     .status(Status.ACTIVE)
- *     .closingDate(LocalDate.of(2025, 12, 31))
- *     .categoryId(UUID.fromString("..."))
- *     .build();
- * }</pre>
+ * <strong>Protección contra XSS:</strong>
+ * El campo {@code name} está anotado con {@link NoHtml}.
+ * Cualquier petición que contenga HTML (ej. {@code <script>},
+ * {@code <img onerror=...>}) será rechazada con un error 400, evitando
+ * el almacenamiento de scripts maliciosos en la base de datos (Stored XSS).
+ * La validación se basa en Jsoup con una {@code Safelist.none()},
+ * es decir, no se permite ningún tag ni atributo HTML.
  *
  * @author Miguel Angel Blandon Montes
+ * @since 0.0.1
+ * @see org.adultofuncional.main.finances.application.usecase.CreateFixedExpenseUseCase
+ * @see NoHtml
  */
 @Getter
 @Builder
@@ -82,11 +56,9 @@ public class CreateFixedExpenseRequest {
    * <p>
    * Identifica de forma legible el gasto recurrente dentro del sistema
    * (por ejemplo: "Netflix", "Arriendo", "Gimnasio").
-   * </p>
    *
    * <p>
    * <b>Restricciones aplicadas:</b>
-   * </p>
    * <ul>
    * <li>{@code @NotBlank}: el nombre no puede ser nulo, vacío ni contener
    * únicamente espacios en blanco.</li>
@@ -108,11 +80,9 @@ public class CreateFixedExpenseRequest {
    * Campo obligatorio que define cada cuánto tiempo se genera el gasto,
    * según el enumerado {@link Frequency}
    * (por ejemplo: diario, semanal, mensual, anual, entre otros).
-   * </p>
    *
    * <p>
    * <b>Restricciones aplicadas:</b>
-   * </p>
    * <ul>
    * <li>{@code @NotNull}: la frecuencia no puede ser nula; debe proporcionarse
    * un valor válido del enumerado {@link Frequency}.</li>
@@ -128,11 +98,9 @@ public class CreateFixedExpenseRequest {
    * Campo obligatorio que representa el valor económico del gasto recurrente.
    * Se utiliza {@link BigDecimal} para garantizar precisión en los cálculos
    * monetarios y evitar errores de redondeo propios de tipos flotantes.
-   * </p>
    *
    * <p>
    * <b>Restricciones aplicadas:</b>
-   * </p>
    * <ul>
    * <li>{@code @NotNull}: el monto no puede ser nulo.</li>
    * <li>{@code @DecimalMin("0.01")}: el monto debe ser mayor a cero,
@@ -150,11 +118,9 @@ public class CreateFixedExpenseRequest {
    * Campo obligatorio que indica la situación operativa del gasto recurrente
    * según el enumerado {@link Status}
    * (por ejemplo: activo, pausado, cancelado, entre otros).
-   * </p>
    *
    * <p>
    * <b>Restricciones aplicadas:</b>
-   * </p>
    * <ul>
    * <li>{@code @NotNull}: el estado no puede ser nulo; debe proporcionarse
    * un valor válido del enumerado {@link Status}.</li>
@@ -170,11 +136,9 @@ public class CreateFixedExpenseRequest {
    * Campo obligatorio que indica hasta cuándo estará vigente el gasto
    * recurrente. Debe ser una fecha posterior a la actual, garantizando
    * que no se registren gastos con vigencia ya vencida.
-   * </p>
    *
    * <p>
    * <b>Restricciones aplicadas:</b>
-   * </p>
    * <ul>
    * <li>{@code @NotNull}: la fecha de cierre no puede ser nula.</li>
    * <li>{@code @Future}: la fecha debe ser estrictamente posterior
@@ -192,7 +156,6 @@ public class CreateFixedExpenseRequest {
    * Campo opcional que permite vincular el gasto fijo con una categoría
    * existente en el sistema para facilitar su clasificación y análisis.
    * Si es {@code null}, el gasto fijo se registra sin categoría asociada.
-   * </p>
    */
   @NotNull(message = "La categoria es obligatoria")
   private UUID categoryId;

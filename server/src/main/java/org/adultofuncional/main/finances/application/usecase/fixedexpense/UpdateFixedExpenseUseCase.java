@@ -20,91 +20,52 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 /**
- * Caso de uso responsable de la actualización parcial o total de la información
- * de un gasto fijo existente en el sistema.
+ * Caso de uso: Actualizar los datos de un gasto fijo existente.
  *
  * <p>
- * Esta clase implementa la lógica de actualización dentro de la capa de
- * aplicación, gestionando la validación de reglas de negocio (como fechas
- * futuras), la verificación de integridad de categorías y la sincronización
- * del estado de la entidad.
- * </p>
+ * Reglas de negocio:
+ * <ul>
+ * <li>El gasto fijo debe existir y pertenecer a la cuenta indicada.</li>
+ * <li>Solo se modifican los campos proporcionados en el DTO (actualización
+ * parcial).</li>
+ * <li>Si cambia la fecha de cierre, debe ser una fecha futura.</li>
+ * <li>Si cambia la categoría, la nueva categoría debe existir.</li>
+ * <li>El estado se gestiona explícitamente: si se envía {@code ACTIVE} se
+ * activa el gasto; cualquier otro valor lo desactiva.</li>
+ * </ul>
  *
  * <p>
- * <b>¿Qué es?</b><br>
- * Un servicio de aplicación de responsabilidad única que encapsula la lógica
- * del caso de uso "actualizar un gasto fijo". Está gestionado por el contenedor
- * de Spring mediante {@code @Service} e inyecta sus dependencias de forma
- * automática mediante {@code @RequiredArgsConstructor}.
- * </p>
- *
- * <p>
- * <b>¿Para qué sirve?</b><br>
- * Recibe una solicitud de modificación, localiza la entidad actual, valida que
- * los nuevos datos cumplan con las restricciones del dominio (especialmente en
- * fechas y categorías existentes) y persiste los cambios de forma segura,
- * retornando una vista actualizada del recurso.
- * </p>
- *
- * <p>
- * <b>¿Cómo funciona?</b><br>
- * El método {@code execute} implementa el siguiente flujo operativo:
- * </p>
- * <ol>
- * <li>Recupera la entidad {@link FixedExpense} por su identificador único;
- * si no existe, lanza {@link NotFoundException}.</li>
- * <li>Extrae los valores actuales y los sobrescribe únicamente si los campos
- * en el {@link UpdateFixedExpenseRequest} están presentes (no nulos o con
- * texto).</li>
- * <li>Valida que, si se intenta cambiar la fecha de cierre, esta sea posterior
- * a la fecha actual, lanzando {@link BusinessException} en caso contrario.</li>
- * <li>Si se proporciona una nueva categoría, valida su existencia en el
- * {@link CategoryRepository}.</li>
- * <li>Invoca el método de actualización del dominio y gestiona el cambio de
- * estado (activar/desactivar) según el valor solicitado.</li>
- * <li>Persiste los cambios y transforma el resultado a
- * {@link FixedExpenseResponse}.</li>
- * </ol>
+ * Retorna un {@link FixedExpenseResponse} con la categoría anidada como
+ * {@link CategoryResponse}, cargada tras la persistencia.
  *
  * @author Miguel Angel Blandon Montes
+ * @since 0.0.1
+ * @see FixedExpense
+ * @see FixedExpenseRepository
+ * @see CategoryRepository
  */
 @Service
 @RequiredArgsConstructor
 public class UpdateFixedExpenseUseCase {
 
-  /**
-   * Repositorio de gastos fijos utilizado para la persistencia y recuperación
-   * de la entidad a modificar.
-   */
+  /** Puerto de dominio para la persistencia de gastos fijos. */
   private final FixedExpenseRepository fixedExpenseRepository;
 
-  /**
-   * Repositorio de categorías utilizado para validar que el identificador de
-   * categoría proporcionado en la actualización sea válido y existente.
-   */
+  /** Puerto de dominio para la validación de categorías. */
   private final CategoryRepository categoryRepository;
 
-  // TODO: Evaluar si el accountId recibido debe validarse contra el propietario
-  // real del gasto fijo
   /**
-   * Ejecuta la lógica de actualización del gasto fijo con los datos
-   * proporcionados.
+   * Ejecuta la actualización parcial de un gasto fijo.
    *
-   * <p>
-   * La operación se realiza bajo un contexto transaccional, asegurando que
-   * la validación de la categoría y la persistencia de la entidad se ejecuten
-   * de forma atómica. Si alguna validación de negocio falla, se realiza un
-   * rollback automático de la operación.
-   * </p>
-   *
-   * @param accountId identificador UUID de la cuenta (usado para contexto de
-   *                  seguridad).
-   * @param expenseId identificador UUID del gasto fijo que se desea modificar.
-   * @param request   objeto {@link UpdateFixedExpenseRequest} con los nuevos
-   *                  valores.
-   * @return {@link FixedExpenseResponse} con los datos actualizados del gasto.
-   * @throws NotFoundException si el gasto fijo o la categoría no existen.
-   * @throws BusinessException si la fecha de cierre proporcionada no es futura.
+   * @param accountId Identificador de la cuenta propietaria.
+   * @param expenseId Identificador del gasto fijo a modificar.
+   * @param request   DTO con los nuevos valores. Los campos nulos o vacíos
+   *                  se ignoran.
+   * @return {@link FixedExpenseResponse} con los datos actualizados,
+   *         incluyendo la categoría asociada.
+   * @throws NotFoundException si el gasto fijo no existe, no pertenece a la
+   *                           cuenta, o la nueva categoría no existe.
+   * @throws BusinessException si la nueva fecha de cierre no es futura.
    */
   @Transactional
   public FixedExpenseResponse execute(UUID accountId, UUID expenseId, UpdateFixedExpenseRequest request) {
@@ -115,6 +76,7 @@ public class UpdateFixedExpenseUseCase {
       throw new NotFoundException("Gasto fijo no pertenece a la cuenta");
     }
 
+    // Valores actuales como base para la actualización parcial
     String name = expense.getName();
     BigDecimal amount = expense.getAmount();
     UUID categoryId = expense.getCategoryId();
@@ -153,8 +115,10 @@ public class UpdateFixedExpenseUseCase {
 
     FixedExpense saved = fixedExpenseRepository.save(expense);
 
+    // La categoría ya fue validada, pero se carga de nuevo para construir la
+    // respuesta
     Category category = categoryRepository.findById(saved.getCategoryId())
-        .orElseThrow(() -> new NotFoundException("Categoría no encontrada")); // No debería fallar
+        .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
 
     CategoryResponse categoryResponse = CategoryResponse.builder()
         .id(category.getId())
@@ -171,6 +135,5 @@ public class UpdateFixedExpenseUseCase {
         .nextDueDate(saved.getNextDueDate())
         .category(categoryResponse)
         .build();
-
   }
 }

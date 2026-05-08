@@ -70,7 +70,7 @@ CREATE TABLE events
   event_status                  VARCHAR(20)       DEFAULT 'Pendiente',
 
   event_fk_account_id           CHAR(36)          NOT NULL,
-  event_fk_category_id          CHAR(36),
+  event_fk_category_id          CHAR(36)          NOT NULL,
 
   FOREIGN KEY (event_fk_account_id)               REFERENCES        accounts      (account_id),
   FOREIGN KEY (event_fk_category_id)              REFERENCES        categories    (category_id)

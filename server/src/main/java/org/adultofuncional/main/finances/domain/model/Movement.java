@@ -16,33 +16,36 @@ import lombok.ToString;
 import lombok.experimental.FieldDefaults;
 
 /**
- * Modelo de dominio que representa un movimiento financiero.
+ * Modelo de dominio que representa un movimiento financiero (ingreso o egreso).
  *
  * <p>
- * Un movimiento puede ser un ingreso o un egreso, y está asociado
- * a una categoría dentro del sistema.
+ * Un movimiento registra un flujo de dinero en una cuenta, con un monto,
+ * una fecha de ocurrencia y una categoría opcional. La fecha de registro
+ * en el sistema se almacena en {@code createdAt} y se genera automáticamente
+ * en el método de fábrica {@link #create}.
  *
- * <p>
- * Encapsula únicamente las invariantes de negocio relacionadas con el
- * movimiento:
+ * <h2>Responsabilidades</h2>
  * <ul>
- * <li>El monto debe ser mayor que cero</li>
- * <li>La fecha del movimiento no puede ser nula</li>
- * <li>La fecha de creación no puede ser nula ni futura</li>
+ * <li>Validar que el tipo de movimiento, el monto, la cuenta y la fecha sean
+ * valores no nulos y coherentes.</li>
+ * <li>Generar su propio identificador UUID v7 en {@link #create} para que
+ * el dominio sea dueño de su identidad.</li>
+ * <li>Permitir la actualización de todos sus campos editables mediante
+ * {@link #update}, con revalidación de invariantes.</li>
+ * <li>Proveer el método {@link #reconstitute} para reconstruir instancias
+ * desde persistencia sin regenerar UUID ni marcas de tiempo.</li>
  * </ul>
  *
  * <p>
- * Las validaciones de formato (longitud de la descripción, caracteres
- * especiales)
- * pertenecen a los DTOs de la capa de aplicación. La descripción es opcional
- * y puede ser {@code null}.
- *
- * <p>
- * Este modelo no contiene campos sensibles, por lo que se puede exponer
- * completamente en los DTOs de respuesta.
+ * Las validaciones de formato y seguridad (longitud de la descripción,
+ * contenido HTML) se aplican en los DTOs de la capa de aplicación, por lo
+ * que la entidad solo garantiza que los valores obligatorios estén presentes
+ * y que el monto sea positivo.
  *
  * @author Jeronimo Ospina Zapata
  * @since 0.0.1
+ * @see MovementType
+ * @see org.adultofuncional.main.finances.application.dto.movement.MovementResponse
  */
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -50,20 +53,44 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Movement {
 
+  /**
+   * Identificador único del movimiento (UUID v7).
+   * Generado en {@link #create}.
+   */
   @EqualsAndHashCode.Include
   final UUID id;
 
+  /**
+   * Tipo de movimiento: {@link MovementType#INCOME} o
+   * {@link MovementType#EXPENSE}.
+   */
   MovementType type;
+
+  /** Monto monetario del movimiento. Debe ser mayor que cero. */
   BigDecimal amount;
+
+  /**
+   * Identificador de la categoría asociada. Puede ser nulo si no se clasifica.
+   */
   UUID categoryId;
+
+  /** Identificador de la cuenta propietaria. No puede ser nulo. */
   UUID accountId;
+
+  /** Descripción opcional del movimiento. */
   String description;
+
+  /** Fecha calendario en que ocurrió el movimiento. */
   LocalDate date;
 
+  /**
+   * Fecha y hora exacta en que el movimiento fue registrado en el sistema.
+   * Se genera automáticamente en {@link #create} y es inmutable.
+   */
   final LocalDateTime createdAt;
 
   /**
-   * Constructor privado. Usar los métodos de fábrica.
+   * Constructor privado. Usar {@link #create} o {@link #reconstitute}.
    */
   private Movement(UUID id, MovementType type, BigDecimal amount,
       UUID categoryId, UUID accountId, String description, LocalDate date,
@@ -88,44 +115,46 @@ public class Movement {
   }
 
   /**
-   * Fábrica para crear un nuevo movimiento (antes de persistirlo).
+   * Método de fábrica para crear un nuevo movimiento antes de persistirlo.
    *
    * <p>
-   * Genera el UUID v7 y el {@code createdAt} en la aplicación,
-   * garantizando que el dominio sea dueño de su identidad.
+   * Genera un UUID v7 y establece {@code createdAt} con la fecha y hora
+   * actuales. La cuenta y la categoría deben haber sido validadas en la capa
+   * de aplicación.
    *
-   * @param type        tipo de movimiento (ingreso o egreso, no puede ser nulo)
-   * @param amount      monto del movimiento (debe ser mayor que cero)
-   * @param categoryId  identificador de la categoría asociada (puede ser nulo si
-   *                    el movimiento no se clasifica, aunque normalmente se
-   *                    espera
-   *                    una categoría válida)
-   * @param description descripción opcional (puede ser {@code null})
-   * @param date        fecha en que ocurrió el movimiento (no puede ser nula)
-   * @return instancia de Movement lista para persistir
-   * @throws IllegalArgumentException si {@code amount} es nulo o ≤ 0,
-   *                                  o si {@code date} es nulo
+   * @param type        tipo de movimiento (no nulo).
+   * @param amount      monto del movimiento (mayor a cero).
+   * @param categoryId  identificador de la categoría asociada (puede ser
+   *                    nulo).
+   * @param accountId   identificador de la cuenta propietaria (requerido).
+   * @param description descripción opcional.
+   * @param date        fecha del movimiento (no nula).
+   * @return instancia de {@code Movement} lista para persistir.
+   * @throws IllegalArgumentException si algún parámetro obligatorio es nulo o
+   *                                  el monto no es positivo.
    */
   public static Movement create(MovementType type, BigDecimal amount,
       UUID categoryId, UUID accountId, String description, LocalDate date) {
 
-    UUID id = Generators.timeBasedEpochGenerator().generate(); // UUID v7
+    UUID id = Generators.timeBasedEpochGenerator().generate();
     LocalDateTime now = LocalDateTime.now();
 
     return new Movement(id, type, amount, categoryId, accountId, description, date, now);
   }
 
   /**
-   * Fábrica para reconstituir un movimiento existente desde persistencia.
+   * Método de fábrica para reconstituir un movimiento desde la capa de
+   * persistencia.
    *
-   * @param id          UUID tal como está en la base de datos
-   * @param type        tipo de movimiento
-   * @param amount      monto
-   * @param categoryId  UUID de la categoría asociada
-   * @param description descripción (puede ser {@code null})
-   * @param date        fecha del movimiento
-   * @param createdAt   fecha de creación original
-   * @return instancia de Movement reconstituida
+   * @param id          identificador existente.
+   * @param type        tipo de movimiento.
+   * @param amount      monto.
+   * @param categoryId  categoría asociada.
+   * @param accountId   cuenta propietaria.
+   * @param description descripción.
+   * @param date        fecha del movimiento.
+   * @param createdAt   fecha de registro original.
+   * @return instancia reconstituida.
    */
   public static Movement reconstitute(UUID id, MovementType type,
       BigDecimal amount, UUID categoryId,
@@ -140,16 +169,16 @@ public class Movement {
    * Actualiza los datos del movimiento.
    *
    * <p>
-   * Permite modificar todos los campos editables del movimiento.
-   * La validación del monto y la fecha se aplica antes de la actualización.
+   * Permite modificar todos los campos editables. Se aplican las mismas
+   * validaciones que en la creación. La fecha de registro
+   * {@code createdAt} no se modifica.
    *
-   * @param type        nuevo tipo (no puede ser nulo)
-   * @param amount      nuevo monto (debe ser mayor que cero)
-   * @param categoryId  nuevo identificador de categoría (puede ser nulo)
-   * @param description nueva descripción (puede ser {@code null})
-   * @param date        nueva fecha (no puede ser nula)
-   * @throws IllegalArgumentException si {@code amount} es nulo o ≤ 0,
-   *                                  o si {@code date} es nulo
+   * @param type        nuevo tipo (no nulo).
+   * @param amount      nuevo monto (mayor a cero).
+   * @param categoryId  nuevo identificador de categoría (puede ser nulo).
+   * @param description nueva descripción (puede ser nula).
+   * @param date        nueva fecha del movimiento (no nula).
+   * @throws IllegalArgumentException si alguna validación falla.
    */
   public void update(MovementType type, BigDecimal amount,
       UUID categoryId, String description,

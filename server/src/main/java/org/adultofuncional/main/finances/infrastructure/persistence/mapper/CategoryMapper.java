@@ -21,10 +21,6 @@ import org.springframework.stereotype.Component;
  * asume que los valores almacenados en base de datos coinciden exactamente con
  * los nombres de las constantes del enum (sensible a mayúsculas).
  * 
- * <p>
- * El método {@code toResponse()} se implementará cuando los DTOs
- * de respuesta estén definidos por el equipo.
- * 
  * @author Lidys Jaraba
  * @since 0.0.1
  * @see Category

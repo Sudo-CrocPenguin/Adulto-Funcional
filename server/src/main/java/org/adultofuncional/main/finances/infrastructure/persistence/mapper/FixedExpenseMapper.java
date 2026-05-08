@@ -21,20 +21,15 @@ import org.springframework.stereotype.Component;
  * </ul>
  *
  * <p>
- * El modelo de dominio {@link FixedExpense} no almacena el {@code accountId}
- * directamente, por lo que {@link #toEntity(FixedExpense, UUID)} lo recibe
- * como parámetro separado para construir la referencia JPA.
- *
- * <p>
- * El método {@code toResponse()} se implementará cuando los DTOs
- * de respuesta estén definidos por el equipo.
+ * El modelo de dominio {@link FixedExpense} ya contiene el {@code accountId},
+ * por lo que {@link #toEntity(FixedExpense)} lo obtiene directamente del
+ * propio modelo para construir la referencia JPA.
  *
  * @author Lidys Jaraba
  * @since 0.0.1
  * @see FixedExpense
  * @see FixedExpensesEntity
  */
-
 @Component
 public class FixedExpenseMapper {
 
@@ -53,7 +48,6 @@ public class FixedExpenseMapper {
    * @param entity entidad JPA; si es {@code null} retorna {@code null}
    * @return modelo de dominio reconstituido o {@code null}
    */
-
   public FixedExpense toDomain(FixedExpensesEntity entity) {
     if (entity == null)
       return null;
@@ -83,10 +77,11 @@ public class FixedExpenseMapper {
    * {@link FixedExpensesEntity}.
    *
    * <p>
-   * Recibe el {@code accountId} como parámetro separado porque el dominio
-   * no lo almacena. Se construyen referencias JPA con solo el ID para
-   * {@code account} y {@code category}, suficiente para que Hibernate
-   * resuelva las FK al persistir.
+   * Obtiene el {@code accountId} directamente del modelo de dominio
+   * {@link FixedExpense#getAccountId()} para construir la referencia JPA.
+   * Se crean referencias JPA con solo el ID para {@code account} y
+   * {@code category}, suficiente para que Hibernate resuelva las FK al
+   * persistir.
    *
    * <p>
    * El campo {@code fixedExpenseFrequency} y {@code fixedExpenseStatus} se
@@ -95,10 +90,8 @@ public class FixedExpenseMapper {
    *
    * @param fixedExpense modelo de dominio; si es {@code null} retorna
    *                     {@code null}
-   * @param accountId    UUID de la cuenta propietaria del gasto fijo
    * @return entidad JPA lista para persistir
    */
-
   public FixedExpensesEntity toEntity(FixedExpense fixedExpense) {
     if (fixedExpense == null)
       return null;

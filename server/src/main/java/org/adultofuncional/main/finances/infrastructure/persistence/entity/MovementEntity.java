@@ -24,20 +24,20 @@ import lombok.Setter;
  *
  * <p>
  * Representa una transacción financiera (ingreso o egreso) asociada a una
- * cuenta y opcionalmente a una categoría.
+ * cuenta y <b>obligatoriamente</b> a una categoría.
  *
  * <p>
  * Schema de la tabla {@code movements}:
  * 
  * <pre>
  * movement_id             CHAR(36)      NOT NULL PRIMARY KEY
- * movement_type           VARCHAR(20)    NOT NULL          -- "Ingreso" o "Egreso"
+ * movement_type           VARCHAR(20)   NOT NULL          -- "Ingreso" o "Egreso"
  * movement_amount         DECIMAL(10,2) NOT NULL
  * movement_register_date  TIMESTAMP     NOT NULL
  * movement_description    TEXT          NULL
  * movement_date           DATE          NOT NULL
  * movement_fk_account_id  CHAR(36)      NOT NULL
- * movement_fk_category_id CHAR(36)      FK → categories(category_id)
+ * movement_fk_category_id CHAR(36)      NOT NULL  -- referencia obligatoria a categories
  * </pre>
  *
  * @author Juan Sebastian Rios
@@ -123,7 +123,7 @@ public class MovementEntity {
   private AccountEntity account;
 
   /**
-   * Categoría asociada al movimiento (opcional).
+   * Categoría asociada al movimiento (obligatoria).
    *
    * <p>
    * FK: {@code movement_fk_category_id CHAR(36)} →

@@ -22,18 +22,15 @@ import lombok.Setter;
  * Categoría de uso interno del sistema (precargada, no gestionable por el
  * usuario) que sirve para clasificar movimientos, gastos fijos y eventos.
  * El campo {@code category_type} diferencia entre categorías de finanzas y de
- * agenda. Soporta borrado lógico (soft delete) mediante
- * {@code @SQLRestriction("category_deleted_at IS NULL")}.
+ * agenda.
  *
  * <p>
  * Schema de la tabla {@code categories}:
  * 
  * <pre>
- * category_id           CHAR(36)    NOT NULL PRIMARY KEY
- * category_name         VARCHAR(50) NOT NULL
- * category_type         VARCHAR(20) NOT NULL     
- * category_created_at   TIMESTAMP   NOT NULL
- * category_deleted_at   TIMESTAMP   NULL DEFAULT NULL
+ * category_id   CHAR(36)    NOT NULL PRIMARY KEY
+ * category_name VARCHAR(50) NOT NULL
+ * category_type VARCHAR(20) NOT NULL
  * </pre>
  *
  * @author Juan Sebastian Rios

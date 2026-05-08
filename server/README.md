@@ -65,10 +65,10 @@ Para una documentación técnica detallada de la arquitectura, consulta [ARCHITE
 El esquema se gestiona mediante Flyway (`src/main/resources/database/migrations/`):
 
 - **accounts** - Cuentas de usuario (UUID v7, email único, hash Argon2)
-- **categories** - Categorías para clasificar (soporta soft delete)
-- **movements** - Movimientos financieros (ingresos/egresos)
-- **fixed_expenses** - Gastos fijos recurrentes
-- **events** - Eventos de agenda con recordatorios
+- **categories** - Categorías para clasificar (sin borrado lógico)
+- **movements** - Movimientos financieros (ingresos/egresos, categoría obligatoria)
+- **fixed_expenses** - Gastos fijos recurrentes con fecha de inicio, próxima fecha y recordatorio
+- **events** - Eventos de agenda con recordatorios y categoria obligatoria
 - **passwords** - Contraseñas encriptadas con AES-256
 
 Todas las tablas usan `CHAR(36)` para UUID v7 y relaciones con llaves foráneas con eliminación en cascada desde `accounts`.

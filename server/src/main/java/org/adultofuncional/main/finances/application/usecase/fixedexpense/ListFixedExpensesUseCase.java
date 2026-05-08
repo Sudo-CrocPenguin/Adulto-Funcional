@@ -23,140 +23,55 @@ import org.springframework.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Caso de uso responsable de la consulta y listado de gastos fijos
- * asociados a una cuenta del usuario, con soporte de filtrado opcional
- * por estado, categoría y término de búsqueda.
+ * Caso de uso: Listar los gastos fijos de una cuenta aplicando filtros
+ * opcionales y retornando la categoría asociada a cada uno.
  *
  * <p>
- * Esta clase implementa el caso de uso de listado de gastos fijos dentro
- * de la capa de aplicación, orquestando la validación de la cuenta, la
- * recuperación de las entidades desde el repositorio, la aplicación de
- * filtros en memoria y la transformación de los resultados a la respuesta
- * esperada por el invocador.
- * </p>
+ * Recupera todos los gastos fijos de la cuenta desde
+ * {@link FixedExpenseRepository#findAllByAccountId} y aplica en memoria
+ * los filtros proporcionados: estado, categoría y término de búsqueda
+ * sobre el nombre. Para evitar el problema N+1, las categorías de los
+ * gastos filtrados se cargan en un único lote a través de
+ * {@link CategoryRepository#findAllById}.
  *
  * <p>
- * <b>¿Qué es?</b><br>
- * Un servicio de aplicación de responsabilidad única que encapsula
- * exclusivamente la lógica del caso de uso "listar gastos fijos de una cuenta".
- * Es gestionado por el contenedor de Spring mediante {@code @Service},
- * e inyecta sus dependencias a través del constructor generado por
- * {@code @RequiredArgsConstructor} de Lombok.
- * </p>
- *
- * <p>
- * <b>¿Para qué sirve?</b><br>
- * Recibe el identificador de una cuenta y criterios de filtrado opcionales,
- * valida que la cuenta exista, recupera todos los gastos fijos asociados
- * a ella y aplica de forma encadenada los filtros disponibles: por estado,
- * por categoría y por término de búsqueda en el nombre. Retorna la lista
- * resultante como una colección de {@link FixedExpenseResponse}.
- * </p>
- *
- * <p>
- * <b>¿Cómo funciona?</b><br>
- * El método {@code execute} es el único punto de entrada del caso de uso
- * y aplica el siguiente flujo:
- * </p>
- * <ol>
- * <li>Verifica que la cuenta identificada por {@code accountId} exista
- * en el sistema, lanzando {@link NotFoundException} si no se encuentra.</li>
- * <li>Recupera todos los gastos fijos asociados a la cuenta mediante
- * {@code findAllByAccountId(accountId)}.</li>
- * <li>Si el filtro no es nulo, aplica de forma encadenada y en memoria
- * los siguientes criterios sobre la lista recuperada:
+ * <strong>Filtros soportados (todos opcionales):</strong>
  * <ul>
- * <li>Filtra por estado si {@code filter.getStatus()} no es nulo.</li>
- * <li>Filtra por categoría si {@code filter.getCategoryId()} no es nulo,
- * ignorando los gastos sin categoría asociada.</li>
- * <li>Filtra por término de búsqueda si {@code filter.getSearchTerm()}
- * tiene texto real, realizando una comparación insensible a
- * mayúsculas sobre el nombre del gasto fijo.</li>
+ * <li>{@code status} — filtra por estado ({@code ACTIVE},
+ * {@code PAUSED}…).</li>
+ * <li>{@code categoryId} — filtra por categoría asociada.</li>
+ * <li>{@code searchTerm} — búsqueda insensible a mayúsculas sobre el
+ * nombre.</li>
  * </ul>
- * </li>
- * <li>Transforma cada entidad {@link FixedExpense} resultante en un
- * {@link FixedExpenseResponse} mediante un mapeo con Streams
- * y retorna la lista final.</li>
- * </ol>
- * <p>
- * La anotación {@code @Transactional(readOnly = true)} optimiza la operación
- * indicando al motor de persistencia que no habrá escrituras durante
- * su ejecución.
- * </p>
  *
  * @author Miguel Angel Blandon Montes
+ * @since 0.0.1
+ * @see FixedExpenseRepository
+ * @see CategoryRepository
+ * @see AccountRepository
  */
 @Service
 @RequiredArgsConstructor
 public class ListFixedExpensesUseCase {
 
-  /**
-   * Repositorio de gastos fijos utilizado para recuperar todas las entidades
-   * asociadas a una cuenta específica del sistema.
-   *
-   * <p>
-   * Abstracción de la capa de persistencia que desacopla el caso de uso
-   * de la implementación concreta del almacenamiento. Es inyectado
-   * automáticamente por Spring a través del constructor generado
-   * por {@code @RequiredArgsConstructor}.
-   * </p>
-   */
+  /** Puerto de dominio para la consulta de gastos fijos. */
   private final FixedExpenseRepository fixedExpenseRepository;
 
-  /**
-   * Repositorio de cuentas utilizado para validar la existencia de la cuenta
-   * antes de recuperar sus gastos fijos asociados.
-   *
-   * <p>
-   * Abstracción de la capa de persistencia del módulo de cuentas.
-   * Es inyectado automáticamente por Spring a través del constructor generado
-   * por {@code @RequiredArgsConstructor}.
-   * </p>
-   */
+  /** Puerto de dominio para la validación de la cuenta (módulo account). */
   private final AccountRepository accountRepository;
+
+  /** Puerto de dominio para la carga en lote de categorías. */
   private final CategoryRepository categoryRepository;
 
   /**
-   * Ejecuta el caso de uso de listado de gastos fijos de una cuenta,
-   * con filtrado opcional por estado, categoría y término de búsqueda.
+   * Ejecuta el listado filtrado de gastos fijos.
    *
-   * <p>
-   * Valida primero la existencia de la cuenta, recupera todos sus gastos
-   * fijos asociados y aplica de forma encadenada los filtros definidos en el
-   * {@link FixedExpenseFilterRequest}. Cada filtro se aplica únicamente si
-   * su valor correspondiente está presente. Finalmente transforma las entidades
-   * resultantes en {@link FixedExpenseResponse} y retorna la lista.
-   * </p>
-   *
-   * <p>
-   * El filtrado por término de búsqueda se realiza de forma insensible a
-   * mayúsculas y minúsculas ({@code toLowerCase()}) sobre el nombre del gasto
-   * fijo, verificando si contiene el término proporcionado como subcadena.
-   * La verificación del término se realiza con {@link StringUtils#hasText},
-   * que garantiza que el valor no sea nulo, vacío ni compuesto únicamente
-   * por espacios en blanco.
-   * </p>
-   *
-   * <p>
-   * La operación se ejecuta dentro de una transacción de solo lectura
-   * gracias a {@code @Transactional(readOnly = true)}, lo que permite al
-   * motor de persistencia aplicar optimizaciones de rendimiento al garantizar
-   * que no se realizarán operaciones de escritura durante su ejecución.
-   * </p>
-   *
-   * @param accountId identificador UUID de la cuenta del usuario cuyos gastos
-   *                  fijos se desean listar.
-   * @param filter    objeto {@link FixedExpenseFilterRequest} que contiene los
-   *                  criterios de filtrado a aplicar sobre el listado. Puede ser
-   *                  {@code null}, en cuyo caso se retornan todos los gastos
-   *                  fijos
-   *                  de la cuenta sin ningún filtro aplicado.
-   * @return lista de {@link FixedExpenseResponse} con los datos de los gastos
-   *         fijos que cumplen los criterios del filtro. La categoría se retorna
-   *         como {@code null} en cada respuesta. Retorna una lista vacía si no
-   *         existen gastos fijos que coincidan con los criterios aplicados.
-   * @throws NotFoundException si no existe ninguna cuenta registrada con el
-   *                           identificador {@code accountId} proporcionado.
+   * @param accountId Identificador de la cuenta propietaria.
+   * @param filter    Filtro opcional con estado, categoría y término de
+   *                  búsqueda. Puede ser {@code null} para obtener todos
+   *                  los gastos fijos de la cuenta.
+   * @return Lista de {@link FixedExpenseResponse} con la categoría anidada.
+   * @throws NotFoundException si la cuenta no existe.
    */
   @Transactional(readOnly = true)
   public List<FixedExpenseResponse> execute(UUID accountId, FixedExpenseFilterRequest filter) {
@@ -184,6 +99,7 @@ public class ListFixedExpensesUseCase {
       }
     }
 
+    // Carga en lote de categorías para evitar N+1
     Set<UUID> categoryIds = expenses.stream()
         .map(FixedExpense::getCategoryId)
         .collect(Collectors.toSet());

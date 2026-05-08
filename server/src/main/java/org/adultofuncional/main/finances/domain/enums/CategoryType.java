@@ -1,21 +1,29 @@
 package org.adultofuncional.main.finances.domain.enums;
 
 /**
- * Ámbito al que pertenece una categoría.
+ * Define el ámbito de aplicación de una categoría.
  *
  * <p>
- * Las categorías pueden clasificar elementos del módulo financiero
- * ({@code FINANCES}) o del módulo de agenda ({@code AGENDA}).
- * Estos valores corresponden a los admitidos en la columna
- * {@code category_type} de la tabla {@code categories}.
+ * Las categorías pueden servir para clasificar elementos del módulo de
+ * finanzas (movimientos, gastos fijos) o del módulo de agenda (eventos).
+ * El valor de este enumerado se almacena en la columna {@code category_type}
+ * de la tabla {@code categories} y se utiliza como criterio de filtro en
+ * {@link org.adultofuncional.main.finances.application.dto.category.CategoryFilterRequest}
+ * y en la creación de categorías.
  *
  * @author Juan Sebastian Rios
  * @since 0.0.1
+ * @see org.adultofuncional.main.finances.domain.model.Category
+ * @see org.adultofuncional.main.finances.application.dto.category.CategoryFilterRequest
  */
 public enum CategoryType {
-  /** Categoría usada en movimientos y gastos fijos. */
+  /**
+   * Categoría destinada a movimientos y gastos fijos del módulo financiero.
+   */
   FINANCES,
 
-  /** Categoría usada en eventos de agenda. */
+  /**
+   * Categoría destinada a eventos del módulo de agenda.
+   */
   AGENDA
 }

@@ -76,7 +76,6 @@ public class FixedExpenseResponse {
    * Corresponde al UUID generado por el sistema al momento de registrar
    * el gasto fijo. Permite identificarlo de forma unívoca en todas
    * las operaciones del sistema.
-   * </p>
    */
   private UUID id;
 
@@ -87,7 +86,6 @@ public class FixedExpenseResponse {
    * Representa la etiqueta legible por el usuario que identifica
    * el gasto recurrente dentro del sistema financiero
    * (por ejemplo: "Netflix", "Arriendo", "Gimnasio").
-   * </p>
    */
   private String name;
 
@@ -98,7 +96,6 @@ public class FixedExpenseResponse {
    * Corresponde a un valor del enumerado {@link Frequency} que indica
    * cada cuánto tiempo se genera el gasto dentro del sistema
    * (por ejemplo: diario, semanal, mensual, anual, entre otros).
-   * </p>
    */
   private Frequency frequency;
 
@@ -109,7 +106,6 @@ public class FixedExpenseResponse {
    * Representa el valor económico del gasto recurrente. Se utiliza
    * {@link BigDecimal} para garantizar precisión en los cálculos
    * monetarios y evitar errores de redondeo propios de tipos flotantes.
-   * </p>
    */
   private BigDecimal amount;
 
@@ -120,7 +116,6 @@ public class FixedExpenseResponse {
    * Corresponde a un valor del enumerado {@link Status} que indica
    * la situación actual del gasto recurrente dentro del sistema
    * (por ejemplo: activo, pausado, cancelado, entre otros).
-   * </p>
    */
   private Status status;
 
@@ -131,7 +126,6 @@ public class FixedExpenseResponse {
    * Indica hasta cuándo está vigente el gasto recurrente en el sistema.
    * Se representa como {@link LocalDate} sin información de hora
    * ni zona horaria, dado que la vigencia opera a nivel de día calendario.
-   * </p>
    */
   private LocalDate nextDueDate;
 
@@ -142,7 +136,6 @@ public class FixedExpenseResponse {
    * Contiene la información completa de la categoría a la que pertenece
    * el gasto fijo, representada como un objeto {@link CategoryResponse} anidado.
    * Si el gasto fijo no tiene categoría asociada, este campo será {@code null}.
-   * </p>
    */
   private CategoryResponse category;
 }

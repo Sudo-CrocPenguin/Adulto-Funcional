@@ -22,9 +22,9 @@ import lombok.Setter;
  *
  * <p>
  * Representa un gasto recurrente (suscripciones, servicios, alquileres, etc.)
- * asociado a una cuenta y opcionalmente a una categoría. Incluye los campos
- * necesarios para el cálculo automático de la próxima fecha de vencimiento
- * y la generación de recordatorios.
+ * asociado a una cuenta y <b>obligatoriamente</b> a una categoría. Incluye los
+ * campos necesarios para el cálculo automático de la próxima fecha de
+ * vencimiento y la generación de recordatorios.
  *
  * <p>
  * Schema de la tabla {@code fixed_expenses}:
@@ -38,8 +38,8 @@ import lombok.Setter;
  * fixed_expense_start_date      DATE          NOT NULL      -- inicio de la recurrencia
  * fixed_expense_next_due_date   DATE          NOT NULL      -- próximo vencimiento
  * fixed_expense_reminder_days   INT           NOT NULL      -- días de antelación para aviso
- * fixed_expense_fk_category_id  CHAR(36)      FK → categories(category_id)
- * fixed_expense_fk_account_id   CHAR(36)      FK → accounts(account_id)
+ * fixed_expense_fk_category_id  CHAR(36)      NOT NULL      -- FK obligatoria a categories
+ * fixed_expense_fk_account_id   CHAR(36)      NOT NULL      -- FK a accounts
  * </pre>
  *
  * @author Juan Sebastian Rios
@@ -143,7 +143,7 @@ public class FixedExpensesEntity {
   private Integer fixedExpenseReminderDays;
 
   /**
-   * Categoría asociada al gasto fijo (opcional).
+   * Categoría asociada al gasto fijo (obligatoria).
    *
    * <p>
    * FK: {@code fixed_expense_fk_category_id CHAR(36)} →

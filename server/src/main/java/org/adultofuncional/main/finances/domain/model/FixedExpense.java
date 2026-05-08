@@ -20,17 +20,34 @@ import lombok.experimental.FieldDefaults;
  *
  * <p>
  * Un gasto fijo es un egreso que se repite con una frecuencia determinada
- * (mensual, semanal, etc.). El modelo encapsula las invariantes de negocio
- * relacionadas con el ciclo de recurrencia, el estado y los importes.
+ * (mensual, semanal, etc.) y está asociado a una cuenta y a una categoría.
+ * El modelo encapsula las invariantes de negocio relacionadas con el ciclo
+ * de recurrencia, el estado operativo y los importes monetarios.
+ *
+ * <h2>Responsabilidades</h2>
+ * <ul>
+ * <li>Validar que el nombre no esté vacío, el monto sea mayor a cero, las
+ * fechas sean coherentes y los días de recordatorio no sean negativos.</li>
+ * <li>Generar su propio identificador UUID v7 en {@link #create} para que
+ * el dominio sea dueño de su identidad.</li>
+ * <li>Gestionar el estado ({@link Status#ACTIVE} / {@link Status#INACTIVE})
+ * mediante los métodos {@link #activate()} y {@link #deactivate()}.</li>
+ * <li>Permitir la actualización parcial de sus campos a través de
+ * {@link #update} y la reconstitución desde persistencia mediante
+ * {@link #reconstitute}.</li>
+ * </ul>
  *
  * <p>
- * La columna {@code fixed_expense_next_due_date} se recalcula en la capa de
- * aplicación cada vez que se registra un pago, mientras que
- * {@code fixed_expense_reminder_days} indica cuántos días antes debe generarse
- * un aviso.
+ * El campo {@code nextDueDate} representa la próxima fecha de vencimiento
+ * y es responsabilidad de la capa de aplicación recalcularlo cuando se
+ * registra un pago. {@code reminderDays} indica cuántos días antes debe
+ * generarse un aviso.
  *
  * @author Jeronimo Ospina Zapata
  * @since 0.0.1
+ * @see Frequency
+ * @see Status
+ * @see org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse
  */
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -38,22 +55,42 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class FixedExpense {
 
+  /**
+   * Identificador único del gasto fijo (UUID v7).
+   * Generado en {@link #create}.
+   */
   @EqualsAndHashCode.Include
   final UUID id;
 
+  /** Nombre descriptivo del gasto fijo. No puede ser nulo ni vacío. */
   String name;
+
+  /** Monto monetario del gasto. Debe ser mayor que cero. */
   BigDecimal amount;
+
+  /** Identificador de la categoría asociada. No puede ser nulo. */
   UUID categoryId;
+
+  /** Identificador de la cuenta propietaria. No puede ser nulo. */
   UUID accountId;
+
+  /** Frecuencia de recurrencia del gasto. */
   Frequency frequency;
+
+  /** Estado operativo actual ({@code ACTIVE} o {@code INACTIVE}). */
   Status status;
 
+  /** Fecha de inicio del gasto fijo. */
   LocalDate startDate;
+
+  /** Próxima fecha de vencimiento. */
   LocalDate nextDueDate;
+
+  /** Días de antelación para el recordatorio. No puede ser negativo. */
   int reminderDays;
 
   /**
-   * Constructor privado. Usar los métodos de fábrica.
+   * Constructor privado. Usar {@link #create} o {@link #reconstitute}.
    */
   private FixedExpense(UUID id, String name, BigDecimal amount,
       UUID categoryId, UUID accountId, Frequency frequency, Status status,
@@ -83,31 +120,25 @@ public class FixedExpense {
   }
 
   /**
-   * Fábrica para crear un nuevo gasto fijo (antes de persistirlo).
+   * Método de fábrica para crear un nuevo gasto fijo antes de persistirlo.
    *
    * <p>
-   * Genera el UUID v7 y el {@code createdAt} en la aplicación,
-   * garantizando que el dominio sea dueño de su identidad.
-   * El estado se establece automáticamente como {@code ACTIVE}.
+   * Genera un UUID v7 y establece el estado inicial como
+   * {@link Status#ACTIVE}. La cuenta debe existir y la categoría también
+   * (validado en la capa de aplicación antes de invocar este método).
    *
-   * @param name       nombre del gasto fijo (no puede ser nulo ni vacío)
-   * @param amount     monto del gasto (debe ser mayor que cero)
-   * @param categoryId identificador de la categoría asociada (puede ser nulo
-   *                   si no se clasifica, aunque normalmente se espera una
-   *                   categoría)
-   * @param frequency  frecuencia de recurrencia (no puede ser nula)
-   * @param startDate  fecha de inicio del gasto fijo (no puede ser nula)
-   * @param endDate    fecha de finalización (opcional, puede ser {@code null}).
-   *                   Si se proporciona, no puede ser anterior a
-   *                   {@code startDate}
-   * @return instancia de FixedExpense lista para persistir
-   * @throws IllegalArgumentException si {@code name} es nulo o vacío,
-   *                                  si {@code amount} es nulo o ≤ 0,
-   *                                  si {@code frequency} es nulo,
-   *                                  si {@code startDate} es nulo,
-   *                                  o si {@code endDate} es anterior a
-   *                                  {@code startDate}
-   * 
+   * @param name         nombre del gasto fijo (no nulo ni vacío).
+   * @param amount       monto del gasto (mayor a cero).
+   * @param categoryId   identificador de la categoría asociada (requerido).
+   * @param accountId    identificador de la cuenta propietaria (requerido).
+   * @param frequency    frecuencia de recurrencia (no nula).
+   * @param startDate    fecha de inicio (no nula).
+   * @param nextDueDate  fecha de próximo vencimiento (no nula, no anterior a
+   *                     {@code startDate}).
+   * @param reminderDays días de recordatorio (no negativo).
+   * @return instancia de {@code FixedExpense} lista para persistir.
+   * @throws IllegalArgumentException si algún parámetro no cumple las
+   *                                  invariantes.
    */
   public static FixedExpense create(String name, BigDecimal amount,
       UUID categoryId, UUID accountId, Frequency frequency,
@@ -130,9 +161,20 @@ public class FixedExpense {
   }
 
   /**
-   * 
-   * Fábrica para reconstituir un gasto fijo desde persistencia.
-   * 
+   * Método de fábrica para reconstituir un gasto fijo desde la capa de
+   * persistencia.
+   *
+   * @param id           identificador existente.
+   * @param name         nombre del gasto fijo.
+   * @param amount       monto.
+   * @param categoryId   categoría asociada.
+   * @param accountId    cuenta propietaria.
+   * @param frequency    frecuencia.
+   * @param status       estado actual.
+   * @param startDate    fecha de inicio.
+   * @param nextDueDate  fecha de próximo vencimiento.
+   * @param reminderDays días de recordatorio.
+   * @return instancia reconstituida.
    */
   public static FixedExpense reconstitute(UUID id, String name,
       BigDecimal amount, UUID categoryId, UUID accountId,
@@ -152,15 +194,14 @@ public class FixedExpense {
    * (que se controla con {@link #activate()} y {@link #deactivate()}).
    * Se aplican las mismas validaciones que en la creación.
    *
-   * @param name       nuevo nombre (no puede ser nulo ni vacío)
-   * @param amount     nuevo monto (debe ser mayor que cero)
-   * @param categoryId nuevo identificador de categoría (puede ser nulo)
-   * @param frequency  nueva frecuencia (no puede ser nula)
-   * @param startDate  nueva fecha de inicio (no puede ser nula)
-   * @param endDate    nueva fecha de finalización (puede ser {@code null},
-   *                   pero si se especifica no puede ser anterior a
-   *                   {@code startDate})
-   * @throws IllegalArgumentException si alguna validación falla
+   * @param name         nuevo nombre (no nulo ni vacío).
+   * @param amount       nuevo monto (mayor a cero).
+   * @param categoryId   nuevo identificador de categoría.
+   * @param frequency    nueva frecuencia.
+   * @param startDate    nueva fecha de inicio.
+   * @param nextDueDate  nueva fecha de próximo vencimiento.
+   * @param reminderDays nuevos días de recordatorio.
+   * @throws IllegalArgumentException si alguna validación falla.
    */
   public void update(String name, BigDecimal amount, UUID categoryId, Frequency frequency,
       LocalDate startDate, LocalDate nextDueDate,
@@ -183,32 +224,23 @@ public class FixedExpense {
   }
 
   /**
-   * Activa el gasto fijo.
-   *
-   * <p>
-   * Cambia el estado a {@code ACTIVE} para que sea tenido en cuenta
-   * en los cálculos de gastos recurrentes.
+   * Activa el gasto fijo, cambiando su estado a {@link Status#ACTIVE}.
    */
   public void activate() {
     this.status = Status.ACTIVE;
   }
 
   /**
-   * Desactiva el gasto fijo.
-   *
-   * <p>
-   * Cambia el estado a {@code INACTIVE} para que deje de considerarse
-   * en los cálculos sin eliminar el registro histórico.
+   * Desactiva el gasto fijo, cambiando su estado a {@link Status#INACTIVE}.
    */
   public void deactivate() {
     this.status = Status.INACTIVE;
   }
 
   /**
-   * Indica si el gasto fijo está activo.
-   * 
-   * @return {@code true} si el estado es {@code ACTIVE}, {@code false} en caso
-   *         contrario
+   * Indica si el gasto fijo está actualmente activo.
+   *
+   * @return {@code true} si el estado es {@link Status#ACTIVE}.
    */
   public boolean isActive() {
     return Status.ACTIVE.equals(this.status);

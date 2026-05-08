@@ -39,8 +39,8 @@ import lombok.Setter;
  * event_end_hour       DATETIME     NOT NULL
  * event_description    TEXT         NULL
  * event_status         VARCHAR(20)  DEFAULT 'Pendiente'
- * event_fk_category_id CHAR(36)     FK → categories(category_id)
- * event_fk_account_id  CHAR(36)     FK → accounts(account_id)
+ * event_fk_category_id CHAR(36)     NOT NULL          -- FK obligatoria a categories
+ * event_fk_account_id  CHAR(36)     NOT NULL          -- FK a accounts
  * </pre>
  *
  * <p>
@@ -161,13 +161,13 @@ public class EventEntity {
   private String eventStatus = "Pendiente";
 
   /**
-   * Categoría asociada al evento (opcional).
+   * Categoría asociada al evento (obligatoria).
    *
    * <p>
    * FK: {@code event_fk_category_id CHAR(36)} → {@code categories(category_id)}.
    */
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "event_fk_category_id")
+  @JoinColumn(name = "event_fk_category_id", nullable = false)
   private CategoryEntity category;
 
   /**

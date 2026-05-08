@@ -14,16 +14,30 @@ import org.springframework.stereotype.Repository;
 import lombok.RequiredArgsConstructor;
 
 /**
- * Implementación del repositorio de movimientos en la capa de infraestructura.
+ * Adaptador concreto del puerto {@link MovementRepository}.
  *
  * <p>
- * Conecta el puerto del dominio con Spring Data JPA y MariaDB,
- * convirtiendo entre {@link Movement} (modelo de dominio) y
- * {@link MovementEntity} (entidad JPA) mediante {@link MovementMapper}.
+ * Implementa las operaciones de persistencia de movimientos delegando en
+ * {@link SpringMovementJpaRepository} (Spring Data JPA) y utilizando el
+ * {@link MovementMapper} para convertir entre las entidades JPA
+ * ({@link MovementEntity}) y el modelo de dominio ({@link Movement}).
+ *
+ * <p>
+ * <strong>Métodos implementados:</strong>
+ * <ul>
+ * <li>{@link #findById(UUID)} — busca un movimiento por ID y lo convierte
+ * a dominio.</li>
+ * <li>{@link #findAllByAccountId(UUID)} — lista todos los movimientos
+ * asociados a una cuenta.</li>
+ * <li>{@link #save(Movement)} — persiste un movimiento nuevo o actualizado,
+ * devolviendo el modelo de dominio resultante.</li>
+ * <li>{@link #deleteById(UUID)} — elimina un movimiento por su ID.</li>
+ * </ul>
  *
  * @author Lidys Jaraba
  * @since 0.0.1
  * @see MovementRepository
+ * @see SpringMovementJpaRepository
  * @see MovementMapper
  */
 @Repository
@@ -34,10 +48,16 @@ public class MovementRepositoryImpl implements MovementRepository {
   private final MovementMapper mapper;
 
   /**
-   * Busca un movimiento por su identificador UUID.
+   * Busca un movimiento por su identificador único.
    *
-   * @param id identificador del movimiento; no puede ser {@code null}
-   * @return {@link Optional} con el movimiento si existe, vacío si no
+   * <p>
+   * Consulta el repositorio Spring Data JPA y convierte la entidad resultante
+   * al modelo de dominio mediante
+   * {@link MovementMapper#toDomain(MovementEntity)}.
+   *
+   * @param id UUID del movimiento. No debe ser {@code null}.
+   * @return {@link Optional} con el movimiento si existe;
+   *         {@code Optional.empty()} en caso contrario.
    */
   @Override
   public Optional<Movement> findById(UUID id) {
@@ -45,14 +65,15 @@ public class MovementRepositoryImpl implements MovementRepository {
   }
 
   /**
-   * Lista todos los movimientos asociados a una cuenta.
+   * Lista todos los movimientos asociados a una cuenta específica.
    *
    * <p>
-   * Delega en {@link SpringMovementJpaRepository#findByAccount_AccountId(UUID)},
-   * que Spring Data traduce a una consulta por FK {@code movement_fk_account_id}.
+   * Utiliza el método {@code findByAccount_AccountId} de Spring Data JPA
+   * para recuperar las entidades y luego las convierte una a una al modelo
+   * de dominio {@link Movement} mediante el mapper.
    *
-   * @param accountId UUID de la cuenta propietaria; no puede ser {@code null}
-   * @return lista de movimientos; vacía si no hay ninguno
+   * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
+   * @return lista de movimientos de la cuenta (vacía si no hay registros).
    */
   @Override
   public List<Movement> findAllByAccountId(UUID accountId) {
@@ -61,14 +82,16 @@ public class MovementRepositoryImpl implements MovementRepository {
   }
 
   /**
-   * Guarda o actualiza un movimiento.
+   * Persiste un movimiento nuevo o actualiza uno existente.
    *
    * <p>
-   * Flujo: {@code Movement} → {@code mapper.toEntity()}
-   * → {@code jpaRepository.save()} → {@code mapper.toDomain()}
+   * Convierte el modelo de dominio a entidad JPA con
+   * {@link MovementMapper#toEntity(Movement)}, la guarda mediante Spring Data JPA
+   * y vuelve a convertir el resultado a dominio para retornar la versión
+   * persistida (incluyendo el ID si fue generado).
    *
-   * @param movement modelo de dominio a persistir; no puede ser {@code null}
-   * @return modelo de dominio con los campos actualizados tras la persistencia
+   * @param movement el movimiento a guardar. No debe ser {@code null}.
+   * @return el movimiento persistido como modelo de dominio.
    */
   @Override
   public Movement save(Movement movement) {
@@ -78,9 +101,14 @@ public class MovementRepositoryImpl implements MovementRepository {
   }
 
   /**
-   * Elimina físicamente un movimiento por su identificador.
+   * Elimina un movimiento por su identificador único.
    *
-   * @param id identificador del movimiento a eliminar; no puede ser {@code null}
+   * <p>
+   * Si no existe ningún movimiento con el ID dado, la operación no tiene efecto
+   * (comportamiento silencioso de Spring Data JPA). La validación de existencia
+   * previa se realiza en la capa de aplicación.
+   *
+   * @param id UUID del movimiento a eliminar. No debe ser {@code null}.
    */
   @Override
   public void deleteById(UUID id) {
