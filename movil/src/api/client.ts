@@ -1,11 +1,4 @@
-/**
- * Cliente HTTP configurado con axios.
- * Incluye interceptores para agregar token JWT (desde SecureStore o cookie) y manejar errores.
- *
- * @author Miguel Angel Blandon Montes
- */
-
-import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosError } from 'axios';
 import { API_BASE_URL, API_TIMEOUT, STORAGE_KEYS } from '../constants/config';
 import { storage } from '../services/storage';
 
@@ -16,18 +9,16 @@ const apiClient: AxiosInstance = axios.create({
     'Content-Type': 'application/json',
     Accept: 'application/json',
   },
-  withCredentials: true, // Permite enviar y recibir cookies HttpOnly
+  // No usamos withCredentials porque manejamos token manualmente
 });
 
-// Interceptor para añadir token al header Authorizationexport src/api/client.ts;
-     //si existe en SecureStore
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const token = await storage.getItem(STORAGE_KEYS.TOKEN);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    // Opcional: añadir header para identificar cliente nativo
+    // Añadimos cabecera para indicar que es cliente nativo (por si el backend lo necesita)
     if (config.headers) {
       config.headers['X-Client-Type'] = 'mobile';
     }
@@ -36,14 +27,13 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor para manejar errores de autenticación (401)
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Token inválido o expirado: limpiar almacenamiento
       await storage.deleteItem(STORAGE_KEYS.TOKEN);
-      // TODO: Disparar evento de logout global (usar emitter o contexto)
+      // Opcional: redirigir a login
+      // window.location.href = '/login';
     }
     return Promise.reject(error);
   }

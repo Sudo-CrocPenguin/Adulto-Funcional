@@ -1,18 +1,18 @@
 /**
  * Configuración global de la aplicación.
- * Define la URL base de la API, timeouts y claves para SecureStore.
- *
+ * 
  * @author Miguel Angel Blandon Montes
  */
 
-// TODO: Cambiar según entorno (desarrollo, producción)
-// Para emulador Android: http://10.0.2.2:8080
-// Para dispositivo físico: http://192.168.x.x:8080
+// Detectar si estamos en web (navegador) o en móvil/emulador
+const isWeb = typeof window !== 'undefined' && window.location?.protocol === 'http:';
 
+// Para web local, usar localhost. Para emulador Android, usar 10.0.2.2. Para dispositivo físico, IP de la máquina.
+export const API_BASE_URL = isWeb 
+  ? 'http://localhost:8080' 
+  : 'http://10.0.2.2:8080';
 
-export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://10.0.2.2:8080';
-
-export const API_TIMEOUT = 30000; // 30 segundos
+export const API_TIMEOUT = 30000;
 
 export const STORAGE_KEYS = {
   TOKEN: 'auth_token',
@@ -35,22 +35,5 @@ export const API_ENDPOINTS = {
   ACCOUNT: {
     GET: (id: string) => `/api/account/${id}`,
     UPDATE: (id: string) => `/api/account/${id}`,
-    DELETE: (id: string) => `/api/account/${id}`,
-  },
-  FINANCES: {
-    MOVEMENTS: '/api/finances/movements',
-    MOVEMENT: (id: string) => `/api/finances/movements/${id}`,
-    CATEGORIES: '/api/finances/categories',
-    FIXED_EXPENSES: '/api/finances/fixed-expenses',
-    FIXED_EXPENSE: (id: string) => `/api/finances/fixed-expenses/${id}`,
-  },
-  AGENDA: {
-    EVENTS: '/api/agenda/events',
-    EVENT: (id: string) => `/api/agenda/events/${id}`,
-  },
-  SECURITY: {
-    PASSWORDS: '/api/security/passwords',
-    PASSWORD: (id: string) => `/api/security/passwords/${id}`,
-    VERIFY_MASTER_KEY: '/api/security/verify-master-key',
   },
 };
