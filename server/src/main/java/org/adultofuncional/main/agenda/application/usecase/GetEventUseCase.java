@@ -21,7 +21,7 @@ import java.util.UUID;
  * indicada. Si el evento tiene una categoría asociada, carga sus datos desde
  * el módulo de finanzas y los anida como un {@link CategoryResponse}.
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see EventRepository
  * @see CategoryRepository

@@ -46,7 +46,7 @@ import lombok.Getter;
  * La validación se basa en Jsoup con una {@code Safelist.none()}, es decir,
  * no se permite ningún tag ni atributo HTML.
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see org.adultofuncional.main.agenda.application.usecase.CreateEventUseCase
  * @see NoHtml

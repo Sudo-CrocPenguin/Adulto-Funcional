@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * <li>{@code categoryId} — filtra por categoría asociada.</li>
  * </ul>
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see EventRepository
  * @see CategoryRepository

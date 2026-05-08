@@ -44,7 +44,7 @@ import lombok.Getter;
  * <li>{@link #category} — categoría asociada (puede ser {@code null}).</li>
  * </ul>
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see org.adultofuncional.main.agenda.application.usecase.CreateEventUseCase
  * @see org.adultofuncional.main.agenda.application.usecase.GetEventUseCase

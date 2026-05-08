@@ -47,7 +47,7 @@ import lombok.Getter;
  * error 400, evitando la persistencia de scripts maliciosos (Stored XSS).
  * La validación se basa en Jsoup con una {@code Safelist.none()}.
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see org.adultofuncional.main.agenda.application.usecase.UpdateEventUseCase
  * @see NoHtml

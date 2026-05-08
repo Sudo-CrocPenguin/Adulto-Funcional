@@ -21,7 +21,7 @@ import java.util.UUID;
  * La operación se ejecuta dentro de una transacción ({@code @Transactional}),
  * garantizando la integridad en caso de fallo durante la eliminación.
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see EventRepository
  * @see NotFoundException

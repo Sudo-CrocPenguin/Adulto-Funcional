@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -36,7 +38,7 @@ import java.util.UUID;
  * {@link StringUtils#hasText}).</li>
  * </ul>
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see EventRepository
  * @see CategoryRepository
@@ -68,44 +70,63 @@ public class UpdateEventUseCase {
     Event event = eventRepository.findByIdAndAccountId(eventId, accountId)
         .orElseThrow(() -> new NotFoundException("Evento no encontrado con id: " + eventId));
 
+    // Valores actuales que se usarán como base; se sobrescriben si hay cambios
+    String title = event.getTitle();
+    String description = event.getDescription();
+    String priority = event.getPriority();
+    LocalDate date = event.getDate();
+    int frequency = event.getFrequency();
+    LocalDateTime reminder = event.getReminder();
+    LocalDateTime startHour = event.getStartHour();
+    LocalDateTime endHour = event.getEndHour();
+    String status = event.getStatus();
+    UUID categoryId = event.getCategoryId();
+
+    // Aplicar cambios solo si el campo fue proporcionado
     if (StringUtils.hasText(request.getTitle())) {
-      event.updateTitle(request.getTitle());
+      title = request.getTitle();
     }
     if (StringUtils.hasText(request.getPriority())) {
-      event.updatePriority(request.getPriority());
+      priority = request.getPriority();
     }
     if (request.getEventDate() != null) {
-      event.updateEventDate(request.getEventDate());
+      date = request.getEventDate();
     }
     if (request.getFrequency() != null) {
-      event.updateFrequency(request.getFrequency());
+      frequency = request.getFrequency();
     }
     if (request.getReminder() != null) {
-      event.updateReminder(request.getReminder());
-    }
-    // Actualización de horas con validación de coherencia
-    if (request.getStartHour() != null && request.getEndHour() != null) {
-      if (request.getStartHour().isAfter(request.getEndHour())) {
-        throw new BusinessException("La hora de inicio no puede ser posterior a la hora de fin");
-      }
-      event.updateStartHour(request.getStartHour());
-      event.updateEndHour(request.getEndHour());
-    } else if (request.getStartHour() != null) {
-      event.updateStartHour(request.getStartHour());
-    } else if (request.getEndHour() != null) {
-      event.updateEndHour(request.getEndHour());
+      reminder = request.getReminder();
     }
     if (StringUtils.hasText(request.getDescription())) {
-      event.updateDescription(request.getDescription());
+      description = request.getDescription();
     }
     if (StringUtils.hasText(request.getStatus())) {
-      event.updateStatus(request.getStatus());
+      status = request.getStatus();
     }
     if (request.getCategoryId() != null) {
-      Category category = categoryRepository.findById(request.getCategoryId())
+      categoryRepository.findById(request.getCategoryId())
           .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
-      event.updateCategoryId(category.getId());
+      categoryId = request.getCategoryId();
     }
+
+    // Validar coherencia de horas si ambas se enviaron, o usar combinaciones
+    // parciales
+    if (request.getStartHour() != null) {
+      startHour = request.getStartHour();
+    }
+    if (request.getEndHour() != null) {
+      endHour = request.getEndHour();
+    }
+    // Validación final de horas (se delega al dominio, pero también la hacemos aquí
+    // para garantizar el mensaje de negocio)
+    if (startHour != null && endHour != null && startHour.isAfter(endHour)) {
+      throw new BusinessException("La hora de inicio no puede ser posterior a la hora de fin");
+    }
+
+    // Actualizar todo el evento con los valores finales
+    event.update(title, description, priority, date, frequency,
+        reminder, startHour, endHour, status, categoryId);
 
     Event updated = eventRepository.save(event);
 
@@ -126,7 +147,7 @@ public class UpdateEventUseCase {
         .id(updated.getId())
         .title(updated.getTitle())
         .priority(updated.getPriority())
-        .eventDate(updated.getEventDate())
+        .eventDate(updated.getDate())
         .frequency(updated.getFrequency())
         .reminder(updated.getReminder())
         .startHour(updated.getStartHour())
