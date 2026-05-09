@@ -39,7 +39,8 @@ public class UpdateAccountUseCase {
    * Ejecuta la actualización de los datos de una cuenta.
    *
    * @param accountId Identificador de la cuenta a modificar.
-   * @param request   DTO con los nuevos valores.
+   * @param request   DTO con los nuevos valores. Los campos no enviados (nulos)
+   *                  conservan su valor actual.
    * @return {@link AccountResponse} con los datos actualizados.
    * @throws NotFoundException Si no existe una cuenta con el ID proporcionado.
    * @throws BusinessException Si el nuevo email ya está registrado en otra
@@ -52,17 +53,21 @@ public class UpdateAccountUseCase {
     Account account = accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    // 2. Validar unicidad del email solo si cambió
-    if (!account.getEmail().equals(request.getEmail())) {
+    // 2. Validar unicidad del email solo si se envió uno nuevo y es diferente
+    if (request.getEmail() != null && !account.getEmail().equals(request.getEmail())) {
       accountRepository.findByEmail(request.getEmail()).ifPresent(existing -> {
         throw new BusinessException(
             "El email " + request.getEmail() + " ya está registrado por otra cuenta");
       });
+      account.updateEmail(request.getEmail());
     }
 
-    // 3. Aplicar cambios sobre el modelo de dominio
-    account.updateDetails(request.getNames(), request.getLastnames(), request.getPhone());
-    account.updateEmail(request.getEmail());
+    // 3. Aplicar cambios sobre los campos personales solo si alguno fue enviado
+    String newNames = request.getNames() != null ? request.getNames() : account.getNames();
+    String newLastnames = request.getLastnames() != null ? request.getLastnames() : account.getLastnames();
+    String newPhone = request.getPhone() != null ? request.getPhone() : account.getPhone();
+
+    account.updateDetails(newNames, newLastnames, newPhone);
 
     // 4. Persistir y retornar
     Account updated = accountRepository.save(account);
