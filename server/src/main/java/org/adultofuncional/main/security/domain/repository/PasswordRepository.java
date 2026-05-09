@@ -71,4 +71,34 @@ public interface PasswordRepository {
    * @param id UUID de la credencial a eliminar. No debe ser {@code null}.
    */
   void deleteById(UUID id);
+
+
+    /**
+   * Busca una credencial por su identificador y la cuenta propietaria.
+   *
+   * @param passwordId UUID de la credencial. No debe ser {@code null}.
+   * @param accountId  UUID de la cuenta propietaria. No debe ser {@code null}.
+   * @return {@link Optional} con la credencial si existe y pertenece a la cuenta;
+   *         {@code Optional.empty()} en caso contrario.
+   */
+  Optional<Password> findByIdAndAccountId(UUID passwordId, UUID accountId);
+
+  /**
+   * Verifica si existe una credencial con el ID dado que pertenezca a la cuenta.
+   *
+   * @param passwordId UUID de la credencial. No debe ser {@code null}.
+   * @param accountId  UUID de la cuenta propietaria. No debe ser {@code null}.
+   * @return {@code true} si la credencial existe y pertenece a la cuenta.
+   */
+  boolean existsByIdAndAccountId(UUID passwordId, UUID accountId);
+
+  /**
+   * Verifica si existe una credencial para una cuenta y aplicación específicas.
+   *
+   * @param accountId       UUID de la cuenta propietaria. No debe ser {@code null}.
+   * @param applicationName nombre de la aplicación. No debe ser {@code null}.
+   * @return {@code true} si ya existe una credencial para esa aplicación en esa cuenta.
+   */
+  boolean existsByAccountIdAndApplicationName(UUID accountId, String applicationName);
+  
 }
