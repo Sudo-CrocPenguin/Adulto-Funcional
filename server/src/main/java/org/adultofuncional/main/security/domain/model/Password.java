@@ -1,6 +1,6 @@
 package org.adultofuncional.main.security.domain.model;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import com.fasterxml.uuid.Generators;
@@ -15,28 +15,22 @@ import lombok.experimental.FieldDefaults;
  * Modelo de dominio que representa una credencial almacenada de forma segura.
  *
  * <p>
- * Cada instancia corresponde a las credenciales de una cuenta en un servicio
- * externo (por ejemplo, Netflix, GitHub, Gmail) asociadas a una cuenta de
- * usuario del sistema. La contraseña se almacena cifrada (AES‑256), nunca en
- * texto plano.
+ * Cada instancia corresponde a las credenciales de un servicio externo
+ * (plataforma o aplicación) asociadas a una cuenta del sistema. Los datos
+ * sensibles se almacenan cifrados: {@code salt}, {@code iv} y
+ * {@code ciphertext} contienen los parámetros necesarios para el descifrado
+ * AES‑256. La contraseña en texto plano **nunca** se guarda en este modelo.
  *
  * <h2>Responsabilidades</h2>
  * <ul>
- * <li>Validar que la plataforma, el usuario y la contraseña cifrada no estén
- * vacíos.</li>
- * <li>Generar su propio identificador UUID v7 en {@link #create} y mantener
- * la fecha de creación inmutable.</li>
+ * <li>Validar que el nombre de la aplicación y los campos criptográficos
+ * obligatorios no sean nulos ni vacíos.</li>
+ * <li>Generar su propio identificador UUID v7 en {@link #create}.</li>
  * <li>Permitir la actualización de los datos mediante {@link #update},
- * registrando automáticamente la fecha de modificación.</li>
+ * manteniendo la integridad de los campos obligatorios.</li>
  * <li>Proveer {@link #reconstitute} para reconstruir instancias desde
  * persistencia.</li>
  * </ul>
- *
- * <p>
- * Las validaciones de formato y seguridad (longitud de los textos, contenido
- * HTML) pertenecen a los DTOs de la capa de aplicación. El campo
- * {@code encryptedPassword} contiene el texto cifrado y nunca se expone sin
- * control.
  *
  * @author Jeronimo Ospina Zapata
  * @since 0.0.1
@@ -44,152 +38,142 @@ import lombok.experimental.FieldDefaults;
  */
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = "encryptedPassword")
+@ToString(exclude = { "salt", "iv", "ciphertext" })
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Password {
 
   /**
-   * Identificador único de la credencial (UUID v7).
-   * Generado en {@link #create}.
+   * Identificador único de la credencial (UUID v7). Generado en {@link #create}.
    */
   @EqualsAndHashCode.Include
   final UUID id;
 
   /**
-   * Plataforma o servicio al que pertenece la credencial. No puede ser nulo ni
-   * vacío.
+   * Nombre de la aplicación o servicio (ej. "Gmail", "Netflix"). No puede ser
+   * nulo ni vacío.
    */
-  String platform;
-
-  /** Nombre de usuario o correo electrónico en el servicio externo. */
-  String username;
+  String applicationName;
 
   /**
-   * Contraseña cifrada con AES‑256. Nunca se expone ni se almacena en texto
-   * plano.
+   * Salt único (Base64) usado para derivar la clave AES a partir de la Master
+   * Key.
    */
-  String encryptedPassword;
+  String salt;
 
-  /** Notas o información adicional (opcional). */
-  String notes;
+  /** Vector de inicialización (16 bytes) para el cifrado AES. */
+  byte[] iv;
 
   /**
-   * Identificador de la cuenta propietaria dentro del sistema (FK a
-   * {@code accounts}).
+   * Texto cifrado (ciphertext + tag si es AES‑GCM) que contiene el secreto
+   * protegido.
    */
+  byte[] ciphertext;
+
+  /** Fecha del último cambio de la contraseña. Opcional. */
+  LocalDate lastChangeDate;
+
+  /** Identificador de la cuenta propietaria (FK a {@code accounts}). */
   UUID accountId;
-
-  /**
-   * Fecha y hora de creación de la credencial.
-   * Se asigna automáticamente en {@link #create} y es inmutable.
-   */
-  final LocalDateTime createdAt;
-
-  /**
-   * Fecha y hora de la última modificación.
-   * Se actualiza automáticamente al invocar {@link #update}.
-   */
-  LocalDateTime updatedAt;
 
   /**
    * Constructor privado. Usar {@link #create} o {@link #reconstitute}.
    */
-  private Password(UUID id, String platform, String username,
-      String encryptedPassword, String notes,
-      UUID accountId, LocalDateTime createdAt, LocalDateTime updatedAt) {
+  private Password(UUID id, String applicationName, String salt,
+      byte[] iv, byte[] ciphertext, LocalDate lastChangeDate,
+      UUID accountId) {
 
     validateId(id);
-    validatePlatform(platform);
-    validateUsername(username);
-    validateEncryptedPassword(encryptedPassword);
+    validateApplicationName(applicationName);
+    validateSalt(salt);
+    validateIv(iv);
+    validateCiphertext(ciphertext);
     validateAccountId(accountId);
-    validateCreatedAt(createdAt);
 
     this.id = id;
-    this.platform = platform;
-    this.username = username;
-    this.encryptedPassword = encryptedPassword;
-    this.notes = notes;
+    this.applicationName = applicationName;
+    this.salt = salt;
+    this.iv = iv;
+    this.ciphertext = ciphertext;
+    this.lastChangeDate = lastChangeDate;
     this.accountId = accountId;
-    this.createdAt = createdAt;
-    this.updatedAt = updatedAt;
   }
 
   /**
    * Método de fábrica para crear una nueva credencial antes de persistirla.
    *
    * <p>
-   * Genera un UUID v7 y establece {@code createdAt} con la fecha y hora
-   * actuales. La cuenta y la contraseña cifrada deben haber sido validadas
-   * en la capa de aplicación.
+   * Genera un UUID v7. Los valores de {@code salt}, {@code iv} y
+   * {@code ciphertext} deben ser generados por el servicio de cifrado en la
+   * capa de aplicación.
    *
-   * @param platform          plataforma o servicio (no nulo ni vacío).
-   * @param username          usuario o correo asociado (no nulo ni vacío).
-   * @param encryptedPassword contraseña cifrada (no nula ni vacía).
-   * @param notes             notas adicionales (puede ser {@code null}).
-   * @param accountId         identificador de la cuenta propietaria.
+   * @param applicationName nombre de la aplicación (no nulo ni vacío).
+   * @param salt            salt en Base64 (no nulo ni vacío).
+   * @param iv              vector de inicialización (no nulo, longitud > 0).
+   * @param ciphertext      texto cifrado (no nulo, longitud > 0).
+   * @param lastChangeDate  fecha de último cambio (puede ser {@code null}).
+   * @param accountId       identificador de la cuenta propietaria.
    * @return instancia de {@code Password} lista para persistir.
    * @throws IllegalArgumentException si algún parámetro obligatorio es nulo o
    *                                  vacío.
    */
-  public static Password create(String platform, String username,
-      String encryptedPassword, String notes, UUID accountId) {
+  public static Password create(String applicationName, String salt,
+      byte[] iv, byte[] ciphertext, LocalDate lastChangeDate,
+      UUID accountId) {
 
     UUID id = Generators.timeBasedEpochGenerator().generate();
-    LocalDateTime now = LocalDateTime.now();
 
-    return new Password(id, platform, username, encryptedPassword,
-        notes, accountId, now, null);
+    return new Password(id, applicationName, salt, iv, ciphertext,
+        lastChangeDate, accountId);
   }
 
   /**
    * Método de fábrica para reconstituir una credencial desde persistencia.
    *
-   * @param id                identificador existente.
-   * @param platform          plataforma.
-   * @param username          usuario.
-   * @param encryptedPassword contraseña cifrada.
-   * @param notes             notas.
-   * @param accountId         cuenta propietaria.
-   * @param createdAt         fecha de creación original.
-   * @param updatedAt         fecha de última modificación.
+   * @param id              identificador existente.
+   * @param applicationName nombre de la aplicación.
+   * @param salt            salt.
+   * @param iv              vector de inicialización.
+   * @param ciphertext      texto cifrado.
+   * @param lastChangeDate  fecha de último cambio.
+   * @param accountId       cuenta propietaria.
    * @return instancia reconstituida.
    */
-  public static Password reconstitute(UUID id, String platform,
-      String username, String encryptedPassword,
-      String notes, UUID accountId,
-      LocalDateTime createdAt, LocalDateTime updatedAt) {
+  public static Password reconstitute(UUID id, String applicationName,
+      String salt, byte[] iv, byte[] ciphertext,
+      LocalDate lastChangeDate, UUID accountId) {
 
-    return new Password(id, platform, username, encryptedPassword,
-        notes, accountId, createdAt, updatedAt);
+    return new Password(id, applicationName, salt, iv, ciphertext,
+        lastChangeDate, accountId);
   }
 
   /**
-   * Actualiza los datos de la credencial.
+   * Actualiza los datos de la credencial (tras un cambio de contraseña).
    *
    * <p>
-   * Modifica la plataforma, el usuario, la contraseña cifrada y las notas.
-   * La fecha {@code updatedAt} se establece automáticamente al momento actual.
+   * Los nuevos valores criptográficos deben ser generados por el servicio de
+   * cifrado. La fecha {@code lastChangeDate} se actualiza normalmente a la
+   * fecha actual, pero se recibe como parámetro para mantener la flexibilidad.
    *
-   * @param platform          nueva plataforma (no nula ni vacía).
-   * @param username          nuevo usuario (no nulo ni vacío).
-   * @param encryptedPassword nueva contraseña cifrada (no nula ni vacía).
-   * @param notes             nuevas notas (puede ser {@code null}).
-   * @throws IllegalArgumentException si algún campo obligatorio es nulo o
-   *                                  vacío.
+   * @param applicationName nuevo nombre de aplicación.
+   * @param salt            nuevo salt.
+   * @param iv              nuevo IV.
+   * @param ciphertext      nuevo ciphertext.
+   * @param lastChangeDate  nueva fecha de cambio.
+   * @throws IllegalArgumentException si algún campo obligatorio es nulo o vacío.
    */
-  public void update(String platform, String username,
-      String encryptedPassword, String notes) {
+  public void update(String applicationName, String salt,
+      byte[] iv, byte[] ciphertext, LocalDate lastChangeDate) {
 
-    validatePlatform(platform);
-    validateUsername(username);
-    validateEncryptedPassword(encryptedPassword);
+    validateApplicationName(applicationName);
+    validateSalt(salt);
+    validateIv(iv);
+    validateCiphertext(ciphertext);
 
-    this.platform = platform;
-    this.username = username;
-    this.encryptedPassword = encryptedPassword;
-    this.notes = notes;
-    this.updatedAt = LocalDateTime.now();
+    this.applicationName = applicationName;
+    this.salt = salt;
+    this.iv = iv;
+    this.ciphertext = ciphertext;
+    this.lastChangeDate = lastChangeDate;
   }
 
   // ── Invariantes de negocio ────────────────────────────────────────────────
@@ -200,36 +184,33 @@ public class Password {
     }
   }
 
-  private static void validatePlatform(String platform) {
-    if (platform == null || platform.isBlank()) {
-      throw new IllegalArgumentException("Platform cannot be null or empty");
+  private static void validateApplicationName(String applicationName) {
+    if (applicationName == null || applicationName.isBlank()) {
+      throw new IllegalArgumentException("Application name cannot be null or empty");
     }
   }
 
-  private static void validateUsername(String username) {
-    if (username == null || username.isBlank()) {
-      throw new IllegalArgumentException("Username cannot be null or empty");
+  private static void validateSalt(String salt) {
+    if (salt == null || salt.isBlank()) {
+      throw new IllegalArgumentException("Salt cannot be null or empty");
     }
   }
 
-  private static void validateEncryptedPassword(String encryptedPassword) {
-    if (encryptedPassword == null || encryptedPassword.isBlank()) {
-      throw new IllegalArgumentException("Encrypted password cannot be null or empty");
+  private static void validateIv(byte[] iv) {
+    if (iv == null || iv.length == 0) {
+      throw new IllegalArgumentException("IV cannot be null or empty");
+    }
+  }
+
+  private static void validateCiphertext(byte[] ciphertext) {
+    if (ciphertext == null || ciphertext.length == 0) {
+      throw new IllegalArgumentException("Ciphertext cannot be null or empty");
     }
   }
 
   private static void validateAccountId(UUID accountId) {
     if (accountId == null) {
       throw new IllegalArgumentException("AccountId cannot be null");
-    }
-  }
-
-  private static void validateCreatedAt(LocalDateTime createdAt) {
-    if (createdAt == null) {
-      throw new IllegalArgumentException("CreatedAt cannot be null");
-    }
-    if (createdAt.isAfter(LocalDateTime.now())) {
-      throw new IllegalArgumentException("CreatedAt cannot be in the future");
     }
   }
 }
