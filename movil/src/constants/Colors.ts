@@ -12,8 +12,6 @@ export const Colors = {
   error: '#e74c3c',
   success: '#27ae60',
   warning: '#f39c12',
-  income: '#2ecc71',
-  expense: '#e74c3c',
   priorityHigh: '#e74c3c',
   priorityMedium: '#f39c12',
   priorityLow: '#27ae60',
