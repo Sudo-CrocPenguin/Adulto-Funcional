@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { router } from 'expo-router';
 import { Colors } from '../../src/constants/Colors';
+
+const logo = require('../../assets/images/icon.png');
 
 export default function RegisterScreen() {
   const { register, isLoading } = useAuth();
@@ -40,7 +42,7 @@ export default function RegisterScreen() {
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: Colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={{ paddingVertical: 40 }}>
         <View style={{ alignItems: 'center' }}>
-          <View style={{ width: 60, height: 60, backgroundColor: Colors.primary, borderRadius: 12, marginBottom: 10 }} />
+          <Image source={logo} style={{ width: 60, height: 60, borderRadius: 12, marginBottom: 10 }} />
           <Text style={{ fontSize: 26, fontWeight: 'bold', color: Colors.text }}>Adulto Funcional</Text>
           <Text style={{ fontSize: 14, color: Colors.textSecondary, textAlign: 'center' }}>Crea tu cuenta para empezar</Text>
         </View>

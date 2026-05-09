@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { router } from 'expo-router';
 import { Colors } from '../../src/constants/Colors';
@@ -29,7 +29,11 @@ export default function LoginScreen() {
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: Colors.background }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}>
         <View style={{ alignItems: 'center', marginTop: 60, marginBottom: 40 }}>
-          <View style={{ width: 80, height: 80, backgroundColor: Colors.primary, borderRadius: 40, marginBottom: 16 }} />
+          <Image 
+            source={require('../../assets/images/icon.png')} 
+            style={{ width: 80, height: 80, borderRadius: 40, marginBottom: 16 }}
+            resizeMode="contain"
+          />
           <Text style={{ fontSize: 28, fontWeight: 'bold', color: Colors.text }}>Adulto Funcional</Text>
           <Text style={{ fontSize: 14, color: Colors.textSecondary, textAlign: 'center', marginHorizontal: 40 }}>Organiza tu vida con control y seguridad</Text>
         </View>
@@ -50,15 +54,15 @@ export default function LoginScreen() {
           />
 
           <Text style={styles.label}>Contraseña</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ccc', borderRadius: 12, paddingHorizontal: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.border, borderRadius: 12, backgroundColor: '#fff' }}>
             <TextInput
-              style={{ flex: 1, paddingVertical: 12 }}
+              style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 12 }}
               placeholder="********"
               secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ paddingHorizontal: 12 }}>
               <Text>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
             </TouchableOpacity>
           </View>
@@ -74,7 +78,7 @@ export default function LoginScreen() {
             {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Iniciar Sesión</Text>}
           </TouchableOpacity>
 
-          <TouchableOpacity style={{ marginTop: 16 }} onPress={() => router.push('/(auth)/forgot-password')}>
+          <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')} style={{ marginTop: 15 }}>
             <Text style={{ color: Colors.error, textAlign: 'center' }}>¿Olvidaste tu contraseña?</Text>
           </TouchableOpacity>
 
@@ -92,5 +96,5 @@ export default function LoginScreen() {
 
 const styles = {
   label: { fontSize: 14, fontWeight: '500', marginBottom: 8, color: Colors.text },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 16 },
+  input: { borderWidth: 1, borderColor: Colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 16, backgroundColor: '#fff' },
 };
