@@ -54,33 +54,30 @@ org.adultofuncional.main
 ├── auth/               # Módulo de autenticación
 ├── config/             # Configuraciones de Spring
 │   ├── beans/          # Configuración de beans
-│   ├── jackson/        # Configuración de Jackson JSON
 │   └── security/       # Configuración de Spring Security
 ├── finances/           # Módulo financiero (movimientos, gastos, categorías)
 ├── agenda/             # Módulo de agenda (eventos)
 ├── security/           # Gestor de contraseñas con Master Key
 └── shared/             # Componentes transversales
-    ├── constants/      # Constantes globales
     ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
     ├── response/       # Formato estándar de respuestas API (ApiResponse)
-    ├── security/       # Validación de ownership reutilizable
-    └── util/           # Clases de utilidad general
+    └── security/       # Validación de ownership reutilizable
 ```
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │               SHARED (COMPONENTES COMPARTIDOS)                   │
 │   (Elementos transversales usados por todos los módulos)         │
-│ ┌────────────┐    ┌────────────┐    ┌─────────────────────────┐  │
-│ │ constants/ │    │ exception/ │    │       response/         │  │
-│ │ (Constantes│    │ (GlobalExc.│    │    (ApiResponse)        │  │
-│ │  globales) │    │  Handler)  │    │                         │  │
-│ └────────────┘    └────────────┘    └─────────────────────────┘  │
-│   ┌────────────────────┐    ┌──────────────────────────────────┐ │
-│   │ security/          │    │ util/ (Clases de utilidad gral)  │ │
-│   │ (OwnedResource,    │    │                                  │ │
-│   │  OwnershipValid.)  │    │                                  │ │
-│   └────────────────────┘    └──────────────────────────────────┘ │
+│     ┌────────────┐    ┌─────────────────────────┐                │
+│     │ exception/ │    │       response/         │                │
+│     │ (GlobalExc.│    │    (ApiResponse)        │                │
+│     │  Handler)  │    │                         │                │
+│     └────────────┘    └─────────────────────────┘                │
+│                     ┌────────────────────┐                       │
+│                     │ security/          │                       │
+│                     │ (OwnedResource,    │                       │
+│                     │  OwnershipValid.)  │                       │
+│                     └────────────────────┘                       │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -313,10 +310,18 @@ Incluye:
 - Controlador REST bajo `/api/agenda` (pendiente de definir ruta exacta).
 - Entidades JPA, mappers y adaptadores de repositorio.
 
-### `security/` — Gestor de contraseñas (PENDIENTE)
+### `security/` — Gestor de contraseñas (COMPLETADO)
 
-Solo existe la entidad JPA `PasswordEntity`.  
-Falta: modelo de dominio, puerto de repositorio, casos de uso, controlador, mapper y servicio de encriptación AES‑256.
+Implementa el almacenamiento seguro de credenciales de servicios externos con cifrado AES‑256.  
+Incluye:
+
+- Modelo de dominio `Password`.
+- Puerto de repositorio `PasswordRepository` y puertos de servicio `EncryptionService`, `MasterKeySessionService`.
+- Implementaciones `AesEncryptionService` (AES‑256‑GCM) e `InMemoryMasterKeyService` (sesión en memoria para desarrollo).
+- Casos de uso (`CreatePasswordUseCase`, `GetPasswordUseCase`, `ListPasswordsUseCase`, `UpdatePasswordUseCase`, `DeletePasswordUseCase`).
+- DTOs de entrada y salida (`PasswordRequest`, `PasswordUpdateRequest`, `PasswordResponse`) con protección `@NoHtml`.
+- Controlador REST `SecurityController` bajo `/api/security/passwords`.
+- Entidad JPA `PasswordEntity`, mapper y adaptador de repositorio.
 
 ## Configuración de seguridad (`config/security/`)
 
@@ -601,4 +606,4 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 - [x] Implementar DeleteAccountUseCase y conectar en AccountController
 - [x] Módulo financiero: todos los casos de uso, DTOs y controladores
 - [x] Módulo agenda: todos los casos de uso, DTOs y controladores
-- [ ] Gestor de contraseñas: PasswordUseCase con encriptación AES-256
+- [x] Gestor de contraseñas: PasswordUseCase con encriptación AES-256
