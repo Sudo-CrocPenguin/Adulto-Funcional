@@ -8,7 +8,8 @@ import org.adultofuncional.main.security.domain.model.Password;
 import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.infrastructure.persistence.entity.PasswordEntity;
 import org.adultofuncional.main.security.infrastructure.persistence.mapper.PasswordMapper;
-import org.adultofuncional.main.security.infrastructure.persistence.repository.SecurityJpaRepository;
+import org.adultofuncional.main.security.infrastructure.persistence.repository.PasswordJpaRepository;
+
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -37,14 +38,14 @@ import lombok.RequiredArgsConstructor;
  * @author Jeronimo Ospina Zapata
  * @since 0.0.1
  * @see PasswordRepository
- * @see SecurityJpaRepository
+ * @see PasswordJpaRepository
  * @see PasswordMapper
  */
 @Repository
 @RequiredArgsConstructor
 public class PasswordRepositoryImpl implements PasswordRepository {
 
-  private final SecurityJpaRepository jpaRepository;
+  private final PasswordJpaRepository jpaRepository;
   private final PasswordMapper mapper;
 
   /**
@@ -116,4 +117,43 @@ public class PasswordRepositoryImpl implements PasswordRepository {
   public void deleteById(UUID id) {
     jpaRepository.deleteById(id);
   }
+
+    /**
+   * Busca una credencial por su identificador y la cuenta propietaria.
+   *
+   * @param passwordId UUID de la credencial. No debe ser {@code null}.
+   * @param accountId  UUID de la cuenta propietaria. No debe ser {@code null}.
+   * @return {@link Optional} con la credencial si existe y pertenece a la cuenta;
+   *         {@code Optional.empty()} en caso contrario.
+   */
+  @Override
+  public Optional<Password> findByIdAndAccountId(UUID passwordId, UUID accountId) {
+      return jpaRepository.findByPasswordIdAndAccount_AccountId(passwordId, accountId)
+              .map(mapper::toDomain);
+  }
+
+  /**
+   * Verifica si existe una credencial con el ID dado que pertenezca a la cuenta.
+   *
+   * @param passwordId UUID de la credencial. No debe ser {@code null}.
+   * @param accountId  UUID de la cuenta propietaria. No debe ser {@code null}.
+   * @return {@code true} si la credencial existe y pertenece a la cuenta.
+   */
+  @Override
+  public boolean existsByIdAndAccountId(UUID passwordId, UUID accountId) {
+      return jpaRepository.existsByPasswordIdAndAccount_AccountId(passwordId, accountId);
+  }
+
+  /**
+   * Verifica si existe una credencial para una cuenta y aplicación específicas.
+   *
+   * @param accountId       UUID de la cuenta propietaria. No debe ser {@code null}.
+   * @param applicationName nombre de la aplicación. No debe ser {@code null}.
+   * @return {@code true} si ya existe una credencial para esa aplicación en esa cuenta.
+   */
+  @Override
+  public boolean existsByAccountIdAndApplicationName(UUID accountId, String applicationName) {
+      return jpaRepository.existsByAccount_AccountIdAndPasswordApplicationName(accountId, applicationName);
+  }
+
 }

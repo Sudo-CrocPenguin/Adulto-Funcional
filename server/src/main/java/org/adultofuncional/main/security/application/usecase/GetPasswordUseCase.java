@@ -1,13 +1,14 @@
 package org.adultofuncional.main.security.application.usecase;
 
-import lombok.RequiredArgsConstructor;
+import java.util.UUID;
+
 import org.adultofuncional.main.security.application.dto.PasswordResponse;
 import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Caso de uso: Obtener una contraseña por su ID.
@@ -16,11 +17,11 @@ import java.util.UUID;
  * Servicio que recupera una entrada del gestor de contraseñas.
  *
  * <p><strong>¿Para qué sirve?</strong><br>
- * Devuelve los datos (incluyendo la contraseña desencriptada) tras verificar
- * que la entrada pertenece a la cuenta autenticada.
+ * Devuelve los datos de la credencial verificando que pertenezca
+ * a la cuenta autenticada.
  *
  * <p><strong>¿Cómo funciona?</strong><br>
- * Busca en el repositorio por ID y accountId, y desencripta el campo.
+ * Busca en el repositorio por ID y accountId y mapea al DTO de respuesta.
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
@@ -37,14 +38,9 @@ public class GetPasswordUseCase {
         var password = passwordRepository.findByIdAndAccountId(passwordId, accountId)
                 .orElseThrow(() -> new NotFoundException("Contraseña no encontrada con id: " + passwordId));
 
-        // TODO: String decrypted = decryptionService.decrypt(password.getEncryptedPassword(), masterKey);
-        String decrypted = "DECRYPTED_" + password.getEncryptedPassword();
-
         return PasswordResponse.builder()
                 .id(password.getId())
                 .applicationName(password.getApplicationName())
-                .password(decrypted)
-                .category(password.getCategory())
                 .lastChangeDate(password.getLastChangeDate())
                 .build();
     }
