@@ -36,7 +36,7 @@ import lombok.Getter;
  * utiliza Jsoup con {@code Safelist.none()} para rechazar cualquier contenido
  * HTML y prevenir Stored XSS.
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see org.adultofuncional.main.security.application.usecase.CreatePasswordUseCase
  * @see org.adultofuncional.main.security.application.usecase.UpdatePasswordUseCase

@@ -44,7 +44,7 @@ import lombok.RequiredArgsConstructor;
  * {@code Pospuesto}).</li>
  * </ul>
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see Event
  * @see EventRepository

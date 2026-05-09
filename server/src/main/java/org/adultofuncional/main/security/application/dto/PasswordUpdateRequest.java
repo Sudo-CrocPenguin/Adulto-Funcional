@@ -30,7 +30,7 @@ import lombok.Getter;
  * <strong>Protección contra XSS:</strong>
  * El campo {@code applicationName} está anotado con {@link NoHtml}.
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see org.adultofuncional.main.security.application.usecase.UpdatePasswordUseCase
  * @see NoHtml

@@ -43,7 +43,7 @@
  * y prevenir la persistencia de scripts maliciosos.</li>
  * </ul>
  *
- * @author Miguel Angel Blandon Montes
+ * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1
  * @see org.adultofuncional.main.security.application.usecase
  * @see org.adultofuncional.main.shared.security.NoHtml
