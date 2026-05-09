@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Dimensions } from 'react-native';
+import React from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDashboard } from '../../src/hooks/useDashboard';
@@ -7,6 +7,7 @@ import { Colors } from '../../src/constants/Colors';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { BottomNav } from '../../src/components/common/BottomNav';
 import { LineChart } from 'react-native-chart-kit';
+import { formatCurrencyParts } from '../../src/utils/currencyUtils';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -14,7 +15,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { data, loading, error } = useDashboard();
   const { user } = useAuth();
-  const [showNotifications, setShowNotifications] = useState(false);
 
   if (loading) return <View style={styles.centered}><Text>Cargando...</Text></View>;
   if (error) return <View style={styles.centered}><Text>Error: {error}</Text></View>;
@@ -28,8 +28,10 @@ export default function HomeScreen() {
     legend: ['Ingresos', 'Egresos'],
   };
 
+  const balanceParts = formatCurrencyParts(data.balance);
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.safeContainer, { paddingTop: insets.top }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
@@ -40,7 +42,10 @@ export default function HomeScreen() {
           </View>
           <View style={styles.balanceCard}>
             <Text style={styles.balanceLabel}>SALDO ACTUAL</Text>
-            <Text style={styles.balanceValue}>${data.balance.toFixed(2)}</Text>
+            <Text style={styles.balanceValue}>
+              <Text style={{ fontSize: 32, fontWeight: 'bold' }}>{balanceParts.integer}</Text>
+              <Text style={{ fontSize: 16 }}>.{balanceParts.decimal}</Text>
+            </Text>
           </View>
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
@@ -58,10 +63,6 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.notifButton} onPress={() => setShowNotifications(true)}>
-          <Text style={styles.notifText}>🔔 Notificaciones</Text>
-        </TouchableOpacity>
-
         <View style={styles.streakCard}>
           <Text style={styles.streakTitle}>Racha de Compromisos</Text>
           <Text style={styles.streakNumber}>{data.streak} días activos</Text>
@@ -73,13 +74,22 @@ export default function HomeScreen() {
         <View style={styles.row}>
           <View style={styles.halfCard}>
             <Text style={styles.cardTitle}>GASTOS FIJOS</Text>
-            {data.upcomingFixedExpenses.slice(0, 1).map(item => (
-              <View key={item.id}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemDate}>{new Date(item.nextDueDate).toLocaleDateString()}</Text>
-              </View>
-            ))}
-            <TouchableOpacity onPress={() => router.push('/(app)/fixed-expenses')}><Text style={styles.ver}>Ver ➔</Text></TouchableOpacity>
+            {data.upcomingFixedExpenses.slice(0, 1).map(item => {
+              const parts = formatCurrencyParts(item.amount);
+              return (
+                <View key={item.id}>
+                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemDate}>{new Date(item.nextDueDate).toLocaleDateString()}</Text>
+                  <Text style={styles.itemAmount}>
+                    <Text style={{ fontSize: 14, fontWeight: 'bold' }}>{parts.integer}</Text>
+                    <Text style={{ fontSize: 10 }}>.{parts.decimal}</Text>
+                  </Text>
+                </View>
+              );
+            })}
+            <TouchableOpacity onPress={() => router.push('/(app)/fixed-expenses')}>
+              <Text style={styles.ver}>Ver ➔</Text>
+            </TouchableOpacity>
           </View>
           <View style={styles.halfCard}>
             <Text style={styles.cardTitle}>COMPROMISOS</Text>
@@ -89,7 +99,9 @@ export default function HomeScreen() {
                 <Text style={styles.itemDate}>{new Date(item.eventDate).toLocaleDateString()}</Text>
               </View>
             ))}
-            <TouchableOpacity onPress={() => router.push('/(app)/compromises')}><Text style={styles.ver}>Ver ➔</Text></TouchableOpacity>
+            <TouchableOpacity onPress={() => router.push('/(app)/compromises')}>
+              <Text style={styles.ver}>Ver ➔</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -119,25 +131,13 @@ export default function HomeScreen() {
           <Text style={styles.reportPeriod}>Últimos 3 meses</Text>
         </View>
       </ScrollView>
-
-      <Modal visible={showNotifications} transparent animationType="slide">
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Notificaciones</Text>
-            <Text>• Gastos Fijos: Tienes una notificación</Text>
-            <Text>• Finanzas: Tienes una notificación</Text>
-            <TouchableOpacity onPress={() => setShowNotifications(false)} style={styles.closeModal}><Text>Cerrar</Text></TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
       <BottomNav />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  safeContainer: { flex: 1, backgroundColor: Colors.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   header: { backgroundColor: Colors.primary, paddingTop: 20, paddingBottom: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 20 },
@@ -150,8 +150,6 @@ const styles = StyleSheet.create({
   statBox: { alignItems: 'center' },
   statNumber: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
   statLabel: { color: '#fff', fontSize: 12, textAlign: 'center' },
-  notifButton: { backgroundColor: '#fff', marginHorizontal: 16, marginTop: 16, padding: 12, borderRadius: 20, alignItems: 'center', shadowOpacity: 0.05 },
-  notifText: { fontWeight: 'bold', color: Colors.primary },
   streakCard: { backgroundColor: '#fff', margin: 16, padding: 16, borderRadius: 24, alignItems: 'center', shadowOpacity: 0.05 },
   streakTitle: { fontSize: 16, fontWeight: 'bold' },
   streakNumber: { fontSize: 28, fontWeight: 'bold', color: Colors.primary, marginVertical: 8 },
@@ -162,6 +160,7 @@ const styles = StyleSheet.create({
   cardTitle: { fontWeight: 'bold', fontSize: 14, marginBottom: 8 },
   itemName: { fontSize: 14, fontWeight: '500' },
   itemDate: { fontSize: 12, color: Colors.textSecondary },
+  itemAmount: { fontSize: 14, fontWeight: 'bold', color: Colors.primary, marginTop: 4 },
   ver: { color: Colors.link, marginTop: 8, fontSize: 12, textAlign: 'right' },
   reportCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 100, padding: 16, borderRadius: 24 },
   reportTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
@@ -171,8 +170,4 @@ const styles = StyleSheet.create({
   legendLeisure: { color: Colors.warning },
   legendSaving: { color: Colors.primary },
   reportPeriod: { textAlign: 'center', marginTop: 12, fontSize: 12, color: Colors.textSecondary },
-  modalContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' },
-  modalContent: { backgroundColor: '#fff', padding: 20, borderRadius: 20, width: '80%' },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
-  closeModal: { marginTop: 20, alignSelf: 'center', padding: 10, backgroundColor: Colors.primary, borderRadius: 10, width: '50%', alignItems: 'center' },
 });

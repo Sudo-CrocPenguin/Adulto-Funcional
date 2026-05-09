@@ -2,6 +2,16 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import * as authApi from '../api/authApi';
 import { AuthResponse, LoginRequest, RegisterRequest } from '../types/auth.types';
 
+// Importación condicional para evitar errores en Expo Go
+let Notifications: any = null;
+if (typeof window !== 'undefined' && !window?.expo?.isExpoGo) {
+  try {
+    Notifications = require('expo-notifications');
+  } catch (e) {
+    console.warn('expo-notifications no disponible en este entorno');
+  }
+}
+
 interface AuthContextType {
   user: Partial<AuthResponse> | null;
   isLoading: boolean;
@@ -11,6 +21,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   checkAuthStatus: () => Promise<void>;
   error: string | null;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +54,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const refreshUser = async () => {
+    const userData = await authApi.getUserData();
+    setUser(userData);
   };
 
   const login = async (credentials: LoginRequest) => {
@@ -92,6 +108,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
+    // Cancelar notificaciones solo si el módulo está disponible
+    if (Notifications && Notifications.cancelAllScheduledNotificationsAsync) {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+    }
     await authApi.logout();
     setUser(null);
     setIsAuthenticated(false);
@@ -102,14 +122,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, login, register, logout, checkAuthStatus, error }}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, login, register, logout, checkAuthStatus, error, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-  const refreshUser = async () => {
-    const userData = await authApi.getUserData();
-    setUser(userData);
-  };
-
