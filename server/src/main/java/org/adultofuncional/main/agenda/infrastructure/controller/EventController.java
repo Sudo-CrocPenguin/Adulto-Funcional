@@ -189,7 +189,7 @@ public class EventController {
    * @return {@code 200 OK} con el {@link EventResponse} actualizado.
    * @throws NotFoundException si el evento no existe o no pertenece a la
    *                           cuenta.
-   * @throws BusinessException si la hora de inicio es posterior a la de fin.
+   * @throws org.adultofuncional.main.shared.exception.BusinessException si la hora de inicio es posterior a la de fin.
    */
   @PatchMapping("/{eventId}")
   public ResponseEntity<ApiResponse<EventResponse>> update(
