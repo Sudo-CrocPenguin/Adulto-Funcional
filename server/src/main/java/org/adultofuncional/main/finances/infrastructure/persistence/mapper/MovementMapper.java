@@ -74,7 +74,7 @@ public class MovementMapper {
    *
    * <p>
    * El {@code accountId} se obtiene directamente de
-    * {@link Movement}.
+   * {@link Movement}.
    * Se construyen referencias JPA con solo el ID para {@code account} y
    * {@code category}, suficiente para que Hibernate resuelva las FK al persistir.
    *
@@ -96,6 +96,10 @@ public class MovementMapper {
     entity.setMovementAmount(movement.getAmount());
     entity.setMovementDescription(movement.getDescription());
     entity.setMovementDate(movement.getDate());
+
+    if (movement.getCreatedAt() != null) {
+      entity.setMovementRegisterDate(movement.getCreatedAt());
+    }
 
     if (movement.getCategoryId() != null) {
       CategoryEntity categoryRef = new CategoryEntity();
