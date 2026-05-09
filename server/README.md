@@ -343,6 +343,14 @@ docker-compose restart app
 - `PATCH /api/agenda/events/{id}` - Actualizar evento
 - `DELETE /api/agenda/events/{id}` - Eliminar evento
 
+### Gestor de contraseñas (`/api/security/passwords`)
+
+- `GET /api/security/passwords` - Listar credenciales
+- `POST /api/security/passwords` - Guardar nueva credencial
+- `GET /api/security/passwords/{id}` - Obtener credencial (descifrada)
+- `PATCH /api/security/passwords/{id}` - Actualizar credencial
+- `DELETE /api/security/passwords/{id}` - Eliminar credencial
+
 ### Health Check
 
 - `GET /actuator/health` - Estado de la aplicación (público, usado por Docker)
@@ -406,5 +414,6 @@ En desarrollo activo. Estado por módulo:
 | Financiero         | Pendiente  | Solo entidades JPA definidas (Category, Movement, FixedExpenses)                                                                  |
 | Agenda             | Pendiente  | Solo entidad JPA definida (Event)                                                                                                 |
 | Gestor contraseñas | Pendiente  | Solo entidad JPA definida (Password); AES-256 sin implementar                                                                     |
+| Gestor contraseñas | Completado | Cifrado AES‑256, verificación de Master Key, CRUD completo bajo `/api/security/passwords`                                         |
 
 **Próximos pasos**: Implementar `DeleteAccountUseCase`, módulo financiero, módulo de agenda y servicio de encriptación AES-256 para el gestor de contraseñas.
