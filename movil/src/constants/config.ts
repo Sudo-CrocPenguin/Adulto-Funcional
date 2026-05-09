@@ -1,17 +1,4 @@
-/**
- * Configuración global de la aplicación.
- * 
- * @author Miguel Angel Blandon Montes
- */
-
-// Detectar si estamos en web (navegador) o en móvil/emulador
-const isWeb = typeof window !== 'undefined' && window.location?.protocol === 'http:';
-
-// Para web local, usar localhost. Para emulador Android, usar 10.0.2.2. Para dispositivo físico, IP de la máquina.
-export const API_BASE_URL = isWeb 
-  ? 'http://localhost:8080' 
-  : 'http://10.0.2.2:8080';
-
+export const API_BASE_URL = 'https://audry-subsphenoidal-bovinely.ngrok-free.dev/'
 export const API_TIMEOUT = 30000;
 
 export const STORAGE_KEYS = {
@@ -35,5 +22,18 @@ export const API_ENDPOINTS = {
   ACCOUNT: {
     GET: (id: string) => `/api/account/${id}`,
     UPDATE: (id: string) => `/api/account/${id}`,
+  },
+  FINANCES: {
+    MOVEMENTS: '/api/finances/movements',
+    FIXED_EXPENSES: '/api/finances/fixed-expenses',
+  },
+  AGENDA: {
+    EVENTS: '/api/agenda/events',
+  },
+  SECURITY: {
+    PASSWORDS: '/api/security/passwords',
+    MASTER_KEY_STATUS: '/api/security/master-key/status',
+    CREATE_MASTER_KEY: '/api/security/master-key',
+    VERIFY_MASTER_KEY: '/api/security/master-key/verify',
   },
 };

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEvents, Event } from '../../../src/hooks/useEvents';
 import { Colors } from '../../../src/constants/Colors';
 import { BottomNav } from '../../../src/components/common/BottomNav';
@@ -8,8 +9,15 @@ import { BottomNav } from '../../../src/components/common/BottomNav';
 type FilterType = 'Todas' | 'Pendientes' | 'Completadas';
 
 export default function CompromisesScreen() {
-  const { events, loading, error, deleteEvent } = useEvents();
+  const insets = useSafeAreaInsets();
+  const { events, loading, error, fetchEvents, deleteEvent } = useEvents();
   const [filter, setFilter] = useState<FilterType>('Todas');
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchEvents();
+    }, [fetchEvents])
+  );
 
   const filteredEvents = events.filter(event => {
     if (filter === 'Pendientes') return event.status === 'Pendiente';
@@ -33,9 +41,9 @@ export default function CompromisesScreen() {
           <Text style={styles.priorityText}>{item.priority}</Text>
         </View>
       </View>
-      <Text style={styles.category}>{item.category}</Text>
-      <Text style={styles.frequency}>{item.frequency}</Text>
-      <Text style={styles.date}>{new Date(item.date).toLocaleDateString()}</Text>
+      <Text style={styles.category}>{item.category?.name || 'Sin categoría'}</Text>
+      <Text style={styles.frequency}>{item.frequency === 0 ? 'Única' : item.frequency === 1 ? 'Diaria' : item.frequency === 7 ? 'Semanal' : item.frequency === 30 ? 'Mensual' : 'Anual'}</Text>
+      <Text style={styles.date}>{new Date(item.eventDate).toLocaleDateString()}</Text>
       <View style={styles.statusRow}>
         <Text style={[styles.status, item.status === 'Completado' ? styles.statusCompleted : styles.statusPending]}>
           {item.status}
@@ -54,7 +62,7 @@ export default function CompromisesScreen() {
   if (error) return <View style={styles.centered}><Text>Error: {error}</Text></View>;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.streakContainer}>
         <Text style={styles.streakTitle}>Racha de Compromisos</Text>
         <Text style={styles.streakNumber}>7 días activos</Text>

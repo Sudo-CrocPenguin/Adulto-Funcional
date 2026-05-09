@@ -1,13 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMovements } from '../../../src/hooks/useMovements';
 import { Colors } from '../../../src/constants/Colors';
 import { BottomNav } from '../../../src/components/common/BottomNav';
+import { formatCurrency, formatCurrencyParts } from '../../../src/utils/currencyUtils';
 
 export default function FinancesScreen() {
-  const { movements, loading, error } = useMovements();
+  const insets = useSafeAreaInsets();
+  const { movements, loading, error, fetchMovements } = useMovements();
   const [filter, setFilter] = useState<'todos' | 'ingresos' | 'egresos'>('todos');
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMovements();
+    }, [fetchMovements])
+  );
 
   const totalIngresos = movements.filter(m => m.movementType === 'INCOME').reduce((sum, m) => sum + m.amount, 0);
   const totalEgresos = movements.filter(m => m.movementType === 'EXPENSE').reduce((sum, m) => sum + m.amount, 0);
@@ -19,32 +28,37 @@ export default function FinancesScreen() {
     return true;
   });
 
-  const renderItem = ({ item }) => (
-    <View style={styles.movementCard}>
-      <View>
-        <Text style={styles.movementTitle}>{item.description || 'Movimiento'}</Text>
-        <Text style={styles.movementCategory}>{item.category || 'Sin categoría'}</Text>
-        <Text style={styles.movementDate}>{new Date(item.movementDate).toLocaleDateString()}</Text>
+  const renderItem = ({ item }) => {
+    const parts = formatCurrencyParts(item.amount);
+    return (
+      <View style={styles.movementCard}>
+        <View>
+          <Text style={styles.movementTitle}>{item.description || 'Movimiento'}</Text>
+          <Text style={styles.movementCategory}>{item.category?.name || 'Sin categoría'}</Text>
+          <Text style={styles.movementDate}>{new Date(item.movementDate).toLocaleDateString()}</Text>
+        </View>
+        <Text style={item.movementType === 'INCOME' ? styles.income : styles.expense}>
+          {item.movementType === 'INCOME' ? '+' : '-'}
+          <Text style={{ fontSize: 16 }}>{parts.integer}</Text>
+          <Text style={{ fontSize: 12 }}>.{parts.decimal}</Text>
+        </Text>
       </View>
-      <Text style={item.movementType === 'INCOME' ? styles.income : styles.expense}>
-        {item.movementType === 'INCOME' ? '+' : '-'}${item.amount.toFixed(2)}
-      </Text>
-    </View>
-  );
+    );
+  };
 
   if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color={Colors.primary} /></View>;
   if (error) return <View style={styles.centered}><Text>Error: {error}</Text></View>;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>TOTAL INGRESOS</Text>
-        <Text style={styles.summaryIncome}>${totalIngresos.toFixed(2)}</Text>
+        <Text style={styles.summaryIncome}>{formatCurrency(totalIngresos)}</Text>
         <Text style={styles.summaryLabel}>TOTAL EGRESOS</Text>
-        <Text style={styles.summaryExpense}>${totalEgresos.toFixed(2)}</Text>
+        <Text style={styles.summaryExpense}>{formatCurrency(totalEgresos)}</Text>
         <View style={styles.balanceRow}>
           <Text style={styles.balanceLabel}>SALDO ACTUAL</Text>
-          <Text style={styles.balanceValue}>${balance.toFixed(2)}</Text>
+          <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
         </View>
       </View>
 

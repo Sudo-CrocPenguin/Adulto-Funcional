@@ -6,27 +6,25 @@ import { Colors } from '../../../src/constants/Colors';
 import { BottomNav } from '../../../src/components/common/BottomNav';
 
 export default function PasswordsScreen() {
-  const { passwords, loading, error, masterKeyVerified, hasMasterKey, fetchPasswords } = usePasswords();
+  const { passwords, loading, error, hasMasterKey, masterKeyVerified, fetchPasswords } = usePasswords();
 
   useEffect(() => {
-    const check = async () => {
-      const has = await hasMasterKey();
-      if (has && !masterKeyVerified) {
-        router.push('/(app)/passwords/master-key/verify');
-      } else {
-        fetchPasswords();
-      }
-    };
-    check();
-  }, []);
+    if (hasMasterKey === false) {
+      router.push('/(app)/passwords/master-key/create');
+    } else if (!masterKeyVerified && hasMasterKey === true) {
+      router.push('/(app)/passwords/master-key/verify');
+    } else {
+      fetchPasswords();
+    }
+  }, [hasMasterKey, masterKeyVerified]);
 
   if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color={Colors.primary} /></View>;
   if (error) return <View style={styles.centered}><Text>Error: {error}</Text></View>;
 
   const renderItem = ({ item }) => (
     <TouchableOpacity style={styles.card} onPress={() => router.push(`/(app)/passwords/${item.id}`)}>
-      <Text style={styles.title}>{item.name}</Text>
-      <Text style={styles.username}>{item.username || 'Sin usuario'}</Text>
+      <Text style={styles.title}>{item.applicationName}</Text>
+      <Text style={styles.username}>{item.category || 'Sin categoría'}</Text>
       <Text style={styles.date}>{new Date(item.lastChangeDate).toLocaleDateString()}</Text>
     </TouchableOpacity>
   );

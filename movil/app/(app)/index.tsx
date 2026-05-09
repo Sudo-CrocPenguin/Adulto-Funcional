@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Modal, Dimensions } from 'react-native';
 import { router } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDashboard } from '../../src/hooks/useDashboard';
 import { Colors } from '../../src/constants/Colors';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { BottomNav } from '../../src/components/common/BottomNav';
 import { LineChart } from 'react-native-chart-kit';
-import { Dimensions } from 'react-native';
 
 const screenWidth = Dimensions.get('window').width;
 
 export default function HomeScreen() {
+  const insets = useSafeAreaInsets();
   const { data, loading, error } = useDashboard();
   const { user } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -18,18 +19,17 @@ export default function HomeScreen() {
   if (loading) return <View style={styles.centered}><Text>Cargando...</Text></View>;
   if (error) return <View style={styles.centered}><Text>Error: {error}</Text></View>;
 
-  // Datos para el gráfico (ingresos, egresos, osio, ahorros)
   const chartData = {
-    labels: ['Ene', 'Feb', 'Mar'],
+    labels: data.chartData.labels,
     datasets: [
-      { data: [3200, 3500, 3800], color: () => Colors.success, strokeWidth: 2 },
-      { data: [1200, 1000, 800], color: () => Colors.error, strokeWidth: 2 },
+      { data: data.chartData.incomes, color: () => Colors.success, strokeWidth: 2 },
+      { data: data.chartData.expenses, color: () => Colors.error, strokeWidth: 2 },
     ],
     legend: ['Ingresos', 'Egresos'],
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <View style={styles.headerTop}>
@@ -139,7 +139,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  header: { backgroundColor: Colors.primary, paddingTop: 50, paddingBottom: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
+  header: { backgroundColor: Colors.primary, paddingTop: 20, paddingBottom: 20, borderBottomLeftRadius: 30, borderBottomRightRadius: 30 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20, marginBottom: 20 },
   welcome: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   settingsIcon: { fontSize: 24, color: '#fff' },

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { router, usePathname } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../../constants/Colors';
 
 const navItems = [
@@ -14,9 +15,10 @@ const navItems = [
 
 export const BottomNav = () => {
   const pathname = usePathname();
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 10) }]}>
       {navItems.map((item) => (
         <TouchableOpacity
           key={item.path}
@@ -35,13 +37,34 @@ export const BottomNav = () => {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-evenly',
     backgroundColor: '#fff',
-    paddingVertical: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#eee',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 5,
   },
-  navItem: { alignItems: 'center' },
-  navText: { fontSize: 12, color: Colors.textSecondary },
-  activeText: { color: Colors.primary, fontWeight: 'bold' },
+  navItem: {
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  navText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: Colors.textSecondary,
+  },
+  activeText: {
+    color: Colors.primary,
+    fontWeight: 'bold',
+    fontSize: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: Colors.primary,
+    paddingBottom: 4,
+  },
 });

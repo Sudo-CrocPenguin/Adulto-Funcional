@@ -1,69 +1,81 @@
-import { useState, useEffect } from 'react';
-import apiClient from '../api/client';
-import { storage } from '../services/storage';
-import { STORAGE_KEYS } from '../constants/config';
+import { useState, useEffect, useCallback } from 'react';
+import { agendaApi, Event } from '../api/agendaApi';
 
-export interface Event {
-  id: string;
-  title: string;
-  category?: string;
-  frequency: string; // 'Única', 'Diaria', 'Semanal', 'Mensual'
-  priority: 'Alta' | 'Media' | 'Baja';
-  date: string; // ISO date
-  reminder?: string;
-  status: 'Pendiente' | 'Completado' | 'Cancelado';
-}
+const formatPriority = (priority: 'ALTA' | 'MEDIA' | 'BAJA'): string => {
+  switch (priority) {
+    case 'ALTA': return 'Alta';
+    case 'MEDIA': return 'Media';
+    case 'BAJA': return 'Baja';
+    default: return 'Media';
+  }
+};
 
-// Datos de demostración
-const demoEvents: Event[] = [
-  { id: '1', title: 'Preparar presentación', category: 'Trabajo', frequency: 'Única', priority: 'Alta', date: '2026-05-15', status: 'Pendiente' },
-  { id: '2', title: 'Pagar recibo de la luz', category: 'Hogar', frequency: 'Mensual', priority: 'Media', date: '2026-05-20', status: 'Pendiente' },
-  { id: '3', title: 'Comprar despensa', category: 'Personal', frequency: 'Semanal', priority: 'Baja', date: '2026-05-10', status: 'Completado' },
-];
+const formatStatus = (status: string): string => {
+  switch (status.toUpperCase()) {
+    case 'PENDIENTE': return 'Pendiente';
+    case 'COMPLETADO': return 'Completado';
+    case 'CANCELADO': return 'Cancelado';
+    default: return 'Pendiente';
+  }
+};
 
 export const useEvents = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchEvents = async () => {
+  const fetchEvents = useCallback(async () => {
     try {
       setLoading(true);
-      const accountId = await storage.getItem(STORAGE_KEYS.ACCOUNT_ID);
-      // TODO: Reemplazar con llamada real cuando el endpoint /api/agenda/events esté listo
-      // const response = await apiClient.get(`/api/agenda/events?accountId=${accountId}`);
-      // setEvents(response.data.data);
-      // Simulamos delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setEvents(demoEvents);
+      const response = await agendaApi.getEvents();
+      setEvents(response.data.data);
     } catch (err: any) {
-      setError(err.message);
-      setEvents(demoEvents); // fallback a demo
+      setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const createEvent = async (eventData: Omit<Event, 'id'>) => {
-    // TODO: Llamada POST a /api/agenda/events
-    const newEvent = { ...eventData, id: Date.now().toString() };
+  const createEvent = async (data: Omit<Event, 'id'>) => {
+    const payload = {
+      title: data.title.trim(),
+      priority: formatPriority(data.priority),
+      eventDate: data.eventDate,
+      frequency: data.frequency,
+      reminder: data.reminder,
+      startHour: data.startHour,
+      endHour: data.endHour,
+      description: data.description || '',
+      status: formatStatus(data.status),
+      categoryId: data.category?.id,
+    };
+    const response = await agendaApi.createEvent(payload as any);
+    const newEvent = response.data.data;
+    // Agregar al estado local (optimista)
     setEvents(prev => [newEvent, ...prev]);
     return newEvent;
   };
 
-  const updateEvent = async (id: string, eventData: Partial<Event>) => {
-    // TODO: Llamada PATCH a /api/agenda/events/{id}
-    setEvents(prev => prev.map(e => e.id === id ? { ...e, ...eventData } : e));
+  const updateEvent = async (id: string, data: Partial<Event>) => {
+    const payload = { ...data };
+    if (data.priority) payload.priority = formatPriority(data.priority);
+    if (data.status) payload.status = formatStatus(data.status);
+    if (data.category) payload.categoryId = data.category.id;
+    delete (payload as any).category;
+    const response = await agendaApi.updateEvent(id, payload);
+    const updatedEvent = response.data.data;
+    setEvents(prev => prev.map(e => e.id === id ? updatedEvent : e));
+    return updatedEvent;
   };
 
   const deleteEvent = async (id: string) => {
-    // TODO: Llamada DELETE
+    await agendaApi.deleteEvent(id);
     setEvents(prev => prev.filter(e => e.id !== id));
   };
 
   useEffect(() => {
     fetchEvents();
-  }, []);
+  }, [fetchEvents]);
 
   return { events, loading, error, fetchEvents, createEvent, updateEvent, deleteEvent };
 };
