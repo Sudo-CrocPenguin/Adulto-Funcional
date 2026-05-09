@@ -69,28 +69,28 @@ public class AesEncryptionService implements EncryptionService {
   // Algoritmo de derivación de clave: PBKDF2 con HMAC-SHA256
   private static final String PBKDF2_ALG = "PBKDF2WithHmacSHA256";
 
-  /**
-   * Cifra una contraseña en texto plano.
-   *
-   * <h2>Flujo detallado</h2>
-   * <ol>
-   * <li><strong>Generar salt aleatorio (16 bytes):</strong> El salt asegura
-   * que dos cifrados de la misma contraseña con la misma Master Key
-   * produzcan resultados diferentes. Se codifica en Base64 para
-   * almacenarlo como texto en la BD.</li>
-   * <li><strong>Generar IV aleatorio (12 bytes):</strong> El IV (vector de
-   * inicialización) garantiza que el mismo texto cifrado con la misma
-   * clave produzca ciphertexts diferentes. Nunca debe reutilizarse con
-   * la misma clave.</li>
-   * <li><strong>Derivar clave AES:</strong> A partir de la Master Key y el
-   * salt, PBKDF2 genera una clave de 256 bits.</li>
-   * <li><strong>Inicializar cifrador:</strong> Se crea un Cipher AES-GCM
-   * con la clave y el IV. El tag de autenticación se configura a 128
-   * bits.</li>
-   * <li><strong>Cifrar:</strong> El texto plano se convierte a bytes y se
-   * cifra. El resultado incluye automáticamente el tag de autenticación
-   * al final.</li>
-   * </ol>
+   /**
+    * Cifra una contraseña en texto plano.
+    *
+    * <h4>Flujo detallado</h4>
+    * <ol>
+    * <li><strong>Generar salt aleatorio (16 bytes):</strong> El salt asegura
+    * que dos cifrados de la misma contraseña con la misma Master Key
+    * produzcan resultados diferentes. Se codifica en Base64 para
+    * almacenarlo como texto en la BD.</li>
+    * <li><strong>Generar IV aleatorio (12 bytes):</strong> El IV (vector de
+    * inicialización) garantiza que el mismo texto cifrado con la misma
+    * clave produzca ciphertexts diferentes. Nunca debe reutilizarse con
+    * la misma clave.</li>
+    * <li><strong>Derivar clave AES:</strong> A partir de la Master Key y el
+    * salt, PBKDF2 genera una clave de 256 bits.</li>
+    * <li><strong>Inicializar cifrador:</strong> Se crea un Cipher AES-GCM
+    * con la clave y el IV. El tag de autenticación se configura a 128
+    * bits.</li>
+    * <li><strong>Cifrar:</strong> El texto plano se convierte a bytes y se
+    * cifra. El resultado incluye automáticamente el tag de autenticación
+    * al final.</li>
+    * </ol>
    *
    * @param plainPassword contraseña en texto plano a cifrar
    * @param masterKey     Master Key del usuario en texto plano
@@ -126,22 +126,22 @@ public class AesEncryptionService implements EncryptionService {
     }
   }
 
-  /**
-   * Descifra una contraseña previamente cifrada.
-   *
-   * <h2>Flujo detallado</h2>
-   * <ol>
-   * <li><strong>Decodificar salt:</strong> El salt se recupera de Base64 a
-   * bytes.</li>
-   * <li><strong>Derivar clave AES:</strong> Se usa la misma Master Key y el
-   * mismo salt para regenerar exactamente la misma clave que se usó al
-   * cifrar.</li>
-   * <li><strong>Inicializar descifrador:</strong> Se configura AES-GCM con
-   * la clave y el IV original. El tag de autenticación está incluido en
-   * el ciphertext (últimos 16 bytes).</li>
-   * <li><strong>Descifrar:</strong> Si el ciphertext fue alterado, GCM
-   * lanzará una excepción porque el tag no coincidirá.</li>
-   * </ol>
+   /**
+    * Descifra una contraseña previamente cifrada.
+    *
+    * <h4>Flujo detallado</h4>
+    * <ol>
+    * <li><strong>Decodificar salt:</strong> El salt se recupera de Base64 a
+    * bytes.</li>
+    * <li><strong>Derivar clave AES:</strong> Se usa la misma Master Key y el
+    * mismo salt para regenerar exactamente la misma clave que se usó al
+    * cifrar.</li>
+    * <li><strong>Inicializar descifrador:</strong> Se configura AES-GCM con
+    * la clave y el IV original. El tag de autenticación está incluido en
+    * el ciphertext (últimos 16 bytes).</li>
+    * <li><strong>Descifrar:</strong> Si el ciphertext fue alterado, GCM
+    * lanzará una excepción porque el tag no coincidirá.</li>
+    * </ol>
    *
    * @param saltB64    salt usado en el cifrado (Base64)
    * @param iv         vector de inicialización original

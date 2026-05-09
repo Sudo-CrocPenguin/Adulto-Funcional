@@ -63,7 +63,7 @@ public class PasswordMapper {
     /**
      * Convierte el modelo de dominio {@link Password} a una {@link PasswordEntity} lista para persistir.
      *
-     * <p>El {@code accountId} se obtiene directamente de {@link Password#getAccountId()}.
+     * <p>El {@code accountId} se obtiene directamente de {@link Password#accountId}.
      * Se construye una referencia JPA con solo el ID para {@code account}, suficiente
      * para que Hibernate resuelva la FK al persistir.
      *

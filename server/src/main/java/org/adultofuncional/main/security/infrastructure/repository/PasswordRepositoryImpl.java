@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
  *
  * <p>
  * Implementa las operaciones de persistencia de credenciales delegando en
- * {@link SecurityJpaRepository} (Spring Data JPA) y utilizando el
+ * {@link org.adultofuncional.main.security.infrastructure.persistence.repository.PasswordJpaRepository} (Spring Data JPA) y utilizando el
  * {@link PasswordMapper} para convertir entre las entidades JPA
  * ({@link PasswordEntity}) y el modelo de dominio ({@link Password}).
  *
