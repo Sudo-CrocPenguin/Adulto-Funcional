@@ -19,7 +19,7 @@ import org.adultofuncional.main.account.domain.model.Account;
  * <p>
  * El dominio nunca conoce {@code AccountEntity} ni ningún detalle de JPA.
  *
- * @author Daniel Salazar
+ * @author Daniel Salazar, Miguel Angel Blandon Montes
  * @since 0.0.1
  */
 public interface AccountRepository {
@@ -61,4 +61,12 @@ public interface AccountRepository {
    * @param id UUID de la cuenta a eliminar.
    */
   void deleteById(UUID id);
+
+  /**
+   * Verifica si existe una cuenta con el identificador dado.
+   *
+   * @param id UUID de la cuenta.
+   * @return {@code true} si existe, {@code false} en caso contrario.
+   */
+  boolean existsById(UUID id);
 }

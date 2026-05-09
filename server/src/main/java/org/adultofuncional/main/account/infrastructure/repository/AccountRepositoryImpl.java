@@ -11,6 +11,8 @@ import org.adultofuncional.main.account.infrastructure.persistence.mapper.Accoun
 import org.adultofuncional.main.account.infrastructure.persistence.repository.SpringAccountJpaRepository;
 import org.springframework.stereotype.Repository;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * Implementación del repositorio de cuentas en la capa de infraestructura.
  *
@@ -19,19 +21,15 @@ import org.springframework.stereotype.Repository;
  * convirtiendo entre {@link Account} (modelo de dominio) y
  * {@link AccountEntity} (entidad JPA) mediante {@link AccountMapper}.
  *
- * @author Jeronimo Ospina Zapata
+ * @author Jeronimo Ospina Zapata,Miguel Angel Blandon Montes
  * @since 0.0.1
  */
 @Repository
+@RequiredArgsConstructor
 public class AccountRepositoryImpl implements AccountRepository {
 
   private final SpringAccountJpaRepository jpaRepository;
   private final AccountMapper mapper;
-
-  public AccountRepositoryImpl(SpringAccountJpaRepository jpaRepository, AccountMapper mapper) {
-    this.jpaRepository = jpaRepository;
-    this.mapper = mapper;
-  }
 
   /**
    * Guarda o actualiza una cuenta.
@@ -49,7 +47,7 @@ public class AccountRepositoryImpl implements AccountRepository {
     AccountEntity saved = jpaRepository.save(entity);
     return mapper.toDomain(saved);
   }
-
+ 
   /**
    * Busca una cuenta por su identificador UUID.
    *
@@ -62,11 +60,16 @@ public class AccountRepositoryImpl implements AccountRepository {
         .map(mapper::toDomain);
   }
 
-  /**
+/**
    * Busca una cuenta por su correo electrónico.
    *
-   * @param email correo electrónico a buscar. No puede ser {@code null}.
-   * @return {@link Optional} con la cuenta si existe, vacío si no.
+   * <p>
+   * Delega en {@link SpringAccountJpaRepository#findByAccountEmail(String)},
+   * que Spring Data traduce a una consulta sobre la columna UNIQUE
+   * {@code account_email}.
+   *
+   * @param email correo electrónico a buscar; no puede ser {@code null}
+   * @return {@link Optional} con la cuenta si existe, vacío si no
    */
   @Override
   public Optional<Account> findByEmail(String email) {
@@ -96,5 +99,10 @@ public class AccountRepositoryImpl implements AccountRepository {
   @Override
   public void deleteById(UUID id) {
     jpaRepository.deleteById(id);
+  }
+
+  @Override
+  public boolean existsById(UUID id) {
+    return jpaRepository.existsById(id);
   }
 }

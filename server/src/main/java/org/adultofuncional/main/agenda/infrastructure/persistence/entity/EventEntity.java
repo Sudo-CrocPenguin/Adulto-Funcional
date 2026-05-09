@@ -6,12 +6,10 @@ import java.util.UUID;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
-import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -31,7 +29,7 @@ import lombok.Setter;
  * Schema de la tabla {@code events}:
  * 
  * <pre>
- * event_id             CHAR(36)     PRIMARY KEY DEFAULT(UUID_V7())
+ * event_id             CHAR(36)     NOT NULL PRIMARY KEY
  * event_title          VARCHAR(35)  NOT NULL
  * event_priority       VARCHAR(15)  NULL DEFAULT 'Media'
  * event_date           DATE         NOT NULL
@@ -41,8 +39,8 @@ import lombok.Setter;
  * event_end_hour       DATETIME     NOT NULL
  * event_description    TEXT         NULL
  * event_status         VARCHAR(20)  DEFAULT 'Pendiente'
- * event_fk_category_id CHAR(36)     FK → categories(category_id)
- * event_fk_account_id  CHAR(36)     FK → accounts(account_id)
+ * event_fk_category_id CHAR(36)     NOT NULL          -- FK obligatoria a categories
+ * event_fk_account_id  CHAR(36)     NOT NULL          -- FK a accounts
  * </pre>
  *
  * <p>
@@ -71,11 +69,9 @@ public class EventEntity {
    * Identificador único del evento.
    *
    * <p>
-   * Columna: {@code event_id CHAR(36) PRIMARY KEY DEFAULT(UUID_V7())}.
+   * Columna: {@code event_id CHAR(36) NOT NULL PRIMARY KEY}.
    */
   @Id
-  @GeneratedValue
-  @UuidGenerator(style = UuidGenerator.Style.TIME)
   @Column(name = "event_id", columnDefinition = "CHAR(36)")
   private UUID eventId;
 
@@ -165,13 +161,13 @@ public class EventEntity {
   private String eventStatus = "Pendiente";
 
   /**
-   * Categoría asociada al evento (opcional).
+   * Categoría asociada al evento (obligatoria).
    *
    * <p>
    * FK: {@code event_fk_category_id CHAR(36)} → {@code categories(category_id)}.
    */
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "event_fk_category_id")
+  @JoinColumn(name = "event_fk_category_id", nullable = false)
   private CategoryEntity category;
 
   /**

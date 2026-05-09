@@ -10,6 +10,8 @@ Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una a
 - **Autenticación segura**: JWT + Argon2 para contraseñas y acceso al gestor de contraseñas
 - **Identificadores únicos**: UUID v7 (ordenable temporalmente) para todas las entidades
 - **Migraciones controladas**: Flyway para versionado de base de datos
+- **Seguridad HTTP**: Headers CSP, HSTS, X-Frame-Options, X-XSS-Protection configurados en SecurityConfig
+- **Protección anti‑XSS**: Validación de entrada con `@NoHtml` (Jsoup) en todos los campos de texto
 
 ## Stack tecnológico
 
@@ -28,6 +30,7 @@ Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una a
 | Testcontainers       | -       | Pruebas de integración                             |
 | Spring Boot Actuator | -       | Health checks para Docker                          |
 | Maven                | 3.9     | Gestión de dependencias                            |
+| Jsoup                | 1.17.2  | Validación anti‑HTML en entrada                    |
 
 ## Arquitectura
 
@@ -43,7 +46,7 @@ org.adultofuncional.main
 ├── config/             # Configuraciones de Spring (beans, jackson, security)
 │   ├── beans/          # Configuración de beans de Spring
 │   ├── jackson/        # Configuración de serialización JSON
-│   └── security/       # Configuración de Spring Security
+│   └── security/       # Spring Security: JwtService, JwtAuthenticationFilter, CookieUtils, ClientTypeResolver, DatabaseUserDetailsService
 ├── finances/           # Módulo financiero (movimientos, gastos, categorías)
 ├── agenda/             # Módulo de agenda (eventos)
 ├── security/           # Gestor de contraseñas con Master Key
@@ -51,6 +54,7 @@ org.adultofuncional.main
     ├── constants/      # Constantes globales del sistema
     ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
     ├── response/       # Formato estándar de respuestas API (ApiResponse)
+    ├── security/       # Validación de ownership reutilizable (OwnedResource, OwnershipValidator)
     └── util/           # Clases de utilidad general
 ```
 
@@ -61,13 +65,15 @@ Para una documentación técnica detallada de la arquitectura, consulta [ARCHITE
 El esquema se gestiona mediante Flyway (`src/main/resources/database/migrations/`):
 
 - **accounts** - Cuentas de usuario (UUID v7, email único, hash Argon2)
-- **categories** - Categorías para clasificar (soporta soft delete)
-- **movements** - Movimientos financieros (ingresos/egresos)
-- **fixed_expenses** - Gastos fijos recurrentes
-- **events** - Eventos de agenda con recordatorios
+- **categories** - Categorías para clasificar (sin borrado lógico)
+- **movements** - Movimientos financieros (ingresos/egresos, categoría obligatoria)
+- **fixed_expenses** - Gastos fijos recurrentes con fecha de inicio, próxima fecha y recordatorio
+- **events** - Eventos de agenda con recordatorios y categoria obligatoria
 - **passwords** - Contraseñas encriptadas con AES-256
 
 Todas las tablas usan `CHAR(36)` para UUID v7 y relaciones con llaves foráneas con eliminación en cascada desde `accounts`.
+
+Para la documentación detallada del esquema, columnas, índices y notas de seguridad, consulta [DATABASE.md](./DATABASE.md).
 
 ## Requisitos previos
 
@@ -117,7 +123,14 @@ SPRING_FLYWAY_VALIDATE_ON_MIGRATE=true
 
 # JWT
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura
-JWT_EXPIRATION=86400000
+JWT_EXPIRATION=3600000
+
+# CORS
+CORS_ALLOWED_ORIGINS=http://localhost:3000
+
+# HttpOnly Cookie
+APP_COOKIE_SECURE=false # true en producción con HTTPS
+APP_COOKIE_SAME_SITE=Lax
 ```
 
 O utilizar la plantilla del proyecto en lugar de crear el archivo manualmente
@@ -271,6 +284,10 @@ docker run -p 8080:8080 \
   -e SPRING_DATASOURCE_USERNAME=root \
   -e SPRING_DATASOURCE_PASSWORD=password \
   -e JWT_SECRET=secret \
+  -e JWT_EXPIRATION=3600000 \
+  -e CORS_ALLOWED_ORIGINS=http://localhost:3000 \
+  -e APP_COOKIE_SECURE=false \
+  -e APP_COOKIE_SAME_SITE=Lax \
   adulto-funcional-server
 
 # Entrar al contenedor de la aplicación
@@ -290,14 +307,45 @@ docker-compose restart app
 
 ### Cuentas (`/api/account`)
 
-- `GET /api/account/{id}` - Obtener datos de una cuenta
-- `PATCH /api/account/{id}` - Actualizar datos de una cuenta
-- `DELETE /api/account/{id}` - Eliminar una cuenta (en desarrollo)
+- `GET /api/account/{id}` - Obtener datos de una cuenta (requiere autenticación + ownership)
+- `PATCH /api/account/{id}` - Actualizar datos de una cuenta (requiere autenticación + ownership)
+- `DELETE /api/account/{id}` - Eliminar una cuenta (endpoint existe, lógica pendiente — retorna 501 Not Implemented)
 
 ### Autenticación (`/api/auth`)
 
-- `POST /api/auth/login` - Iniciar sesión (en desarrollo)
-- `POST /api/auth/register` - Registrar usuario (en desarrollo)
+- `POST /api/auth/login` - Iniciar sesión (JWT en HttpOnly cookie; también en body para clientes nativos)
+- `POST /api/auth/register` - Registrar usuario (JWT en HttpOnly cookie; también en body para clientes nativos)
+- `POST /api/auth/logout` - Cerrar sesión (limpia cookie)
+
+### Finanzas (`/api/finances`)
+
+- `GET /api/finances/movements` - Listar movimientos (filtros opcionales)
+- `POST /api/finances/movements` - Registrar un movimiento
+- `GET /api/finances/movements/{id}` - Obtener un movimiento
+- `PATCH /api/finances/movements/{id}` - Actualizar un movimiento
+- `DELETE /api/finances/movements/{id}` - Eliminar un movimiento
+- `GET /api/finances/categories` - Listar categorías (filtro opcional)
+- `POST /api/finances/categories` - Crear categoría
+- `GET /api/finances/categories/{id}` - Obtener categoría
+- `PATCH /api/finances/categories/{id}` - Actualizar categoría
+- `DELETE /api/finances/categories/{id}` - Eliminar categoría
+- `GET /api/finances/fixed-expenses` - Listar gastos fijos (filtros opcionales)
+- `POST /api/finances/fixed-expenses` - Registrar gasto fijo
+- `GET /api/finances/fixed-expenses/{id}` - Obtener gasto fijo
+- `PATCH /api/finances/fixed-expenses/{id}` - Actualizar gasto fijo
+- `DELETE /api/finances/fixed-expenses/{id}` - Eliminar gasto fijo
+
+### Agenda (`/api/agenda`)
+
+- `GET /api/agenda/events` - Listar eventos (filtros opcionales)
+- `POST /api/agenda/events` - Crear evento
+- `GET /api/agenda/events/{id}` - Obtener evento
+- `PATCH /api/agenda/events/{id}` - Actualizar evento
+- `DELETE /api/agenda/events/{id}` - Eliminar evento
+
+### Health Check
+
+- `GET /actuator/health` - Estado de la aplicación (público, usado por Docker)
 
 ## Formato de respuesta estándar
 
@@ -349,4 +397,14 @@ Este proyecto está bajo licencia propietaria. Todos los derechos reservados.
 
 ## Estado del proyecto
 
-🚧 **En desarrollo activo** - Los módulos de autenticación y eliminación de cuentas están parcialmente implementados (marcados con TODO en el código).
+En desarrollo activo. Estado por módulo:
+
+| Módulo             | Estado     | Detalle                                                                                                                           |
+| ------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Autenticación      | Completado | Login resistente a enumeración, registro con `ConflictException` (409), logout con `ApiResponse` 204, protección anti‑XSS en DTOs |
+| Cuentas            | Parcial    | GET y PATCH funcionales; DELETE retorna 501 Not Implemented (lógica pendiente)                                                    |
+| Financiero         | Pendiente  | Solo entidades JPA definidas (Category, Movement, FixedExpenses)                                                                  |
+| Agenda             | Pendiente  | Solo entidad JPA definida (Event)                                                                                                 |
+| Gestor contraseñas | Pendiente  | Solo entidad JPA definida (Password); AES-256 sin implementar                                                                     |
+
+**Próximos pasos**: Implementar `DeleteAccountUseCase`, módulo financiero, módulo de agenda y servicio de encriptación AES-256 para el gestor de contraseñas.
