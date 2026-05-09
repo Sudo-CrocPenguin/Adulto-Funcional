@@ -51,7 +51,6 @@ public class UpdateAccountRequest {
    * TODO: Añadir validación de formato (solo letras, espacios, guiones)
    * mediante {@code @Pattern}.
    */
-  @NotBlank(message = "El nombre es obligatorio")
   @Size(max = 50, message = "El nombre no puede exceder 50 caracteres")
   @NoHtml
   private final String names;
@@ -63,7 +62,6 @@ public class UpdateAccountRequest {
    * TODO: Añadir validación de formato (solo letras, espacios, guiones)
    * mediante {@code @Pattern}.
    */
-  @NotBlank(message = "Los apellidos son obligatorios")
   @Size(max = 50, message = "Los apellidos no pueden exceder 50 caracteres")
   @NoHtml
   private final String lastnames;
@@ -75,7 +73,6 @@ public class UpdateAccountRequest {
    * TODO: Agregar {@code @Pattern} para validar formato internacional
    * (ej. +573001234567).
    */
-  @NotBlank(message = "El teléfono es obligatorio")
   @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
   @NoHtml
   private final String phone;
@@ -87,7 +84,6 @@ public class UpdateAccountRequest {
    * TODO: Agregar validación de dominios permitidos según políticas del sistema
    * (ej. solo ciertos dominios corporativos).
    */
-  @NotBlank(message = "El email es obligatorio")
   @Email(message = "Debe ser un email válido")
   @Size(max = 255, message = "El email no puede exceder 255 caracteres")
   @NoHtml
