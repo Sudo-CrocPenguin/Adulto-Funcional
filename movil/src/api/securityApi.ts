@@ -4,27 +4,39 @@ import { ApiResponse } from '../types/auth.types';
 export interface PasswordEntry {
   id: string;
   applicationName: string;
-  password: string; // viene desencriptada
-  category?: string;
+  password?: string;
   lastChangeDate: string;
+}
+
+export interface CreatePasswordRequest {
+  applicationName: string;
+  password: string;
+  lastChangeDate?: string;
+}
+
+export interface UpdatePasswordRequest {
+  applicationName?: string;
+  password?: string;
+  lastChangeDate?: string;
 }
 
 export const securityApi = {
   // Master Key
-  hasMasterKey: () => apiClient.get<ApiResponse<{ hasMasterKey: boolean }>>('/api/security/master-key/status'),
   createMasterKey: (masterKey: string) =>
     apiClient.post<ApiResponse<void>>('/api/security/master-key', { masterKey }),
   verifyMasterKey: (masterKey: string) =>
-    apiClient.post<ApiResponse<{ verified: boolean }>>('/api/security/master-key/verify', { masterKey }),
+    apiClient.post<ApiResponse<void>>('/api/security/passwords/master-key/verify', { masterKey }),
+  getMasterKeyStatus: () =>
+    apiClient.get<ApiResponse<{ hasMasterKey: boolean }>>('/api/security/master-key/status'),
 
-  // Passwords
+  // Passwords CRUD
   getPasswords: () =>
     apiClient.get<ApiResponse<PasswordEntry[]>>('/api/security/passwords'),
   getPassword: (id: string) =>
     apiClient.get<ApiResponse<PasswordEntry>>(`/api/security/passwords/${id}`),
-  createPassword: (data: Omit<PasswordEntry, 'id'>) =>
+  createPassword: (data: CreatePasswordRequest) =>
     apiClient.post<ApiResponse<PasswordEntry>>('/api/security/passwords', data),
-  updatePassword: (id: string, data: Partial<PasswordEntry>) =>
+  updatePassword: (id: string, data: UpdatePasswordRequest) =>
     apiClient.patch<ApiResponse<PasswordEntry>>(`/api/security/passwords/${id}`, data),
   deletePassword: (id: string) =>
     apiClient.delete<ApiResponse<void>>(`/api/security/passwords/${id}`),

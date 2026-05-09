@@ -107,3 +107,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     </AuthContext.Provider>
   );
 };
+
+  const refreshUser = async () => {
+    const userData = await authApi.getUserData();
+    setUser(userData);
+  };
+

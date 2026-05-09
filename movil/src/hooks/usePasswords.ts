@@ -1,29 +1,24 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { securityApi, PasswordEntry } from '../api/securityApi';
 import { storage } from '../services/storage';
+import { useAuth } from '../contexts/AuthContext';
 
 export const usePasswords = () => {
+  const { user } = useAuth();
   const [passwords, setPasswords] = useState<PasswordEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasMasterKey, setHasMasterKey] = useState<boolean | null>(null);
   const [masterKeyVerified, setMasterKeyVerified] = useState(false);
+  const hasMasterKey = user?.hasMasterKey || false;
 
-  const checkMasterKey = async () => {
-    try {
-      const response = await securityApi.hasMasterKey();
-      setHasMasterKey(response.data.data.hasMasterKey);
-    } catch (err) {
-      setHasMasterKey(false);
-    }
-  };
-
-  const createMasterKey = async (masterKey: string) => {
-    await securityApi.createMasterKey(masterKey);
-    setHasMasterKey(true);
-    setMasterKeyVerified(true);
-    await storage.setItem('master_key_verified', 'true');
-  };
+  // Verificar si ya tenemos la clave verificada en storage (persistencia local)
+  useEffect(() => {
+    const checkVerified = async () => {
+      const verified = await storage.getItem('master_key_verified');
+      if (verified === 'true') setMasterKeyVerified(true);
+    };
+    checkVerified();
+  }, []);
 
   const verifyMasterKey = async (masterKey: string) => {
     await securityApi.verifyMasterKey(masterKey);
@@ -31,7 +26,7 @@ export const usePasswords = () => {
     await storage.setItem('master_key_verified', 'true');
   };
 
-  const fetchPasswords = async () => {
+  const fetchPasswords = useCallback(async () => {
     if (!masterKeyVerified) return;
     try {
       setLoading(true);
@@ -42,18 +37,24 @@ export const usePasswords = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [masterKeyVerified]);
 
-  const createPassword = async (data: Omit<PasswordEntry, 'id'>) => {
+  const createPassword = async (data: { applicationName: string; password: string; lastChangeDate?: string }) => {
     const response = await securityApi.createPassword(data);
-    setPasswords(prev => [response.data.data, ...prev]);
-    return response.data.data;
+    const newPassword = response.data.data;
+    setPasswords(prev => [newPassword, ...prev]);
+    return newPassword;
   };
 
   const updatePassword = async (id: string, data: Partial<PasswordEntry>) => {
-    const response = await securityApi.updatePassword(id, data);
-    setPasswords(prev => prev.map(p => p.id === id ? response.data.data : p));
-    return response.data.data;
+    const payload: any = {};
+    if (data.applicationName) payload.applicationName = data.applicationName;
+    if (data.password) payload.password = data.password;
+    if (data.lastChangeDate) payload.lastChangeDate = data.lastChangeDate;
+    const response = await securityApi.updatePassword(id, payload);
+    const updated = response.data.data;
+    setPasswords(prev => prev.map(p => p.id === id ? updated : p));
+    return updated;
   };
 
   const deletePassword = async (id: string) => {
@@ -62,17 +63,8 @@ export const usePasswords = () => {
   };
 
   useEffect(() => {
-    const checkVerified = async () => {
-      const verified = await storage.getItem('master_key_verified');
-      if (verified === 'true') setMasterKeyVerified(true);
-    };
-    checkVerified();
-    checkMasterKey();
-  }, []);
-
-  useEffect(() => {
     if (masterKeyVerified) fetchPasswords();
-  }, [masterKeyVerified]);
+  }, [masterKeyVerified, fetchPasswords]);
 
   return {
     passwords,
@@ -80,12 +72,10 @@ export const usePasswords = () => {
     error,
     hasMasterKey,
     masterKeyVerified,
-    checkMasterKey,
-    createMasterKey,
     verifyMasterKey,
+    fetchPasswords,
     createPassword,
     updatePassword,
     deletePassword,
-    fetchPasswords,
   };
 };
