@@ -155,14 +155,14 @@ public class AuthController {
    * llamarlo aunque el token ya haya expirado.
    *
    * @param response respuesta HTTP donde se escribe el header de limpieza
-   * @return 204 No Content con un {@link ApiResponse} vacío
+   * @return 200 OK con un {@link ApiResponse} de confirmación
    */
   @PostMapping("/logout")
   public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
     cookieUtils.clearTokenCookie(response);
-    return ResponseEntity.status(HttpStatus.NO_CONTENT)
-        .body(ApiResponse.<Void>builder()
-            .status(HttpStatus.NO_CONTENT.value())
+    return ResponseEntity.ok(
+        ApiResponse.<Void>builder()
+            .status(HttpStatus.OK.value())
             .message("Sesión cerrada exitosamente")
             .build());
   }
