@@ -16,6 +16,8 @@
   --color-celeste-muted: #98a1a9;   /* Celeste apagado */
   --color-cyan: #6ce5e8;            /* Cian */
   --color-teal: #1cabb0;            /* Verde azulado tropical */
+  --color-teal-bright: #2dd4bf;     /* Teal para subtitulos en modales*/
+  --color-landing-bg: #1a3360;      /* Azul oscuro fondo modal landing*/
 
   /* fondos y bordes */
   --color-background: #f4f6f9;      /* Fondo total de la aplicación */
