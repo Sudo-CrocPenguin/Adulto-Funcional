@@ -1,3 +1,13 @@
+/**
+ * @file LandingPage.tsx
+ * @description Página principal de la aplicación.
+ * Presenta el hero, las características del producto y el navbar.
+ * Gestiona los modales de login y registro directamente, renderizándolos
+ * sobre el fondo con overlay oscuro y borroso.
+ * También detecta si viene de ForgotPassword con state { openLogin: true }
+ * para abrir el modal de login automáticamente.
+ */
+
 import { useEffect, useState } from 'react'
 import { TrendingUp, ClipboardCheck, LockKeyhole } from 'lucide-react'
 import logo from '../../assets/logo.png'
@@ -6,14 +16,25 @@ import Login from '../Login/Login'
 import Register from '../Register/Register'
 import { useLocation } from 'react-router-dom'
 
+/** Tipos posibles de modal activo en la landing */
 type ModalType = 'login' | 'register' | null
 
+/**
+ * Componente de la página principal (landing).
+ * Controla qué modal está abierto mediante estado local.
+ *
+ * @returns Página landing con hero, features y modales de autenticación
+ */
 function LandingPage() {
 
     const [modal, setModal] = useState<ModalType>(null)
 
     const location = useLocation()
 
+    /**
+   * Detecta si viene de ForgotPassword con state { openLogin: true }
+   * y abre el modal de login automáticamente.
+   */
     useEffect(() => {
         
     if (location.state?.openLogin) {
