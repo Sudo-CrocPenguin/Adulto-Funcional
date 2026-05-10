@@ -6,9 +6,9 @@
  */
 
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import AuthLayout from '../../components/AuthLayout/AuthLayout'
-import styles from "./ForgotPassword.module.css"
+import { useNavigate } from 'react-router-dom'
+import { LockKeyhole } from 'lucide-react'
+import styles from './ForgotPassword.module.css'
 
 interface ForgotPasswordErrors {
   email?: string
@@ -16,103 +16,85 @@ interface ForgotPasswordErrors {
 
 function ForgotPassword() {
 
-  const [email, setEmail] = useState<string>('')
-  const [errors, setErrors ]= useState<ForgotPasswordErrors>({})
-  const [successMsg, setSuccessMsg] = useState<string>('')
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [errors, setErrors] = useState<ForgotPasswordErrors>({})
+  const [successMsg, setSuccessMsg] = useState('')
 
-  /**
-   * Valida el campo de correo electrónico.
-   * @returns Objeto con el mensaje de error si el correo es inválido
-   */
   const validate = (): ForgotPasswordErrors => {
     const newErrors: ForgotPasswordErrors = {}
-
     if (!email.trim())
-      newErrors.email = "El correo es obligatorio."
+      newErrors.email = 'El correo es obligatorio.'
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      newErrors.email = "Ingresa un correo válido."
-
+      newErrors.email = 'Ingresa un correo válido.'
     return newErrors
   }
 
-  /**
-   * Maneja el envío del formulario.
-   * Si la validación pasa, muestra el mensaje genérico de éxito
-   * y oculta el formulario.
-   */
   const handleSubmit = () => {
     const newErrors = validate()
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
       return
     }
-
     setErrors({})
-
-    //TODO: conectar con el backend - POST /api/auth/forgot-password
-
-    setSuccessMsg("Si el correo está registrado, recibirás instrucciones en tu bandeja de entrada.")
+    // TODO: conectar con el backend - POST /api/auth/forgot-password
+    setSuccessMsg('Si el correo está registrado, recibirás instrucciones en tu bandeja de entrada.')
   }
 
   return (
+    <div className={styles.page}>
+      <div className={styles.card}>
 
-    <AuthLayout>
+        <div className={styles.iconWrapper}>
+          <LockKeyhole size={32} strokeWidth={1.5} />
+        </div>
 
-      <h2 className={styles.title}>Recuperar Contraseña</h2>
+        <h2 className={styles.title}>Recuperar contraseña</h2>
 
-      <p className={styles.subtitle}>
-        Ingresa tu correo y te enviaremos instrucciones para restablecer tu contraseña
-      </p>
+        <p className={styles.subtitle}>
+          Ingresa tu correo y te enviaremos instrucciones
+          para restablecer tu contraseña
+        </p>
 
-      {/*mensaje de exito */}
-      {successMsg && (
-        <p className={styles.successMsg}>{successMsg}</p>
-      )}
+        {successMsg && (
+          <p className={styles.successMsg}>{successMsg}</p>
+        )}
 
-      {/*campo correo electronico */}
-      {!successMsg && (
-        <>
-          <div className={styles.formGroup}>
-            <label htmlFor="email">Correo Electrónico</label>
-            <input 
-              type="text"
-              id="email"
-              name="email"
-              placeholder='tucorreo@ejemplo.com'
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-                if (errors.email) setErrors({})
-              }} 
-              
-              className={errors.email ? styles.inputError : ''}
-              onKeyDown={(e) => {if (e.key === "Enter") handleSubmit() }}
-            />
+        {!successMsg && (
+          <>
+            <div className={styles.formGroup}>
+              <label htmlFor="email">Correo electrónico</label>
+              <input
+                type="text"
+                id="email"
+                name="email"
+                placeholder="tucorreo@ejemplo.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (errors.email) setErrors({})
+                }}
+                className={errors.email ? styles.inputError : ''}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
+              />
+              {errors.email && (
+                <span className={styles.errorMsg}>{errors.email}</span>
+              )}
+            </div>
 
-            {errors.email && (
-              <span className={styles.errorMsg}>{errors.email}</span>
-            )}
-
-          </div>
-
-            {/*boton enviar */}
             <button className={styles.btnPrimary} onClick={handleSubmit}>
               Enviar
             </button>
-        </>
-      )}
+          </>
+        )}
 
-      {/*link volver al login */}
-      <p className={styles.backToLogin}>
-        <Link to="/login">Volver al inicio de sesión</Link>
-      </p>
+        <p className={styles.backToLogin} onClick={() => navigate('/', { state: { openLogin: true } })}>
+          Volver al inicio de sesión
+        </p>
 
-    </AuthLayout>
-
+      </div>
+    </div>
   )
 }
-
-
 
 export default ForgotPassword
