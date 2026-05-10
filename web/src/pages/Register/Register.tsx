@@ -1,3 +1,13 @@
+/**
+ * @file Register.tsx
+ * @description Modal de registro de usuario.
+ * Se renderiza sobre la landing page con un overlay oscuro y borroso.
+ * Permite crear una nueva cuenta con validaciones en tiempo real.
+ * Los campos se organizan en grid de dos columnas para mejor aprovechamiento
+ * del espacio en el modal.
+ * Campos: nombres, apellidos, teléfono, correo, contraseña, confirmar contraseña.
+ */
+
 import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import styles from './Register.module.css'
@@ -5,6 +15,7 @@ import { useAuth } from '../../context/AuthContext'
 import { register } from '../../services/auth.service'
 import { useNavigate } from 'react-router-dom'
 
+/** Estructura de los campos del formulario de registro */
 interface RegisterForm {
   firstName: string
   lastName: string
@@ -14,6 +25,11 @@ interface RegisterForm {
   confirmPassword: string
   acceptTerms: boolean
 }
+
+/**
+ * Errores de validación del formulario de registro.
+ * Cada campo es opcional - solo se define si hay error en ese campo.
+ */
 
 interface RegisterErrors {
   firstName?: string
@@ -25,10 +41,31 @@ interface RegisterErrors {
   acceptTerms?: string
 }
 
+/**
+ * Props del componente Register.
+ * Al ser un modal, necesita callbacks para cerrarse y para
+ * navegar al login sin cambiar de página.
+ */
+
 interface RegisterProps {
+  /** Cierra el modal de registro */
   onClose: () => void
+  /** Cierra el modal de registro y abre el de login */
   onGoToLogin: () => void
 }
+
+/**
+ * Componente modal de registro de usuario.
+ *
+ * @param {RegisterProps} props - Callbacks para cerrar el modal y cambiar al login
+ * @returns Modal con formulario de registro en grid de dos columnas
+ *
+ * @example
+ * <Register
+ *   onClose={() => setModal(null)}
+ *   onGoToLogin={() => setModal('login')}
+ * />
+ */
 
 function Register({ onClose, onGoToLogin }: RegisterProps) {
 
@@ -50,6 +87,15 @@ function Register({ onClose, onGoToLogin }: RegisterProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
+  /**
+   * Maneja los cambios en los campos del formulario.
+   * - Bloquea números en nombre y apellidos.
+   * - Restringe el teléfono a números con máximo 10 dígitos.
+   * - Limpia el error del campo en cuanto el usuario empieza a corregirlo.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e - Evento de cambio del input
+   */
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
 
@@ -65,6 +111,12 @@ function Register({ onClose, onGoToLogin }: RegisterProps) {
       setErrors({ ...errors, [name]: undefined })
     }
   }
+
+  /**
+   * Valida todos los campos del formulario antes de enviar.
+   *
+   * @returns {RegisterErrors} Objeto con los mensajes de error encontrados por campo
+   */
 
   const validate = (): RegisterErrors => {
     const newErrors: RegisterErrors = {}
@@ -101,6 +153,13 @@ function Register({ onClose, onGoToLogin }: RegisterProps) {
     return newErrors
   }
 
+  /**
+   * Maneja el envío del formulario de registro.
+   * Si hay errores de validación los muestra y detiene el proceso.
+   * Si el registro es exitoso, guarda la sesión, muestra mensaje de éxito
+   * y redirige al dashboard después de 2 segundos.
+   */
+  
   const handleSubmit = async () => {
     const newErrors = validate()
     if (Object.keys(newErrors).length > 0) {
