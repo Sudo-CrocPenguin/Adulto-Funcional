@@ -1,8 +1,10 @@
 /**
- * Página de inicio de sesión.
- * Permite al usuario autenticarse con email y contraseña. 
- * Incluye opción "Recuerdame", toggle de visibilidad de contraseña,
- * y manejo de error de credenciales incorrectas desde el backend.
+ * @file Login.tsx
+ * @description Modal de inicio de sesión.
+ * Se renderiza sobre la landing page con un overlay oscuro y borroso.
+ * Permite al usuario autenticarse con email y contraseña.
+ * Incluye opción "Recuérdame", toggle de visibilidad de contraseña,
+ * y manejo de errores de credenciales incorrectas desde el backend.
  */
 
 
@@ -13,21 +15,44 @@ import styles from './Login.module.css'
 import { useAuth } from '../../context/AuthContext'
 import { login as loginService } from '../../services/auth.service'
 
+
+/** Estructura de los campos del formulario de login */
 interface LoginForm {
   email: string
   password: string
   rememberMe: boolean
 }
 
+/** Errores de validación por campo del formulario de login */
 interface LoginErrors {
   email?: string
   password?: string
 }
 
+/**
+ * Props del componente Login.
+ * Al ser un modal, necesita callbacks para cerrarse y para
+ * navegar al registro sin cambiar de página.
+ */
 interface LoginProps {
+  /** Cierra el modal de login */
   onClose: () => void
+  /** Cierra el modal de login y abre el de registro */
   onGoToRegister: () => void
 }
+
+/**
+ * Componente modal de inicio de sesión.
+ *
+ * @param {LoginProps} props - Callbacks para cerrar el modal y cambiar al registro
+ * @returns Modal con formulario de autenticación
+ *
+ * @example
+ * <Login
+ *   onClose={() => setModal(null)}
+ *   onGoToRegister={() => setModal('register')}
+ * />
+ */
 
 function Login({ onClose, onGoToRegister }: LoginProps) {
 
@@ -44,6 +69,13 @@ function Login({ onClose, onGoToRegister }: LoginProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [authError, setAuthError] = useState('')
 
+  /**
+   * Maneja los cambios en los campos del formulario.
+   * Limpia el error del campo en cuanto el usuario empieza a corregirlo.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement>} e - Evento de cambio del input
+   */
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
     setForm({ ...form, [name]: type === 'checkbox' ? checked : value })
@@ -51,6 +83,12 @@ function Login({ onClose, onGoToRegister }: LoginProps) {
       setErrors({ ...errors, [name]: undefined })
     }
   }
+
+  /**
+   * Valida los campos del formulario antes de enviar.
+   *
+   * @returns {LoginErrors} Objeto con los mensajes de error encontrados por campo
+   */
 
   const validate = (): LoginErrors => {
     const newErrors: LoginErrors = {}
@@ -65,6 +103,13 @@ function Login({ onClose, onGoToRegister }: LoginProps) {
     return newErrors
   }
 
+  /**
+   * Maneja el envío del formulario de login.
+   * Si hay errores de validación los muestra y detiene el proceso.
+   * Si las credenciales son incorrectas, muestra el error del backend.
+   * Si el login es exitoso, cierra el modal y redirige al dashboard.
+   */
+  
   const handleSubmit = async () => {
     const newErrors = validate()
     if (Object.keys(newErrors).length > 0) {
