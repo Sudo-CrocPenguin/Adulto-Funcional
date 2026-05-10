@@ -231,3 +231,52 @@
 .linkBtn:hover {
   color: var(--color-primary);
 }
+
+/* ── TABLET (481px - 768px) ─────────────────────────────────── */
+@media (max-width: 768px) {
+
+  .modal {
+    padding: 36px 32px;
+    max-width: 420px;
+  }
+
+  .title {
+    font-size: 1.6rem;
+  }
+}
+
+/* ── MÓVIL (hasta 480px) ────────────────────────────────────── */
+@media (max-width: 480px) {
+
+  .overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    padding: 32px 20px 28px;
+    border-radius: 20px 20px 0 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+
+  .btnPrimary {
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  .labelRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}

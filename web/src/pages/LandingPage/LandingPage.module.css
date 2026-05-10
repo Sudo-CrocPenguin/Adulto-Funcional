@@ -523,3 +523,142 @@
   font-size: 0.85rem;
   line-height: 1.6;
 }
+
+/* ── TABLET (481px - 768px) ─────────────────────────────────── */
+@media (max-width: 768px) {
+
+  .navbar {
+    padding: 14px 24px;
+  }
+
+  .brandName {
+    font-size: 1.4rem;
+  }
+
+  .logoWrapper {
+    width: 46px;
+    height: 46px;
+  }
+
+  .btnOutline,
+  .btnTeal {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+
+  .heroTitle {
+    font-size: 2.6rem;
+  }
+
+  .heroSubtitle {
+    font-size: 1rem;
+  }
+
+  .btnHero {
+    padding: 13px 44px;
+    font-size: 1rem;
+  }
+
+  .features {
+    padding: 32px 24px 48px;
+    gap: 16px;
+  }
+
+  .featureItem {
+    padding: 22px 20px;
+    min-width: 160px;
+  }
+}
+
+/* ── MÓVIL (hasta 480px) ────────────────────────────────────── */
+@media (max-width: 480px) {
+
+  .navbar {
+    padding: 12px 16px;
+  }
+
+  .brandName {
+    font-size: 1.15rem;
+  }
+
+  .logoWrapper {
+    width: 40px;
+    height: 40px;
+  }
+
+  .btnOutline,
+  .btnTeal {
+    padding: 7px 12px;
+    font-size: 0.8rem;
+  }
+
+  .hero {
+    padding: 40px 16px 32px;
+  }
+
+  .heroTitle {
+    font-size: 2rem;
+  }
+
+  .heroSubtitle {
+    font-size: 0.95rem;
+    max-width: 100%;
+  }
+
+  /* oculta el <br> en móvil para que fluya naturalmente */
+  .heroSubtitle br {
+    display: none;
+  }
+
+  .btnHero {
+    padding: 13px 32px;
+    font-size: 1rem;
+    width: 100%;
+  }
+
+  .features {
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+    gap: 14px;
+  }
+
+  .featureItem {
+    width: 100%;
+    max-width: 340px;
+    min-width: unset;
+    flex-direction: row;
+    text-align: left;
+    padding: 18px 20px;
+    gap: 16px;
+  }
+
+  .featureText h3 {
+    font-size: 0.95rem;
+  }
+
+  .featureText p {
+    font-size: 0.82rem;
+  }
+
+  /* reduce tamaño de anillos en móvil para no saturar */
+  .ring1, .ring2 {
+    width: 420px;
+    height: 420px;
+  }
+
+  .ring3, .ring4 {
+    width: 300px;
+    height: 300px;
+  }
+
+  .orb1 {
+    width: 320px;
+    height: 320px;
+  }
+
+  .orb2 {
+    width: 260px;
+    height: 260px;
+  }
+}

@@ -253,3 +253,53 @@
 .linkBtn:hover {
   color: var(--color-primary);
 }
+
+/* ── TABLET (481px - 768px) ─────────────────────────────────── */
+@media (max-width: 768px) {
+
+  .modal {
+    padding: 36px 28px;
+    max-width: 520px;
+  }
+
+  .title {
+    font-size: 1.6rem;
+  }
+}
+
+/* ── MÓVIL (hasta 480px) ────────────────────────────────────── */
+@media (max-width: 480px) {
+
+  .overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    padding: 28px 16px 24px;
+    border-radius: 20px 20px 0 0;
+    max-width: 100%;
+    width: 100%;
+    max-height: 92vh;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+  }
+
+  /* grid de dos columnas pasa a una columna en móvil */
+  .twoCol {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .btnPrimary {
+    font-size: 1rem;
+    padding: 12px;
+  }
+}
