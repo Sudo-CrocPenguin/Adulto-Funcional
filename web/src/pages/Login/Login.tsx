@@ -7,9 +7,8 @@
 
 
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {Eye, EyeOff } from 'lucide-react'
-import AuthLayout from '../../components/AuthLayout/AuthLayout'
 import styles from './Login.module.css'
 import { useAuth } from '../../context/AuthContext'
 import { login as loginService } from '../../services/auth.service'
@@ -25,10 +24,15 @@ interface LoginErrors {
   password?: string
 }
 
+interface LoginProps {
+  onClose: () => void
+  onGoToRegister: () => void
+}
 
-function Login() {
+function Login({ onClose, onGoToRegister }: LoginProps) {
 
   const navigate = useNavigate()
+  const { login } = useAuth()
 
   const [form, setForm] = useState<LoginForm>({
     email: '',
@@ -36,74 +40,43 @@ function Login() {
     rememberMe: false,
   })
 
-  const { login } = useAuth()
-
   const [errors, setErrors] = useState<LoginErrors>({})
-  const [showPassword, setShowPassword] = useState<boolean>(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [authError, setAuthError] = useState('')
 
-  //error general de autenticacion (credenciales incorrectas desde el backend )
-  const [authError, setAuthError] = useState<string>('')
-
-  /**
-   * Maneja los cambios en los campos del formulario.
-   */
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type,checked } = e.target
+    const { name, value, type, checked } = e.target
     setForm({ ...form, [name]: type === 'checkbox' ? checked : value })
-
-    //limpia el error del campo al escribir
     if (errors[name as keyof LoginErrors]) {
       setErrors({ ...errors, [name]: undefined })
     }
   }
 
-  /**
-   * Valida los campos del formulario antes de enviar.
-   * @returns Objeto con los mensajes de error encontrados por campo.
-   */
   const validate = (): LoginErrors => {
-
     const newErrors: LoginErrors = {}
-
-      if (!form.email.trim())
-        newErrors.email = 'El correo es obligatorio.'
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-        newErrors.email = 'Ingresa un correo válido.'
-
-      if (!form.password)
-        newErrors.password = 'La contraseña es obligatoria.'
-      else if (form.password.length < 8)
-        newErrors.password = 'Mínimo 8 caracteres.'
-
+    if (!form.email.trim())
+      newErrors.email = 'El correo es obligatorio.'
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      newErrors.email = 'Ingresa un correo válido.'
+    if (!form.password)
+      newErrors.password = 'La contraseña es obligatoria.'
+    else if (form.password.length < 8)
+      newErrors.password = 'Mínimo 8 caracteres.'
     return newErrors
-
   }
 
-  /**
-   * Maneja el envío del formulario de login.
-   * Si hay errores de validación los muestra y detiene el proceso.
-   * Si las credenciales son incorrectas, muestra authError desde el backend.
-   */
   const handleSubmit = async () => {
-    console.log('handleSubmit ejecutado')
     const newErrors = validate()
-
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors)
-
       return
     }
-
-    setAuthError('') //limpia error previo
-
+    setAuthError('')
     try {
-      console.log('llamando al backend...')
       const response = await loginService({
         email: form.email,
         password: form.password,
       })
-
-      console.log('respuesta del backend:', response)
 
       sessionStorage.setItem('token', response.token)
       sessionStorage.setItem('user', JSON.stringify({
@@ -124,106 +97,91 @@ function Login() {
         hasMasterKey: response.hasMasterKey,
       })
 
-      
+      onClose()
       navigate('/dashboard')
 
-    } catch (errors: unknown) {
-      if (errors instanceof Error) {
-        setAuthError(errors.message)
-      }
+    } catch (err: unknown) {
+      if (err instanceof Error) setAuthError(err.message)
     }
   }
 
-
   return (
-  
-    <AuthLayout>
+    <div className={styles.overlay} onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+      <div className={styles.modal}>
 
-      <h2 className={styles.title}>Iniciar Sesión</h2>
+        <button className={styles.closeBtn} onClick={onClose} aria-label="Cerrar">✕</button>
 
-      {/**error de autenticacion del backend */}
-      {authError && (
-        <p className={styles.authError}>{authError}</p>
-      )}
+        <h2 className={styles.title}>Bienvenido de nuevo</h2>
+        <p className={styles.subtitle}>Inicia sesión en tu cuenta</p>
 
-      {/**campo correo electronico */}
-      <div className={styles.formGroup}>
-        <label htmlFor="email">Correo Electrónico</label>
-        <input 
-          type="text"
-          id="email"
-          name="email"
-          placeholder='tucorreo@ejemplo.com'
-          value={form.email}
-          onChange={handleChange}
-          className={errors.email ? styles.inputError : ''} 
-        
-        />
+        {authError && <p className={styles.authError}>{authError}</p>}
 
-        {errors.email && (
-          <span className={styles.errorMsg}>{errors.email}</span>
-        )}
-
-      </div>
-
-      {/**campo contrase con boton mostrar/ocultar */}
-      <div className={styles.formGroup}>
-        <label htmlFor="password">Contraseña</label>
-        <div className={styles.passwordWrapper}>
-          <input 
-            type={showPassword ? 'text' : 'password'}
-            id='password'
-            name='password'
-            placeholder='*********'
-            value={form.password}
+        <div className={styles.formGroup}>
+          <label htmlFor="email">Correo electrónico</label>
+          <input
+            type="text"
+            id="email"
+            name="email"
+            placeholder="tucorreo@ejemplo.com"
+            value={form.email}
             onChange={handleChange}
-            className={errors.password ? styles.inputError : ''}
-            onKeyDown={(e) => {if (e.key === 'Enter') handleSubmit()}}          
+            className={errors.email ? styles.inputError : ''}
           />
-
-          <span className={styles.eyeIcon} onClick={() => setShowPassword(p => !p)}>
-            {showPassword ? <EyeOff size={20}/> : <Eye size={20}/>}
-          </span>
-
+          {errors.email && <span className={styles.errorMsg}>{errors.email}</span>}
         </div>
-        
-        {errors.password && (
-          <span className={styles.errorMsg}>{errors.password}</span>
-        )}
+
+        <div className={styles.formGroup}>
+          <div className={styles.labelRow}>
+            <label htmlFor="password">Contraseña</label>
+            <span
+              className={styles.forgotLink}
+              onClick={() => { onClose(); navigate('/forgot-password') }}
+            >
+              ¿Olvidaste tu contraseña?
+            </span>
+          </div>
+          <div className={styles.passwordWrapper}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              id="password"
+              name="password"
+              placeholder="********"
+              value={form.password}
+              onChange={handleChange}
+              className={errors.password ? styles.inputError : ''}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit() }}
+            />
+            <span className={styles.eyeIcon} onClick={() => setShowPassword(p => !p)}>
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </span>
+          </div>
+          {errors.password && <span className={styles.errorMsg}>{errors.password}</span>}
+        </div>
+
+        <div className={styles.rememberMe}>
+          <input
+            type="checkbox"
+            id="rememberMe"
+            name="rememberMe"
+            checked={form.rememberMe}
+            onChange={handleChange}
+          />
+          <label htmlFor="rememberMe">Recuérdame</label>
+        </div>
+
+        <button className={styles.btnPrimary} onClick={handleSubmit}>
+          Iniciar Sesión
+        </button>
+
+        <p className={styles.switchLink}>
+          ¿No tienes cuenta?{' '}
+          <span className={styles.linkBtn} onClick={onGoToRegister}>
+            Registrar
+          </span>
+        </p>
 
       </div>
-
-      {/**checkbox recuerdame */}
-      <div className={styles.rememberMe}>
-        <input 
-          type="checkbox"
-          id="rememberMe"
-          name="rememberMe"
-          checked={form.rememberMe}
-          onChange={handleChange} 
-        />
-
-        <label htmlFor="remenberMe">Recuérdame</label>
-
-      </div>
-
-      {/**boton iniciar sesion */}
-      <button className={styles.btnPrimary} onClick={handleSubmit}>
-        Iniciar Sesión
-      </button>
-
-      {/**link olvidé mi contraseña */}
-      <p className={styles.forgotPassword}>
-        <Link to="/forgot-password">¿Olvidaste tu contraseña?</Link>
-      </p>
-
-      {/**link ir a registro */}
-      <p className={styles.registerLink}>
-        ¿No tienes cuenta? <Link to="/register">Registrarse</Link>
-      </p>
-
-    </AuthLayout>
-
+    </div>
   )
 
 }
