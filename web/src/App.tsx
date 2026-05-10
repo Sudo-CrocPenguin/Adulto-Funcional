@@ -4,8 +4,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 /* Páginas de autenticación */
-import Register from './pages/Register/Register'
-import Login from './pages/Login/Login'
+
 import ForgotPassword from './pages/ForgotPassword/ForgotPassword'
 
 /* Layout compartido para páginas protegidas */
@@ -24,15 +23,15 @@ import PasswordManagerReset from './pages/PasswordManagerReset/PasswordManagerRe
 import PasswordManager from './pages/PasswordManager/PasswordManager'
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
 
+import LandingPage from './pages/LandingPage/LandingPage'
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
 
         {/* Rutas públicas - accesibles sin autenticación */}
-        <Route path="/" element={<Register />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Rutas protegidas - requieren autenticación, envueltas en Layout */}
