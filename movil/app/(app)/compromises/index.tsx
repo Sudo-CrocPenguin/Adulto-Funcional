@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEvents, Event } from '../../../src/hooks/useEvents';
 import { Colors } from '../../../src/constants/Colors';
 import { BottomNav } from '../../../src/components/common/BottomNav';
@@ -9,8 +8,7 @@ import { BottomNav } from '../../../src/components/common/BottomNav';
 type FilterType = 'Todas' | 'Pendientes' | 'Completadas';
 
 export default function CompromisesScreen() {
-  const insets = useSafeAreaInsets();
-  const { events, loading, error, fetchEvents, deleteEvent } = useEvents();
+  const { events, loading, error, fetchEvents, deleteEvent, completeEvent } = useEvents();
   const [filter, setFilter] = useState<FilterType>('Todas');
 
   useFocusEffect(
@@ -33,6 +31,24 @@ export default function CompromisesScreen() {
     }
   };
 
+  const handleComplete = async (event: Event) => {
+    Alert.alert(
+      'Completar compromiso',
+      `¿Marcar "${event.title}" como completado? Esto aumentará su racha.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Completar', onPress: async () => {
+          try {
+            await completeEvent(event.id);
+            // La lista se actualizará automáticamente con el nuevo estado y fecha
+          } catch (err: any) {
+            Alert.alert('Error', err.message);
+          }
+        }}
+      ]
+    );
+  };
+
   const renderItem = ({ item }: { item: Event }) => (
     <TouchableOpacity style={styles.card} onPress={() => router.push(`/(app)/compromises/${item.id}`)}>
       <View style={styles.cardHeader}>
@@ -42,18 +58,30 @@ export default function CompromisesScreen() {
         </View>
       </View>
       <Text style={styles.category}>{item.category?.name || 'Sin categoría'}</Text>
-      <Text style={styles.frequency}>{item.frequency === 0 ? 'Única' : item.frequency === 1 ? 'Diaria' : item.frequency === 7 ? 'Semanal' : item.frequency === 30 ? 'Mensual' : 'Anual'}</Text>
+      <Text style={styles.frequency}>
+        {item.frequency === 0 ? 'Única' : item.frequency === 1 ? 'Diaria' : item.frequency === 7 ? 'Semanal' : item.frequency === 30 ? 'Mensual' : 'Anual'}
+      </Text>
       <Text style={styles.date}>{new Date(item.eventDate).toLocaleDateString()}</Text>
+      {item.frequency > 0 && item.streak !== undefined && (
+        <Text style={styles.streak}>🔥 Racha: {item.streak}</Text>
+      )}
       <View style={styles.statusRow}>
         <Text style={[styles.status, item.status === 'Completado' ? styles.statusCompleted : styles.statusPending]}>
           {item.status}
         </Text>
-        <TouchableOpacity onPress={() => Alert.alert('Eliminar', '¿Eliminar compromiso?', [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Eliminar', style: 'destructive', onPress: () => deleteEvent(item.id) }
-        ])}>
-          <Text style={styles.delete}>🗑️</Text>
-        </TouchableOpacity>
+        <View style={styles.actionButtons}>
+          {item.status !== 'Completado' && (
+            <TouchableOpacity onPress={() => handleComplete(item)} style={styles.completeButton}>
+              <Text style={styles.completeText}>✔️</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity onPress={() => Alert.alert('Eliminar', '¿Eliminar compromiso?', [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Eliminar', style: 'destructive', onPress: () => deleteEvent(item.id) }
+          ])}>
+            <Text style={styles.delete}>🗑️</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -62,7 +90,7 @@ export default function CompromisesScreen() {
   if (error) return <View style={styles.centered}><Text>Error: {error}</Text></View>;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={styles.container}>
       <View style={styles.streakContainer}>
         <Text style={styles.streakTitle}>Racha de Compromisos</Text>
         <Text style={styles.streakNumber}>7 días activos</Text>
@@ -120,10 +148,14 @@ const styles = StyleSheet.create({
   category: { fontSize: 14, color: Colors.textSecondary, marginBottom: 4 },
   frequency: { fontSize: 12, color: Colors.textSecondary },
   date: { fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
-  statusRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
+  streak: { fontSize: 12, fontWeight: 'bold', color: Colors.primary, marginTop: 4 },
+  statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   status: { fontSize: 12, fontWeight: 'bold' },
   statusPending: { color: Colors.error },
   statusCompleted: { color: Colors.success },
+  actionButtons: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  completeButton: { marginRight: 12 },
+  completeText: { fontSize: 16 },
   delete: { fontSize: 16, color: Colors.error },
   empty: { textAlign: 'center', marginTop: 50, color: Colors.textSecondary },
   fab: { position: 'absolute', bottom: 80, right: 20, backgroundColor: Colors.primary, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', elevation: 5 },
