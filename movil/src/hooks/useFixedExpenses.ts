@@ -1,15 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { financesApi, FixedExpense } from '../api/financesApi';
 import { useMovements } from './useMovements';
-import { useNotifications } from './useNotifications';
 
 export const useFixedExpenses = () => {
   const [expenses, setExpenses] = useState<FixedExpense[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { createMovement } = useMovements();
-  const { scheduleForItem, cancelForItem } = useNotifications();
 
   const fetchExpenses = useCallback(async () => {
     try {
@@ -22,17 +19,6 @@ export const useFixedExpenses = () => {
       setLoading(false);
     }
   }, []);
-
-  const getNotificationKey = (id: string) => `fixedExpenseNotifications_${id}`;
-
-  const loadNotificationIds = async (id: string): Promise<string[]> => {
-    const stored = await AsyncStorage.getItem(getNotificationKey(id));
-    return stored ? JSON.parse(stored) : [];
-  };
-
-  const saveNotificationIds = async (id: string, ids: string[]) => {
-    await AsyncStorage.setItem(getNotificationKey(id), JSON.stringify(ids));
-  };
 
   const createExpense = async (data: Omit<FixedExpense, 'id'>) => {
     const statusValue = data.status === 'ACTIVO' ? 'ACTIVE' : 
@@ -47,14 +33,6 @@ export const useFixedExpenses = () => {
     };
     const response = await financesApi.createFixedExpense(payload as any);
     const newExpense = response.data.data;
-    
-    // Programar notificaciones
-    const dueDate = new Date(newExpense.nextDueDate);
-    const dueDateTime = new Date(dueDate);
-    dueDateTime.setHours(12, 0, 0, 0); // Hora por defecto al mediodía
-    const notificationIds = await scheduleForItem(newExpense.id, 'fixedExpense', newExpense.name, dueDateTime);
-    await saveNotificationIds(newExpense.id, notificationIds);
-    
     setExpenses(prev => [newExpense, ...prev]);
     return newExpense;
   };
@@ -71,26 +49,11 @@ export const useFixedExpenses = () => {
     }
     const response = await financesApi.updateFixedExpense(id, payload);
     const updated = response.data.data;
-    
-    // Reprogramar notificaciones si cambió la fecha
-    if (data.nextDueDate) {
-      const oldIds = await loadNotificationIds(id);
-      await cancelForItem(oldIds);
-      const dueDate = new Date(updated.nextDueDate);
-      const dueDateTime = new Date(dueDate);
-      dueDateTime.setHours(12, 0, 0, 0);
-      const newIds = await scheduleForItem(id, 'fixedExpense', updated.name, dueDateTime);
-      await saveNotificationIds(id, newIds);
-    }
-    
     setExpenses(prev => prev.map(e => e.id === id ? updated : e));
     return updated;
   };
 
   const deleteExpense = async (id: string) => {
-    const notificationIds = await loadNotificationIds(id);
-    await cancelForItem(notificationIds);
-    await AsyncStorage.removeItem(getNotificationKey(id));
     await financesApi.deleteFixedExpense(id);
     setExpenses(prev => prev.filter(e => e.id !== id));
   };

@@ -18,6 +18,7 @@ const storeAuthData = async (authData: AuthResponse) => {
 };
 
 export const login = async (credentials: LoginRequest): Promise<AuthResponse> => {
+  console.log('🔐 Intentando login con:', credentials.email);
   if (DEMO_MODE) {
     await new Promise(resolve => setTimeout(resolve, 600));
     const demoAuth: AuthResponse = {
@@ -36,7 +37,12 @@ export const login = async (credentials: LoginRequest): Promise<AuthResponse> =>
     return demoAuth;
   }
 
-  const response = await apiClient.post<ApiResponse<AuthResponse>>(API_ENDPOINTS.AUTH.LOGIN, credentials);
+  // Forzar header X-Client-Type en esta petición específica
+  const response = await apiClient.post<ApiResponse<AuthResponse>>(
+    API_ENDPOINTS.AUTH.LOGIN,
+    credentials,
+    { headers: { 'X-Client-Type': 'mobile' } } // Header explícito
+  );
   const authData = response.data.data;
   await storeAuthData(authData);
   return authData;
@@ -68,15 +74,21 @@ export const register = async (userData: RegisterRequest): Promise<AuthResponse>
 };
 
 export const logout = async (): Promise<void> => {
-  await storage.deleteItem(STORAGE_KEYS.TOKEN);
-  await storage.deleteItem(STORAGE_KEYS.TOKEN_TYPE);
-  await storage.deleteItem(STORAGE_KEYS.EXPIRES_IN);
-  await storage.deleteItem(STORAGE_KEYS.ACCOUNT_ID);
-  await storage.deleteItem(STORAGE_KEYS.USER_EMAIL);
-  await storage.deleteItem(STORAGE_KEYS.USER_NAMES);
-  await storage.deleteItem(STORAGE_KEYS.USER_LASTNAMES);
-  await storage.deleteItem(STORAGE_KEYS.USER_PHONE);
-  await storage.deleteItem(STORAGE_KEYS.HAS_MASTER_KEY);
+  try {
+    await apiClient.post(API_ENDPOINTS.AUTH.LOGOUT);
+  } catch (error) {
+    console.warn('Error al cerrar sesión en backend', error);
+  } finally {
+    await storage.deleteItem(STORAGE_KEYS.TOKEN);
+    await storage.deleteItem(STORAGE_KEYS.TOKEN_TYPE);
+    await storage.deleteItem(STORAGE_KEYS.EXPIRES_IN);
+    await storage.deleteItem(STORAGE_KEYS.ACCOUNT_ID);
+    await storage.deleteItem(STORAGE_KEYS.USER_EMAIL);
+    await storage.deleteItem(STORAGE_KEYS.USER_NAMES);
+    await storage.deleteItem(STORAGE_KEYS.USER_LASTNAMES);
+    await storage.deleteItem(STORAGE_KEYS.USER_PHONE);
+    await storage.deleteItem(STORAGE_KEYS.HAS_MASTER_KEY);
+  }
 };
 
 export const isAuthenticated = async (): Promise<boolean> => {

@@ -13,6 +13,8 @@ export interface Event {
   description?: string;
   status: 'PENDIENTE' | 'COMPLETADO' | 'CANCELADO';
   category?: { id: string; name: string };
+  streak?: number;          // racha (solo para recurrentes)
+  lastCompletionDate?: string; // última vez que se completó (ISO)
 }
 
 export const agendaApi = {

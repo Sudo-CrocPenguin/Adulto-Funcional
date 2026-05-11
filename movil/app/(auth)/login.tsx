@@ -12,11 +12,29 @@ export default function LoginScreen() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
 
+  const validateEmail = (email: string) => {
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return regex.test(email);
+  };
+
   const handleLogin = async () => {
-    if (!email.trim() || !password) {
-      setError('Todos los campos son obligatorios');
+    if (!email.trim()) {
+      setError('El correo electrónico es obligatorio');
       return;
     }
+    if (!validateEmail(email)) {
+      setError('Ingrese un correo electrónico válido');
+      return;
+    }
+    if (!password) {
+      setError('La contraseña es obligatoria');
+      return;
+    }
+    if (password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
+    setError('');
     try {
       await login({ email: email.trim(), password });
       router.replace('/(app)');

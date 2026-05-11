@@ -8,7 +8,6 @@ const apiClient: AxiosInstance = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-    'X-Client-Type': 'mobile',   // Cliente nativo (obliga al backend a devolver token en body)
   },
 });
 
@@ -17,10 +16,10 @@ apiClient.interceptors.request.use(
     const token = await storage.getItem(STORAGE_KEYS.TOKEN);
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log(`✅ Token añadido a ${config.url}`);
-    } else {
-      console.warn(`⚠️ No hay token para ${config.url}`);
     }
+    config.headers['X-Client-Type'] = 'mobile';
+    console.log(`📡 ${config.method?.toUpperCase()} ${config.url}`);
+    console.log('🔑 Headers enviados:', config.headers);
     return config;
   },
   (error) => Promise.reject(error)
@@ -29,6 +28,7 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
+    console.error('❌ Respuesta error:', error.response?.status, error.response?.data);
     if (error.response?.status === 401 || error.response?.status === 403) {
       console.error('❌ Error 401/403, eliminando token');
       await storage.deleteItem(STORAGE_KEYS.TOKEN);

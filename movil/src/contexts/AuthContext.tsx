@@ -2,16 +2,6 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import * as authApi from '../api/authApi';
 import { AuthResponse, LoginRequest, RegisterRequest } from '../types/auth.types';
 
-// Importación condicional para evitar errores en Expo Go
-let Notifications: any = null;
-if (typeof window !== 'undefined' && !window?.expo?.isExpoGo) {
-  try {
-    Notifications = require('expo-notifications');
-  } catch (e) {
-    console.warn('expo-notifications no disponible en este entorno');
-  }
-}
-
 interface AuthContextType {
   user: Partial<AuthResponse> | null;
   isLoading: boolean;
@@ -108,11 +98,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    // Cancelar notificaciones solo si el módulo está disponible
-    if (Notifications && Notifications.cancelAllScheduledNotificationsAsync) {
-      await Notifications.cancelAllScheduledNotificationsAsync();
-    }
-    await authApi.logout();
+    await authApi.logout(); // Llama al endpoint /api/auth/logout
     setUser(null);
     setIsAuthenticated(false);
   };

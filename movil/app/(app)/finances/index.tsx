@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMovements } from '../../../src/hooks/useMovements';
@@ -50,35 +50,37 @@ export default function FinancesScreen() {
   if (error) return <View style={styles.centered}><Text>Error: {error}</Text></View>;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.summaryCard}>
-        <Text style={styles.summaryLabel}>TOTAL INGRESOS</Text>
-        <Text style={styles.summaryIncome}>{formatCurrency(totalIngresos)}</Text>
-        <Text style={styles.summaryLabel}>TOTAL EGRESOS</Text>
-        <Text style={styles.summaryExpense}>{formatCurrency(totalEgresos)}</Text>
-        <View style={styles.balanceRow}>
-          <Text style={styles.balanceLabel}>SALDO ACTUAL</Text>
-          <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
+    <View style={[styles.safeContainer, { paddingTop: insets.top }]}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.summaryCard}>
+          <Text style={styles.summaryLabel}>TOTAL INGRESOS</Text>
+          <Text style={styles.summaryIncome}>{formatCurrency(totalIngresos)}</Text>
+          <Text style={styles.summaryLabel}>TOTAL EGRESOS</Text>
+          <Text style={styles.summaryExpense}>{formatCurrency(totalEgresos)}</Text>
+          <View style={styles.balanceRow}>
+            <Text style={styles.balanceLabel}>SALDO ACTUAL</Text>
+            <Text style={styles.balanceValue}>{formatCurrency(balance)}</Text>
+          </View>
         </View>
-      </View>
 
-      <View style={styles.filterRow}>
-        {(['todos', 'ingresos', 'egresos'] as const).map(f => (
-          <TouchableOpacity key={f} onPress={() => setFilter(f)} style={[styles.filterButton, filter === f && styles.filterActive]}>
-            <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
-              {f === 'todos' ? 'Todos' : f === 'ingresos' ? 'Ingresos' : 'Egresos'}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        <View style={styles.filterRow}>
+          {(['todos', 'ingresos', 'egresos'] as const).map(f => (
+            <TouchableOpacity key={f} onPress={() => setFilter(f)} style={[styles.filterButton, filter === f && styles.filterActive]}>
+              <Text style={[styles.filterText, filter === f && styles.filterTextActive]}>
+                {f === 'todos' ? 'Todos' : f === 'ingresos' ? 'Ingresos' : 'Egresos'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      <FlatList
-        data={filteredMovements}
-        keyExtractor={item => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={{ paddingBottom: 80 }}
-        ListEmptyComponent={<Text style={styles.empty}>No hay movimientos</Text>}
-      />
+        <FlatList
+          data={filteredMovements}
+          keyExtractor={item => item.id}
+          renderItem={renderItem}
+          scrollEnabled={false}
+          ListEmptyComponent={<Text style={styles.empty}>No hay movimientos</Text>}
+        />
+      </ScrollView>
 
       <TouchableOpacity style={styles.fab} onPress={() => router.push('/(app)/finances/new')}>
         <Text style={styles.fabText}>+</Text>
@@ -90,7 +92,7 @@ export default function FinancesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
+  safeContainer: { flex: 1, backgroundColor: Colors.background },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   summaryCard: { backgroundColor: '#fff', margin: 16, padding: 16, borderRadius: 24, alignItems: 'center' },
   summaryLabel: { fontSize: 14, color: Colors.textSecondary, marginTop: 8 },
