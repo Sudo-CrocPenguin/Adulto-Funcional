@@ -1,0 +1,608 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   Layout.module.css  –  Adulto Funcional
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── raíz ─────────────────────────────────────────────────────────────────── */
+.root {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: var(--color-background);
+  font-family: var(--font-primary);
+  overflow: hidden;
+  position: relative;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SIDEBAR
+══════════════════════════════════════════════════════════════════════════════ */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-primary);
+  height: 100%;
+  flex-shrink: 0;
+  transition: width 0.25s ease;
+  overflow: hidden;
+}
+
+.sidebarExpanded  { width: 225px; }
+.sidebarCollapsed { width: 80px; }
+
+/* header del sidebar — solo el toggle, sin logo ni AF */
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 8px 8px 4px;
+  min-height: 46px;
+}
+
+.hamburger,
+.collapseToggle {
+  background: none;
+  border: none;
+  color: var(--color-white);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+.hamburger:hover,
+.collapseToggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* nav */
+.nav {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 4px 0;
+  gap: 2px;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: 400;
+  border-radius: 0;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-white);
+}
+
+.navItemActive {
+  background: var(--color-celeste-2) !important;
+  color: var(--color-white) !important;
+  font-weight: 500;
+}
+
+.navIcon {
+  flex-shrink: 0;
+}
+
+.navLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── footer del sidebar ────────────────────────────────────────────────────── */
+.sidebarFooter {
+  padding: 8px 0 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/*
+ * Botón de perfil de usuario:
+ * - Ocupa todo el ancho del footer
+ * - Al hacer clic navega a /profile
+ * - Se resalta cuando la ruta activa es /profile
+ */
+.userProfileBtn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+  overflow: hidden;
+}
+.userProfileBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* resaltado cuando /profile está activo */
+.userProfileBtnActive {
+  background: var(--color-celeste-2) !important;
+}
+
+.userBadge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-celeste-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* cuando el botón está activo, el badge cambia de fondo para que contraste */
+.userProfileBtnActive .userBadge {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.userInitial {
+  color: var(--color-white);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.userName {
+  color: var(--color-white);
+  font-size: 12.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   CONTENIDO DERECHO
+══════════════════════════════════════════════════════════════════════════════ */
+.mainWrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+/* ── TOPBAR ─────────────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #c8d0dc;
+  border-bottom: 2px solid var(--color-primary);
+  padding: 0 12px;
+  height: 74px;
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.topbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.topbarLogo {
+  width: 50px;
+  height: 50px;
+  border-radius: 100%;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.topbarTitle {
+  font-family: var(--font-primary);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* acciones del topbar */
+.topbarActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.iconWrapper {
+  position: relative;
+}
+
+.iconBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-primary);
+  padding: 5px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s;
+}
+.iconBtn:hover {
+  background: rgba(46, 76, 126, 0.1);
+}
+
+/* badge de notificaciones */
+.badge {
+  position: absolute;
+  top: 1px;
+  right: 1px;
+  background: var(--color-error);
+  color: var(--color-white);
+  font-size: 9px;
+  font-weight: 700;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* ── POPUPS (notificaciones y configuración) ─────────────────────────────── */
+.popup {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  min-width: 220px;
+  z-index: 200;
+  overflow: hidden;
+}
+
+.popupSettings {
+  min-width: 240px;
+}
+
+/* header popup notificaciones */
+.popupHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 12px 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-primary);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* header popup configuración */
+.popupHeader2 {
+  padding: 9px 12px 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* mensaje vacío */
+.emptyMsg {
+  padding: 12px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  margin: 0;
+}
+
+/* item de notificación */
+.notifItem {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border);
+  gap: 6px;
+}
+.notifItem:last-child {
+  border-bottom: none;
+}
+
+.notifContent {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+
+.notifIcon {
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.notifCategory {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin: 0 0 2px;
+}
+
+.notifMsg {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.notifClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 2px;
+  display: flex;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+.notifClose:hover {
+  color: var(--color-error);
+}
+
+/* ── TABS configuración ────────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tab {
+  flex: 1;
+  padding: 7px 8px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-family: var(--font-primary);
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab:hover {
+  color: var(--color-primary);
+}
+
+.tabActive {
+  color: var(--color-primary) !important;
+  border-bottom-color: var(--color-primary) !important;
+  font-weight: 600;
+}
+
+/* ── cuerpo configuración ─────────────────────────────────────────────────── */
+.settingsBody {
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settingsLabel {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+  display: block;
+}
+
+.settingsInput,
+.settingsSelect {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-family: var(--font-primary);
+  color: var(--color-text-primary);
+  background: var(--color-white);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.settingsInput:focus,
+.settingsSelect:focus {
+  border-color: var(--color-primary-4);
+}
+
+/* checkboxes */
+.checkRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--color-text-primary);
+  padding: 2px 0;
+}
+.checkRow input[type='checkbox'] {
+  accent-color: var(--color-primary);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+/* modo claro / oscuro */
+.modeRow {
+  display: flex;
+  gap: 6px;
+}
+
+.modeBtn {
+  flex: 1;
+  padding: 5px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-size: 12px;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  color: var(--color-text-primary);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.modeBtnActive {
+  background: var(--color-primary) !important;
+  color: var(--color-white) !important;
+  border-color: var(--color-primary) !important;
+}
+
+/* seguridad */
+.secRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.activateBtn {
+  padding: 4px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-success);
+  color: var(--color-white);
+  font-size: 11.5px;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.activateBtn:hover { opacity: 0.85; }
+.activateBtnOn     { background: var(--color-success-muted); }
+
+.sessionRow {
+  display: flex;
+  gap: 6px;
+}
+
+.logoutBtn {
+  flex: 1;
+  padding: 5px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-text-primary);
+  font-size: 11.5px;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.logoutBtn:hover { background: var(--color-background); }
+
+.deleteBtn {
+  flex: 1;
+  padding: 5px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-error);
+  color: var(--color-white);
+  font-size: 11.5px;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.deleteBtn:hover { opacity: 0.85; }
+
+/* ── ÁREA DE CONTENIDO ──────────────────────────────────────────────────────── */
+.content {
+  flex: 1;
+  background: var(--color-white);
+  overflow-y: auto;
+  padding: 10px 14px;
+  min-height: 0;
+}
+
+.breadcrumb {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin: 0 0 10px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   MODAL CERRAR SESIÓN
+══════════════════════════════════════════════════════════════════════════════ */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(60, 60, 60, 0.55);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 28px 32px 24px;
+  max-width: 340px;
+  width: 90%;
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.modalText {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.modalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.cancelBtn {
+  flex: 1;
+  padding: 11px 16px;
+  border: 2px solid var(--color-border);
+  border-radius: 30px;
+  background: var(--color-white);
+  color: var(--color-text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.cancelBtn:hover { background: var(--color-background); }
+
+.confirmLogoutBtn {
+  flex: 1;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 30px;
+  background: var(--color-error);
+  color: var(--color-white);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.confirmLogoutBtn:hover { opacity: 0.88; }
