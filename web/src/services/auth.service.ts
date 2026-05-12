@@ -5,7 +5,7 @@
  * Base URL:https://audry-subsphenoidal-bovinely.ngrok-free.dev/api/auth
  */
 
-const BASE_URL = 'https://audry-subsphenoidal-bovinely.ngrok-free.dev/api/auth'
+const BASE_URL = 'http://localhost:8080/api/auth'
 
 /**
  * Datos que se envían al backend para registrar un nuevo usuario.
