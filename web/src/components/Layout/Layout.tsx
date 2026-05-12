@@ -16,7 +16,7 @@ import {
 import logo from '../../assets/logo.png';
 import styles from './Layout.module.css';
 
-// ── tipos ──────────────────────────────────────────────────────────────────────
+
 interface Notification {
   id: number;
   category: string;
@@ -32,7 +32,6 @@ interface SettingsState {
   backup: string;
 }
 
-// ── datos de ejemplo ───────────────────────────────────────────────────────────
 const MOCK_NOTIFICATIONS: Notification[] = [
   { id: 1, category: 'Gastos Fijos',  message: 'Internet vence el 14 de feb' },
   { id: 2, category: 'Compromisos',   message: 'Reunión con equipo hoy 12:00 p.m.' },
@@ -47,7 +46,6 @@ const NAV_ITEMS = [
   { to: '/password-manager', label: 'Gestor Contraseñas',  icon: Lock },
 ];
 
-// ── componente principal ───────────────────────────────────────────────────────
 export default function Layout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -70,7 +68,6 @@ export default function Layout() {
   const notifRef    = useRef<HTMLDivElement>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
 
-  // cerrar popups al hacer click afuera
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (notifRef.current    && !notifRef.current.contains(e.target as Node))    setNotifOpen(false);
@@ -86,13 +83,8 @@ export default function Layout() {
   return (
     <div className={styles.root}>
 
-      {/* ── SIDEBAR ───────────────────────────────────────────────────────── */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarExpanded : styles.sidebarCollapsed}`}>
 
-        {/*
-          Cabecera del sideba
-          - Solo el botón toggle hamburguesa / chevron
-        */}
         <div className={styles.sidebarHeader}>
           {sidebarOpen ? (
             <button className={styles.hamburger} onClick={() => setSidebarOpen(false)}>
@@ -105,7 +97,6 @@ export default function Layout() {
           )}
         </div>
 
-        {/* navegación */}
         <nav className={styles.nav}>
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -121,8 +112,6 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/*
-          Footer del sidebar: perfil de usuario*/}
         <div className={styles.sidebarFooter}>
           <button
             className={`${styles.userProfileBtn} ${location.pathname === '/profile' ? styles.userProfileBtnActive : ''}`}
@@ -136,10 +125,8 @@ export default function Layout() {
 
       </aside>
 
-      {/* ── CONTENIDO DERECHO ─────────────────────────────────────────────── */}
       <div className={styles.mainWrapper}>
 
-        {/* TOPBAR */}
         <header className={styles.topbar}>
           <div className={styles.topbarLeft}>
             <img src={logo} alt="Logo" className={styles.topbarLogo} />
@@ -148,7 +135,6 @@ export default function Layout() {
 
           <div className={styles.topbarActions}>
 
-            {/* notificaciones */}
             <div className={styles.iconWrapper} ref={notifRef}>
               <button
                 className={`${styles.iconBtn} ${styles.notificationBtn}`}
@@ -185,7 +171,6 @@ export default function Layout() {
               )}
             </div>
 
-            {/* configuración */}
             <div className={styles.iconWrapper} ref={settingsRef}>
               <button
                 className={`${styles.iconBtn} ${styles.settingsBtn}`}
@@ -198,7 +183,6 @@ export default function Layout() {
                 <div className={`${styles.popup} ${styles.popupSettings}`}>
                   <p className={styles.popupHeader2}>Configuración</p>
 
-                  {/* tabs */}
                   <div className={styles.tabs}>
                     <button
                       className={`${styles.tab} ${settingsTab === 'general' ? styles.tabActive : ''}`}
@@ -317,14 +301,12 @@ export default function Layout() {
           </div>
         </header>
 
-        {/* ÁREA DE CONTENIDO */}
         <main className={styles.content}>
           <Outlet />
         </main>
 
       </div>
 
-      {/* ── MODAL CERRAR SESIÓN ─────────────────────────────────────────────── */}
       {showLogoutModal && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>
@@ -337,7 +319,7 @@ export default function Layout() {
                 className={styles.confirmLogoutBtn}
                 onClick={() => {
                   setShowLogoutModal(false);
-                  navigate('/login');   // ← reemplaza con logout() del AuthContext si lo tienes
+                  navigate('/login');   
                 }}
               >
                 Cerrar Sesión

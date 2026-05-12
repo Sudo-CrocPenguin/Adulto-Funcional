@@ -1,8 +1,3 @@
-/* ─────────────────────────────────────────────────────────────────────────────
-   Layout.module.css  –  Adulto Funcional
-───────────────────────────────────────────────────────────────────────────── */
-
-/* ── raíz ─────────────────────────────────────────────────────────────────── */
 .root {
   display: flex;
   height: 100vh;
@@ -13,9 +8,7 @@
   position: relative;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   SIDEBAR
-══════════════════════════════════════════════════════════════════════════════ */
+/* SIDEBAR*/
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -29,7 +22,7 @@
 .sidebarExpanded  { width: 225px; }
 .sidebarCollapsed { width: 80px; }
 
-/* header del sidebar — solo el toggle, sin logo ni AF */
+/* header del sidebar — solo el toggle */
 .sidebarHeader {
   display: flex;
   align-items: center;
@@ -68,24 +61,36 @@
 .navItem {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 9px 12px;
-  color: rgba(255, 255, 255, 0.82);
-  text-decoration: none;
-  font-size: 12.5px;
+  margin: 0 8px;
+  color: var(--color-white);
+  text-decoration: none !important;
+  font-size: 14px;
   font-weight: 400;
-  border-radius: 0;
+  border-radius: 8px;
   transition: background 0.15s, color 0.15s;
   white-space: nowrap;
   overflow: hidden;
 }
 
+.sidebarExpanded .navItem {
+  justify-content: flex-start;
+}
+
+.sidebarCollapsed .navItem {
+  justify-content: center;
+  padding: 9px 0;
+}
+
 .navItem:hover {
+  text-decoration: none !important;
   background: rgba(255, 255, 255, 0.1);
-  color: var(--color-white);
 }
 
 .navItemActive {
+  text-decoration: none !important;
   background: var(--color-celeste-2) !important;
   color: var(--color-white) !important;
   font-weight: 500;
@@ -100,36 +105,42 @@
   text-overflow: ellipsis;
 }
 
-/* ── footer del sidebar ────────────────────────────────────────────────────── */
+/* footer sidebar*/
 .sidebarFooter {
   padding: 8px 0 12px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/*
- * Botón de perfil de usuario:
- * - Ocupa todo el ancho del footer
- * - Al hacer clic navega a /profile
- * - Se resalta cuando la ruta activa es /profile
- */
 .userProfileBtn {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
-  width: 100%;
+  width: calc(100% - 16px);
+  margin: 0 8px;
   padding: 8px 12px;
   background: none;
   border: none;
   cursor: pointer;
   text-align: left;
+  border-radius: 8px;
   transition: background 0.15s;
   overflow: hidden;
+  color: var(--color-white);
 }
+
+.sidebarExpanded .userProfileBtn {
+  justify-content: flex-start;
+}
+
+.sidebarCollapsed .userProfileBtn {
+  justify-content: center;
+}
+
 .userProfileBtn:hover {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* resaltado cuando /profile está activo */
 .userProfileBtnActive {
   background: var(--color-celeste-2) !important;
 }
@@ -145,7 +156,6 @@
   flex-shrink: 0;
 }
 
-/* cuando el botón está activo, el badge cambia de fondo para que contraste */
 .userProfileBtnActive .userBadge {
   background: rgba(255, 255, 255, 0.3);
 }
@@ -158,15 +168,13 @@
 
 .userName {
   color: var(--color-white);
-  font-size: 12.5px;
+  font-size: 14px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   CONTENIDO DERECHO
-══════════════════════════════════════════════════════════════════════════════ */
+/*CONTENIDO DERECHO */
 .mainWrapper {
   display: flex;
   flex-direction: column;
@@ -175,13 +183,13 @@
   height: 100%;
 }
 
-/* ── TOPBAR ─────────────────────────────────────────────────────────────────── */
+/* Topbar */
 .topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #c8d0dc;
-  border-bottom: 2px solid var(--color-primary);
+  background: var( --color-banner);
+  border-bottom: 4px solid var(--color-primary);
   padding: 0 12px;
   height: 74px;
   flex-shrink: 0;
@@ -196,17 +204,18 @@
 }
 
 .topbarLogo {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   border-radius: 100%;
-  object-fit: contain;
+  object-fit: cover;
   flex-shrink: 0;
+  border: 2px solid var(--color-white)
 }
 
 .topbarTitle {
   font-family: var(--font-primary);
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 28px;
+  font-weight: 800;
   letter-spacing: 0.06em;
   color: var(--color-primary);
   white-space: nowrap;
@@ -220,6 +229,7 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  margin-right: 20px;
 }
 
 .iconWrapper {
@@ -234,13 +244,20 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--color-primary);
   padding: 5px;
   border-radius: var(--radius-sm);
   transition: background 0.15s;
 }
 .iconBtn:hover {
   background: rgba(46, 76, 126, 0.1);
+}
+
+.notificationBtn {
+  color: var(--color-warning) !important;
+}
+
+.settingsBtn {
+  color: var( --color-text-primary) !important;
 }
 
 /* badge de notificaciones */
@@ -262,7 +279,7 @@
   pointer-events: none;
 }
 
-/* ── POPUPS (notificaciones y configuración) ─────────────────────────────── */
+/* POPUPS (notificaciones y configuración) */
 .popup {
   position: absolute;
   top: calc(100% + 6px);
@@ -318,10 +335,14 @@
   justify-content: space-between;
   padding: 8px 10px;
   border-bottom: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
   gap: 6px;
+  margin: 4px 8px;
+  border-radius: 4px;
+  background: var(--color-white);
 }
 .notifItem:last-child {
-  border-bottom: none;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .notifContent {
@@ -330,12 +351,6 @@
   align-items: flex-start;
   flex: 1;
   min-width: 0;
-}
-
-.notifIcon {
-  font-size: 13px;
-  flex-shrink: 0;
-  margin-top: 1px;
 }
 
 .notifCategory {
@@ -366,7 +381,7 @@
   color: var(--color-error);
 }
 
-/* ── TABS configuración ────────────────────────────────────────────────────── */
+/*Tab configuraciones*/
 .tabs {
   display: flex;
   border-bottom: 1px solid var(--color-border);
@@ -394,7 +409,7 @@
   font-weight: 600;
 }
 
-/* ── cuerpo configuración ─────────────────────────────────────────────────── */
+/*cuerpo Configuración*/
 .settingsBody {
   padding: 10px 12px 12px;
   display: flex;
@@ -500,16 +515,16 @@
 .logoutBtn {
   flex: 1;
   padding: 5px 8px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-primary);
   border-radius: var(--radius-sm);
   background: var(--color-white);
-  color: var(--color-text-primary);
+  color: var(--color-primary);
   font-size: 11.5px;
   font-family: var(--font-primary);
   cursor: pointer;
   transition: background 0.15s;
 }
-.logoutBtn:hover { background: var(--color-background); }
+.logoutBtn:hover { background: var(--color-primary); color: var(--color-white); }
 
 .deleteBtn {
   flex: 1;
@@ -525,7 +540,7 @@
 }
 .deleteBtn:hover { opacity: 0.85; }
 
-/* ── ÁREA DE CONTENIDO ──────────────────────────────────────────────────────── */
+/*AREA DE CONTENIDO DE LAS OTRAS PÁGINAS*/
 .content {
   flex: 1;
   background: var(--color-white);
@@ -540,9 +555,7 @@
   margin: 0 0 10px;
 }
 
-/* ══════════════════════════════════════════════════════════════════════════════
-   MODAL CERRAR SESIÓN
-══════════════════════════════════════════════════════════════════════════════ */
+/*MODAL CERRAR SESIÓN*/
 .modalOverlay {
   position: fixed;
   inset: 0;
@@ -581,7 +594,7 @@
   flex: 1;
   padding: 11px 16px;
   border: 2px solid var(--color-border);
-  border-radius: 30px;
+  border-radius: 8px;
   background: var(--color-white);
   color: var(--color-text-primary);
   font-size: 14px;
@@ -596,7 +609,7 @@
   flex: 1;
   padding: 11px 16px;
   border: none;
-  border-radius: 30px;
+  border-radius: 8px;
   background: var(--color-error);
   color: var(--color-white);
   font-size: 14px;
