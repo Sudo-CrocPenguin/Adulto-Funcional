@@ -4,11 +4,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 /* Páginas de autenticación */
-
 import ForgotPassword from './pages/ForgotPassword/ForgotPassword'
 
 /* Layout compartido para páginas protegidas */
-import Layout from './components/Layout'
+import Layout from './components/Layout/Layout';
 
 /* Páginas protegidas */
 import Dashboard from './pages/Dashboard/Dashboard'
@@ -21,9 +20,10 @@ import Profile from './pages/Profile/Profile'
 import PasswordManagerAccess from './pages/PasswordManagerAccess/PasswordManagerAccess'
 import PasswordManagerReset from './pages/PasswordManagerReset/PasswordManagerReset'
 import PasswordManager from './pages/PasswordManager/PasswordManager'
-import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute' // TU VERSIÓN
 
 import LandingPage from './pages/LandingPage/LandingPage'
+
 
 function App() {
   return (
@@ -33,40 +33,26 @@ function App() {
         {/* Rutas públicas - accesibles sin autenticación */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/login" element={<LandingPage />} /> {/* Ruta de login que usas en ProtectedRoute */}
 
-        {/* Rutas protegidas - requieren autenticación, envueltas en Layout */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>
-        } />
 
-        <Route path="/commitments" element={
-          <ProtectedRoute><Layout><Commitments /></Layout></ProtectedRoute>
-        } />
+        {/* ✅ RUTAS PROTEGIDAS - CORREGIDO PARA TU ProtectedRoute */}
+        <Route element={
+          <ProtectedRoute>
+            <Layout />  {/* El Layout va aquí, como base para todas */}
+          </ProtectedRoute>
+        }>
+          {/* TODAS estas páginas se muestran DENTRO del Layout */}
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/commitments" element={<Commitments />} />
+          <Route path="/finances" element={<Finances />} />
+          <Route path="/fixed-expenses" element={<FixedExpenses />} />
+          <Route path="/profile" element={<Profile />} />
 
-        <Route path="/finances" element={
-          <ProtectedRoute><Layout><Finances /></Layout></ProtectedRoute>
-        } />
-
-        <Route path="/fixed-expenses" element={
-          <ProtectedRoute><Layout><FixedExpenses /></Layout></ProtectedRoute>
-        } />
-
-        <Route path="/profile" element={
-          <ProtectedRoute><Layout><Profile /></Layout></ProtectedRoute>
-        } />
-
-        {/* Rutas del gestor de contraseñas */}
-        <Route path="/password-manager" element={
-          <ProtectedRoute><Layout><PasswordManagerAccess /></Layout></ProtectedRoute>
-        } />
-
-        <Route path="/password-manager/reset" element={
-          <ProtectedRoute><Layout><PasswordManagerReset /></Layout></ProtectedRoute>
-        } />
-
-        <Route path="/password-manager/home" element={
-          <ProtectedRoute><Layout><PasswordManager /></Layout></ProtectedRoute>
-        } />
+          <Route path="/password-manager" element={<PasswordManagerAccess />} />
+          <Route path="/password-manager/reset" element={<PasswordManagerReset />} />
+          <Route path="/password-manager/home" element={<PasswordManager />} />
+        </Route>
 
       </Routes>
     </BrowserRouter>
