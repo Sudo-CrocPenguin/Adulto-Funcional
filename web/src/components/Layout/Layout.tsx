@@ -21,7 +21,6 @@ interface Notification {
   id: number;
   category: string;
   message: string;
-  icon: string;
 }
 
 interface SettingsState {
@@ -35,9 +34,9 @@ interface SettingsState {
 
 // ── datos de ejemplo ───────────────────────────────────────────────────────────
 const MOCK_NOTIFICATIONS: Notification[] = [
-  { id: 1, category: 'Gastos Fijos',  message: 'Internet vence el 14 de feb',      icon: 'ℹ️' },
-  { id: 2, category: 'Compromisos',   message: 'Reunión con equipo hoy 12:00 p.m.', icon: 'ℹ️' },
-  { id: 3, category: 'Finanzas',      message: 'Transferencia exitosa - $150.00',   icon: 'ℹ️' },
+  { id: 1, category: 'Gastos Fijos',  message: 'Internet vence el 14 de feb' },
+  { id: 2, category: 'Compromisos',   message: 'Reunión con equipo hoy 12:00 p.m.' },
+  { id: 3, category: 'Finanzas',      message: 'Transferencia exitosa - $150.00' },
 ];
 
 const NAV_ITEMS = [
@@ -45,7 +44,7 @@ const NAV_ITEMS = [
   { to: '/commitments',      label: 'Compromisos',            icon: ListChecks },
   { to: '/finances',         label: 'Finanzas',               icon: HandCoins },
   { to: '/fixed-expenses',   label: 'Gastos Fijos',           icon: Wallet },
-  { to: '/password-manager', label: 'Gestor de Contraseñas',  icon: Lock },
+  { to: '/password-manager', label: 'Gestor Contraseñas',  icon: Lock },
 ];
 
 // ── componente principal ───────────────────────────────────────────────────────
@@ -152,7 +151,7 @@ export default function Layout() {
             {/* notificaciones */}
             <div className={styles.iconWrapper} ref={notifRef}>
               <button
-                className={styles.iconBtn}
+                className={`${styles.iconBtn} ${styles.notificationBtn}`}
                 onClick={() => { setNotifOpen((p) => !p); setSettingsOpen(false); }}
               >
                 <BellRing size={30} />
@@ -172,14 +171,13 @@ export default function Layout() {
                   {notifications.map((n) => (
                     <div key={n.id} className={styles.notifItem}>
                       <div className={styles.notifContent}>
-                        <span className={styles.notifIcon}>{n.icon}</span>
                         <div>
                           <p className={styles.notifCategory}>{n.category}</p>
                           <p className={styles.notifMsg}>{n.message}</p>
                         </div>
                       </div>
                       <button className={styles.notifClose} onClick={() => dismissNotif(n.id)}>
-                        <X size={12} />
+                        <X size={14} />
                       </button>
                     </div>
                   ))}
@@ -190,7 +188,7 @@ export default function Layout() {
             {/* configuración */}
             <div className={styles.iconWrapper} ref={settingsRef}>
               <button
-                className={styles.iconBtn}
+                className={`${styles.iconBtn} ${styles.settingsBtn}`}
                 onClick={() => { setSettingsOpen((p) => !p); setNotifOpen(false); }}
               >
                 <Settings size={30} />
