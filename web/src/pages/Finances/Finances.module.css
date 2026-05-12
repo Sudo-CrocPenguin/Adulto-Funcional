@@ -1,0 +1,437 @@
+/* Finances.module.css */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.container {
+  display: flex;
+  min-height: 100vh;
+  background: #f2f3f7;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+  width: 125px;
+  background: #2f4f88;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sidebarTop {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  margin-top: 60px;
+}
+
+.iconButton {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+}
+
+.profileContainer {
+  width: 100%;
+  border-top: 2px solid rgba(255, 255, 255, 0.3);
+  padding: 22px 0;
+  display: flex;
+  justify-content: center;
+  color: white;
+}
+
+/* MAIN */
+
+.main {
+  flex: 1;
+}
+
+/* HEADER */
+
+.header {
+  height: 95px;
+  background: #dfe5ef;
+  border-bottom: 5px solid #2f4f88;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 50px;
+}
+
+.logoSection {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.logoSection h1 {
+  font-size: 34px;
+  color: #2f4f88;
+  font-weight: 800;
+}
+
+.logoCircle {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #f1f1f1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #b0b0b0;
+}
+
+.headerIcons {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  color: #9ca3af;
+}
+
+.notification {
+  position: relative;
+}
+
+.notification span {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #ff3d3d;
+  color: white;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* CONTENT */
+
+.content {
+  padding: 20px 45px;
+}
+
+.title {
+  font-size: 52px;
+  font-weight: 800;
+  margin-bottom: 25px;
+  color: #111827;
+}
+
+/* SUMMARY */
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 0;
+  margin-bottom: 30px;
+}
+
+.summaryCard {
+  background: white;
+  border-radius: 18px 0 0 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 40px 50px;
+}
+
+.summaryItem {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.summaryItem p {
+  color: #9aa1a9;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.summaryItem h3 {
+  font-size: 34px;
+  margin-top: 12px;
+}
+
+.divider {
+  width: 2px;
+  height: 120px;
+  background: #c5cad3;
+}
+
+.incomeIcon {
+  color: #419523;
+}
+
+.expenseIcon {
+  color: #9aa1a9;
+}
+
+.incomeText {
+  color: #419523;
+}
+
+.expenseText {
+  color: #979797;
+}
+
+.balanceCard {
+  background: #466cad;
+  color: white;
+  border-radius: 0 18px 18px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-left: 50px;
+}
+
+.balanceCard p {
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.balanceCard h3 {
+  font-size: 42px;
+  font-weight: 800;
+}
+
+/* ACTIONS */
+
+.actionsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 28px;
+  gap: 20px;
+}
+
+.searchBox {
+  flex: 1;
+  max-width: 650px;
+  height: 72px;
+  border: 2px solid #222;
+  border-radius: 16px;
+  background: white;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  gap: 14px;
+}
+
+.searchBox input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 22px;
+}
+
+.actionsRight {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.filterButton {
+  height: 58px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: white;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.newButton {
+  height: 58px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 12px;
+  background: #466cad;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+/* MOVEMENTS */
+
+.movements {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.movementCard {
+  background: white;
+  border-bottom: 2px solid #9bb0d6;
+  padding: 28px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.leftMovement {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.leftMovement h3 {
+  font-size: 28px;
+  margin-bottom: 10px;
+}
+
+.leftMovement p {
+  font-size: 20px;
+}
+
+.incomeBadge,
+.expenseBadge {
+  width: 85px;
+  height: 85px;
+  border-radius: 14px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.incomeBadge {
+  background: #dff0d8;
+  color: #419523;
+}
+
+.expenseBadge {
+  background: #f1f3f6;
+  color: #9aa1a9;
+}
+
+.rightMovement {
+  text-align: right;
+  padding-right: 35px;
+}
+
+.rightMovement h3 {
+  font-size: 32px;
+  margin-bottom: 14px;
+}
+
+.rightMovement p {
+  font-size: 20px;
+}
+
+.positive {
+  color: #419523;
+}
+
+.negative {
+  color: #9a9a9a;
+}
+
+/* MODAL */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.18);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  width: 440px;
+  background: #f4f4f4;
+  border-radius: 20px;
+  padding: 28px 28px 18px;
+}
+
+.modal h2 {
+  text-align: center;
+  font-size: 28px;
+  margin-bottom: 18px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 14px;
+}
+
+.formGroup label {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.formGroup input,
+.formGroup textarea {
+  height: 52px;
+  border-radius: 14px;
+  border: 2px solid #d3d7de;
+  padding: 0 16px;
+  font-size: 18px;
+  background: white;
+}
+
+.formGroup textarea {
+  height: 80px;
+  resize: none;
+  padding-top: 14px;
+}
+
+.selectInput {
+  height: 52px;
+  border-radius: 14px;
+  border: 2px solid #d3d7de;
+  background: white;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 18px;
+}
+
+.modalButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.cancelButton {
+  border: none;
+  background: #e5e7eb;
+  padding: 12px 22px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.saveButton {
+  border: none;
+  background: #466cad;
+  color: white;
+  padding: 12px 32px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
