@@ -52,7 +52,9 @@ const AuthContext = createContext<AuthContextType | null>(null)
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
 
-    const [token, setToken] = useState<string | null>(null)
+    const [token, setToken] = useState<string | null>(
+        sessionStorage.getItem('token')
+    )
     
     const [user, setUser] = useState<AuthUser | null>(
         JSON.parse(sessionStorage.getItem('user') || 'null')
@@ -67,6 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = (token: string, user: AuthUser) => {
         setToken(token)
         setUser(user)
+        sessionStorage.setItem('token', token) 
         sessionStorage.setItem('user', JSON.stringify(user))
     }
 
@@ -76,7 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         setToken(null)
         setUser(null)
+        sessionStorage.removeItem('token')
         sessionStorage.removeItem('user')
+        sessionStorage.removeItem('masterKeyVerified')
     }
 
     return (

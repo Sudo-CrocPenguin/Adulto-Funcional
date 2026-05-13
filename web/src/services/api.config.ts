@@ -42,11 +42,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      sessionStorage.removeItem('token');       
-      sessionStorage.removeItem('accountId');  
-      window.location.href = '/login';
-    }
     return Promise.reject(error);
   }
 );
