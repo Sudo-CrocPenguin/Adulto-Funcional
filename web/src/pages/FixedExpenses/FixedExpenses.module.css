@@ -1,0 +1,367 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.content {
+  padding: 16px 28px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 24px;
+  color: #111827;
+}
+
+/* ACTIONS */
+
+.actionsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.filters {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.select {
+  height: 46px;
+  min-width: 220px;
+  border: none;
+  border-radius: 12px;
+  background: white;
+  padding: 0 16px;
+  font-size: 15px;
+  outline: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  cursor: pointer;
+}
+
+.newButton {
+  height: 48px;
+  padding: 0 22px;
+  border: none;
+  border-radius: 12px;
+  background: #466cad;
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.newButton:hover {
+  background: #3a5a94;
+}
+
+/* TABS */
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.tab {
+  border: none;
+  background: #e5e7eb;
+  padding: 12px 18px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #111827;
+  transition: 0.2s;
+}
+
+.activeTab {
+  background: white;
+}
+
+/* CARDS */
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 28px;
+}
+
+.card {
+  position: relative;
+  background: white;
+  border-radius: 18px;
+  padding: 22px;
+  min-height: 290px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+.redBorder::before,
+.orangeBorder::before,
+.greenBorder::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 100%;
+}
+
+.redBorder::before {
+  background: #ff7b7b;
+}
+
+.orangeBorder::before {
+  background: #e6a23c;
+}
+
+.greenBorder::before {
+  background: #7bc67b;
+}
+
+.card h3 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #141428;
+  margin-bottom: 6px;
+}
+
+.category {
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 700;
+  display: block;
+  margin-bottom: 28px;
+}
+
+.paymentInfo p {
+  font-size: 16px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.dateRow span {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.redDays {
+  color: #ff3b30;
+  font-size: 16px;
+}
+
+.orangeDays {
+  color: #e6a23c;
+  font-size: 16px;
+}
+
+.card h2 {
+  font-size: 42px;
+  font-weight: 800;
+  color: #141428;
+  margin-bottom: 30px;
+}
+
+.badges {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pendingBadge,
+.paidBadge,
+.frequencyBadge {
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.pendingBadge {
+  background: #f6e6a8;
+  color: #b3871f;
+}
+
+.paidBadge {
+  background: #dff0d8;
+  color: #419523;
+}
+
+.frequencyBadge {
+  background: #e5e7eb;
+  color: #8d8d8d;
+}
+
+.deleteBtn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  border: none;
+  background: transparent;
+  color: #c4c4c4;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.deleteBtn:hover {
+  color: #ef4444;
+}
+
+.empty {
+  text-align: center;
+  margin-top: 40px;
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+/* MODAL */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  width: 100%;
+  max-width: 450px;
+  background: #f4f4f4;
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modalHeader h2 {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.closeBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #6b7280;
+}
+
+.modalBody {
+  padding: 20px 22px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.input {
+  height: 48px;
+  border-radius: 12px;
+  border: 2px solid #d1d5db;
+  padding: 0 14px;
+  font-size: 15px;
+  outline: none;
+  background: white;
+}
+
+.input:focus {
+  border-color: #466cad;
+}
+
+.modalButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 18px 22px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cancelButton {
+  border: none;
+  background: #e5e7eb;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.saveButton {
+  border: none;
+  background: #466cad;
+  color: white;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.saveButton:hover {
+  background: #3a5a94;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px;
+  }
+
+  .actionsRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
+  .select {
+    width: 100%;
+  }
+
+  .newButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+}
