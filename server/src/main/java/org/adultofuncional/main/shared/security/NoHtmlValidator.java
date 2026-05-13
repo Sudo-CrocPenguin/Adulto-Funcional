@@ -51,8 +51,9 @@ public class NoHtmlValidator implements ConstraintValidator<NoHtml, String> {
     if (value == null) {
       return true; // @NotNull o @NotBlank deben ocuparse de nulos
     }
-    // Si el texto original y el limpio son distintos, hay HTML
-    String cleaned = Jsoup.clean(value, Safelist.none());
-    return cleaned.equals(value);
+    // strip() antes de limpiar para no penalizar espacios al inicio/fin
+    String stripped = value.strip();
+    String cleaned = Jsoup.clean(stripped, Safelist.none());
+    return cleaned.equals(stripped);
   }
 }
