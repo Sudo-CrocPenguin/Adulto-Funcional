@@ -12,8 +12,6 @@
  * <li>{@code beans} — Configuración de beans generales.
  * {@link org.adultofuncional.main.config.beans.AppConfig} expone el
  * {@code PasswordEncoder} (Argon2).</li>
- * <li>{@code jackson} — Configuración de serialización/deserialización
- * JSON con Jackson (módulo en preparación).</li>
  * <li>{@code security} — Configuración completa de Spring Security:
  * cadena de filtros, JWT, cookies HttpOnly, CORS y headers OWASP.
  * Ver {@link org.adultofuncional.main.config.security.SecurityConfig}

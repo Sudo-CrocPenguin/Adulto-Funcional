@@ -12,8 +12,13 @@
  * <li>{@link org.adultofuncional.main.config.security.SecurityConfig} —
  * Cadena de filtros, reglas de autorización, headers de seguridad
  * (CSP, HSTS, X-Frame-Options, etc.) y configuración CORS.</li>
+ * <li>{@link org.adultofuncional.main.config.security.JwtProperties} —
+ * Propiedades de configuración para JWT (secreto y expiración), vinculadas
+ * automáticamente desde {@code application.yml} o variables de entorno
+ * mediante {@code @ConfigurationProperties(prefix = "jwt")}.</li>
  * <li>{@link org.adultofuncional.main.config.security.JwtService} —
- * Generación, firma (HMAC-SHA256) y validación de JWT.</li>
+ * Generación, firma (HMAC-SHA256) y validación de JWT. Utiliza
+ * {@code JwtProperties} para obtener la clave y el tiempo de expiración.</li>
  * <li>{@link org.adultofuncional.main.config.security.JwtAuthenticationFilter}
  * —
  * Filtro que extrae el token del header {@code Authorization} o de la
