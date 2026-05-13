@@ -43,7 +43,18 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# GitHub
+.github/
+
 # Documentation (opcional - puedes querer README en el contenedor)
 README.md
 LICENSE
+ARCHITECTURE.md
+DATABASE.md
 docs/
+
+# Maven wrapper (Windows)
+mvnw.cmd
+
+# Environment (template)
+.env.example
