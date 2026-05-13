@@ -328,11 +328,26 @@ Incluye:
 Módulo responsable de toda la infraestructura de autenticación y autorización:
 
 - **`SecurityConfig`**: Cadena de filtros de Spring Security. Configura CSRF (deshabilitado para API stateless), sesiones stateless, CORS con credenciales y headers de seguridad (CSP, X-Frame-Options, X-XSS-Protection, X-Content-Type-Options, HSTS).
-- **`JwtService`**: Generación, validación y extracción de claims de tokens JWT.
+- **`JwtProperties`**: Clase `@ConfigurationProperties(prefix = "jwt")` que vincula automáticamente `jwt.secret` y `jwt.expiration` desde cualquier fuente de configuración de Spring (YAML, variables de entorno, etc.). La vinculación relajada permite que tanto `JWT_SECRET` (formato env) como `jwt.secret` (formato YAML) se mapeen correctamente.
+- **`JwtService`**: Generación, validación y extracción de claims de tokens JWT. Recibe `JwtProperties` por constructor en lugar de anotaciones `@Value`, centralizando la configuración JWT.
 - **`JwtAuthenticationFilter`**: Filtro que intercepta cada request, extrae el token de la cookie HttpOnly o del header `Authorization`, lo valida y establece el contexto de seguridad de Spring.
 - **`DatabaseUserDetailsService`**: Implementación de `UserDetailsService` que carga las credenciales desde `accounts` en la base de datos, integrando Spring Security con el repositorio de cuentas.
 - **`CookieUtils`**: Gestión segura de la cookie `token` (crear/eliminar) con atributos HttpOnly, Secure (configurable) y SameSite.
 - **`ClientTypeResolver`**: Detecta si un request proviene de una app nativa (móvil/desktop) o de un navegador web mediante señales pasivas (User-Agent, ausencia de Origin) y un header declarativo (`X-Client-Type`). Determina si el token JWT se incluye en el body de la respuesta además de la cookie.
+
+### Perfiles de entorno
+
+La configuración sensible se segrega por perfiles de Spring Boot:
+
+| Perfil  | Archivo                          | Propósito                                        |
+| ------- | -------------------------------- | ------------------------------------------------ |
+| `dev`   | `application-dev.yml`            | Desarrollo local con valores fijos en YAML       |
+| `prod`  | `application-prod.yml`           | Producción/Docker con placeholders `${...}`      |
+| default | `application.yml`                | Configuración base (JPA, Flyway, server)         |
+
+- **`application.yml`**: Configuración base compartida (JPA, Flyway, server port). Se aplica siempre, independientemente del perfil activo.
+- **`application-dev.yml`**: Define `spring.datasource`, `jwt.secret`, `APP_COOKIE_SECURE`, etc. con valores para el entorno local. No se incluye en el repositorio.
+- **`application-prod.yml`**: Usa placeholders de variables de entorno (`${JWT_SECRET}`, `${SPRING_DATASOURCE_URL}`). Se activa automáticamente en Docker mediante `SPRING_PROFILES_ACTIVE=prod`.
 
 ## Componentes compartidos (`shared/`)
 
@@ -386,7 +401,7 @@ Componentes reutilizables para validación de acceso por ownership y protección
 - **`OwnedResource`**: Interfaz que deben implementar los DTOs de respuesta cuyos recursos pertenecen a un usuario específico. Expone el email del propietario mediante `getEmail()`, permitiendo que `OwnershipValidator` valide acceso sin acoplarse a ningún módulo concreto.
 - **`OwnershipValidator`**: Componente Spring que centraliza la lógica de validación de ownership. Compara el email del recurso (vía `OwnedResource`) con el email del usuario autenticado (extraído del JWT). Si no coinciden, lanza `UnauthorizedException` (HTTP 401) antes de que el caso de uso sea invocado.
 - **`NoHtml`**: Anotación Jakarta Validation que restringe campos de texto para que no contengan HTML.
-- **`NoHtmlValidator`**: Validador que usa Jsoup con `Safelist.none()` para rechazar cualquier tag o atributo HTML. Si el texto limpio difiere del original, la validación falla.
+- **`NoHtmlValidator`**: Validador que usa Jsoup con `Safelist.none()` para rechazar cualquier tag o atributo HTML. Si el texto limpio difiere del original, la validación falla. Aplica `strip()` antes de la limpieza para permitir espacios al inicio/fin del texto.
 
 ## Flujo de datos típico
 
@@ -520,7 +535,9 @@ Etapa 2 (runtime): eclipse-temurin:21-jre-alpine
 - **Red**: `afs-network` (bridge) para comunicación entre contenedores
 - **Volumen**: `mariadb_data` para persistencia de datos
 
-### Variables de entorno requeridas
+### Variables de entorno requeridas (.env)
+
+Las variables definidas en `.env` son utilizadas por `docker-compose.yml` y por el perfil `prod`:
 
 | Variable                | Descripción                                             | Ejemplo                        |
 | ----------------------- | ------------------------------------------------------- | ------------------------------ |
@@ -528,12 +545,13 @@ Etapa 2 (runtime): eclipse-temurin:21-jre-alpine
 | `MARIADB_DATABASE`      | Nombre de la base de datos                              | adulto_funcional               |
 | `MARIADB_USER`          | Usuario de la aplicación                                | afs_user                       |
 | `MARIADB_PASSWORD`      | Password del usuario                                    | userpass                       |
-| `SPRING_DATASOURCE_URL` | JDBC URL                                                | jdbc:mariadb://mariadb:3306/db |
-| `JWT_SECRET`            | Clave secreta para firmar JWT                           | my-jwt-secret                  |
-| `JWT_EXPIRATION`        | Tiempo de expiración JWT (ms)                           | 3600000                        |
-| `CORS_ALLOWED_ORIGINS`  | Orígenes permitidos para CORS                           | <http://localhost:5173>        |
+| `JWT_SECRET`            | Clave secreta para firmar JWT (mín. 32 caracteres)      | my-jwt-secret                  |
+| `JWT_EXPIRATION`        | Tiempo de expiración JWT en milisegundos                | 86400000                       |
+| `CORS_ALLOWED_ORIGINS`  | Orígenes permitidos para CORS                           | http://localhost:5173          |
 | `APP_COOKIE_SECURE`     | Atributo Secure de la cookie (true en producción HTTPS) | true                           |
 | `APP_COOKIE_SAME_SITE`  | Atributo SameSite de la cookie (Lax, Strict o None)     | Lax                            |
+
+Las configuraciones de JPA, Flyway y server residen en `application.yml` y no requieren variables de entorno explícitas. El perfil `prod` resuelve `spring.datasource.*` desde las variables de entorno mediante placeholders en `application-prod.yml`.
 
 ## Manejo de excepciones
 
@@ -607,3 +625,6 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 - [x] Módulo financiero: todos los casos de uso, DTOs y controladores
 - [x] Módulo agenda: todos los casos de uso, DTOs y controladores
 - [x] Gestor de contraseñas: PasswordUseCase con encriptación AES-256
+- [x] Perfiles de Spring Boot: `dev` y `prod` con configuración segregada
+- [x] `JwtProperties` como `@ConfigurationProperties` centralizada para JWT
+- [x] Fix en `NoHtmlValidator`: `strip()` para permitir espacios en campos de registro
