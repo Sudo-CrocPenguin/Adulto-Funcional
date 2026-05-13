@@ -4,7 +4,6 @@ import {
   Plus,
   Search,
   X,
-  ChevronDown,
   ArrowUp,
   ArrowDown,
 } from "lucide-react"
@@ -111,7 +110,7 @@ function Finances() {
       <div className={styles.summaryGrid}>
         <div className={styles.summaryCard}>
           <div className={styles.summaryItem}>
-            <ArrowUp className={styles.incomeIcon} size={42} />
+            <ArrowUp className={styles.incomeIcon} size={32} />
 
             <div>
               <p>TOTAL INGRESOS</p>
@@ -124,7 +123,7 @@ function Finances() {
           <div className={styles.divider}></div>
 
           <div className={styles.summaryItem}>
-            <ArrowDown className={styles.expenseIcon} size={42} />
+            <ArrowDown className={styles.expenseIcon} size={32} />
 
             <div>
               <p>TOTAL EGRESOS</p>
@@ -144,7 +143,7 @@ function Finances() {
       {/* SEARCH */}
       <div className={styles.actionsRow}>
         <div className={styles.searchBox}>
-          <Search size={24} />
+          <Search size={22} />
 
           <input
             type="text"
@@ -153,14 +152,14 @@ function Finances() {
             onChange={(e) => setSearch(e.target.value)}
           />
 
-          <X size={20} />
+          <X size={18} />
         </div>
 
         <button
           className={styles.newButton}
           onClick={() => setShowModal(true)}
         >
-          <Plus size={20} />
+          <Plus size={18} />
           Nuevo Movimiento
         </button>
       </div>
@@ -178,9 +177,9 @@ function Finances() {
                 }
               >
                 {movement.type === "Ingreso" ? (
-                  <ArrowUp size={28} />
+                  <ArrowUp size={24} />
                 ) : (
-                  <ArrowDown size={28} />
+                  <ArrowDown size={24} />
                 )}
               </div>
 
@@ -223,6 +222,7 @@ function Finances() {
                   setFormData({
                     ...formData,
                     type: e.target.value,
+                    category: "",
                   })
                 }
                 className={styles.input}
@@ -237,6 +237,7 @@ function Finances() {
 
               <input
                 type="text"
+                className={styles.input}
                 value={formData.title}
                 onChange={(e) =>
                   setFormData({
@@ -248,10 +249,9 @@ function Finances() {
             </div>
 
             <div className={styles.formGroup}>
-              <label>Categoría</label>
+              <label>Clasificación</label>
 
-              <input
-                type="text"
+              <select
                 value={formData.category}
                 onChange={(e) =>
                   setFormData({
@@ -259,7 +259,31 @@ function Finances() {
                     category: e.target.value,
                   })
                 }
-              />
+                className={styles.input}
+              >
+                <option value="">Seleccionar</option>
+
+                {formData.type === "Ingreso" ? (
+                  <>
+                    <option value="Trabajo">Trabajo</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Inversiones">Inversiones</option>
+                    <option value="Ventas">Ventas</option>
+                    <option value="Otros">Otros</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="Alimentación">Alimentación</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Servicios">Servicios</option>
+                    <option value="Entretenimiento">
+                      Entretenimiento
+                    </option>
+                    <option value="Salud">Salud</option>
+                    <option value="Otros">Otros</option>
+                  </>
+                )}
+              </select>
             </div>
 
             <div className={styles.formGroup}>
@@ -267,6 +291,7 @@ function Finances() {
 
               <input
                 type="number"
+                className={styles.input}
                 value={formData.amount}
                 onChange={(e) =>
                   setFormData({
@@ -282,6 +307,7 @@ function Finances() {
 
               <input
                 type="text"
+                className={styles.input}
                 placeholder="22/Feb"
                 value={formData.date}
                 onChange={(e) =>
@@ -297,6 +323,7 @@ function Finances() {
               <label>Descripción</label>
 
               <textarea
+                className={styles.textarea}
                 value={formData.description}
                 onChange={(e) =>
                   setFormData({
