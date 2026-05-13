@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
@@ -22,9 +21,13 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>
  * Utiliza el algoritmo HMAC-SHA256 (HS256) para firmar los tokens. La clave
- * de firma se deriva de la variable de entorno {@code JWT_SECRET}, que debe
- * tener mínimo 32 caracteres. Si no se cumple, la aplicación falla al arrancar
- * con {@link IllegalStateException}, evitando operar con una clave insegura.
+ * de firma se deriva de la propiedad {@code jwt.secret} (o la variable de
+ * entorno {@code JWT_SECRET}) y el tiempo de expiración de
+ * {@code jwt.expiration} (o {@code JWT_EXPIRATION}), ambas mapeadas
+ * automáticamente por {@link JwtProperties} mediante vinculación relajada
+ * de Spring Boot. Si el secreto no cumple el mínimo de 32 caracteres,
+ * la aplicación falla al arrancar con {@link IllegalStateException},
+ * evitando operar con una clave insegura.
  *
  * <p>
  * <strong>Claims incluidos en cada token:</strong>
@@ -45,6 +48,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  * @author Juan Sebastian Rios
  * @since 0.0.1
+ * @see JwtProperties
  * @see CookieUtils
  * @see JwtAuthenticationFilter
  * @see ClientTypeResolver
@@ -54,14 +58,16 @@ import lombok.extern.slf4j.Slf4j;
 public class JwtService {
 
   /**
-   * Clave HMAC-SHA256 derivada de {@code JWT_SECRET}.
-   * Se construye una sola vez en el constructor y es inmutable.
+   * Clave HMAC-SHA256 derivada de {@code jwt.secret}.
+   * Se construye una sola vez en el constructor a partir de los valores
+   * proporcionados por {@link JwtProperties} y es inmutable.
    */
   private final SecretKey secretKey;
 
   /**
    * Tiempo de vida del token en milisegundos.
-   * Configurado via {@code JWT_EXPIRATION} (ej. {@code 3600000} = 1 hora).
+   * Configurado vía {@code jwt.expiration} (ej. {@code 86400000} = 24 horas).
+   * Proviene de {@link JwtProperties#getExpiration()}.
    */
   private final long expiration;
 
@@ -69,20 +75,19 @@ public class JwtService {
    * Inicializa el servicio derivando la clave de firma y validando que el
    * secreto cumpla el mínimo de seguridad requerido por HS256.
    *
-   * @param secret     clave secreta en texto plano; mínimo 32 caracteres para
-   *                   garantizar al menos 256 bits de entropía en HS256
-   * @param expiration tiempo de vida del token en milisegundos
-   * @throws IllegalStateException si {@code JWT_SECRET} es {@code null} o tiene
+   * @param jwtProperties propiedades de configuración JWT vinculadas
+   *                      automáticamente al prefijo {@code jwt}
+   * @throws IllegalStateException si {@code jwt.secret} es {@code null} o tiene
    *                               menos de 32 caracteres; la aplicación no
    *                               arrancará en ese caso
    */
-  public JwtService(
-      @Value("${JWT_SECRET}") String secret,
-      @Value("${JWT_EXPIRATION}") long expiration) {
+  public JwtService(JwtProperties jwtProperties) {
+    String secret = jwtProperties.getSecret();
+    long expiration = jwtProperties.getExpiration();
 
     if (secret == null || secret.length() < 32) {
       throw new IllegalStateException(
-          "JWT_SECRET debe tener mínimo 32 caracteres. Longitud actual: "
+          "jwt.secret debe tener mínimo 32 caracteres. Longitud actual: "
               + (secret == null ? 0 : secret.length()));
     }
 

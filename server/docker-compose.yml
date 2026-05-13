@@ -30,6 +30,7 @@ services:
       mariadb:
         condition: service_healthy
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       SPRING_APPLICATION_NAME: ${SPRING_APPLICATION_NAME:-adulto-funcional}
       SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/${MARIADB_DATABASE}
       SPRING_DATASOURCE_USERNAME: ${MARIADB_USER}
