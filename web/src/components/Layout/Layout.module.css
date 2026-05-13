@@ -619,3 +619,34 @@
   transition: opacity 0.15s;
 }
 .confirmLogoutBtn:hover { opacity: 0.88; }
+
+/* Advertencia del modal de eliminar cuenta */
+.modalWarning {
+  font-size: 12px;
+  color: var(--color-error);
+  background: rgba(255, 107, 107, 0.1);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-error);
+  margin: 0 0 20px;
+  text-align: left;
+  line-height: 1.4;
+}
+
+/* Botón de confirmación de eliminar (rojo) */
+.confirmDeleteBtn {
+  flex: 1;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-error);
+  color: var(--color-white);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.confirmDeleteBtn:hover {
+  opacity: 0.88;
+}

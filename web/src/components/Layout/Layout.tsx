@@ -15,14 +15,37 @@ import {
 } from 'lucide-react';
 import logo from '../../assets/logo.png';
 import styles from './Layout.module.css';
+import { accountService, type Account } from '../../services/account.service';
+import { logout as authLogout } from '../../services/auth.service';
 
-
+/**
+ * Interfaz que define la estructura de una notificación.
+ * 
+ * @interface Notification
+ * @property {number} id - Identificador único de la notificación
+ * @property {string} category - Categoría de la notificación (Gastos Fijos, Compromisos, Finanzas)
+ * @property {string} message - Mensaje descriptivo de la notificación
+ */
 interface Notification {
   id: number;
   category: string;
   message: string;
 }
 
+/**
+ * Interfaz que define el estado de configuración del usuario.
+ * 
+ * @interface SettingsState
+ * @property {string} username - Nombre de usuario
+ * @property {string} language - Idioma seleccionado (Español, English)
+ * @property {Object} notifications - Preferencias de notificaciones por categoría
+ * @property {boolean} notifications.commitments - Notificaciones de compromisos
+ * @property {boolean} notifications.finances - Notificaciones de finanzas
+ * @property {boolean} notifications.fixedExpenses - Notificaciones de gastos fijos
+ * @property {'light' | 'dark'} mode - Modo de tema (claro/oscuro)
+ * @property {boolean} twoStep - Estado de verificación en dos pasos
+ * @property {string} backup - Frecuencia de respaldo automático (Diario, Semanal, Mensual)
+ */
 interface SettingsState {
   username: string;
   language: string;
@@ -32,11 +55,27 @@ interface SettingsState {
   backup: string;
 }
 
+/**
+ * Datos de ejemplo para notificaciones.
+ * @constant {Notification[]}
+ */
+
+/*TODO: BACKEND - Reemplazar con llamada a API REST para obtener notificaciones del usuario.
+ * Endpoint sugerido: GET /api/notifications
+ * Respuesta esperada: Array<{ id: number, category: string, message: string }> */
+
 const MOCK_NOTIFICATIONS: Notification[] = [
   { id: 1, category: 'Gastos Fijos',  message: 'Internet vence el 14 de feb' },
   { id: 2, category: 'Compromisos',   message: 'Reunión con equipo hoy 12:00 p.m.' },
   { id: 3, category: 'Finanzas',      message: 'Transferencia exitosa - $150.00' },
 ];
+
+/**
+ * Configuración de los items de navegación del sidebar.
+ * Cada item define la ruta, etiqueta e icono correspondiente.
+ * 
+ * @constant {Array<{ to: string, label: string, icon: React.ComponentType }>}
+ */
 
 const NAV_ITEMS = [
   { to: '/dashboard',        label: 'Inicio',                 icon: HomeIcon },
@@ -46,18 +85,50 @@ const NAV_ITEMS = [
   { to: '/password-manager', label: 'Gestor Contraseñas',  icon: Lock },
 ];
 
+/**
+ * Componente principal de Layout.
+ * 
+ * Proporciona la estructura base de la aplicación que incluye:
+ * - Sidebar colapsable con navegación
+ * - Topbar con logo, notificaciones y configuración
+ * - Área de contenido principal mediante Outlet de React Router
+ * - Modal de confirmación para cierre de sesión
+ * - Popups de notificaciones y configuración
+ * 
+ * Gestiona el estado local de:
+ * - Apertura/cierre del sidebar
+ * - Visualización de popups de notificaciones y configuración
+ * - Preferencias de usuario (idioma, tema, notificaciones)
+ * - Modal de cierre de sesión
+ * 
+ * @component
+ * @returns {JSX.Element} Estructura completa del layout de la aplicación
+ */
+
 export default function Layout() {
+
   const location = useLocation();
   const navigate = useNavigate();
 
+  /** Estado de apertura/cierre del sidebar */
   const [sidebarOpen,   setSidebarOpen]   = useState(true);
+  /** Estado de visibilidad del popup de notificaciones */
   const [notifOpen,     setNotifOpen]     = useState(false);
+  /** Estado de visibilidad del popup de configuración */
   const [settingsOpen,  setSettingsOpen]  = useState(false);
+  /** Pestaña activa en el popup de configuración */
   const [settingsTab,   setSettingsTab]   = useState<'general' | 'security'>('general');
+
   const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+  /** Estado de visibilidad del modal de cierre de sesión */
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const [account, setAccount] = useState<Account | null>(null);
+
   const [settings, setSettings] = useState<SettingsState>({
-    username: 'Usuario',
+    username: sessionStorage.getItem('names') || 'Usuario',
     language: 'Español',
     notifications: { commitments: true, finances: true, fixedExpenses: true },
     mode: 'light',
@@ -65,9 +136,29 @@ export default function Layout() {
     backup: 'Diario',
   });
 
+  /** Referencia al contenedor del popup de notificaciones */
   const notifRef    = useRef<HTMLDivElement>(null);
+  /** Referencia al contenedor del popup de configuración */
   const settingsRef = useRef<HTMLDivElement>(null);
 
+  //cargar cuenta al montar
+  useEffect(() => {
+    const accountId = sessionStorage.getItem('accountId');
+    if (accountId) {
+      accountService.getById(accountId)
+        .then((acc) => { 
+          setAccount(acc);
+          setSettings((s) => ({ ...s, username: acc.names}));
+        })
+
+        .catch(console.error);
+    }
+  }, []);
+
+  /**
+   * Efecto para cerrar los popups al hacer clic fuera de ellos.
+   * Agrega un event listener al documento y lo limpia al desmontar.
+   */
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (notifRef.current    && !notifRef.current.contains(e.target as Node))    setNotifOpen(false);
@@ -80,11 +171,49 @@ export default function Layout() {
   const dismissNotif = (id: number) =>
     setNotifications((prev) => prev.filter((n) => n.id !== id));
 
+  //cerrar sesion
+  const handleLogout = async () => {
+    setShowLogoutModal(false);
+    try {
+      await authLogout();  
+    } catch (error) {
+      console.error('Error cerrando sesión:', error);
+    }
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('accountId');
+    sessionStorage.removeItem('names');
+    navigate('/login');
+  };
+
+  const handleDeleteAccount = async () => {
+    setShowDeleteModal(false);
+    const accountId = sessionStorage.getItem('accountId');
+    if (accountId) {
+      try {
+        await accountService.remove(accountId);
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('accountId');
+        sessionStorage.removeItem('names');
+        navigate('/login');
+      } catch (error: any) {
+        console.error('Error eliminando cuenta:', error.response?.status, error);
+        alert('La eliminación de cuenta aún no está disponible. Contacta al administrador.');
+      }
+    }
+  };
+
   return (
     <div className={styles.root}>
 
+      {/* ──────────────────────────────────────────────────────────────────
+          SIDEBAR
+          Contiene la navegación principal y el acceso al perfil.
+          Se colapsa/expande mediante los botones de toggle.
+      ────────────────────────────────────────────────────────────────── */}
+    
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.sidebarExpanded : styles.sidebarCollapsed}`}>
 
+        {/* Cabecera del sidebar con botón toggle hamburguesa/chevron */}
         <div className={styles.sidebarHeader}>
           {sidebarOpen ? (
             <button className={styles.hamburger} onClick={() => setSidebarOpen(false)}>
@@ -97,6 +226,7 @@ export default function Layout() {
           )}
         </div>
 
+        {/* Navegación principal */}
         <nav className={styles.nav}>
           {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
             <NavLink
@@ -112,6 +242,7 @@ export default function Layout() {
           ))}
         </nav>
 
+          {/* Footer del sidebar con acceso al perfil de usuario */}
         <div className={styles.sidebarFooter}>
           <button
             className={`${styles.userProfileBtn} ${location.pathname === '/profile' ? styles.userProfileBtnActive : ''}`}
@@ -119,7 +250,9 @@ export default function Layout() {
             title="Ver perfil"
           >
             <UserCircle2 size={30} className={styles.userAvatar} />
-            {sidebarOpen && <span className={styles.userName}>Usuario</span>}
+            {sidebarOpen && <span className={styles.userName}>
+              {account?.names || sessionStorage.getItem('names') || 'Usuario'}
+              </span>}
           </button>
         </div>
 
@@ -290,7 +423,9 @@ export default function Layout() {
                         >
                           Cerrar Sesión
                         </button>
-                        <button className={styles.deleteBtn}>Eliminar Cuenta</button>
+                        <button className={styles.deleteBtn} onClick={() => { setSettingsOpen(false); setShowDeleteModal(true);}}>
+                          Eliminar Cuenta
+                        </button>
                       </div>
                     </div>
                   )}
@@ -301,6 +436,10 @@ export default function Layout() {
           </div>
         </header>
 
+        {/*
+          Área de contenido dinámico.
+          Renderiza el componente correspondiente a la ruta actual mediante React Router Outlet.
+        */}
         <main className={styles.content}>
           <Outlet />
         </main>
@@ -317,12 +456,30 @@ export default function Layout() {
               </button>
               <button
                 className={styles.confirmLogoutBtn}
-                onClick={() => {
-                  setShowLogoutModal(false);
-                  navigate('/login');   
-                }}
+                onClick={handleLogout}
               >
                 Cerrar Sesión
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ELIMINAR CUENTA */}
+      {showDeleteModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <p className={styles.modalText}>¿Estás seguro que quieres eliminar tu cuenta?</p>
+            <p className={styles.modalWarning}>
+              Esta acción es irreversible. Se eliminarán todos tus datos, 
+              finanzas, compromisos, gastos fijos y contraseñas guardadas.
+            </p>
+            <div className={styles.modalActions}>
+              <button className={styles.cancelBtn} onClick={() => setShowDeleteModal(false)}>
+                Cancelar
+              </button>
+              <button className={styles.confirmDeleteBtn} onClick={handleDeleteAccount}>
+                Eliminar Cuenta
               </button>
             </div>
           </div>
