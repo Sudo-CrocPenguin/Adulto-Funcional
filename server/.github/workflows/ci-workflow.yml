@@ -22,8 +22,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create .env file
-        run: cp .env.example .env
+      - name: Create .env file with CI defaults
+        run: |
+          cat > .env << 'EOF'
+          MARIADB_ROOT_PASSWORD=ci_root
+          MARIADB_DATABASE=agenda
+          MARIADB_USER=ci_user
+          MARIADB_PASSWORD=ci_password
+          JWT_SECRET=ci-jwt-secret-key-for-testing-only-must-be-32-chars
+          JWT_EXPIRATION=86400000
+          CORS_ALLOWED_ORIGINS=http://localhost:5173/
+          APP_COOKIE_SECURE=false
+          APP_COOKIE_SAME_SITE=Lax
+          EOF
 
       - name: Build Docker containers
         run: docker compose up -d --build
@@ -34,7 +45,7 @@ jobs:
       - name: Wait for app healthcheck
         run: |
           echo "Waiting the app is healthy..."
-          timeout=60
+          timeout=120
 
           while [ $timeout -gt 0 ]; do
             if docker compose ps app | grep -q "healthy"; then
@@ -60,10 +71,9 @@ jobs:
         run: docker compose down -v
 
   # ================================================================== #
-  # Job para ejecutar las pruebas unitarias, el cual genera un archivo #
-  # con las variables de entorno necesarias para la correcta ejecución #
-  # de Spring Boot, y ejecuta los comandos con Maven Wraper(mvnw) para #
-  # los tests                                                          #
+  # Job para ejecutar las pruebas unitarias con Maven Wrapper (mvnw).  #
+  # Usa Testcontainers para la base de datos, por lo que Docker está  #
+  # disponible en el runner de GitHub Actions.                         #
   # ================================================================== #
   unit-tests:
     runs-on: ubuntu-latest
@@ -76,9 +86,6 @@ jobs:
         with:
           java-version: "21"
           distribution: "temurin"
-
-      - name: Create .env file
-        run: cp .env.example .env
 
       - name: Run unit tests
         run: ./mvnw clean test
