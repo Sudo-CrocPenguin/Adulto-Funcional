@@ -140,7 +140,7 @@
 .streakBigNumber {
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-white);
   line-height: 1;
 }
 
@@ -156,6 +156,7 @@
   border-radius: 99px;
   height: 8px;
   overflow: hidden;
+  width: 100%;
 }
 
 .streakBarFill {
@@ -168,7 +169,7 @@
 .streakMilestones {
   display: flex;
   justify-content: space-between;
-  margin-top: -var(--spacing-xs);
+  margin-top: calc(-1 * var(--spacing-xs));
 }
 
 .milestone {
@@ -369,16 +370,6 @@
     grid-template-columns: 1fr;
   }
 
-  .streakCard {
-    /* En tablet la racha va arriba a todo el ancho */
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .streakDaysRow {
-    flex: 1;
-  }
 }
 
 /* Mobile (≤ 640px) */
@@ -413,7 +404,13 @@
 
   .streakCard {
     flex-direction: column;
+    flex-wrap: nowrap;
   }
+
+  .streakBigNumber {
+    font-size: 2rem;
+  }
+
 
   .bottomRow {
     grid-template-columns: 1fr;
