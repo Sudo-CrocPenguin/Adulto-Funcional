@@ -7,15 +7,28 @@ import { Colors } from '../../../src/constants/Colors';
 import { BottomNav } from '../../../src/components/common/BottomNav';
 
 export default function ProfileScreen() {
-  const { profile, loading } = useProfile();
-  const { user, logout } = useAuth();
+  const { profile, loading, stats } = useProfile();
+  const { logout } = useAuth();
 
-  if (loading) return <View style={styles.centered}><ActivityIndicator size="large" color={Colors.primary} /></View>;
-  if (!profile) return <View style={styles.centered}><Text>Error cargando perfil</Text></View>;
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={Colors.primary} />
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={styles.centered}>
+        <Text>Error cargando perfil</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <ScrollView>
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Perfil</Text>
         </View>
@@ -23,28 +36,59 @@ export default function ProfileScreen() {
         <View style={styles.statsCard}>
           <Text style={styles.sectionTitle}>MI ACTIVIDAD</Text>
           <View style={styles.statsRow}>
-            <View style={styles.statItem}><Text style={styles.statNumber}>47</Text><Text style={styles.statLabel}>Compromisos completados</Text></View>
-            <View style={styles.statItem}><Text style={styles.statNumber}>14</Text><Text style={styles.statLabel}>Racha máxima (días)</Text></View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats.completedEvents}</Text>
+              <Text style={styles.statLabel}>Compromisos completados</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats.maxStreak}</Text>
+              <Text style={styles.statLabel}>Racha máxima (días)</Text>
+            </View>
           </View>
           <View style={styles.statsRow}>
-            <View style={styles.statItem}><Text style={styles.statNumber}>2</Text><Text style={styles.statLabel}>Contraseñas guardadas</Text></View>
-            <View style={styles.statItem}><Text style={styles.statNumber}>8</Text><Text style={styles.statLabel}>Gastos fijos registrados</Text></View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats.passwordCount}</Text>
+              <Text style={styles.statLabel}>Contraseñas guardadas</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{stats.fixedExpensesCount}</Text>
+              <Text style={styles.statLabel}>Gastos fijos registrados</Text>
+            </View>
           </View>
         </View>
 
         <View style={styles.infoCard}>
           <Text style={styles.sectionTitle}>INFORMACIÓN PERSONAL</Text>
-          <View style={styles.infoRow}><Text style={styles.infoLabel}>Nombre completo</Text><Text style={styles.infoValue}>{profile.names} {profile.lastnames}</Text></View>
-          <View style={styles.infoRow}><Text style={styles.infoLabel}>Correo electrónico</Text><Text style={styles.infoValue}>{profile.email}</Text></View>
-          <View style={styles.infoRow}><Text style={styles.infoLabel}>Teléfono</Text><Text style={styles.infoValue}>{profile.phone}</Text></View>
-          <TouchableOpacity style={styles.editButton} onPress={() => router.push('/(app)/profile/edit')}><Text style={styles.editButtonText}>Editar perfil</Text></TouchableOpacity>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Nombre completo</Text>
+            <Text style={styles.infoValue}>{profile.names} {profile.lastnames}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Correo electrónico</Text>
+            <Text style={styles.infoValue}>{profile.email}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Teléfono</Text>
+            <Text style={styles.infoValue}>{profile.phone}</Text>
+          </View>
+          <TouchableOpacity style={styles.editButton} onPress={() => router.push('/(app)/profile/edit')}>
+            <Text style={styles.editButtonText}>Editar perfil</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.accountCard}>
-          <TouchableOpacity onPress={() => router.push('/(app)/profile/change-password')}><Text style={styles.accountOption}>Cambiar contraseña</Text></TouchableOpacity>
-          <TouchableOpacity onPress={() => router.push('/(app)/profile/settings')}><Text style={styles.accountOption}>Configuración</Text></TouchableOpacity>
-          <TouchableOpacity onPress={logout}><Text style={[styles.accountOption, styles.logout]}>Cerrar Sesión</Text></TouchableOpacity>
-          <TouchableOpacity onPress={() => alert('Función no implementada')}><Text style={[styles.accountOption, styles.delete]}>Eliminar Cuenta</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(app)/profile/change-password')}>
+            <Text style={styles.accountOption}>Cambiar contraseña</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => router.push('/(app)/profile/settings')}>
+            <Text style={styles.accountOption}>Configuración</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={logout}>
+            <Text style={[styles.accountOption, styles.logout]}>Cerrar Sesión</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => alert('Función no implementada')}>
+            <Text style={[styles.accountOption, styles.delete]}>Eliminar Cuenta</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
       <BottomNav />
@@ -58,11 +102,11 @@ const styles = StyleSheet.create({
   header: { backgroundColor: Colors.primary, paddingTop: 60, paddingBottom: 20, alignItems: 'center' },
   headerTitle: { color: '#fff', fontSize: 28, fontWeight: 'bold' },
   statsCard: { backgroundColor: '#fff', margin: 16, padding: 16, borderRadius: 24 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: Colors.text },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16 },
   statItem: { alignItems: 'center' },
   statNumber: { fontSize: 24, fontWeight: 'bold', color: Colors.primary },
-  statLabel: { fontSize: 12, color: Colors.textSecondary },
+  statLabel: { fontSize: 12, color: Colors.textSecondary, textAlign: 'center' },
   infoCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 16, padding: 16, borderRadius: 24 },
   infoRow: { marginBottom: 12 },
   infoLabel: { fontSize: 14, color: Colors.textSecondary },
