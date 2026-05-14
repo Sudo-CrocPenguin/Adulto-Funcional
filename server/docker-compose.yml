@@ -22,7 +22,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --loglevel warning --appendonly yes
+    command: "redis-server --loglevel warning --appendonly yes --requirepass ${REDIS_PASSWORD}"
     volumes:
       - redis_data:/data
     healthcheck:
