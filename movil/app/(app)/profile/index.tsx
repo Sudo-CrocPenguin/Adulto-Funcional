@@ -8,7 +8,7 @@ import { BottomNav } from '../../../src/components/common/BottomNav';
 
 export default function ProfileScreen() {
   const { profile, loading, stats } = useProfile();
-  const { logout } = useAuth();
+  const { logout, maxStreak } = useAuth();
 
   if (loading) {
     return (
@@ -41,7 +41,7 @@ export default function ProfileScreen() {
               <Text style={styles.statLabel}>Compromisos completados</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{stats.maxStreak}</Text>
+              <Text style={styles.statNumber}>{maxStreak}</Text>
               <Text style={styles.statLabel}>Racha máxima (días)</Text>
             </View>
           </View>

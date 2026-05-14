@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useEvents, Event } from '../../../src/hooks/useEvents';
+import { useAuth } from '../../../src/contexts/AuthContext';
 import { Colors } from '../../../src/constants/Colors';
 import { BottomNav } from '../../../src/components/common/BottomNav';
 
@@ -9,6 +10,7 @@ type FilterType = 'Todas' | 'Pendientes' | 'Completadas';
 
 export default function CompromisesScreen() {
   const { events, loading, error, fetchEvents, deleteEvent, completeEvent } = useEvents();
+  const { streak } = useAuth();
   const [filter, setFilter] = useState<FilterType>('Todas');
 
   useFocusEffect(
@@ -40,7 +42,6 @@ export default function CompromisesScreen() {
         { text: 'Completar', onPress: async () => {
           try {
             await completeEvent(event.id);
-            // La lista se actualizará automáticamente con el nuevo estado y fecha
           } catch (err: any) {
             Alert.alert('Error', err.message);
           }
@@ -93,7 +94,7 @@ export default function CompromisesScreen() {
     <View style={styles.container}>
       <View style={styles.streakContainer}>
         <Text style={styles.streakTitle}>Racha de Compromisos</Text>
-        <Text style={styles.streakNumber}>7 días activos</Text>
+        <Text style={styles.streakNumber}>{streak} días activos</Text>
         <View style={styles.streakDays}>
           {[7, 15, 23, 30].map(day => <Text key={day} style={styles.streakDay}>{day}</Text>)}
         </View>

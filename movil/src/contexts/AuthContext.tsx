@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import * as authApi from '../api/authApi';
 import { AuthResponse, LoginRequest, RegisterRequest } from '../types/auth.types';
+import { updateStreak, getCurrentStreak, getMaxStreak } from '../services/streakService';
 
 interface AuthContextType {
   user: Partial<AuthResponse> | null;
@@ -12,6 +13,8 @@ interface AuthContextType {
   checkAuthStatus: () => Promise<void>;
   error: string | null;
   refreshUser: () => Promise<void>;
+  streak: number;
+  maxStreak: number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +30,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [maxStreak, setMaxStreak] = useState(0);
+
+  const updateAndLoadStreak = async () => {
+    const { current, max } = await updateStreak();
+    setStreak(current);
+    setMaxStreak(max);
+  };
 
   const checkAuthStatus = async () => {
     try {
@@ -36,6 +47,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (auth) {
         const userData = await authApi.getUserData();
         setUser(userData);
+        await updateAndLoadStreak();
       } else {
         setUser(null);
       }
@@ -65,6 +77,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         hasMasterKey: response.hasMasterKey,
       });
       setIsAuthenticated(true);
+      await updateAndLoadStreak();
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Error en login';
       setError(msg);
@@ -88,6 +101,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         hasMasterKey: response.hasMasterKey,
       });
       setIsAuthenticated(true);
+      await updateAndLoadStreak();
     } catch (err: any) {
       const msg = err.response?.data?.message || err.message || 'Error en registro';
       setError(msg);
@@ -98,9 +112,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    await authApi.logout(); // Llama al endpoint /api/auth/logout
+    await authApi.logout();
     setUser(null);
     setIsAuthenticated(false);
+    setStreak(0);
+    setMaxStreak(0);
   };
 
   useEffect(() => {
@@ -108,7 +124,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, login, register, logout, checkAuthStatus, error, refreshUser }}>
+    <AuthContext.Provider value={{ user, isLoading, isAuthenticated, login, register, logout, checkAuthStatus, error, refreshUser, streak, maxStreak }}>
       {children}
     </AuthContext.Provider>
   );

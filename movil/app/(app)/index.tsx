@@ -14,7 +14,7 @@ const screenWidth = Dimensions.get('window').width;
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { data, loading, error } = useDashboard();
-  const { user } = useAuth();
+  const { user, streak, maxStreak } = useAuth();
 
   if (loading) return <View style={styles.centered}><Text>Cargando...</Text></View>;
   if (error) return <View style={styles.centered}><Text>Error: {error}</Text></View>;
@@ -65,7 +65,7 @@ export default function HomeScreen() {
 
         <View style={styles.streakCard}>
           <Text style={styles.streakTitle}>Racha de Compromisos</Text>
-          <Text style={styles.streakNumber}>{data.streak} días activos</Text>
+          <Text style={styles.streakNumber}>{streak} días activos</Text>
           <View style={styles.dotsRow}>
             {[7, 15, 23, 30].map(day => <Text key={day} style={styles.dot}>{day}</Text>)}
           </View>
