@@ -35,6 +35,28 @@ export const accountService = {
   },
 
   /**
+   * Actualiza los datos basicos de una cuenta.
+   * Solo permite modificar nombres, apellidos y telefono.
+   * El correo electronico no se puede cambiar por este medio.
+   * 
+   * @param {string} id - Identificador unico de la cuenta
+   * @param {object} payload - Campos a actualizar
+   * @param {string} [payload.names] - Nuevos nombres del usuario
+   * @param {string} [payload.lastnames] - Nuevos apellidos del usuario
+   * @param {string} [payload.phone] - Nuevo numero de telefono
+   * @returns {Promise<Account>} Cuenta actualizada con todos sus campos
+   * @throws {Error} Si la cuenta no existe, no pertenece al usuario o el token no es valido
+   * 
+   */
+  update: async (
+    id: string,
+    payload: Partial<Pick<Account, 'names' | 'lastnames' | 'phone'>>
+  ): Promise<Account> => {
+    const { data: body } = await api.patch<ApiResponse<Account>>(`/account/${id}`, payload);
+    return body.data;
+  },
+
+  /**
    * Elimina una cuenta por ID.
    * DELETE /api/account/{id}
    * Retorna 501 Not Implemented por ahora.
