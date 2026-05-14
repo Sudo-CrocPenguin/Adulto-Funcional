@@ -262,6 +262,12 @@ export default function Layout() {
 
         <header className={styles.topbar}>
           <div className={styles.topbarLeft}>
+            <button
+              className={styles.mobileMenuBtn}
+              onClick={() => setSidebarOpen((v) => !v)}
+            >
+              <AlignJustify size={24} />
+            </button>
             <img src={logo} alt="Logo" className={styles.topbarLogo} />
             <span className={styles.topbarTitle}>ADULTO FUNCIONAL</span>
           </div>

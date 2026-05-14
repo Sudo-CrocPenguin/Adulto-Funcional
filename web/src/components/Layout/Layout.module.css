@@ -288,13 +288,13 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
-  min-width: 220px;
+  min-width: 270px;
   z-index: 200;
   overflow: hidden;
 }
 
 .popupSettings {
-  min-width: 240px;
+  min-width: 310px;
 }
 
 /* header popup notificaciones */
@@ -354,14 +354,14 @@
 }
 
 .notifCategory {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--color-primary);
   margin: 0 0 2px;
 }
 
 .notifMsg {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-text-secondary);
   margin: 0;
   line-height: 1.3;
@@ -411,14 +411,14 @@
 
 /*cuerpo Configuración*/
 .settingsBody {
-  padding: 10px 12px 12px;
+  padding: 12px 16px 16px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .settingsLabel {
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: 2px;
@@ -428,10 +428,10 @@
 .settingsInput,
 .settingsSelect {
   width: 100%;
-  padding: 5px 8px;
+  padding: 7px 10px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 13px;
   font-family: var(--font-primary);
   color: var(--color-text-primary);
   background: var(--color-white);
@@ -649,4 +649,99 @@
 }
 .confirmDeleteBtn:hover {
   opacity: 0.88;
+}
+
+/* botón hamburger del topbar — oculto en desktop */
+.mobileMenuBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+/* ── Responsive Layout */
+
+/* Tablet (≤ 1024px) */
+@media (max-width: 1024px) {
+  .topbarTitle {
+    font-size: 20px;
+  }
+}
+
+/* Mobile (≤ 768px) */
+@media (max-width: 768px) {
+  /* El sidebar en móvil se convierte en overlay */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 400;
+  }
+
+  /* Expandido: se muestra encima del contenido */
+  .sidebarExpanded {
+    width: 225px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Colapsado: completamente oculto */
+  .sidebarCollapsed {
+    width: 0;
+    padding: 0;
+  }
+
+  /* Hamburger del topbar aparece en móvil */
+  .mobileMenuBtn {
+    display: flex;
+  }
+
+  .topbarTitle {
+    font-size: 16px;
+    letter-spacing: 0.03em;
+  }
+
+  .topbarLogo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .topbar {
+    height: 60px;
+    padding: 0 10px;
+  }
+
+  /* El contenido ocupa todo el ancho (sidebar ya no empuja) */
+  .mainWrapper {
+    width: 100%;
+  }
+
+  /* Popups se abren hacia la izquierda en móvil para no salirse */
+  .popup {
+    right: 0;
+    min-width: 240px;
+    max-width: 90vw;
+  }
+
+  .popupSettings {
+    min-width: 270px;
+  }
+}
+
+/* Mobile pequeño (≤ 480px) */
+@media (max-width: 480px) {
+  .topbarTitle {
+    font-size: 13px;
+  }
+
+  .topbarLogo {
+    width: 38px;
+    height: 38px;
+  }
 }
