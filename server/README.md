@@ -22,6 +22,7 @@ Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una a
 | Spring Data JPA      | -       | Persistencia ORM                                   |
 | Spring Security      | -       | Autenticación y autorización                       |
 | MariaDB              | 11.8    | Base de datos relacional                           |
+| Redis                | 7       | Almacén distribuido para sesiones de Master Key    |
 | Flyway               | -       | Migraciones de base de datos                       |
 | Lombok               | -       | Reducción de boilerplate                           |
 | JWT                  | -       | Autenticación stateless                            |
@@ -140,6 +141,11 @@ MARIADB_ROOT_PASSWORD=tu_root_password
 MARIADB_DATABASE=adulto_funcional
 MARIADB_USER=afs_user
 MARIADB_PASSWORD=tu_password
+
+# Redis (para sesiones de Master Key en producción)
+REDIS_HOST=redis
+REDIS_PORT=6379
+REDIS_PASSWORD=
 
 # JWT
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura
@@ -283,18 +289,24 @@ docker-compose down -v
 # Construir la imagen manualmente
 docker build -t adulto-funcional-server .
 
-# Ejecutar contenedor de la aplicación (perfil prod)
+# Ejecutar contenedor de la aplicación (perfil prod) — requiere Redis y MariaDB
 docker run -p 8080:8080 \
   -e SPRING_PROFILES_ACTIVE=prod \
   -e SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/adulto_funcional \
   -e SPRING_DATASOURCE_USERNAME=afs_user \
   -e SPRING_DATASOURCE_PASSWORD=password \
+  -e REDIS_HOST=redis \
+  -e REDIS_PORT=6379 \
+  -e REDIS_PASSWORD= \
   -e JWT_SECRET=secret \
   -e JWT_EXPIRATION=86400000 \
   -e CORS_ALLOWED_ORIGINS=http://localhost:5173 \
   -e APP_COOKIE_SECURE=true \
   -e APP_COOKIE_SAME_SITE=Lax \
   adulto-funcional-server
+
+# NOTA: El perfil prod requiere Redis. Usa docker-compose (recomendado)
+# o asegúrate de tener Redis corriendo y accesible desde el contenedor.
 
 # Entrar al contenedor de la aplicación
 docker-compose exec app sh
@@ -356,6 +368,10 @@ docker-compose restart app
 - `GET /api/security/passwords/{id}` - Obtener credencial (descifrada)
 - `PATCH /api/security/passwords/{id}` - Actualizar credencial
 - `DELETE /api/security/passwords/{id}` - Eliminar credencial
+
+### Health Check
+
+- `POST /api/security/passwords/master-key/verify` - Verificar Master Key para acceder al gestor
 
 ### Health Check
 

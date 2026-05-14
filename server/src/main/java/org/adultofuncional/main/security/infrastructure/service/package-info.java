@@ -15,7 +15,10 @@
  * Cifrado AES‑256‑GCM con derivación PBKDF2.</li>
  * <li>{@link org.adultofuncional.main.security.infrastructure.service.InMemoryMasterKeyService}
  * —
- * Gestión en memoria de la Master Key por cuenta.</li>
+ * Gestión en memoria de la Master Key por cuenta (perfil {@code dev}).</li>
+ * <li>{@link org.adultofuncional.main.security.infrastructure.service.RedisMasterKeyService}
+ * —
+ * Gestión distribuida de la Master Key con Redis (perfil {@code prod}).</li>
  * </ul>
  *
  * @author Equipo de desarrollo Adulto Funcional

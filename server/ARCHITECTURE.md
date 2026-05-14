@@ -317,7 +317,7 @@ Incluye:
 
 - Modelo de dominio `Password`.
 - Puerto de repositorio `PasswordRepository` y puertos de servicio `EncryptionService`, `MasterKeySessionService`.
-- Implementaciones `AesEncryptionService` (AES‑256‑GCM) e `InMemoryMasterKeyService` (sesión en memoria para desarrollo).
+- Implementaciones `AesEncryptionService` (AES‑256‑GCM), `InMemoryMasterKeyService` (sesión en memoria para desarrollo) y `RedisMasterKeyService` (almacén distribuido con Redis para producción).
 - Casos de uso (`CreatePasswordUseCase`, `GetPasswordUseCase`, `ListPasswordsUseCase`, `UpdatePasswordUseCase`, `DeletePasswordUseCase`).
 - DTOs de entrada y salida (`PasswordRequest`, `PasswordUpdateRequest`, `PasswordResponse`) con protección `@NoHtml`.
 - Controlador REST `SecurityController` bajo `/api/security/passwords`.
@@ -531,9 +531,10 @@ Etapa 2 (runtime): eclipse-temurin:21-jre-alpine
 ### Docker Compose
 
 - **Servicio mariadb**: Imagen oficial 11.8 con healthcheck nativo
-- **Servicio app**: Construido desde Dockerfile
+- **Servicio redis**: Imagen oficial 7-alpine con healthcheck nativo y persistencia AOF
+- **Servicio app**: Construido desde Dockerfile, depende de `mariadb` y `redis` (ambos con `condition: service_healthy`)
 - **Red**: `afs-network` (bridge) para comunicación entre contenedores
-- **Volumen**: `mariadb_data` para persistencia de datos
+- **Volúmenes**: `mariadb_data` para datos, `redis_data` para persistencia de sesiones
 
 ### Variables de entorno requeridas (.env)
 
@@ -545,6 +546,9 @@ Las variables definidas en `.env` son utilizadas por `docker-compose.yml` y por 
 | `MARIADB_DATABASE`      | Nombre de la base de datos                              | adulto_funcional               |
 | `MARIADB_USER`          | Usuario de la aplicación                                | afs_user                       |
 | `MARIADB_PASSWORD`      | Password del usuario                                    | userpass                       |
+| `REDIS_HOST`            | Host del servidor Redis                                 | redis                          |
+| `REDIS_PORT`            | Puerto del servidor Redis                               | 6379                           |
+| `REDIS_PASSWORD`        | Password de conexión a Redis                            | (vacío si no se requiere)      |
 | `JWT_SECRET`            | Clave secreta para firmar JWT (mín. 32 caracteres)      | my-jwt-secret                  |
 | `JWT_EXPIRATION`        | Tiempo de expiración JWT en milisegundos                | 86400000                       |
 | `CORS_ALLOWED_ORIGINS`  | Orígenes permitidos para CORS                           | http://localhost:5173          |
@@ -590,6 +594,9 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 <artifactId>flyway-mysql</artifactId>
 <artifactId>mariadb-java-client</artifactId>
 
+<!-- Almacenamiento distribuido -->
+<artifactId>spring-boot-starter-data-redis</artifactId>  <!-- Sesiones de Master Key -->
+
 <!-- Utilidades -->
 <artifactId>lombok</artifactId>
 <artifactId>java-uuid-generator</artifactId>  <!-- UUID v7 -->
@@ -625,6 +632,7 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 - [x] Módulo financiero: todos los casos de uso, DTOs y controladores
 - [x] Módulo agenda: todos los casos de uso, DTOs y controladores
 - [x] Gestor de contraseñas: PasswordUseCase con encriptación AES-256
+- [x] Implementación distribuida de MasterKeySessionService con Redis para producción (`RedisMasterKeyService`)
 - [x] Perfiles de Spring Boot: `dev` y `prod` con configuración segregada
 - [x] `JwtProperties` como `@ConfigurationProperties` centralizada para JWT
 - [x] Fix en `NoHtmlValidator`: `strip()` para permitir espacios en campos de registro

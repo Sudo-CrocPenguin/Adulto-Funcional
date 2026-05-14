@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 /**
@@ -37,6 +38,7 @@ import org.springframework.stereotype.Component;
  * @since 0.0.1
  */
 @Component
+@Profile({"dev", "test"})
 public class InMemoryMasterKeyService implements MasterKeySessionService {
 
   // Mapa concurrente: accountId → Master Key en texto plano
