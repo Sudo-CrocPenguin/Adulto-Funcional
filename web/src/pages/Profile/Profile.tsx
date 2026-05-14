@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import styles from './Profile.module.css';
+import { User, Mail, Phone, Pencil, Lock } from 'lucide-react';
 
 export default function Profile() {
   const { user, isAuthenticated } = useAuth();
@@ -81,7 +82,7 @@ export default function Profile() {
           <div className={styles.avatarWrapper}>
             <div className={styles.avatar}>
               {user.names?.charAt(0).toUpperCase()}
-              <span className={styles.avatarEditBtn}>✏</span>
+              <span className={styles.avatarEditBtn}><Pencil size={16} /></span>
             </div>
             <p className={styles.avatarName}>{user.names} {user.lastnames}</p>
             <p className={styles.avatarEmail}>{user.email}</p>
@@ -94,7 +95,7 @@ export default function Profile() {
           {!editing ? (
             <>
               <div className={styles.infoRow}>
-                <div className={styles.infoIconWrap}>👤</div>
+                <div className={styles.infoIconWrap}><User size={18} /></div>
                 <div>
                   <div className={styles.infoLabel}>Nombre completo</div>
                   <div className={styles.infoValue}>{user.names} {user.lastnames}</div>
@@ -102,7 +103,7 @@ export default function Profile() {
               </div>
 
               <div className={styles.infoRow}>
-                <div className={styles.infoIconWrap}>✉️</div>
+                <div className={styles.infoIconWrap}><Mail size={18} /></div>
                 <div>
                   <div className={styles.infoLabel}>Correo electrónico</div>
                   <div className={styles.infoValue}>{user.email}</div>
@@ -110,7 +111,7 @@ export default function Profile() {
               </div>
 
               <div className={styles.infoRow}>
-                <div className={styles.infoIconWrap}>📞</div>
+                <div className={styles.infoIconWrap}><Phone size={18} /></div>
                 <div>
                   <div className={styles.infoLabel}>Teléfono</div>
                   <div className={styles.infoValue}>{user.phone || 'No registrado'}</div>
@@ -118,7 +119,8 @@ export default function Profile() {
               </div>
 
               <button className={styles.editButton} onClick={() => setEditing(true)}>
-                ✏ Editar perfil
+                <Pencil size={16} />
+                Editar perfil
               </button>
             </>
           ) : (
@@ -168,7 +170,7 @@ export default function Profile() {
             <h3>Cuenta</h3>
             <div className={styles.accountItem}>
               <button>
-                <div className={styles.accountIconWrap}>🔒</div>
+                <div className={styles.accountIconWrap}><Lock size={18} /></div>
                 Cambiar contraseña
                 <span className={styles.accountChevron}>›</span>
               </button>
