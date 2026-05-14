@@ -57,7 +57,7 @@ export default function HomeScreen() {
               <Text style={styles.statLabel}>COMPROMISOS PENDIENTES</Text>
             </View>
             <View style={styles.statBox}>
-              <Text style={styles.statNumber}>12</Text>
+              <Text style={styles.statNumber}>{data.passwordCount}</Text>
               <Text style={styles.statLabel}>CONTRASEÑAS</Text>
             </View>
           </View>
@@ -108,10 +108,10 @@ export default function HomeScreen() {
         <View style={styles.reportCard}>
           <Text style={styles.reportTitle}>Reporte estadístico</Text>
           <View style={styles.legend}>
-            <Text style={styles.legendIncome}>Ingresos</Text>
-            <Text style={styles.legendExpense}>Egresos</Text>
-            <Text style={styles.legendLeisure}>Osio</Text>
-            <Text style={styles.legendSaving}>Ahorros</Text>
+            <Text style={[styles.legendIncome, { color: Colors.success }]}>Ingresos</Text>
+            <Text style={[styles.legendExpense, { color: Colors.error }]}>Egresos</Text>
+            <Text style={[styles.legendLeisure, { color: Colors.warning }]}>Osio</Text>
+            <Text style={[styles.legendSaving, { color: Colors.primary }]}>Ahorros</Text>
           </View>
           <LineChart
             data={chartData}
@@ -150,24 +150,24 @@ const styles = StyleSheet.create({
   statBox: { alignItems: 'center' },
   statNumber: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
   statLabel: { color: '#fff', fontSize: 12, textAlign: 'center' },
-  streakCard: { backgroundColor: '#fff', margin: 16, padding: 16, borderRadius: 24, alignItems: 'center', shadowOpacity: 0.05 },
-  streakTitle: { fontSize: 16, fontWeight: 'bold' },
+  streakCard: { backgroundColor: '#fff', margin: 16, padding: 16, borderRadius: 24, alignItems: 'center', shadowOpacity: 0.05, elevation: 2 },
+  streakTitle: { fontSize: 16, fontWeight: 'bold', color: Colors.text },
   streakNumber: { fontSize: 28, fontWeight: 'bold', color: Colors.primary, marginVertical: 8 },
   dotsRow: { flexDirection: 'row', justifyContent: 'space-around', width: '100%' },
   dot: { fontSize: 14, color: Colors.textSecondary },
   row: { flexDirection: 'row', marginHorizontal: 16, marginBottom: 16 },
-  halfCard: { flex: 1, backgroundColor: '#fff', borderRadius: 24, padding: 12, marginHorizontal: 4, shadowOpacity: 0.05 },
-  cardTitle: { fontWeight: 'bold', fontSize: 14, marginBottom: 8 },
-  itemName: { fontSize: 14, fontWeight: '500' },
+  halfCard: { flex: 1, backgroundColor: '#fff', borderRadius: 24, padding: 12, marginHorizontal: 4, shadowOpacity: 0.05, elevation: 2 },
+  cardTitle: { fontWeight: 'bold', fontSize: 14, marginBottom: 8, color: Colors.text },
+  itemName: { fontSize: 14, fontWeight: '500', color: Colors.text },
   itemDate: { fontSize: 12, color: Colors.textSecondary },
   itemAmount: { fontSize: 14, fontWeight: 'bold', color: Colors.primary, marginTop: 4 },
   ver: { color: Colors.link, marginTop: 8, fontSize: 12, textAlign: 'right' },
-  reportCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 100, padding: 16, borderRadius: 24 },
-  reportTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12 },
+  reportCard: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 100, padding: 16, borderRadius: 24, shadowOpacity: 0.05, elevation: 2 },
+  reportTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: Colors.text },
   legend: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16 },
-  legendIncome: { color: Colors.success },
-  legendExpense: { color: Colors.error },
-  legendLeisure: { color: Colors.warning },
-  legendSaving: { color: Colors.primary },
+  legendIncome: { fontSize: 12, fontWeight: 'bold' },
+  legendExpense: { fontSize: 12, fontWeight: 'bold' },
+  legendLeisure: { fontSize: 12, fontWeight: 'bold' },
+  legendSaving: { fontSize: 12, fontWeight: 'bold' },
   reportPeriod: { textAlign: 'center', marginTop: 12, fontSize: 12, color: Colors.textSecondary },
 });

@@ -7,19 +7,16 @@ import { Colors } from '../../src/constants/Colors';
 export default function RegisterScreen() {
   const { register, isLoading } = useAuth();
   const [form, setForm] = useState({
-    names: '', lastnames: '', phone: '', email: '', password: '', confirmPassword: '', masterKey: '',
+    names: '', lastnames: '', phone: '', email: '', password: '', confirmPassword: '', masterKey: '', confirmMasterKey: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showMasterKey, setShowMasterKey] = useState(false);
+  const [showMasterKey, setShowMasterKey] = useState(true); // Siempre visible
+  const [showConfirmMasterKey, setShowConfirmMasterKey] = useState(false);
   const [error, setError] = useState('');
 
   const validateEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const validateColombianPhone = (phone: string) => {
-    // Acepta formatos: 3001234567, +573001234567
-    const regex = /^(\+57)?[1-9]\d{9}$/;
-    return regex.test(phone.replace(/\s/g, ''));
-  };
+  const validateColombianPhone = (phone: string) => /^(\+57)?[1-9]\d{9}$/.test(phone.replace(/\s/g, ''));
 
   const handleRegister = async () => {
     if (!form.names.trim()) { setError('El nombre es obligatorio'); return; }
@@ -31,7 +28,10 @@ export default function RegisterScreen() {
     if (!form.password) { setError('La contraseña es obligatoria'); return; }
     if (form.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return; }
     if (form.password !== form.confirmPassword) { setError('Las contraseñas no coinciden'); return; }
-    if (form.masterKey && form.masterKey.length < 8) { setError('La clave maestra debe tener al menos 8 caracteres'); return; }
+    // Validaciones de clave maestra (obligatoria)
+    if (!form.masterKey) { setError('La clave maestra es obligatoria'); return; }
+    if (form.masterKey.length < 8) { setError('La clave maestra debe tener al menos 8 caracteres'); return; }
+    if (form.masterKey !== form.confirmMasterKey) { setError('Las claves maestras no coinciden'); return; }
     setError('');
     try {
       await register({
@@ -40,7 +40,7 @@ export default function RegisterScreen() {
         phone: form.phone.trim(),
         email: form.email.trim(),
         password: form.password,
-        masterKey: form.masterKey || undefined,
+        masterKey: form.masterKey,
       });
       router.replace('/(app)');
     } catch (err: any) {
@@ -90,16 +90,17 @@ export default function RegisterScreen() {
             <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} style={{ paddingHorizontal: 12 }}><Text>{showConfirm ? '👁️' : '👁️‍🗨️'}</Text></TouchableOpacity>
           </View>
 
-          <TouchableOpacity onPress={() => setShowMasterKey(!showMasterKey)} style={{ marginVertical: 12 }}>
-            <Text style={{ color: Colors.link, textAlign: 'center' }}>{showMasterKey ? 'Ocultar' : 'Configurar'} clave maestra (opcional)</Text>
-          </TouchableOpacity>
+          <Text style={styles.label}>Clave Maestra (obligatoria)</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.border, borderRadius: 12 }}>
+            <TextInput style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 12 }} secureTextEntry={!showMasterKey} value={form.masterKey} onChangeText={(t) => setForm({ ...form, masterKey: t })} placeholder="Mínimo 8 caracteres" />
+            <TouchableOpacity onPress={() => setShowMasterKey(!showMasterKey)} style={{ paddingHorizontal: 12 }}><Text>{showMasterKey ? '👁️' : '👁️‍🗨️'}</Text></TouchableOpacity>
+          </View>
 
-          {showMasterKey && (
-            <>
-              <Text style={styles.label}>Clave Maestra</Text>
-              <TextInput style={styles.input} secureTextEntry value={form.masterKey} onChangeText={(t) => setForm({ ...form, masterKey: t })} placeholder="Mínimo 8 caracteres" />
-            </>
-          )}
+          <Text style={styles.label}>Confirmar clave maestra</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.border, borderRadius: 12 }}>
+            <TextInput style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 12 }} secureTextEntry={!showConfirmMasterKey} value={form.confirmMasterKey} onChangeText={(t) => setForm({ ...form, confirmMasterKey: t })} placeholder="Repite la clave maestra" />
+            <TouchableOpacity onPress={() => setShowConfirmMasterKey(!showConfirmMasterKey)} style={{ paddingHorizontal: 12 }}><Text>{showConfirmMasterKey ? '👁️' : '👁️‍🗨️'}</Text></TouchableOpacity>
+          </View>
 
           <TouchableOpacity style={{ backgroundColor: Colors.primary, paddingVertical: 14, borderRadius: 30, alignItems: 'center', marginTop: 16 }} onPress={handleRegister} disabled={isLoading}>
             {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Crear Cuenta</Text>}

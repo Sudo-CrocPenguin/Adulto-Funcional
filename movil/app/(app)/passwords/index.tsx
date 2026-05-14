@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, ActivityIndicator, Alert, SafeAreaView } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePasswords } from '../../../src/hooks/usePasswords';
+import { securityApi } from '../../../src/api/securityApi';
 import { Colors } from '../../../src/constants/Colors';
 import { BottomNav } from '../../../src/components/common/BottomNav';
 
@@ -12,6 +13,7 @@ export default function PasswordsScreen() {
     passwords,
     loading,
     error,
+    verifying,
     hasMasterKey,
     masterKeyVerified,
     verifyMasterKey,
@@ -20,63 +22,63 @@ export default function PasswordsScreen() {
   } = usePasswords();
 
   const [verificationKey, setVerificationKey] = useState('');
-  const [mode, setMode] = useState<'checking' | 'verify' | 'list'>('checking');
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, string>>({});
+  const [loadingPasswords, setLoadingPasswords] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    if (hasMasterKey === false) {
-      Alert.alert(
-        'Clave maestra no configurada',
-        'Para usar el gestor de contraseñas, primero debes configurar una clave maestra en tu perfil.',
-        [{ text: 'Ir a Perfil', onPress: () => router.push('/(app)/profile') }]
-      );
-      setMode('checking');
-    } else if (hasMasterKey === true && !masterKeyVerified) {
-      setMode('verify');
-    } else if (hasMasterKey === true && masterKeyVerified) {
-      setMode('list');
-    }
-  }, [hasMasterKey, masterKeyVerified]);
+  // Si no hay clave maestra (caso extremo, pero todos deberían tenerla)
+  if (!hasMasterKey) {
+    return (
+      <SafeAreaView style={[styles.safeContainer, { paddingTop: insets.top }]}>
+        <View style={styles.verifyContainer}>
+          <Text style={styles.verifyTitle}>Clave maestra no configurada</Text>
+          <Text style={styles.verifySubtitle}>No se puede acceder al gestor de contraseñas.</Text>
+        </View>
+        <BottomNav />
+      </SafeAreaView>
+    );
+  }
 
-  const handleVerifyMasterKey = async () => {
-    if (!verificationKey) {
-      Alert.alert('Error', 'Ingrese la clave maestra');
-      return;
-    }
-    try {
-      await verifyMasterKey(verificationKey);
-      setVerificationKey('');
-      setMode('list');
-      await fetchPasswords();
-    } catch (err: any) {
-      Alert.alert('Error', err.message);
-    }
-  };
+  // Si tiene clave pero no está verificada, mostrar formulario de verificación
+  if (!masterKeyVerified) {
+    return (
+      <SafeAreaView style={[styles.safeContainer, { paddingTop: insets.top }]}>
+        <View style={styles.verifyContainer}>
+          <Text style={styles.verifyTitle}>Verificar clave maestra</Text>
+          <Text style={styles.verifySubtitle}>Ingresa tu clave maestra para acceder a tus contraseñas</Text>
+          {error && <Text style={styles.errorText}>{error}</Text>}
+          <TextInput
+            style={styles.verifyInput}
+            secureTextEntry
+            value={verificationKey}
+            onChangeText={setVerificationKey}
+            placeholder="Clave maestra"
+            editable={!verifying}
+          />
+          <TouchableOpacity
+            style={[styles.verifyButton, verifying && styles.buttonDisabled]}
+            onPress={async () => {
+              if (!verificationKey.trim()) {
+                Alert.alert('Error', 'Ingrese la clave maestra');
+                return;
+              }
+              const success = await verifyMasterKey(verificationKey);
+              if (success) {
+                setVerificationKey('');
+                await fetchPasswords();
+              }
+            }}
+            disabled={verifying}
+          >
+            {verifying ? <ActivityIndicator color="#fff" /> : <Text style={styles.verifyButtonText}>Verificar</Text>}
+          </TouchableOpacity>
+        </View>
+        <BottomNav />
+      </SafeAreaView>
+    );
+  }
 
-  useFocusEffect(
-    React.useCallback(() => {
-      if (mode === 'list') fetchPasswords();
-    }, [mode, fetchPasswords])
-  );
-
-  const renderItem = ({ item }) => (
-    <TouchableOpacity style={styles.card} onPress={() => router.push(`/(app)/passwords/${item.id}`)}>
-      <Text style={styles.title}>{item.applicationName}</Text>
-      <Text style={styles.date}>Último cambio: {new Date(item.lastChangeDate).toLocaleDateString()}</Text>
-      <View style={styles.row}>
-        <TouchableOpacity onPress={() => router.push(`/(app)/passwords/${item.id}`)}>
-          <Text style={styles.edit}>✏️ Editar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => Alert.alert('Eliminar', '¿Eliminar esta contraseña?', [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Eliminar', style: 'destructive', onPress: () => deletePassword(item.id) }
-        ])}>
-          <Text style={styles.delete}>🗑️ Eliminar</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
-
-  if (mode === 'checking' || (mode === 'list' && loading)) {
+  // Si está verificado y cargando
+  if (loading) {
     return (
       <SafeAreaView style={[styles.safeContainer, { paddingTop: insets.top }]}>
         <View style={styles.centered}><ActivityIndicator size="large" color={Colors.primary} /></View>
@@ -85,27 +87,74 @@ export default function PasswordsScreen() {
     );
   }
 
-  if (mode === 'verify') {
+  // Si hay error en la carga (después de verificado)
+  if (error) {
     return (
       <SafeAreaView style={[styles.safeContainer, { paddingTop: insets.top }]}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Verificar clave maestra</Text>
-          <Text style={styles.subtitle}>Ingresa tu clave maestra para acceder a tus contraseñas</Text>
-          <TextInput
-            style={styles.input}
-            secureTextEntry
-            value={verificationKey}
-            onChangeText={setVerificationKey}
-            placeholder="Clave maestra"
-          />
-          <TouchableOpacity style={styles.button} onPress={handleVerifyMasterKey}>
-            <Text style={styles.buttonText}>Verificar</Text>
-          </TouchableOpacity>
-        </View>
+        <View style={styles.centered}><Text style={styles.errorText}>Error: {error}</Text></View>
         <BottomNav />
       </SafeAreaView>
     );
   }
+
+  const handleTogglePassword = async (id: string) => {
+    // Si ya tenemos la contraseña visible, la ocultamos
+    if (visiblePasswords[id]) {
+      setVisiblePasswords(prev => {
+        const newState = { ...prev };
+        delete newState[id];
+        return newState;
+      });
+      return;
+    }
+
+    // Si no la tenemos, la solicitamos al backend
+    setLoadingPasswords(prev => ({ ...prev, [id]: true }));
+    try {
+      const response = await securityApi.getPassword(id);
+      const decryptedPassword = response.data.data.password || '';
+      setVisiblePasswords(prev => ({ ...prev, [id]: decryptedPassword }));
+    } catch (err: any) {
+      Alert.alert('Error', 'No se pudo obtener la contraseña');
+    } finally {
+      setLoadingPasswords(prev => ({ ...prev, [id]: false }));
+    }
+  };
+
+  const renderItem = ({ item }) => {
+    const isVisible = !!visiblePasswords[item.id];
+    const isLoadingPassword = loadingPasswords[item.id];
+    return (
+      <View style={styles.card}>
+        <Text style={styles.title}>{item.applicationName}</Text>
+        <View style={styles.passwordRow}>
+          <Text style={styles.passwordLabel}>Contraseña:</Text>
+          <Text style={styles.passwordValue}>
+            {isVisible ? visiblePasswords[item.id] : '********'}
+          </Text>
+          <TouchableOpacity onPress={() => handleTogglePassword(item.id)} disabled={isLoadingPassword}>
+            {isLoadingPassword ? (
+              <ActivityIndicator size="small" color={Colors.primary} />
+            ) : (
+              <Text style={styles.eyeIcon}>{isVisible ? '👁️' : '👁️‍🗨️'}</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.date}>Último cambio: {new Date(item.lastChangeDate).toLocaleDateString()}</Text>
+        <View style={styles.row}>
+          <TouchableOpacity onPress={() => router.push(`/(app)/passwords/${item.id}`)}>
+            <Text style={styles.edit}>✏️ Editar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => Alert.alert('Eliminar', '¿Eliminar esta contraseña?', [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Eliminar', style: 'destructive', onPress: () => deletePassword(item.id) }
+          ])}>
+            <Text style={styles.delete}>🗑️ Eliminar</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.safeContainer, { paddingTop: insets.top }]}>
@@ -126,17 +175,23 @@ export default function PasswordsScreen() {
 
 const styles = StyleSheet.create({
   safeContainer: { flex: 1, backgroundColor: Colors.background },
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  subtitle: { fontSize: 16, color: Colors.textSecondary, textAlign: 'center', marginBottom: 30 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, width: '100%', marginBottom: 16, backgroundColor: '#fff' },
-  button: { backgroundColor: Colors.primary, paddingVertical: 14, borderRadius: 30, alignItems: 'center', width: '100%' },
-  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  verifyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  verifyTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 12, textAlign: 'center', color: Colors.text },
+  verifySubtitle: { fontSize: 16, color: Colors.textSecondary, textAlign: 'center', marginBottom: 20 },
+  verifyInput: { borderWidth: 1, borderColor: Colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, width: '100%', marginBottom: 16, backgroundColor: '#fff' },
+  verifyButton: { backgroundColor: Colors.primary, paddingVertical: 14, borderRadius: 30, alignItems: 'center', width: '100%' },
+  buttonDisabled: { backgroundColor: Colors.textSecondary, opacity: 0.6 },
+  verifyButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  errorText: { color: Colors.error, marginBottom: 12, textAlign: 'center' },
   card: { backgroundColor: '#fff', marginHorizontal: 16, marginBottom: 12, padding: 16, borderRadius: 16 },
-  title: { fontSize: 18, fontWeight: 'bold', color: Colors.text },
-  date: { fontSize: 12, color: Colors.textSecondary, marginTop: 4 },
-  row: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 },
+  title: { fontSize: 18, fontWeight: 'bold', color: Colors.text, marginBottom: 8 },
+  passwordRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  passwordLabel: { fontSize: 14, color: Colors.textSecondary, marginRight: 8 },
+  passwordValue: { flex: 1, fontSize: 14, color: Colors.text },
+  eyeIcon: { fontSize: 18, marginLeft: 8 },
+  date: { fontSize: 12, color: Colors.textSecondary, marginBottom: 8 },
+  row: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 4 },
   edit: { color: Colors.link, marginRight: 16 },
   delete: { color: Colors.error },
   empty: { textAlign: 'center', marginTop: 50, color: Colors.textSecondary },

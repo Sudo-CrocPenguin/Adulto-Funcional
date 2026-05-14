@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { securityApi, PasswordEntry } from '../api/securityApi';
-import { storage } from '../services/storage';
 import { useAuth } from '../contexts/AuthContext';
+
+const PASSWORD_COUNT_KEY = 'password_count';
 
 export const usePasswords = () => {
   const { user } = useAuth();
@@ -9,21 +11,35 @@ export const usePasswords = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [masterKeyVerified, setMasterKeyVerified] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const hasMasterKey = user?.hasMasterKey || false;
 
-  // Verificar si ya tenemos la clave verificada en storage (persistencia local)
-  useEffect(() => {
-    const checkVerified = async () => {
-      const verified = await storage.getItem('master_key_verified');
-      if (verified === 'true') setMasterKeyVerified(true);
-    };
-    checkVerified();
-  }, []);
+  // No cargar estado de persistencia al inicio (para que siempre pida la clave)
+  // En lugar, exponemos función para resetear la verificación
+
+  const resetVerification = () => {
+    setMasterKeyVerified(false);
+    setError(null);
+  };
 
   const verifyMasterKey = async (masterKey: string) => {
-    await securityApi.verifyMasterKey(masterKey);
-    setMasterKeyVerified(true);
-    await storage.setItem('master_key_verified', 'true');
+    setVerifying(true);
+    setError(null);
+    try {
+      await securityApi.verifyMasterKey(masterKey);
+      setMasterKeyVerified(true);
+      return true;
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Clave maestra incorrecta';
+      setError(msg);
+      return false;
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const saveCount = async (count: number) => {
+    await AsyncStorage.setItem(PASSWORD_COUNT_KEY, count.toString());
   };
 
   const fetchPasswords = useCallback(async () => {
@@ -31,7 +47,9 @@ export const usePasswords = () => {
     try {
       setLoading(true);
       const response = await securityApi.getPasswords();
-      setPasswords(response.data.data);
+      const pws = response.data.data;
+      setPasswords(pws);
+      await saveCount(pws.length);
     } catch (err: any) {
       setError(err.response?.data?.message || err.message);
     } finally {
@@ -42,7 +60,9 @@ export const usePasswords = () => {
   const createPassword = async (data: { applicationName: string; password: string; lastChangeDate?: string }) => {
     const response = await securityApi.createPassword(data);
     const newPassword = response.data.data;
-    setPasswords(prev => [newPassword, ...prev]);
+    const newList = [newPassword, ...passwords];
+    setPasswords(newList);
+    await saveCount(newList.length);
     return newPassword;
   };
 
@@ -53,26 +73,33 @@ export const usePasswords = () => {
     if (data.lastChangeDate) payload.lastChangeDate = data.lastChangeDate;
     const response = await securityApi.updatePassword(id, payload);
     const updated = response.data.data;
-    setPasswords(prev => prev.map(p => p.id === id ? updated : p));
+    const newList = passwords.map(p => p.id === id ? updated : p);
+    setPasswords(newList);
     return updated;
   };
 
   const deletePassword = async (id: string) => {
     await securityApi.deletePassword(id);
-    setPasswords(prev => prev.filter(p => p.id !== id));
+    const newList = passwords.filter(p => p.id !== id);
+    setPasswords(newList);
+    await saveCount(newList.length);
   };
 
   useEffect(() => {
-    if (masterKeyVerified) fetchPasswords();
+    if (masterKeyVerified) {
+      fetchPasswords();
+    }
   }, [masterKeyVerified, fetchPasswords]);
 
   return {
     passwords,
     loading,
     error,
+    verifying,
     hasMasterKey,
     masterKeyVerified,
     verifyMasterKey,
+    resetVerification,
     fetchPasswords,
     createPassword,
     updatePassword,
