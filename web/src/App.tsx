@@ -20,7 +20,7 @@ import Profile from './pages/Profile/Profile'
 import PasswordManagerAccess from './pages/PasswordManagerAccess/PasswordManagerAccess'
 import PasswordManagerReset from './pages/PasswordManagerReset/PasswordManagerReset'
 import PasswordManager from './pages/PasswordManager/PasswordManager'
-import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute' // TU VERSIÓN
+import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute' 
 
 import LandingPage from './pages/LandingPage/LandingPage'
 
@@ -36,7 +36,7 @@ function App() {
         <Route path="/login" element={<LandingPage />} /> {/* Ruta de login que usas en ProtectedRoute */}
 
 
-        {/* ✅ RUTAS PROTEGIDAS - CORREGIDO PARA TU ProtectedRoute */}
+        {/*  RUTAS PROTEGIDAS - CORREGIDO PARA TU ProtectedRoute */}
         <Route element={
           <ProtectedRoute>
             <Layout />  {/* El Layout va aquí, como base para todas */}

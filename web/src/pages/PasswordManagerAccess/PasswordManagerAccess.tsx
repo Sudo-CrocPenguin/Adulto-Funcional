@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import styles from './PasswordManagerAccess.module.css';
 import { accountService } from '../../services/account.service';
+import { verifyMasterKey, createMasterKey } from '../../services/auth.service';
 
 type View = 'login' | 'create';
 
@@ -49,9 +50,13 @@ export default function PasswordManagerAccess() {
     setLoading(true);
     setLoginError('');
     try {
-      /*TODO: BACKEND - POST /api/security/master-key/verify { masterKey } */
+      const isValid = await verifyMasterKey(masterKey);
+      if (!isValid) {
+        setLoginError('Contraseña maestra incorrecta');
+        return;
+      }
       sessionStorage.setItem('masterKeyVerified', 'true');
-      navigate('/password-manager/home');
+      navigate('/password-manager-home');
     } catch {
       setLoginError('Contraseña maestra incorrecta');
     } finally {
@@ -69,9 +74,11 @@ export default function PasswordManagerAccess() {
 
     setLoading(true);
     try {
-      /*TODO: BACKEND - PATCH /api/account/{id} { masterKey: newKey } */
-      sessionStorage.setItem('masterKeyVerified', 'true');
-      navigate('/password-manager/home');
+      await createMasterKey(newKey);
+      setNewKey('');
+      setConfirmKey('');
+      setView('login')
+      
     } catch {
       setKeyErrors(['Error al crear la contraseña maestra']);
     } finally {

@@ -170,7 +170,14 @@ export async function verifyMasterKey(masterKey: string): Promise<boolean> {
  * @throws {Error} Si el token JWT no es valido
  */
 export async function createMasterKey(masterKey: string): Promise<void> {
-    const accountId = sessionStorage.getItem('accountId');
+    let accountId = sessionStorage.getItem('accountId');
+
+    if (!accountId) {
+        const user = JSON.parse(sessionStorage.getItem('user') || 'null');
+        accountId = user?.accountId ?? null;
+    }
+
+    if (!accountId) throw new Error ('No se encontró el ID de cuenta');
     await api.patch(`/account/${accountId}`, { masterKey });
 }
 

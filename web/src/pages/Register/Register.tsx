@@ -12,7 +12,7 @@ import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import styles from './Register.module.css'
 import { useAuth } from '../../context/AuthContext'
-import { register } from '../../services/auth.service'
+import { register, login as loginService } from '../../services/auth.service'
 import { useNavigate } from 'react-router-dom'
 
 /** Estructura de los campos del formulario de registro */
@@ -168,7 +168,7 @@ function Register({ onClose, onGoToLogin }: RegisterProps) {
     }
 
     try {
-      const response = await register({
+      await register({
         names: form.firstName,
         lastnames: form.lastName,
         phone: `+57${form.phone}`,
@@ -176,23 +176,18 @@ function Register({ onClose, onGoToLogin }: RegisterProps) {
         password: form.password,
       })
 
-      sessionStorage.setItem('token', response.token)
-      sessionStorage.setItem('user', JSON.stringify({
-        accountId: response.accountId,
-        names: response.names,
-        lastnames: response.lastnames,
-        email: response.email,
-        phone: response.phone,
-        hasMasterKey: response.hasMasterKey,
-      }))
+      const session = await loginService({
+        email: form.email,
+        password: form.password,
+      })
 
-      login(response.token, {
-        accountId: response.accountId,
-        names: response.names,
-        lastnames: response.lastnames,
-        email: response.email,
-        phone: response.phone,
-        hasMasterKey: response.hasMasterKey,
+      login(session.token, {
+        accountId: session.accountId,
+        names: session.names,
+        lastnames: session.lastnames,
+        email: session.email,
+        phone: session.phone,
+        hasMasterKey: session.hasMasterKey,
       })
 
       setSuccessMsg('¡Cuenta creada exitosamente! Redirigiendo...')
