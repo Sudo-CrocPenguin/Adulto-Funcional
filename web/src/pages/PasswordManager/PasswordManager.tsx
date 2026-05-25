@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, EyeOff, Trash2, Pencil } from 'lucide-react';
 import styles from './PasswordManager.module.css';
@@ -76,14 +76,38 @@ export default function PasswordManager() {
   /* Modal confirmación eliminación */
   const [confirmDelete, setConfirmDelete] = useState<PasswordCredential | null>(null);
 
+  const VAULT_TIMEOUT = 5 * 60 * 1000;
+  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const lockVault = useCallback(() => {
+    sessionStorage.removeItem('masterKeyVerified');
+    navigate('/password-manager', { replace: true});
+  }, [navigate]);
+
+  const resetTimer = useCallback(() => {
+    if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+    inactivityTimer.current = setTimeout(lockVault, VAULT_TIMEOUT);
+  }, [lockVault]);
+
   /* Verificar sesión de clave maestra */
   useEffect(() => {
     if (sessionStorage.getItem('masterKeyVerified') !== 'true') {
       navigate('/password-manager', { replace: true });
       return;
     }
+    resetTimer();
+    const events = ['mousemove', 'keydown', 'click', 'scroll'] as const;
+    events.forEach(e => window.addEventListener(e, resetTimer));
+
     loadPasswords();
-  }, [navigate]);
+
+    return () => {
+      sessionStorage.removeItem('masterKeyVerified');
+
+      if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
+      events.forEach( e => window.removeEventListener(e, resetTimer));
+    };
+  }, [navigate, resetTimer]);
 
   const loadPasswords = async () => {
     try {
