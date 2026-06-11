@@ -1,4 +1,4 @@
-export const API_BASE_URL = 'https://audry-subsphenoidal-bovinely.ngrok-free.dev'
+export const API_BASE_URL = 'http://38.225.48.28:8083'
 export const API_TIMEOUT = 30000;
 
 export const STORAGE_KEYS = {
