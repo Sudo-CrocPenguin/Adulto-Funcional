@@ -6,6 +6,10 @@ import { LoginRequest, RegisterRequest, AuthResponse, ApiResponse } from '../typ
 const DEMO_MODE = false;
 
 const storeAuthData = async (authData: AuthResponse) => {
+  if (!authData.token) {
+    throw new Error('El backend no devolvio token de autenticacion para cliente movil');
+  }
+
   await storage.setItem(STORAGE_KEYS.TOKEN, authData.token);
   await storage.setItem(STORAGE_KEYS.TOKEN_TYPE, authData.tokenType);
   await storage.setItem(STORAGE_KEYS.EXPIRES_IN, authData.expiresIn.toString());
@@ -38,11 +42,7 @@ export const login = async (credentials: LoginRequest): Promise<AuthResponse> =>
   }
 
   // Forzar header X-Client-Type en esta petición específica
-  const response = await apiClient.post<ApiResponse<AuthResponse>>(
-    API_ENDPOINTS.AUTH.LOGIN,
-    credentials,
-    { headers: { 'X-Client-Type': 'mobile' } } // Header explícito
-  );
+  const response = await apiClient.post<ApiResponse<AuthResponse>>(API_ENDPOINTS.AUTH.LOGIN, credentials);
   const authData = response.data.data;
   await storeAuthData(authData);
   return authData;

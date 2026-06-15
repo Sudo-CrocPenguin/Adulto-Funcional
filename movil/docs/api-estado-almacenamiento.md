@@ -6,15 +6,15 @@ Archivo principal: `src/constants/config.ts`.
 
 Constantes:
 
-- `API_BASE_URL`: URL base hardcodeada del backend.
+- `API_BASE_URL`: URL base normalizada del backend, inferida o configurada por entorno.
 - `API_TIMEOUT`: timeout Axios en milisegundos.
 - `STORAGE_KEYS`: llaves usadas para persistir sesion y datos de usuario.
 - `API_ENDPOINTS`: endpoints agrupados por dominio.
 
 Estado local detectado:
 
-- El archivo tiene un cambio no confirmado frente a Git: la URL base paso de un dominio ngrok a `http://38.225.48.28:8083`.
-- Existe `.env` con `API_URL` y `API_TIMEOUT`, pero no se consume desde el codigo.
+- `src/constants/config.ts` ya no usa una IP publica hardcodeada.
+- Existe `.env` con `API_URL`, `API_TIMEOUT` y `EXPO_PUBLIC_API_URL`. El cliente movil usa `EXPO_PUBLIC_API_URL` si esta definido; si no, infiere la URL del backend desde el host LAN de Expo Go y apunta al puerto `8080`.
 
 ## Cliente Axios
 
@@ -31,9 +31,8 @@ Configuracion:
 Interceptor de request:
 
 - Lee `STORAGE_KEYS.TOKEN` desde `storage`.
-- Si existe token, asigna `Authorization: Bearer <token>`.
+- Si existe un token valido, asigna `Authorization: Bearer <token>`.
 - Agrega `X-Client-Type: mobile`.
-- Registra metodo, URL y headers por consola.
 
 Interceptor de response:
 

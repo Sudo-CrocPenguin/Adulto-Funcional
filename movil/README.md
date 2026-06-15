@@ -63,7 +63,15 @@ docs/                 Documentacion detallada del proyecto
 
 ## Backend y configuracion
 
-La URL del backend se define actualmente en [src/constants/config.ts](src/constants/config.ts). Existe un archivo `.env` con `API_URL` y `API_TIMEOUT`, pero el codigo no lo usa en este momento.
+La URL del backend se resuelve en [src/constants/config.ts](src/constants/config.ts). En Expo Go se infiere desde `Constants.expoConfig.hostUri`, de modo que una sesion LAN como `exp://192.168.78.161:8081` usa automaticamente `http://192.168.78.161:8080`.
+
+Para sobrescribirla, define `EXPO_PUBLIC_API_URL` en `.env`:
+
+```bash
+EXPO_PUBLIC_API_URL=http://192.168.78.161:8080
+```
+
+Si no hay host LAN disponible, Android usa `http://10.0.2.2:8080` y otros entornos usan `http://localhost:8080`.
 
 El cliente HTTP esta en [src/api/client.ts](src/api/client.ts). Agrega automaticamente:
 

@@ -125,6 +125,14 @@ Estado actual:
 - Los tipos moviles usan los valores en espanol que acepta y devuelve el backend.
 - `useEvents` normaliza entradas antiguas en mayusculas antes de enviar payloads.
 
+### Conexion al backend en Expo Go
+
+Estado actual:
+
+- `src/constants/config.ts` ya no usa una IP publica hardcodeada.
+- En Expo Go infiere `http://<host-lan-de-expo>:8080` desde `Constants.expoConfig.hostUri`.
+- `EXPO_PUBLIC_API_URL` permite sobrescribir la URL para staging, produccion o redes especiales.
+
 ### Frecuencias y estados de gastos fijos
 
 Tipo API:

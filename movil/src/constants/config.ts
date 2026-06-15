@@ -1,5 +1,35 @@
-export const API_BASE_URL = 'http://38.225.48.28:8083'
-export const API_TIMEOUT = 30000;
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+
+const DEFAULT_API_PORT = '8080';
+
+const normalizeBaseUrl = (url: string) => url.replace(/\/+$/, '');
+
+const getExpoHost = (): string | null => {
+  const hostUri = Constants.expoConfig?.hostUri ?? Constants.expoGoConfig?.debuggerHost;
+  const host = hostUri?.split(':')[0]?.trim();
+
+  return host || null;
+};
+
+const inferDevelopmentApiUrl = (): string => {
+  const expoHost = getExpoHost();
+
+  if (expoHost && expoHost !== 'localhost' && expoHost !== '127.0.0.1') {
+    return `http://${expoHost}:${DEFAULT_API_PORT}`;
+  }
+
+  if (Platform.OS === 'android') {
+    return `http://10.0.2.2:${DEFAULT_API_PORT}`;
+  }
+
+  return `http://localhost:${DEFAULT_API_PORT}`;
+};
+
+const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+
+export const API_BASE_URL = normalizeBaseUrl(configuredApiUrl || inferDevelopmentApiUrl());
+export const API_TIMEOUT = Number(process.env.EXPO_PUBLIC_API_TIMEOUT || 30000);
 
 export const STORAGE_KEYS = {
   TOKEN: 'auth_token',
