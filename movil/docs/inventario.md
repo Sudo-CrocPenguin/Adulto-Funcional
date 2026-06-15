@@ -146,7 +146,7 @@ Registro con datos personales, contrasena y clave maestra obligatoria.
 
 ### `app/(auth)/forgot-password.tsx`
 
-Recuperacion simulada de contrasena por email.
+Recuperacion de contrasena por email desde el flujo de autenticacion.
 
 ### `app/(auth)/reset-password.tsx`
 
@@ -202,13 +202,13 @@ Gestor de contrasenas protegido por clave maestra.
 
 Formulario de nueva contrasena.
 
-### `app/(app)/passwords/[id].tsx.bak`
+### `app/(app)/passwords/[id].tsx`
 
-Pantalla de edicion de contrasena no activa como ruta.
+Pantalla de edicion de contrasena activa como ruta dinamica.
 
 ### `app/(app)/passwords/master-key/create.tsx`
 
-Placeholder que redirige a perfil.
+Formulario para crear la clave maestra despues del registro.
 
 ### `app/(app)/passwords/master-key/verify.tsx`
 
@@ -216,7 +216,7 @@ Placeholder minimo.
 
 ### `app/(app)/passwords/master-key/reset-request.tsx`
 
-Pantalla de solicitud de reset de clave maestra, actualmente incompatible con `usePasswords`.
+Pantalla informativa que explica que el cambio de clave maestra requiere la clave actual.
 
 ### `app/(app)/passwords/master-key/reset-verify.tsx`
 
@@ -224,7 +224,7 @@ Pantalla para ingresar codigo de verificacion.
 
 ### `app/(app)/passwords/master-key/reset-new.tsx`
 
-Pantalla para nueva clave maestra, actualmente incompatible con `usePasswords`.
+Formulario que cambia la clave maestra mediante `PATCH /api/security/master-key`.
 
 ### `app/(app)/profile/index.tsx`
 
@@ -232,11 +232,11 @@ Perfil, actividad, datos personales y acciones de cuenta.
 
 ### `app/(app)/profile/edit.tsx`
 
-Edicion de perfil con bug en inputs.
+Edicion de perfil conectada a `PATCH /api/account/{id}`.
 
 ### `app/(app)/profile/change-password.tsx`
 
-Formulario de cambio de contrasena conectado a un TODO.
+Formulario de cambio de contrasena conectado a `PATCH /api/account/{id}/password`.
 
 ### `app/(app)/profile/settings.tsx`
 
@@ -244,7 +244,7 @@ Configuracion local de tema, notificaciones, seguridad y cuenta.
 
 ### `app/(app)/profile/delete-account.tsx`
 
-Placeholder.
+Pantalla real de eliminacion de cuenta con confirmacion `ELIMINAR`.
 
 ### `app/(app)/categories/index.tsx`
 
@@ -286,11 +286,11 @@ Mocks de dashboard, no integrados con `useDashboard`.
 
 ### `src/api/endpoints.ts`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ### `src/api/passwordsApi.ts`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ## Contextos
 
@@ -304,7 +304,7 @@ Tema claro/oscuro con storage.
 
 ### `src/contexts/MasterKeyContext.tsx`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ## Hooks
 
@@ -338,15 +338,15 @@ Perfil desde storage y estadisticas derivadas.
 
 ### `src/hooks/useAuth.ts`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ### `src/hooks/useApi.ts`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ### `src/hooks/useMasterKey.ts`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ## Servicios
 
@@ -360,19 +360,19 @@ Calculo y persistencia de racha global de login.
 
 ### `src/services/validators.ts`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ### `src/services/currencyUtils.ts`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ### `src/services/dateUtils.ts`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ### `src/services/errorHandler.ts`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ## Utilidades
 
@@ -400,7 +400,7 @@ Estilos globales base.
 
 ### `src/constants/enums.ts`
 
-Placeholder invalido.
+Placeholder valido sin implementacion de runtime.
 
 ### `constants/Colors.ts`
 
@@ -425,7 +425,7 @@ Advertencia:
 
 - Usa paths como `/finances`, pero muchas pantallas navegan con `/(app)/finances`. Expo Router puede resolver grupos, pero conviene estandarizar.
 
-### Placeholders invalidos de componentes
+### Placeholders validos de componentes
 
 Archivos common:
 

@@ -245,7 +245,6 @@ Responsabilidades:
 
 Frecuencias de UI:
 
-- `DAILY`
 - `WEEKLY`
 - `BIWEEKLY`
 - `MONTHLY`
@@ -319,9 +318,9 @@ Frecuencias:
 
 Prioridades:
 
-- `ALTA`
-- `MEDIA`
-- `BAJA`
+- `Alta`
+- `Media`
+- `Baja`
 
 ### `app/(app)/compromises/[id].tsx`
 
@@ -361,7 +360,7 @@ Responsabilidades:
 
 Notas:
 
-- La ruta de edicion por id no existe como `.tsx`; existe como `.tsx.bak`.
+- La ruta de edicion por id existe como `app/(app)/passwords/[id].tsx`.
 - `useFocusEffect` esta importado, pero no se usa.
 
 ### `app/(app)/passwords/new.tsx`

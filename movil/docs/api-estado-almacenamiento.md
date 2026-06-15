@@ -146,7 +146,24 @@ Payload:
 
 Nota:
 
-- La pantalla `profile/edit.tsx` no usa `accountApi`; llama directamente `apiClient.patch`.
+- `profile/edit.tsx` usa `useProfile`, que delega en `accountApi.updateAccount`.
+
+### `changePassword(accountId, data)`
+
+Endpoint:
+
+- `PATCH /api/account/{id}/password`
+
+Payload:
+
+- `currentPassword`
+- `newPassword`
+
+### `deleteAccount(accountId)`
+
+Endpoint:
+
+- `DELETE /api/account/{id}`
 
 ## Finanzas
 
@@ -200,9 +217,10 @@ Entidad:
 - `nextDueDate`
 - `status`
 
-Advertencia:
+Estado:
 
-- El tipo declara frecuencias y estados en espanol, pero pantallas y hooks usan valores en ingles.
+- Las frecuencias y estados usan los valores reales del backend: `WEEKLY`, `BIWEEKLY`, `MONTHLY`, `QUARTERLY`, `SEMIANNUAL`, `ANNUAL`, `ACTIVE`, `INACTIVE`.
+- La opcion `DAILY` no se expone porque el backend no la acepta.
 
 ### Categorias
 

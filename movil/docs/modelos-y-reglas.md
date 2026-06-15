@@ -129,7 +129,6 @@ Campos:
 
 Frecuencias en pantallas:
 
-- `DAILY`
 - `WEEKLY`
 - `BIWEEKLY`
 - `MONTHLY`
@@ -144,16 +143,17 @@ Estados en pantallas:
 
 Estados declarados en tipo:
 
-- `ACTIVO`
-- `INACTIVO`
-- `PAGADO`
+- `ACTIVE`
+- `INACTIVE`
 
 Frecuencias declaradas en tipo:
 
-- `DIARIO`
-- `SEMANAL`
-- `MENSUAL`
-- `ANUAL`
+- `WEEKLY`
+- `BIWEEKLY`
+- `MONTHLY`
+- `QUARTERLY`
+- `SEMIANNUAL`
+- `ANNUAL`
 
 Reglas:
 
@@ -224,25 +224,16 @@ Frecuencias:
 
 Prioridades declaradas:
 
-- `BAJA`
-- `MEDIA`
-- `ALTA`
-
-Prioridades transformadas para backend/UI:
-
 - `Baja`
 - `Media`
 - `Alta`
 
 Estados declarados:
 
-- `PENDIENTE`
-- `COMPLETADO`
-- `CANCELADO`
-
-Estados transformados:
-
 - `Pendiente`
+- `Completado`
+- `Cancelado`
+- `Pospuesto`
 - `Completado`
 - `Cancelado`
 
@@ -287,8 +278,8 @@ Validaciones de nueva contrasena:
 
 Riesgos:
 
-- Edicion de contrasena no esta activa como ruta porque el archivo esta en `.tsx.bak`.
-- Reset de clave maestra llama funciones no existentes en `usePasswords`.
+- La edicion de contrasena esta activa como ruta dinamica.
+- La recuperacion de clave maestra por correo no esta disponible; el cambio requiere la clave actual.
 
 ## Racha global
 

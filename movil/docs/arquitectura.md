@@ -4,7 +4,7 @@
 
 Adulto Funcional Movil es una app Expo/React Native con TypeScript y Expo Router. La arquitectura real del repositorio esta organizada por rutas en `app/` y por capas tecnicas en `src/`.
 
-La mayor parte de la UI vive directamente en las pantallas de `app/`. Aunque existe una carpeta `src/components/`, casi todos sus archivos son placeholders invalidos, excepto `BottomNav`. Por eso la reutilizacion visual todavia es limitada.
+La mayor parte de la UI vive directamente en las pantallas de `app/`. Aunque existe una carpeta `src/components/`, varios archivos siguen siendo placeholders sin implementacion de runtime, excepto `BottomNav`; esos placeholders ya son modulos TypeScript validos. Por eso la reutilizacion visual todavia es limitada.
 
 ## Capas
 
@@ -35,7 +35,7 @@ Maneja estado global.
 
 - `AuthContext.tsx`: usuario, autenticacion, login, registro, logout y rachas de login.
 - `ThemeContext.tsx`: tema claro/oscuro con persistencia en `AsyncStorage`.
-- `MasterKeyContext.tsx`: placeholder invalido.
+- `MasterKeyContext.tsx`: placeholder valido sin logica de runtime.
 
 ### `src/hooks/`
 
@@ -49,7 +49,7 @@ Los hooks contienen estado local de cada dominio y conectan pantallas con API.
 - `useDashboard`: agrega datos de movimientos, gastos, eventos y contrasenas.
 - `useProfile`: arma perfil desde storage y calcula estadisticas.
 
-`useAuth.ts`, `useApi.ts` y `useMasterKey.ts` son placeholders invalidos.
+`useAuth.ts`, `useApi.ts` y `useMasterKey.ts` son placeholders validos sin logica de runtime.
 
 ### `src/services/`
 
@@ -57,7 +57,7 @@ Servicios de infraestructura local.
 
 - `storage.ts`: abstraccion de almacenamiento seguro. Usa `SecureStore` en movil y `localStorage` en web.
 - `streakService.ts`: calcula racha global de login.
-- `validators.ts`, `currencyUtils.ts`, `dateUtils.ts`, `errorHandler.ts`: placeholders invalidos.
+- `validators.ts`, `currencyUtils.ts`, `dateUtils.ts`, `errorHandler.ts`: placeholders validos sin logica de runtime.
 
 ### `src/utils/`
 
@@ -73,7 +73,7 @@ Constantes compartidas.
 - `config.ts`: URL base, timeout, llaves de storage y endpoints.
 - `Colors.ts`: paleta principal.
 - `Styles.ts`: estilos globales base.
-- `enums.ts`: placeholder invalido.
+- `enums.ts`: placeholder valido sin logica de runtime.
 
 ## Flujo de arranque
 
@@ -136,7 +136,7 @@ Cuando los tres terminan de cargar:
 3. Actualiza el gasto fijo con nueva `nextDueDate`.
 4. Refresca la lista.
 
-Hay una inconsistencia importante: el tipo `FixedExpense.frequency` en `financesApi.ts` declara valores en espanol (`DIARIO`, `SEMANAL`, `MENSUAL`, `ANUAL`), pero las pantallas y `markAsPaid` usan valores en ingles (`DAILY`, `WEEKLY`, `MONTHLY`, etc.).
+El flujo usa las frecuencias y estados reales del backend financiero: `WEEKLY`, `BIWEEKLY`, `MONTHLY`, `QUARTERLY`, `SEMIANNUAL`, `ANNUAL`, `ACTIVE` e `INACTIVE`. La opcion `DAILY` fue retirada porque el backend no la acepta.
 
 ## Flujo de compromisos
 
@@ -147,7 +147,7 @@ Hay una inconsistencia importante: el tipo `FixedExpense.frequency` en `finances
 - Al completar un evento recurrente, incrementa racha local y mueve la fecha del evento a la siguiente ocurrencia.
 - Al eliminar un evento, elimina tambien la racha local asociada.
 
-Hay una inconsistencia de estados/prioridades: el tipo del API declara mayusculas (`PENDIENTE`, `COMPLETADO`, `ALTA`), pero pantallas filtran y muestran valores capitalizados (`Pendiente`, `Completado`, `Alta`).
+Los estados y prioridades de agenda usan los literales aceptados por el backend: `Pendiente`, `Completado`, `Cancelado`, `Pospuesto`, `Alta`, `Media` y `Baja`.
 
 ## Flujo de contrasenas
 
@@ -159,7 +159,7 @@ Hay una inconsistencia de estados/prioridades: el tipo del API declara mayuscula
 4. Cada contrasena se muestra oculta.
 5. Al tocar revelar, se llama `securityApi.getPassword(id)` para obtener la contrasena descifrada.
 
-La edicion de contrasenas no esta activa porque el archivo de edicion esta como `app/(app)/passwords/[id].tsx.bak`.
+La edicion de contrasenas esta activa en `app/(app)/passwords/[id].tsx`.
 
 ## Dependencias principales
 

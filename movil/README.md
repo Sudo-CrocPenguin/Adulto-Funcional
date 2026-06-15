@@ -2,7 +2,7 @@
 
 Aplicacion movil construida con Expo, React Native, TypeScript y Expo Router para organizar finanzas personales, compromisos, gastos fijos, perfil de usuario y gestor de contrasenas protegido por clave maestra.
 
-Este repositorio contiene una app en estado funcional parcial: varias pantallas principales estan implementadas, pero tambien hay archivos placeholder invalidos que actualmente impiden compilar con TypeScript. La documentacion de `docs/` describe el estado real del codigo, no solo la arquitectura esperada.
+Este repositorio contiene una app movil en estabilizacion: las pantallas principales estan implementadas, los placeholders invalidos ya no bloquean TypeScript y la documentacion de `docs/` describe el estado real del codigo, no solo la arquitectura esperada.
 
 ## Inicio rapido
 
@@ -29,7 +29,13 @@ Chequeo de tipos:
 npx tsc --noEmit
 ```
 
-Estado actual del chequeo: falla por archivos placeholder que contienen expresiones como `export src/...;`. Ver [docs/estado-tecnico.md](docs/estado-tecnico.md).
+Estado actual del chequeo: finaliza correctamente. Ver [docs/estado-tecnico.md](docs/estado-tecnico.md).
+
+Empaquetado Android verificado:
+
+```bash
+npx expo export --platform android --output-dir /tmp/adulto-funcional-mobile-export
+```
 
 ## Estructura general
 
@@ -41,7 +47,7 @@ src/hooks/            Hooks de estado y operaciones por funcionalidad
 src/services/         Servicios locales de storage y rachas
 src/utils/            Utilidades puras de validacion y moneda
 src/constants/        Configuracion, colores y estilos globales
-src/components/       Componentes reutilizables, casi todos placeholders
+src/components/       Componentes reutilizables y placeholders validos sin runtime
 assets/               Iconos, splash y fuente
 docs/                 Documentacion detallada del proyecto
 ```
@@ -75,21 +81,21 @@ El cliente HTTP esta en [src/api/client.ts](src/api/client.ts). Agrega automatic
 
 ## Funcionalidades principales
 
-- Autenticacion: login, registro con clave maestra, recuperacion simulada de contrasena.
+- Autenticacion: login, registro con clave maestra opcional y recuperacion de contrasena.
 - Dashboard: balance, proximos gastos, proximos compromisos, contador de contrasenas y grafico de tres meses.
 - Finanzas: lista de movimientos, filtro por ingresos/egresos, creacion de movimientos y categorias.
 - Gastos fijos: lista, filtros, creacion, edicion, eliminacion y registro de pago como movimiento.
 - Compromisos: lista, filtros, creacion, edicion, eliminacion, completado y rachas locales por evento recurrente.
 - Contrasenas: verificacion de clave maestra, lista, creacion, borrado y revelado individual desde backend.
-- Perfil: datos locales del usuario, estadisticas derivadas, edicion parcial, cambio de contrasena placeholder, configuracion local.
+- Perfil: datos del usuario, estadisticas derivadas, edicion parcial, cambio de contrasena y eliminacion de cuenta.
 
 ## Advertencias importantes
 
-- `npx tsc --noEmit` falla por 32 archivos placeholder invalidos.
-- La ruta de edicion de contrasenas existe solo como `.tsx.bak`, por lo que `/(app)/passwords/[id]` no esta activa para Expo Router.
+- Los 32 archivos placeholder invalidos fueron convertidos en modulos validos con `export {};`.
+- La ruta `/(app)/passwords/[id]` esta activa para Expo Router.
 - `app.json` referencia assets de notificaciones que no existen en `assets/`.
-- Algunas pantallas llaman funciones no exportadas por sus hooks, especialmente reset de clave maestra.
-- Hay inconsistencias entre enums enviados/recibidos en espanol e ingles para estados, prioridades y frecuencias.
+- El flujo de clave maestra usa crear, verificar, cambiar y cerrar sesion interna; no hay recuperacion por correo.
+- Los enums de agenda y finanzas fueron alineados con el backend actual.
 - El cambio local actual en [src/constants/config.ts](src/constants/config.ts) apunta a `http://38.225.48.28:8083`.
 
 ## Convenciones detectadas
@@ -104,4 +110,4 @@ El cliente HTTP esta en [src/api/client.ts](src/api/client.ts). Agrega automatic
 
 ## Siguiente paso recomendado
 
-Antes de ampliar funcionalidades, conviene reemplazar o eliminar los placeholders invalidos para recuperar compilacion TypeScript. Despues, alinear contratos con backend y extraer formularios/listas repetidos hacia componentes reales.
+Antes de ampliar funcionalidades, conviene completar los placeholders que se necesiten en runtime, corregir assets de notificaciones, aplicar tema en vivo desde `ThemeContext` y extraer formularios/listas repetidos hacia componentes reales.
