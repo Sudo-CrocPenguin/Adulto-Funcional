@@ -2,25 +2,26 @@ import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { agendaApi, Event } from '../api/agendaApi';
 
+export type { Event } from '../api/agendaApi';
+
 const STREAK_KEY = 'event_streaks';
 const COMPLETION_KEY = 'event_last_completion';
 
-const formatPriority = (priority: 'ALTA' | 'MEDIA' | 'BAJA'): string => {
-  switch (priority) {
-    case 'ALTA': return 'Alta';
-    case 'MEDIA': return 'Media';
-    case 'BAJA': return 'Baja';
-    default: return 'Media';
-  }
+const formatPriority = (priority: string): string => {
+  const normalized = priority.toUpperCase();
+  if (normalized === 'ALTA') return 'Alta';
+  if (normalized === 'MEDIA') return 'Media';
+  if (normalized === 'BAJA') return 'Baja';
+  return priority || 'Media';
 };
 
 const formatStatus = (status: string): string => {
-  switch (status.toUpperCase()) {
-    case 'PENDIENTE': return 'Pendiente';
-    case 'COMPLETADO': return 'Completado';
-    case 'CANCELADO': return 'Cancelado';
-    default: return 'Pendiente';
-  }
+  const normalized = status.toUpperCase();
+  if (normalized === 'PENDIENTE') return 'Pendiente';
+  if (normalized === 'COMPLETADO') return 'Completado';
+  if (normalized === 'CANCELADO') return 'Cancelado';
+  if (normalized === 'POSPUESTO') return 'Pospuesto';
+  return status || 'Pendiente';
 };
 
 // Calcular próxima fecha según frecuencia
@@ -70,7 +71,7 @@ export const useEvents = () => {
       let needsSave = false;
 
       for (const event of fetchedEvents) {
-        if (event.frequency > 0 && event.status !== 'COMPLETADO') {
+        if (event.frequency > 0 && event.status !== 'Completado') {
           const lastCompletion = completions[event.id];
           let nextDue = event.eventDate;
           if (lastCompletion) {
@@ -164,11 +165,11 @@ export const useEvents = () => {
     let newLastCompletion = today;
 
     // Si el evento es recurrente, actualizar su fecha (eventDate) y estado
-    let updatedEventData: Partial<Event> = { status: 'COMPLETADO' };
+    let updatedEventData: Partial<Event> = { status: 'Completado' };
     if (event.frequency > 0) {
       const nextDate = getNextDueDate(event.eventDate, event.frequency);
       updatedEventData = {
-        status: 'PENDIENTE', // volver a pendiente para la siguiente ocurrencia
+        status: 'Pendiente', // volver a pendiente para la siguiente ocurrencia
         eventDate: nextDate,
       };
     }

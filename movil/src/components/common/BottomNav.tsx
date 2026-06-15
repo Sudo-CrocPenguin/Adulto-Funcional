@@ -1,30 +1,31 @@
-import React from 'react';
+import React, { type ComponentProps } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
-import { router, useSegments } from 'expo-router';
+import { router, useSegments, type Href } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '../../constants/Colors';
 
-const navItems = [
-  { name: 'Inicio', path: '/', icon: 'home' },
-  { name: 'Compromisos', path: '/compromises', icon: 'calendar-check' },
-  { name: 'Finanzas', path: '/finances', icon: 'currency-usd' },
-  { name: 'Gastos Fijos', path: '/fixed-expenses', icon: 'cash' },
-  { name: 'Contraseñas', path: '/passwords', icon: 'lock' },
-  { name: 'Perfil', path: '/profile', icon: 'account' },
+type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
+
+const navItems: Array<{ name: string; segment: string; path: Href; icon: IconName }> = [
+  { name: 'Inicio', segment: '', path: '/(app)', icon: 'home' },
+  { name: 'Compromisos', segment: 'compromises', path: '/(app)/compromises', icon: 'calendar-check' },
+  { name: 'Finanzas', segment: 'finances', path: '/(app)/finances', icon: 'currency-usd' },
+  { name: 'Gastos Fijos', segment: 'fixed-expenses', path: '/(app)/fixed-expenses', icon: 'cash' },
+  { name: 'Contraseñas', segment: 'passwords', path: '/(app)/passwords', icon: 'lock' },
+  { name: 'Perfil', segment: 'profile', path: '/(app)/profile', icon: 'account' },
 ];
 
 export const BottomNav = () => {
   const segments = useSegments();
-  // Obtener la ruta actual: puede ser ['(app)', 'compromises'] -> '/compromises'
-  const currentPath = segments.length > 1 ? `/${segments[segments.length - 1]}` : '/';
+  const currentSegment = segments.length > 1 ? String(segments[1]) : '';
 
   return (
     <View style={styles.container}>
       {navItems.map((item) => {
-        const isActive = currentPath === item.path;
+        const isActive = currentSegment === item.segment;
         return (
           <TouchableOpacity
-            key={item.path}
+            key={item.name}
             style={styles.navItem}
             onPress={() => router.push(item.path)}
           >

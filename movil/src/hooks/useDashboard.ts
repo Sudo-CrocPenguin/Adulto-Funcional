@@ -44,7 +44,7 @@ export const useDashboard = () => {
         .slice(0, 3);
 
       const upcomingEvents = events
-        .filter(e => e.status !== 'COMPLETADO')
+        .filter(e => e.status !== 'Completado')
         .sort((a, b) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime())
         .slice(0, 3);
 

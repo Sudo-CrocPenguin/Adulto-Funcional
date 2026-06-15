@@ -1,16 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router } from 'expo-router';
 import { usePasswords } from '../../../../src/hooks/usePasswords';
 import { Colors } from '../../../../src/constants/Colors';
 
 export default function ResetMasterKeyNewScreen() {
-  const { resetMasterKeyVerify, loading } = usePasswords();
-  const { code } = useLocalSearchParams<{ code: string }>();
+  const { changeMasterKey, verifying } = usePasswords();
+  const [currentKey, setCurrentKey] = useState('');
   const [newKey, setNewKey] = useState('');
   const [confirmKey, setConfirmKey] = useState('');
 
   const handleReset = async () => {
+    if (!currentKey) {
+      Alert.alert('Error', 'Ingrese la clave maestra actual');
+      return;
+    }
     if (!newKey || newKey.length < 8) {
       Alert.alert('Error', 'Mínimo 8 caracteres');
       return;
@@ -19,19 +23,26 @@ export default function ResetMasterKeyNewScreen() {
       Alert.alert('Error', 'No coinciden');
       return;
     }
-    await resetMasterKeyVerify(code!, newKey);
-    router.back();
+    try {
+      await changeMasterKey(currentKey, newKey);
+      Alert.alert('Clave maestra actualizada', 'Tus contraseñas fueron recifradas con la nueva clave.');
+      router.replace('/(app)/passwords');
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.message || err.message);
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Restablecer Contraseña Maestra</Text>
+      <Text style={styles.label}>Clave maestra actual</Text>
+      <TextInput style={styles.input} secureTextEntry value={currentKey} onChangeText={setCurrentKey} placeholder="Clave actual" />
       <Text style={styles.label}>Nueva contraseña maestra</Text>
       <TextInput style={styles.input} secureTextEntry value={newKey} onChangeText={setNewKey} placeholder="●●●●●" />
       <Text style={styles.label}>Confirmar contraseña maestra</Text>
       <TextInput style={styles.input} secureTextEntry value={confirmKey} onChangeText={setConfirmKey} placeholder="●●●●●" />
-      <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Restablecer</Text>}
+      <TouchableOpacity style={styles.button} onPress={handleReset} disabled={verifying}>
+        {verifying ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Actualizar</Text>}
       </TouchableOpacity>
     </View>
   );

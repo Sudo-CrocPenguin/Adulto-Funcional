@@ -5,12 +5,12 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFixedExpenses } from '../../../src/hooks/useFixedExpenses';
 import { useCategories } from '../../../src/hooks/useCategories';
 import { Colors } from '../../../src/constants/Colors';
+import type { FixedExpense, FixedExpenseFrequency, FixedExpenseStatus } from '../../../src/api/financesApi';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { BottomNav } from '../../../src/components/common/BottomNav';
 
-const frequencyOptions = [
-  { label: 'Diario', value: 'DAILY' },
+const frequencyOptions: Array<{ label: string; value: FixedExpenseFrequency }> = [
   { label: 'Semanal', value: 'WEEKLY' },
   { label: 'Quincenal', value: 'BIWEEKLY' },
   { label: 'Mensual', value: 'MONTHLY' },
@@ -19,7 +19,7 @@ const frequencyOptions = [
   { label: 'Anual', value: 'ANNUAL' },
 ];
 
-const statusOptions = [
+const statusOptions: Array<{ label: string; value: FixedExpenseStatus }> = [
   { label: 'Activo', value: 'ACTIVE' },
   { label: 'Inactivo', value: 'INACTIVE' },
 ];
@@ -32,11 +32,11 @@ export default function EditFixedExpenseScreen() {
 
   const [loading, setLoading] = useState(true);
   const [formLoading, setFormLoading] = useState(true);
-  const [expense, setExpense] = useState<any>(null);
+  const [expense, setExpense] = useState<FixedExpense | null>(null);
   const [name, setName] = useState('');
-  const [frequency, setFrequency] = useState('MONTHLY');
+  const [frequency, setFrequency] = useState<FixedExpenseFrequency>('MONTHLY');
   const [amount, setAmount] = useState('');
-  const [status, setStatus] = useState('ACTIVE');
+  const [status, setStatus] = useState<FixedExpenseStatus>('ACTIVE');
   const [nextDueDate, setNextDueDate] = useState(new Date());
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);

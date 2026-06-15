@@ -6,6 +6,7 @@ import { usePasswords } from '../../../src/hooks/usePasswords';
 import { securityApi } from '../../../src/api/securityApi';
 import { Colors } from '../../../src/constants/Colors';
 import { BottomNav } from '../../../src/components/common/BottomNav';
+import type { PasswordEntry } from '../../../src/api/securityApi';
 
 export default function PasswordsScreen() {
   const insets = useSafeAreaInsets();
@@ -31,7 +32,10 @@ export default function PasswordsScreen() {
       <SafeAreaView style={[styles.safeContainer, { paddingTop: insets.top }]}>
         <View style={styles.verifyContainer}>
           <Text style={styles.verifyTitle}>Clave maestra no configurada</Text>
-          <Text style={styles.verifySubtitle}>No se puede acceder al gestor de contraseñas.</Text>
+          <Text style={styles.verifySubtitle}>Crea una clave maestra para activar el gestor de contraseñas.</Text>
+          <TouchableOpacity style={styles.verifyButton} onPress={() => router.push('/(app)/passwords/master-key/create')}>
+            <Text style={styles.verifyButtonText}>Crear clave maestra</Text>
+          </TouchableOpacity>
         </View>
         <BottomNav />
       </SafeAreaView>
@@ -121,7 +125,7 @@ export default function PasswordsScreen() {
     }
   };
 
-  const renderItem = ({ item }) => {
+  const renderItem = ({ item }: { item: PasswordEntry }) => {
     const isVisible = !!visiblePasswords[item.id];
     const isLoadingPassword = loadingPasswords[item.id];
     return (
@@ -142,7 +146,7 @@ export default function PasswordsScreen() {
         </View>
         <Text style={styles.date}>Último cambio: {new Date(item.lastChangeDate).toLocaleDateString()}</Text>
         <View style={styles.row}>
-          <TouchableOpacity onPress={() => router.push(`/(app)/passwords/${item.id}`)}>
+          <TouchableOpacity onPress={() => router.push({ pathname: '/(app)/passwords/[id]', params: { id: item.id } } as any)}>
             <Text style={styles.edit}>✏️ Editar</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => Alert.alert('Eliminar', '¿Eliminar esta contraseña?', [

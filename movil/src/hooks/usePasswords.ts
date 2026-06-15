@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { securityApi, PasswordEntry } from '../api/securityApi';
 import { useAuth } from '../contexts/AuthContext';
+import { STORAGE_KEYS } from '../constants/config';
+import { storage } from '../services/storage';
 
 const PASSWORD_COUNT_KEY = 'password_count';
 
@@ -12,15 +14,33 @@ export const usePasswords = () => {
   const [error, setError] = useState<string | null>(null);
   const [masterKeyVerified, setMasterKeyVerified] = useState(false);
   const [verifying, setVerifying] = useState(false);
-  const hasMasterKey = user?.hasMasterKey || false;
+  const [hasMasterKey, setHasMasterKey] = useState(user?.hasMasterKey || false);
 
   // No cargar estado de persistencia al inicio (para que siempre pida la clave)
   // En lugar, exponemos función para resetear la verificación
 
-  const resetVerification = () => {
+  const resetVerification = async () => {
+    try {
+      await securityApi.clearMasterKeySession();
+    } catch {
+      // La sesión local se cierra aunque el backend no pueda limpiar la sesión remota.
+    }
     setMasterKeyVerified(false);
     setError(null);
   };
+
+  const refreshMasterKeyStatus = useCallback(async () => {
+    try {
+      const response = await securityApi.getMasterKeyStatus();
+      const status = response.data.data.hasMasterKey;
+      setHasMasterKey(status);
+      await storage.setItem(STORAGE_KEYS.HAS_MASTER_KEY, status.toString());
+      return status;
+    } catch {
+      setHasMasterKey(user?.hasMasterKey || false);
+      return user?.hasMasterKey || false;
+    }
+  }, [user?.hasMasterKey]);
 
   const verifyMasterKey = async (masterKey: string) => {
     setVerifying(true);
@@ -40,6 +60,19 @@ export const usePasswords = () => {
 
   const saveCount = async (count: number) => {
     await AsyncStorage.setItem(PASSWORD_COUNT_KEY, count.toString());
+  };
+
+  const createMasterKey = async (masterKey: string) => {
+    await securityApi.createMasterKey(masterKey);
+    setHasMasterKey(true);
+    setMasterKeyVerified(true);
+    await storage.setItem(STORAGE_KEYS.HAS_MASTER_KEY, 'true');
+  };
+
+  const changeMasterKey = async (currentMasterKey: string, newMasterKey: string) => {
+    await securityApi.changeMasterKey(currentMasterKey, newMasterKey);
+    setMasterKeyVerified(true);
+    await storage.setItem(STORAGE_KEYS.HAS_MASTER_KEY, 'true');
   };
 
   const fetchPasswords = useCallback(async () => {
@@ -91,6 +124,14 @@ export const usePasswords = () => {
     }
   }, [masterKeyVerified, fetchPasswords]);
 
+  useEffect(() => {
+    setHasMasterKey(user?.hasMasterKey || false);
+  }, [user?.hasMasterKey]);
+
+  useEffect(() => {
+    refreshMasterKeyStatus();
+  }, [refreshMasterKeyStatus]);
+
   return {
     passwords,
     loading,
@@ -100,6 +141,9 @@ export const usePasswords = () => {
     masterKeyVerified,
     verifyMasterKey,
     resetVerification,
+    refreshMasterKeyStatus,
+    createMasterKey,
+    changeMasterKey,
     fetchPasswords,
     createPassword,
     updatePassword,

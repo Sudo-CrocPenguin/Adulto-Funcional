@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Alert, Image, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import { Colors } from '../../src/constants/Colors';
-import apiClient from '../../src/api/client';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -80,10 +79,10 @@ export default function ForgotPasswordScreen() {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: '500', marginBottom: 8, color: Colors.text },
   input: { borderWidth: 1, borderColor: Colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 16, backgroundColor: '#fff' },
   button: { backgroundColor: Colors.primary, paddingVertical: 14, borderRadius: 30, alignItems: 'center' },
   buttonDisabled: { backgroundColor: Colors.textSecondary, opacity: 0.6 },
   buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-};
+});

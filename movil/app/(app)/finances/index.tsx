@@ -6,6 +6,7 @@ import { useMovements } from '../../../src/hooks/useMovements';
 import { Colors } from '../../../src/constants/Colors';
 import { BottomNav } from '../../../src/components/common/BottomNav';
 import { formatCurrency, formatCurrencyParts } from '../../../src/utils/currencyUtils';
+import type { Movement } from '../../../src/api/financesApi';
 
 export default function FinancesScreen() {
   const insets = useSafeAreaInsets();
@@ -28,7 +29,7 @@ export default function FinancesScreen() {
     return true;
   });
 
-  const renderItem = ({ item }) => {
+  const renderItem = ({ item }: { item: Movement }) => {
     const parts = formatCurrencyParts(item.amount);
     return (
       <View style={styles.movementCard}>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Image, StyleSheet } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { router } from 'expo-router';
 import { Colors } from '../../src/constants/Colors';
@@ -112,7 +112,7 @@ export default function LoginScreen() {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: '500', marginBottom: 8, color: Colors.text },
   input: { borderWidth: 1, borderColor: Colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 12, marginBottom: 16, backgroundColor: '#fff' },
-};
+});

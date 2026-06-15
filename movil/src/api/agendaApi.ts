@@ -1,17 +1,20 @@
 import apiClient from './client';
 import { ApiResponse } from '../types/auth.types';
 
+export type EventPriority = 'Baja' | 'Media' | 'Alta';
+export type EventStatus = 'Pendiente' | 'Completado' | 'Cancelado' | 'Pospuesto';
+
 export interface Event {
   id: string;
   title: string;
-  priority: 'BAJA' | 'MEDIA' | 'ALTA';
+  priority: EventPriority;
   eventDate: string;
   frequency: number; // 0=único, 1=diario, 7=semanal, 30=mensual, 365=anual
   reminder: string;
   startHour: string;
   endHour: string;
   description?: string;
-  status: 'PENDIENTE' | 'COMPLETADO' | 'CANCELADO';
+  status: EventStatus;
   category?: { id: string; name: string };
   streak?: number;          // racha (solo para recurrentes)
   lastCompletionDate?: string; // última vez que se completó (ISO)

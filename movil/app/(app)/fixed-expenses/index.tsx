@@ -6,6 +6,7 @@ import { useFixedExpenses } from '../../../src/hooks/useFixedExpenses';
 import { Colors } from '../../../src/constants/Colors';
 import { BottomNav } from '../../../src/components/common/BottomNav';
 import { formatCurrencyParts } from '../../../src/utils/currencyUtils';
+import type { FixedExpense } from '../../../src/api/financesApi';
 
 type FilterType = 'Todos' | 'Próximos a vencer';
 
@@ -29,7 +30,7 @@ export default function FixedExpensesScreen() {
     return days > 0 ? `${days} días` : 'hoy';
   };
 
-  const handleMarkAsPaid = (item) => {
+  const handleMarkAsPaid = (item: FixedExpense) => {
     Alert.alert(
       'Confirmar pago',
       `¿Registrar pago de ${item.name} por $${item.amount}?`,
@@ -40,7 +41,7 @@ export default function FixedExpensesScreen() {
     );
   };
 
-  const renderItem = ({ item }) => {
+  const renderItem = ({ item }: { item: FixedExpense }) => {
     const parts = formatCurrencyParts(item.amount);
     return (
       <View style={styles.card}>

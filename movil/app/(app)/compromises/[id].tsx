@@ -6,6 +6,7 @@ import { useCategories } from '../../../src/hooks/useCategories';
 import { Colors } from '../../../src/constants/Colors';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import type { Event, EventPriority } from '../../../src/api/agendaApi';
 
 export default function EditCompromisoScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -16,7 +17,7 @@ export default function EditCompromisoScreen() {
   const [title, setTitle] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [frequency, setFrequency] = useState(0);
-  const [priority, setPriority] = useState<'ALTA' | 'MEDIA' | 'BAJA'>('MEDIA');
+  const [priority, setPriority] = useState<EventPriority>('Media');
   const [eventDate, setEventDate] = useState(new Date());
   const [startHour, setStartHour] = useState(new Date());
   const [endHour, setEndHour] = useState(new Date());
@@ -53,14 +54,11 @@ export default function EditCompromisoScreen() {
     }
   }, [events, id]);
 
-  const fillForm = (event: any) => {
+  const fillForm = (event: Event) => {
     setTitle(event.title);
     setCategoryId(event.category?.id || '');
     setFrequency(event.frequency);
-    const priorityMap: Record<string, 'ALTA' | 'MEDIA' | 'BAJA'> = {
-      Alta: 'ALTA', Media: 'MEDIA', Baja: 'BAJA'
-    };
-    setPriority(priorityMap[event.priority] || 'MEDIA');
+    setPriority(event.priority);
     setEventDate(new Date(event.eventDate));
     setStartHour(new Date(event.startHour));
     setEndHour(new Date(event.endHour));
@@ -161,7 +159,7 @@ export default function EditCompromisoScreen() {
 
       <Text style={styles.label}>Prioridad</Text>
       <View style={styles.priorityRow}>
-        {(['ALTA', 'MEDIA', 'BAJA'] as const).map(p => (
+        {(['Alta', 'Media', 'Baja'] as const).map(p => (
           <TouchableOpacity key={p} onPress={() => setPriority(p)} style={[styles.priorityButton, priority === p && styles.priorityActive]}>
             <Text style={styles.priorityText}>{p}</Text>
           </TouchableOpacity>

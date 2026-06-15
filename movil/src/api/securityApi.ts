@@ -20,14 +20,23 @@ export interface UpdatePasswordRequest {
   lastChangeDate?: string;
 }
 
+export interface MasterKeyStatusResponse {
+  hasMasterKey: boolean;
+  sessionActive?: boolean;
+}
+
 export const securityApi = {
   // Master Key
   createMasterKey: (masterKey: string) =>
     apiClient.post<ApiResponse<void>>('/api/security/master-key', { masterKey }),
   verifyMasterKey: (masterKey: string) =>
-    apiClient.post<ApiResponse<void>>('/api/security/passwords/master-key/verify', { masterKey }),
+    apiClient.post<ApiResponse<void>>('/api/security/master-key/verify', { masterKey }),
+  changeMasterKey: (currentMasterKey: string, newMasterKey: string) =>
+    apiClient.patch<ApiResponse<void>>('/api/security/master-key', { currentMasterKey, newMasterKey }),
+  clearMasterKeySession: () =>
+    apiClient.delete<ApiResponse<void>>('/api/security/master-key/session'),
   getMasterKeyStatus: () =>
-    apiClient.get<ApiResponse<{ hasMasterKey: boolean }>>('/api/security/master-key/status'),
+    apiClient.get<ApiResponse<MasterKeyStatusResponse>>('/api/security/master-key/status'),
 
   // Passwords CRUD
   getPasswords: () =>

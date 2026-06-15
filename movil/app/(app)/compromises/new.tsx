@@ -6,13 +6,14 @@ import { useCategories } from '../../../src/hooks/useCategories';
 import { Colors } from '../../../src/constants/Colors';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import type { EventPriority } from '../../../src/api/agendaApi';
 
 export default function NewCompromisoScreen() {
   const { createEvent } = useEvents();
   const { categories, loading: categoriesLoading, createCategory } = useCategories('AGENDA');
   const [title, setTitle] = useState('');
   const [frequency, setFrequency] = useState(0);
-  const [priority, setPriority] = useState<'ALTA' | 'MEDIA' | 'BAJA'>('MEDIA');
+  const [priority, setPriority] = useState<EventPriority>('Media');
   const [date, setDate] = useState(new Date());
   const [startHour, setStartHour] = useState(new Date());
   const [endHour, setEndHour] = useState(new Date(new Date().getTime() + 3600000));
@@ -74,7 +75,7 @@ export default function NewCompromisoScreen() {
         startHour: startHour.toISOString(),
         endHour: endHour.toISOString(),
         description: '',
-        status: 'PENDIENTE',
+        status: 'Pendiente',
         category: { id: selectedCategory.id, name: selectedCategory.name },
       });
       router.back();
@@ -121,7 +122,7 @@ export default function NewCompromisoScreen() {
 
       <Text style={styles.label}>Prioridad</Text>
       <View style={styles.priorityRow}>
-        {(['ALTA', 'MEDIA', 'BAJA'] as const).map(p => (
+        {(['Alta', 'Media', 'Baja'] as const).map(p => (
           <TouchableOpacity key={p} onPress={() => setPriority(p)} style={[styles.priorityButton, priority === p && styles.priorityActive]}>
             <Text style={styles.priorityText}>{p}</Text>
           </TouchableOpacity>

@@ -9,7 +9,7 @@ import { useAuth } from '../../../src/contexts/AuthContext';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState({
     compromisos: true,
@@ -87,6 +87,13 @@ export default function SettingsScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Seguridad</Text>
+          <TouchableOpacity
+            style={styles.option}
+            onPress={() => router.push(user?.hasMasterKey ? '/(app)/passwords/master-key/reset-request' : '/(app)/passwords/master-key/create')}
+          >
+            <Text style={styles.optionText}>{user?.hasMasterKey ? 'Cambiar clave maestra' : 'Crear clave maestra'}</Text>
+            <Text style={styles.optionValue}>›</Text>
+          </TouchableOpacity>
           <View style={styles.switchRow}>
             <Text style={styles.optionText}>Verificación en dos pasos</Text>
             <Switch value={twoFactor} onValueChange={setTwoFactor} />

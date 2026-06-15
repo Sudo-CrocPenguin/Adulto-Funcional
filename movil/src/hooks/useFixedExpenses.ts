@@ -21,17 +21,15 @@ export const useFixedExpenses = () => {
   }, []);
 
   const createExpense = async (data: Omit<FixedExpense, 'id'>) => {
-    const statusValue = data.status === 'ACTIVO' ? 'ACTIVE' : 
-                        data.status === 'INACTIVO' ? 'INACTIVE' : data.status;
     const payload = {
       name: data.name,
       frequency: data.frequency,
       amount: data.amount,
-      status: statusValue,
+      status: data.status,
       nextDueDate: data.nextDueDate,
       categoryId: data.category?.id,
     };
-    const response = await financesApi.createFixedExpense(payload as any);
+    const response = await financesApi.createFixedExpense(payload);
     const newExpense = response.data.data;
     setExpenses(prev => [newExpense, ...prev]);
     return newExpense;
@@ -39,10 +37,6 @@ export const useFixedExpenses = () => {
 
   const updateExpense = async (id: string, data: Partial<FixedExpense>) => {
     const payload: any = { ...data };
-    if (data.status) {
-      payload.status = data.status === 'ACTIVO' ? 'ACTIVE' : 
-                       data.status === 'INACTIVO' ? 'INACTIVE' : data.status;
-    }
     if (data.category) {
       payload.categoryId = data.category.id;
       delete payload.category;
@@ -70,7 +64,6 @@ export const useFixedExpenses = () => {
     const currentDue = new Date(expense.nextDueDate);
     let nextDueDate = new Date(currentDue);
     switch (expense.frequency) {
-      case 'DAILY': nextDueDate.setDate(currentDue.getDate() + 1); break;
       case 'WEEKLY': nextDueDate.setDate(currentDue.getDate() + 7); break;
       case 'BIWEEKLY': nextDueDate.setDate(currentDue.getDate() + 14); break;
       case 'MONTHLY': nextDueDate.setMonth(currentDue.getMonth() + 1); break;

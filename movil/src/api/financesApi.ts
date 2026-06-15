@@ -10,15 +10,36 @@ export interface Movement {
   category?: { id: string; name: string };
 }
 
+export type FixedExpenseFrequency =
+  | 'WEEKLY'
+  | 'BIWEEKLY'
+  | 'MONTHLY'
+  | 'QUARTERLY'
+  | 'SEMIANNUAL'
+  | 'ANNUAL';
+
+export type FixedExpenseStatus = 'ACTIVE' | 'INACTIVE';
+
 export interface FixedExpense {
   id: string;
   name: string;
   category?: { id: string; name: string };
-  frequency: 'DIARIO' | 'SEMANAL' | 'MENSUAL' | 'ANUAL';
+  frequency: FixedExpenseFrequency;
   amount: number;
   nextDueDate: string;
-  status: 'ACTIVO' | 'INACTIVO' | 'PAGADO';
+  status: FixedExpenseStatus;
 }
+
+export interface CreateFixedExpenseRequest {
+  name: string;
+  categoryId?: string;
+  frequency: FixedExpenseFrequency;
+  amount: number;
+  nextDueDate: string;
+  status: FixedExpenseStatus;
+}
+
+export type UpdateFixedExpenseRequest = Partial<CreateFixedExpenseRequest>;
 
 export interface Category {
   id: string;
@@ -40,9 +61,9 @@ export const financesApi = {
   // Fixed Expenses
   getFixedExpenses: (params?: { status?: string; categoryId?: string }) =>
     apiClient.get<ApiResponse<FixedExpense[]>>('/api/finances/fixed-expenses', { params }),
-  createFixedExpense: (data: Omit<FixedExpense, 'id'>) =>
+  createFixedExpense: (data: CreateFixedExpenseRequest) =>
     apiClient.post<ApiResponse<FixedExpense>>('/api/finances/fixed-expenses', data),
-  updateFixedExpense: (id: string, data: Partial<FixedExpense>) =>
+  updateFixedExpense: (id: string, data: UpdateFixedExpenseRequest) =>
     apiClient.patch<ApiResponse<FixedExpense>>(`/api/finances/fixed-expenses/${id}`, data),
   deleteFixedExpense: (id: string) =>
     apiClient.delete<ApiResponse<void>>(`/api/finances/fixed-expenses/${id}`),

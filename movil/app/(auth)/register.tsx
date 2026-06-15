@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Alert, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform, Alert, Image, StyleSheet } from 'react-native';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { router } from 'expo-router';
 import { Colors } from '../../src/constants/Colors';
+import type { RegisterRequest } from '../../src/types/auth.types';
 
 export default function RegisterScreen() {
   const { register, isLoading } = useAuth();
@@ -28,20 +29,20 @@ export default function RegisterScreen() {
     if (!form.password) { setError('La contraseña es obligatoria'); return; }
     if (form.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return; }
     if (form.password !== form.confirmPassword) { setError('Las contraseñas no coinciden'); return; }
-    // Validaciones de clave maestra (obligatoria)
-    if (!form.masterKey) { setError('La clave maestra es obligatoria'); return; }
-    if (form.masterKey.length < 8) { setError('La clave maestra debe tener al menos 8 caracteres'); return; }
-    if (form.masterKey !== form.confirmMasterKey) { setError('Las claves maestras no coinciden'); return; }
+    const shouldCreateMasterKey = Boolean(form.masterKey || form.confirmMasterKey);
+    if (shouldCreateMasterKey && form.masterKey.length < 8) { setError('La clave maestra debe tener al menos 8 caracteres'); return; }
+    if (shouldCreateMasterKey && form.masterKey !== form.confirmMasterKey) { setError('Las claves maestras no coinciden'); return; }
     setError('');
     try {
-      await register({
+      const payload: RegisterRequest = {
         names: form.names.trim(),
         lastnames: form.lastnames.trim(),
         phone: form.phone.trim(),
         email: form.email.trim(),
         password: form.password,
-        masterKey: form.masterKey,
-      });
+      };
+      if (shouldCreateMasterKey) payload.masterKey = form.masterKey;
+      await register(payload);
       router.replace('/(app)');
     } catch (err: any) {
       setError(err.message);
@@ -90,7 +91,7 @@ export default function RegisterScreen() {
             <TouchableOpacity onPress={() => setShowConfirm(!showConfirm)} style={{ paddingHorizontal: 12 }}><Text>{showConfirm ? '👁️' : '👁️‍🗨️'}</Text></TouchableOpacity>
           </View>
 
-          <Text style={styles.label}>Clave Maestra (obligatoria)</Text>
+          <Text style={styles.label}>Clave Maestra (opcional)</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.border, borderRadius: 12 }}>
             <TextInput style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 12 }} secureTextEntry={!showMasterKey} value={form.masterKey} onChangeText={(t) => setForm({ ...form, masterKey: t })} placeholder="Mínimo 8 caracteres" />
             <TouchableOpacity onPress={() => setShowMasterKey(!showMasterKey)} style={{ paddingHorizontal: 12 }}><Text>{showMasterKey ? '👁️' : '👁️‍🗨️'}</Text></TouchableOpacity>
@@ -116,7 +117,7 @@ export default function RegisterScreen() {
   );
 }
 
-const styles = {
+const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: '500', marginTop: 12, marginBottom: 6, color: Colors.text },
   input: { borderWidth: 1, borderColor: Colors.border, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 8, backgroundColor: '#fff' },
-};
+});
