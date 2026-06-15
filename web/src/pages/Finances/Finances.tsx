@@ -1,17 +1,7 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import styles from "./Finances.module.css"
 import { Plus, Search, X, ArrowUp, ArrowDown, Trash2 } from "lucide-react"
-
-interface Movement {
-  id: number
-  type: "Ingreso" | "Egreso"
-  title: string
-  category: string
-  amount: number
-  entryDate: string      
-  registerDate: string   
-  description?: string
-}
+import financesService, { type Movement } from "../../services/financeService"
 
 const formatCurrency = (amount: number) =>
   "$" + amount.toLocaleString("es-CO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -23,55 +13,26 @@ const formatDate = (dateStr: string) => {
   return `${day}/${months[parseInt(month) - 1]}/${year}`
 }
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response
+    if (response?.data?.message) return response.data.message
+  }
+
+  return error instanceof Error ? error.message : fallback
+}
+
 function Finances() {
   const [showModal, setShowModal]           = useState(false)
   const [deleteTarget, setDeleteTarget]     = useState<Movement | null>(null)
   const [detailTarget, setDetailTarget]     = useState<Movement | null>(null)
   const [search, setSearch]                 = useState("")
   const [filterType, setFilterType]         = useState("")
+  const [loading, setLoading]               = useState(true)
+  const [saving, setSaving]                 = useState(false)
+  const [error, setError]                   = useState("")
 
-  // ─── Estado de movimientos 
-  // TODO: reemplazar este estado inicial por una llamada GET al backend cuando esté listo
-  const [movements, setMovements] = useState<Movement[]>([
-    {
-      id: 1,
-      type: "Ingreso",
-      title: "Salario",
-      category: "Trabajo",
-      amount: 1500,
-      entryDate: "2026-02-20",
-      registerDate: "2026-02-20",
-      description: "Pago mensual de nómina",
-    },
-    {
-      id: 2,
-      type: "Egreso",
-      title: "Supermercado",
-      category: "Alimentación",
-      amount: 180,
-      entryDate: "2026-02-21",
-      registerDate: "2026-02-21",
-      description: "",
-    },
-    {
-      id: 3,
-      type: "Ingreso",
-      title: "Transferencia",
-      category: "Personal",
-      amount: 500,
-      entryDate: "2026-02-21",
-      registerDate: "2026-02-21",
-      description: "Transferencia recibida de familiar",
-    },
-  ])
-
-  // TODO: GET /api/movements — descomentar cuando el backend esté listo
-  // useEffect(() => {
-  //   fetch("/api/movements")
-  //     .then((res) => res.json())
-  //     .then((data) => setMovements(data))
-  //     .catch((err) => console.error("Error al cargar movimientos:", err))
-  // }, [])
+  const [movements, setMovements] = useState<Movement[]>([])
 
   // ─── Formulario 
   const [formData, setFormData] = useState({
@@ -84,6 +45,30 @@ function Finances() {
     description: "",
   })
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadMovements = async () => {
+      setLoading(true)
+      setError("")
+
+      try {
+        const data = await financesService.getAll()
+        if (mounted) setMovements(data)
+      } catch (err) {
+        if (mounted) setError(getErrorMessage(err, "No se pudieron cargar los movimientos."))
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    void loadMovements()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   // ─── Filtrado 
   const filteredMovements = useMemo(() => {
@@ -110,35 +95,30 @@ function Finances() {
   }
 
   // ─── Agregar movimiento 
-  const handleAddMovement = () => {
+  const handleAddMovement = async () => {
     const errors = validateForm()
     if (Object.keys(errors).length > 0) { setFormErrors(errors); return }
 
-    const newMovement: Movement = {
-      id: Date.now(), // TODO: quitar, el backend asignará el id real
-      type:         formData.type as "Ingreso" | "Egreso",
-      title:        formData.title,
-      category:     formData.category,
-      amount:       Number(formData.amount),
-      entryDate:    formData.entryDate,
-      registerDate: formData.registerDate,
-      description:  formData.description,
+    setSaving(true)
+    setError("")
+
+    try {
+      const created = await financesService.create({
+        type:         formData.type as "Ingreso" | "Egreso",
+        title:        formData.title,
+        category:     formData.category,
+        amount:       Number(formData.amount),
+        entryDate:    formData.entryDate,
+        registerDate: formData.registerDate,
+        description:  formData.description,
+      })
+      setMovements((current) => [created, ...current])
+      handleCloseModal()
+    } catch (err) {
+      setError(getErrorMessage(err, "No se pudo crear el movimiento."))
+    } finally {
+      setSaving(false)
     }
-
-    // TODO: POST /api/movements — descomentar cuando el backend esté listo
-    // fetch("/api/movements", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(newMovement),
-    // })
-    //   .then((res) => res.json())
-    //   .then((created: Movement) => setMovements([created, ...movements]))
-    //   .catch((err) => console.error("Error al crear movimiento:", err))
-
-    // TODO: eliminar esta línea cuando el backend esté listo (moverla dentro del .then)
-    setMovements([newMovement, ...movements])
-
-    handleCloseModal()
   }
 
   const handleCloseModal = () => {
@@ -148,15 +128,16 @@ function Finances() {
   }
 
   // ─── Eliminar movimiento 
-  const handleDelete = (id: number) => {
-    // TODO: DELETE /api/movements/:id — descomentar cuando el backend esté listo
-    // fetch(`/api/movements/${id}`, { method: "DELETE" })
-    //   .then(() => setMovements(movements.filter((m) => m.id !== id)))
-    //   .catch((err) => console.error("Error al eliminar movimiento:", err))
+  const handleDelete = async (id: string) => {
+    setError("")
 
-    // TODO: eliminar esta línea y moverla dentro del .then()
-    setMovements(movements.filter((m) => m.id !== id))
-    setDeleteTarget(null)
+    try {
+      await financesService.delete(id)
+      setMovements((current) => current.filter((m) => m.id !== id))
+      setDeleteTarget(null)
+    } catch (err) {
+      setError(getErrorMessage(err, "No se pudo eliminar el movimiento."))
+    }
   }
 
   // ─── Helpers form 
@@ -166,6 +147,7 @@ function Finances() {
   return (
     <section className={styles.content}>
       <h2 className={styles.title}>Finanzas</h2>
+      {error && <p className={styles.empty}>{error}</p>}
 
       {/* ── RESUMEN ── */}
       <div className={styles.summaryGrid}>
@@ -225,7 +207,9 @@ function Finances() {
 
       {/* ── LISTA DE MOVIMIENTOS ── */}
       <div className={styles.movements}>
-        {filteredMovements.map((movement) => (
+        {loading && <p className={styles.empty}>Cargando movimientos...</p>}
+
+        {!loading && filteredMovements.map((movement) => (
           <div
             key={movement.id}
             className={styles.movementCard}
@@ -255,7 +239,7 @@ function Finances() {
             </button>
           </div>
         ))}
-        {filteredMovements.length === 0 && (
+        {!loading && filteredMovements.length === 0 && (
           <p className={styles.empty}>No se encontraron movimientos.</p>
         )}
       </div>
@@ -368,7 +352,9 @@ function Finances() {
 
             <div className={styles.modalButtons}>
               <button className={styles.cancelButton} onClick={handleCloseModal}>Cancelar</button>
-              <button className={styles.saveButton} onClick={handleAddMovement}>Guardar</button>
+              <button className={styles.saveButton} onClick={handleAddMovement} disabled={saving}>
+                {saving ? "Guardando..." : "Guardar"}
+              </button>
             </div>
           </div>
         </div>

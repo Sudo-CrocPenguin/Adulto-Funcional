@@ -1,16 +1,20 @@
-import { useMemo, useState } from "react" 
+import { useEffect, useMemo, useState } from "react" 
 import styles from "./FixedExpenses.module.css"
 import { Plus, X, Trash2, CheckCircle2, Clock } from "lucide-react"
+import fixedExpensesService, {
+  type FixedExpense,
+  type FixedExpenseFrequency,
+  type FixedExpenseStatus,
+} from "../../services/fixedExpenses.service"
 
-interface FixedExpense {
-  id: number
+interface FixedExpenseForm {
   name: string
   description: string
   category: string
-  frequency: string
+  frequency: FixedExpenseFrequency
   cutOffDate: string
-  amount: number
-  status: "Pendiente" | "Pagado"
+  amount: string
+  status: FixedExpenseStatus
 }
 
 const formatCurrency = (amount: number) =>
@@ -20,51 +24,32 @@ const formatCurrency = (amount: number) =>
     maximumFractionDigits: 2,
   })
 
+const emptyForm: FixedExpenseForm = {
+  name: "",
+  description: "",
+  category: "",
+  frequency: "Mensual",
+  cutOffDate: "",
+  amount: "",
+  status: "Pendiente",
+}
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === "object" && error !== null && "response" in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response
+    if (response?.data?.message) return response.data.message
+  }
+
+  return error instanceof Error ? error.message : fallback
+}
+
 function FixedExpenses() {
   const [showModal, setShowModal] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<FixedExpense | null>(null)
-
-  // TODO: quitar los datos hardcodeados y dejar el array vacío cuando el backend esté listo
-  const [expenses, setExpenses] = useState<FixedExpense[]>([
-    {
-      id: 1,
-      name: "Gimnasio",
-      description: "",
-      category: "Salud",
-      frequency: "Mensual",
-      cutOffDate: "2026-02-27",
-      amount: 45000,
-      status: "Pendiente",
-    },
-    {
-      id: 2,
-      name: "Alquiler",
-      description: "Arriendo apartamento",
-      category: "Vivienda",
-      frequency: "Mensual",
-      cutOffDate: "2026-05-19",
-      amount: 850000,
-      status: "Pendiente",
-    },
-    {
-      id: 3,
-      name: "Netflix",
-      description: "",
-      category: "Suscripción",
-      frequency: "Mensual",
-      cutOffDate: "2026-02-15",
-      amount: 22000,
-      status: "Pagado",
-    },
-  ])
-
-  // TODO: GET /api/fixed-expenses — descomentar cuando el backend esté listo
-  // useEffect(() => {
-  //   fetch("/api/fixed-expenses")
-  //     .then((res) => res.json())
-  //     .then((data) => setExpenses(data))
-  //     .catch((err) => console.error("Error al cargar gastos fijos:", err))
-  // }, [])
+  const [expenses, setExpenses] = useState<FixedExpense[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
 
   const [selectedTab, setSelectedTab] = useState("Todos")
 
@@ -74,17 +59,33 @@ function FixedExpenses() {
     category: "",
   })
 
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    category: "",
-    frequency: "Mensual",
-    cutOffDate: "",
-    amount: "",
-    status: "Pendiente",
-  })
+  const [formData, setFormData] = useState<FixedExpenseForm>(emptyForm)
 
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadExpenses = async () => {
+      setLoading(true)
+      setError("")
+
+      try {
+        const data = await fixedExpensesService.getAll()
+        if (mounted) setExpenses(data)
+      } catch (err) {
+        if (mounted) setError(getErrorMessage(err, "No se pudieron cargar los gastos fijos."))
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    void loadExpenses()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const getRemainingDays = (date: string) => {
     const today = new Date()
@@ -140,117 +141,81 @@ function FixedExpenses() {
     return errors
   }
 
-  const handleAddExpense = () => {
+  const handleAddExpense = async () => {
     const errors = validateForm()
     if (Object.keys(errors).length > 0) {
       setFormErrors(errors)
       return
     }
 
-    const newExpense: FixedExpense = {
-      id: Date.now(), // TODO: quitar este id, el backend lo asignará automáticamente
-      name: formData.name,
-      description: formData.description,
-      category: formData.category,
-      frequency: formData.frequency,
-      cutOffDate: formData.cutOffDate,
-      amount: Number(formData.amount),
-      status: formData.status as "Pendiente" | "Pagado",
+    setSaving(true)
+    setError("")
+
+    try {
+      const created = await fixedExpensesService.create({
+        name: formData.name,
+        description: formData.description,
+        category: formData.category,
+        frequency: formData.frequency,
+        cutOffDate: formData.cutOffDate,
+        amount: Number(formData.amount),
+        status: formData.status,
+      })
+      setExpenses((current) => [created, ...current])
+      setFormData(emptyForm)
+      setFormErrors({})
+      setShowModal(false)
+    } catch (err) {
+      setError(getErrorMessage(err, "No se pudo crear el gasto fijo."))
+    } finally {
+      setSaving(false)
     }
-
-    // TODO: POST /api/fixed-expenses — descomentar cuando el backend esté listo
-    // El objeto que devuelve el backend trae el id real generado por la BD
-    // fetch("/api/fixed-expenses", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify(newExpense),
-    // })
-    //   .then((res) => res.json())
-    //   .then((created: FixedExpense) => setExpenses([created, ...expenses]))
-    //   .catch((err) => console.error("Error al crear gasto fijo:", err))
-
-    // TODO: eliminar esta línea y moverla dentro del .then() de arriba
-    setExpenses([newExpense, ...expenses])
-
-    setFormData({
-      name: "",
-      description: "",
-      category: "",
-      frequency: "Mensual",
-      cutOffDate: "",
-      amount: "",
-      status: "Pendiente",
-    })
-    setFormErrors({})
-    setShowModal(false)
   }
 
   const handleCloseModal = () => {
     setShowModal(false)
     setFormErrors({})
-    setFormData({
-      name: "",
-      description: "",
-      category: "",
-      frequency: "Mensual",
-      cutOffDate: "",
-      amount: "",
-      status: "Pendiente",
-    })
+    setFormData(emptyForm)
   }
 
-  const handleDelete = (id: number) => {
-    // TODO: DELETE /api/fixed-expenses/:id — descomentar cuando el backend esté listo
-    // fetch(`/api/fixed-expenses/${id}`, {
-    //   method: "DELETE",
-    // })
-    //   .then(() => setExpenses(expenses.filter((e) => e.id !== id)))
-    //   .catch((err) => console.error("Error al eliminar gasto fijo:", err))
+  const handleDelete = async (id: string) => {
+    setError("")
 
-    // TODO: eliminar esta línea y moverla dentro del .then() de arriba
-    setExpenses(expenses.filter((e) => e.id !== id))
-    setDeleteTarget(null)
+    try {
+      await fixedExpensesService.delete(id)
+      setExpenses((current) => current.filter((e) => e.id !== id))
+      setDeleteTarget(null)
+    } catch (err) {
+      setError(getErrorMessage(err, "No se pudo eliminar el gasto fijo."))
+    }
   }
 
-  const handleMarkPaid = (id: number) => {
-    // TODO: PATCH /api/fixed-expenses/:id — descomentar cuando el backend esté listo
-    // fetch(`/api/fixed-expenses/${id}`, {
-    //   method: "PATCH",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ status: "Pagado" }),
-    // })
-    //   .then(() =>
-    //     setExpenses(expenses.map((e) => e.id === id ? { ...e, status: "Pagado" } : e))
-    //   )
-    //   .catch((err) => console.error("Error al actualizar estado:", err))
+  const handleMarkPaid = async (id: string) => {
+    setError("")
 
-    // TODO: eliminar esta línea y moverla dentro del .then() de arriba
-    setExpenses(
-      expenses.map((e) => e.id === id ? { ...e, status: "Pagado" } : e)
-    )
+    try {
+      const updated = await fixedExpensesService.update(id, { status: "Pagado" })
+      setExpenses((current) => current.map((e) => e.id === id ? updated : e))
+    } catch (err) {
+      setError(getErrorMessage(err, "No se pudo actualizar el estado del gasto."))
+    }
   }
 
-  const handleMarkPending = (id: number) => {
-    // TODO: PATCH /api/fixed-expenses/:id — descomentar cuando el backend esté listo
-    // fetch(`/api/fixed-expenses/${id}`, {
-    //   method: "PATCH",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ status: "Pendiente" }),
-    // })
-    //   .then(() =>
-    //     setExpenses(expenses.map((e) => e.id === id ? { ...e, status: "Pendiente" } : e))
-    //   )
-    //   .catch((err) => console.error("Error al actualizar estado:", err))
+  const handleMarkPending = async (id: string) => {
+    setError("")
 
-    // TODO: eliminar esta línea y moverla dentro del .then() de arriba
-    setExpenses(
-      expenses.map((e) => e.id === id ? { ...e, status: "Pendiente" } : e)
-    )
+    try {
+      const updated = await fixedExpensesService.update(id, { status: "Pendiente" })
+      setExpenses((current) => current.map((e) => e.id === id ? updated : e))
+    } catch (err) {
+      setError(getErrorMessage(err, "No se pudo actualizar el estado del gasto."))
+    }
   }
 
   return (
     <section className={styles.content}>
       <h2 className={styles.title}>Gastos Fijos</h2>
+      {error && <p className={styles.empty}>{error}</p>}
 
       {/* FILTROS */}
       <div className={styles.actionsRow}>
@@ -261,9 +226,11 @@ function FixedExpenses() {
             onChange={(e) => setFilters({ ...filters, frequency: e.target.value })}
           >
             <option value="">Todas las frecuencias</option>
-            <option value="Diario">Diario</option>
             <option value="Semanal">Semanal</option>
+            <option value="Quincenal">Quincenal</option>
             <option value="Mensual">Mensual</option>
+            <option value="Trimestral">Trimestral</option>
+            <option value="Semestral">Semestral</option>
             <option value="Anual">Anual</option>
           </select>
 
@@ -314,7 +281,9 @@ function FixedExpenses() {
 
       {/* CARDS */}
       <div className={styles.cardsGrid}>
-        {filteredExpenses.map((expense) => {
+        {loading && <p className={styles.empty}>Cargando gastos fijos...</p>}
+
+        {!loading && filteredExpenses.map((expense) => {
           const remainingDays = getRemainingDays(expense.cutOffDate)
 
           return (
@@ -391,7 +360,7 @@ function FixedExpenses() {
         })}
       </div>
 
-      {filteredExpenses.length === 0 && (
+      {!loading && filteredExpenses.length === 0 && (
         <p className={styles.empty}>No se encontraron gastos fijos.</p>
       )}
 
@@ -473,12 +442,14 @@ function FixedExpenses() {
                   className={styles.input}
                   value={formData.frequency}
                   onChange={(e) =>
-                    setFormData({ ...formData, frequency: e.target.value })
+                    setFormData({ ...formData, frequency: e.target.value as FixedExpenseFrequency })
                   }
                 >
-                  <option value="Diario">Diario</option>
                   <option value="Semanal">Semanal</option>
+                  <option value="Quincenal">Quincenal</option>
                   <option value="Mensual">Mensual</option>
+                  <option value="Trimestral">Trimestral</option>
+                  <option value="Semestral">Semestral</option>
                   <option value="Anual">Anual</option>
                 </select>
               </div>
@@ -529,7 +500,7 @@ function FixedExpenses() {
                   className={styles.input}
                   value={formData.status}
                   onChange={(e) =>
-                    setFormData({ ...formData, status: e.target.value })
+                    setFormData({ ...formData, status: e.target.value as FixedExpenseStatus })
                   }
                 >
                   <option value="Pendiente">Pendiente</option>
@@ -542,8 +513,8 @@ function FixedExpenses() {
               <button className={styles.cancelButton} onClick={handleCloseModal}>
                 Cancelar
               </button>
-              <button className={styles.saveButton} onClick={handleAddExpense}>
-                Guardar
+              <button className={styles.saveButton} onClick={handleAddExpense} disabled={saving}>
+                {saving ? "Guardando..." : "Guardar"}
               </button>
             </div>
           </div>
