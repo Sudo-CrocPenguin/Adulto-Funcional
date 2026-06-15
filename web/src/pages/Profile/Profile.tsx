@@ -3,10 +3,13 @@ import { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import styles from './Profile.module.css';
 import { User, Mail, Phone, Pencil, Lock } from 'lucide-react';
+import { accountService } from '../../services/account.service';
 
 export default function Profile() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, updateUser } = useAuth();
   const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
   const [formData, setFormData] = useState({
     names: user?.names || '',
     lastnames: user?.lastnames || '',
@@ -28,34 +31,29 @@ export default function Profile() {
     e.preventDefault();
     if (!user?.accountId) return;
 
+    setSaving(true);
+    setMessage('');
+
     try {
-      const res = await fetch(`/api/account/${user.accountId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          names: formData.names,
-          lastnames: formData.lastnames,
-          phone: formData.phone
-        })
+      const account = await accountService.update(user.accountId, {
+        names: formData.names,
+        lastnames: formData.lastnames,
+        phone: formData.phone
       });
 
-      if (res.ok) {
-        const updatedUser = {
-          ...user,
-          names: formData.names,
-          lastnames: formData.lastnames,
-          phone: formData.phone
-        };
-        sessionStorage.setItem('user', JSON.stringify(updatedUser));
-        alert('Perfil actualizado correctamente');
-        window.location.reload();
-      } else {
-        alert('Error al actualizar');
-      }
+      updateUser({
+        ...user,
+        names: account.names,
+        lastnames: account.lastnames,
+        phone: account.phone
+      });
+      setEditing(false);
+      setMessage('Perfil actualizado correctamente.');
     } catch (error) {
       console.error(error);
-      alert('Error de red');
+      setMessage('No se pudo actualizar el perfil.');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -72,6 +70,7 @@ export default function Profile() {
       <div className={styles.profileHeader}>
         <h2>Perfil</h2>
       </div>
+      {message && <p className={styles.message}>{message}</p>}
 
       <div className={styles.profileGrid}>
 
@@ -142,7 +141,9 @@ export default function Profile() {
                 <input name="phone" value={formData.phone} onChange={handleChange} />
               </div>
               <div className={styles.formActions}>
-                <button type="submit" className={styles.saveBtn}>Guardar</button>
+                <button type="submit" className={styles.saveBtn} disabled={saving}>
+                  {saving ? 'Guardando...' : 'Guardar'}
+                </button>
                 <button type="button" className={styles.cancelBtn} onClick={() => setEditing(false)}>Cancelar</button>
               </div>
             </form>

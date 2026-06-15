@@ -41,6 +41,11 @@ interface AuthContextType {
      * Cierra sesión limpiando el token y los datos del usuario.
      */
     logout: () => void
+
+    /**
+     * Actualiza los datos locales del usuario autenticado sin cambiar sesion.
+     */
+    updateUser: (user: AuthUser) => void
 }
 /** Contexto de autenticación */
 const AuthContext = createContext<AuthContextType | null>(null)
@@ -64,6 +69,13 @@ const getInitialStorage = (): Storage => {
 const readStoredUser = (): AuthUser | null => {
     const storage = getInitialStorage()
     return JSON.parse(storage.getItem('user') || 'null')
+}
+
+const writeStoredUser = (user: AuthUser) => {
+    const storage = getInitialStorage()
+    storage.setItem('user', JSON.stringify(user))
+    storage.setItem('accountId', user.accountId)
+    storage.setItem('names', user.names)
 }
 
 /**
@@ -115,6 +127,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearAuthStorage()
     }
 
+    const updateUser = (user: AuthUser) => {
+        setUser(user)
+        writeStoredUser(user)
+    }
+
     return (
 
         <AuthContext.Provider value={{
@@ -123,6 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isAuthenticated: !!user,
             login,
             logout,
+            updateUser,
         }}>
             {children}
         </AuthContext.Provider>

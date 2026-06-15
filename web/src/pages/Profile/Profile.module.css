@@ -26,6 +26,13 @@
   letter-spacing: -0.3px;
 }
 
+.message {
+  margin: 0 0 14px;
+  color: #56647a;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 /* ─── Main layout: left (2/3) + right (1/3) ─── */
 .profileGrid {
   display: grid;
