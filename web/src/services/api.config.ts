@@ -8,7 +8,8 @@ import axios from 'axios';
  * 
  * Características:
  * - URL base configurada una sola vez
- * - Token JWT agregado automáticamente desde sessionStorage
+ * - Cookie HttpOnly enviada automáticamente con withCredentials
+ * - Token JWT agregado solo si existe una copia valida en storage
  * - Redirección automática al login si el token expira (401)
  * - withCredentials: true para cookies HttpOnly
  */
@@ -26,8 +27,10 @@ const api = axios.create({
  */
 api.interceptors.request.use(
   (config) => {
-    const token = sessionStorage.getItem('token'); 
-    if (token) {
+    const token = sessionStorage.getItem('token') ?? localStorage.getItem('token')
+    const hasUsableToken = token && token !== 'undefined' && token !== 'null'
+
+    if (hasUsableToken) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
