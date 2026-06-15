@@ -10,8 +10,8 @@ export default function CreateMasterKeyScreen() {
   const [confirmMasterKey, setConfirmMasterKey] = useState('');
 
   const handleCreate = async () => {
-    if (masterKey.length < 8) {
-      Alert.alert('Error', 'La clave maestra debe tener al menos 8 caracteres');
+    if (masterKey.length < 12 || masterKey.length > 24) {
+      Alert.alert('Error', 'La clave maestra debe tener entre 12 y 24 caracteres');
       return;
     }
     if (masterKey !== confirmMasterKey) {

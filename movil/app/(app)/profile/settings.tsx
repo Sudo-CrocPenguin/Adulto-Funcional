@@ -108,10 +108,7 @@ export default function SettingsScreen() {
           <Text style={styles.dangerText}>Cerrar sesión</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.dangerButton} onPress={() => Alert.alert('Eliminar cuenta', 'Esta acción no se puede deshacer', [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Eliminar', style: 'destructive', onPress: () => console.log('Eliminar cuenta') }
-        ])}>
+        <TouchableOpacity style={styles.dangerButton} onPress={() => router.push('/(app)/profile/delete-account')}>
           <Text style={styles.dangerText}>Eliminar cuenta</Text>
         </TouchableOpacity>
 

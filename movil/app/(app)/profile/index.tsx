@@ -86,7 +86,7 @@ export default function ProfileScreen() {
           <TouchableOpacity onPress={logout}>
             <Text style={[styles.accountOption, styles.logout]}>Cerrar Sesión</Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => alert('Función no implementada')}>
+          <TouchableOpacity onPress={() => router.push('/(app)/profile/delete-account')}>
             <Text style={[styles.accountOption, styles.delete]}>Eliminar Cuenta</Text>
           </TouchableOpacity>
         </View>

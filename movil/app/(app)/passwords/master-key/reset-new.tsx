@@ -15,8 +15,8 @@ export default function ResetMasterKeyNewScreen() {
       Alert.alert('Error', 'Ingrese la clave maestra actual');
       return;
     }
-    if (!newKey || newKey.length < 8) {
-      Alert.alert('Error', 'Mínimo 8 caracteres');
+    if (!newKey || newKey.length < 12 || newKey.length > 24) {
+      Alert.alert('Error', 'La nueva clave maestra debe tener entre 12 y 24 caracteres');
       return;
     }
     if (newKey !== confirmKey) {

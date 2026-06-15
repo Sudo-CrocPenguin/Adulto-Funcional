@@ -4,14 +4,11 @@ import { router } from 'expo-router';
 import { useProfile } from '../../../src/hooks/useProfile';
 import { Colors } from '../../../src/constants/Colors';
 import { isValidColombianPhone, isValidEmail } from '../../../src/utils/validators';
-import apiClient from '../../../src/api/client';
 import { useAuth } from '../../../src/contexts/AuthContext';
-import { STORAGE_KEYS } from '../../../src/constants/config';
-import { storage } from '../../../src/services/storage';
 
 export default function EditProfileScreen() {
-  const { profile, loading, fetchProfile, updateProfile } = useProfile();
-  const { user, refreshUser } = useAuth();
+  const { profile, loading, updateProfile } = useProfile();
+  const { refreshUser } = useAuth();
   const [names, setNames] = useState('');
   const [lastnames, setLastnames] = useState('');
   const [phone, setPhone] = useState('');
@@ -48,20 +45,12 @@ export default function EditProfileScreen() {
     }
     setSaving(true);
     try {
-      const accountId = await storage.getItem(STORAGE_KEYS.ACCOUNT_ID);
-      if (!accountId) throw new Error('No se encontró la cuenta');
-      // Llamada directa al PATCH /api/account/{id}
-      const response = await apiClient.patch(`/api/account/${accountId}`, {
-        names,
-        lastnames,
-        phone,
-        email,
+      await updateProfile({
+        names: names.trim(),
+        lastnames: lastnames.trim(),
+        phone: phone.trim(),
+        email: email.trim(),
       });
-      // Actualizar almacenamiento local y contexto
-      await storage.setItem(STORAGE_KEYS.USER_NAMES, names);
-      await storage.setItem(STORAGE_KEYS.USER_LASTNAMES, lastnames);
-      await storage.setItem(STORAGE_KEYS.USER_PHONE, phone);
-      await storage.setItem(STORAGE_KEYS.USER_EMAIL, email);
       await refreshUser();
       Alert.alert('Éxito', 'Perfil actualizado correctamente');
       router.back();
@@ -80,13 +69,13 @@ export default function EditProfileScreen() {
       <Text style={styles.title}>Editar Perfil</Text>
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Text style={styles.label}>Nombres</Text>
-      <TextInput style={styles.input} value={names} onChangeText={() => setError('')} />
+      <TextInput style={styles.input} value={names} onChangeText={(text) => { setNames(text); setError(''); }} />
       <Text style={styles.label}>Apellidos</Text>
-      <TextInput style={styles.input} value={lastnames} onChangeText={() => setError('')} />
+      <TextInput style={styles.input} value={lastnames} onChangeText={(text) => { setLastnames(text); setError(''); }} />
       <Text style={styles.label}>Teléfono (ej: 3001234567)</Text>
-      <TextInput style={styles.input} value={phone} onChangeText={() => setError('')} keyboardType="phone-pad" />
+      <TextInput style={styles.input} value={phone} onChangeText={(text) => { setPhone(text); setError(''); }} keyboardType="phone-pad" />
       <Text style={styles.label}>Correo electrónico</Text>
-      <TextInput style={styles.input} value={email} onChangeText={() => setError('')} autoCapitalize="none" keyboardType="email-address" />
+      <TextInput style={styles.input} value={email} onChangeText={(text) => { setEmail(text); setError(''); }} autoCapitalize="none" keyboardType="email-address" />
       <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={saving}>
         {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>Guardar cambios</Text>}
       </TouchableOpacity>

@@ -22,6 +22,8 @@ export const API_ENDPOINTS = {
   ACCOUNT: {
     GET: (id: string) => `/api/account/${id}`,
     UPDATE: (id: string) => `/api/account/${id}`,
+    CHANGE_PASSWORD: (id: string) => `/api/account/${id}/password`,
+    DELETE: (id: string) => `/api/account/${id}`,
   },
   FINANCES: {
     MOVEMENTS: '/api/finances/movements',

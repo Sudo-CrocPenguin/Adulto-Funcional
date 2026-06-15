@@ -5,6 +5,7 @@ import { STORAGE_KEYS } from '../constants/config';
 import { useMovements } from './useMovements';
 import { useFixedExpenses } from './useFixedExpenses';
 import { useEvents } from './useEvents';
+import * as accountApi from '../api/accountApi';
 
 const PASSWORD_COUNT_KEY = 'password_count';
 
@@ -36,15 +37,12 @@ export const useProfile = () => {
     try {
       const accountId = await storage.getItem(STORAGE_KEYS.ACCOUNT_ID);
       if (!accountId) throw new Error('No autenticado');
-      // Simular obtención de datos del perfil (podría venir del backend)
-      setProfile({
-        id: accountId,
-        names: await storage.getItem(STORAGE_KEYS.USER_NAMES) || 'Usuario',
-        lastnames: await storage.getItem(STORAGE_KEYS.USER_LASTNAMES) || '',
-        email: await storage.getItem(STORAGE_KEYS.USER_EMAIL) || '',
-        phone: await storage.getItem(STORAGE_KEYS.USER_PHONE) || '',
-        createdAt: new Date().toISOString(),
-      });
+      const account = await accountApi.getAccount(accountId);
+      setProfile(account);
+      await storage.setItem(STORAGE_KEYS.USER_NAMES, account.names);
+      await storage.setItem(STORAGE_KEYS.USER_LASTNAMES, account.lastnames);
+      await storage.setItem(STORAGE_KEYS.USER_EMAIL, account.email);
+      await storage.setItem(STORAGE_KEYS.USER_PHONE, account.phone);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -54,7 +52,12 @@ export const useProfile = () => {
 
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (profile) {
-      const updated = { ...profile, ...data };
+      const updated = await accountApi.updateAccount(profile.id, {
+        names: data.names ?? profile.names,
+        lastnames: data.lastnames ?? profile.lastnames,
+        phone: data.phone ?? profile.phone,
+        email: data.email ?? profile.email,
+      });
       setProfile(updated);
       await storage.setItem(STORAGE_KEYS.USER_NAMES, updated.names);
       await storage.setItem(STORAGE_KEYS.USER_LASTNAMES, updated.lastnames);
@@ -64,8 +67,18 @@ export const useProfile = () => {
   };
 
   const changePassword = async (oldPassword: string, newPassword: string) => {
-    // TODO: implementar cambio de contraseña real
-    console.log('Cambiar contraseña', oldPassword, newPassword);
+    const accountId = await storage.getItem(STORAGE_KEYS.ACCOUNT_ID);
+    if (!accountId) throw new Error('No autenticado');
+    await accountApi.changePassword(accountId, {
+      currentPassword: oldPassword,
+      newPassword,
+    });
+  };
+
+  const deleteAccount = async () => {
+    const accountId = await storage.getItem(STORAGE_KEYS.ACCOUNT_ID);
+    if (!accountId) throw new Error('No autenticado');
+    await accountApi.deleteAccount(accountId);
   };
 
   useEffect(() => {
@@ -96,5 +109,5 @@ export const useProfile = () => {
     fetchProfile();
   }, []);
 
-  return { profile, loading, error, stats, fetchProfile, updateProfile, changePassword };
+  return { profile, loading, error, stats, fetchProfile, updateProfile, changePassword, deleteAccount };
 };

@@ -30,7 +30,7 @@ export default function RegisterScreen() {
     if (form.password.length < 8) { setError('La contraseña debe tener al menos 8 caracteres'); return; }
     if (form.password !== form.confirmPassword) { setError('Las contraseñas no coinciden'); return; }
     const shouldCreateMasterKey = Boolean(form.masterKey || form.confirmMasterKey);
-    if (shouldCreateMasterKey && form.masterKey.length < 8) { setError('La clave maestra debe tener al menos 8 caracteres'); return; }
+    if (shouldCreateMasterKey && (form.masterKey.length < 12 || form.masterKey.length > 24)) { setError('La clave maestra debe tener entre 12 y 24 caracteres'); return; }
     if (shouldCreateMasterKey && form.masterKey !== form.confirmMasterKey) { setError('Las claves maestras no coinciden'); return; }
     setError('');
     try {
@@ -93,7 +93,7 @@ export default function RegisterScreen() {
 
           <Text style={styles.label}>Clave Maestra (opcional)</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Colors.border, borderRadius: 12 }}>
-            <TextInput style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 12 }} secureTextEntry={!showMasterKey} value={form.masterKey} onChangeText={(t) => setForm({ ...form, masterKey: t })} placeholder="Mínimo 8 caracteres" />
+            <TextInput style={{ flex: 1, paddingVertical: 12, paddingHorizontal: 12 }} secureTextEntry={!showMasterKey} value={form.masterKey} onChangeText={(t) => setForm({ ...form, masterKey: t })} placeholder="12 a 24 caracteres" />
             <TouchableOpacity onPress={() => setShowMasterKey(!showMasterKey)} style={{ paddingHorizontal: 12 }}><Text>{showMasterKey ? '👁️' : '👁️‍🗨️'}</Text></TouchableOpacity>
           </View>
 

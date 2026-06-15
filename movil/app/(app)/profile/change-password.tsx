@@ -5,22 +5,35 @@ import { useProfile } from '../../../src/hooks/useProfile';
 import { Colors } from '../../../src/constants/Colors';
 
 export default function ChangePasswordScreen() {
-  const { changePassword, loading } = useProfile();
+  const { changePassword } = useProfile();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [saving, setSaving] = useState(false);
 
   const handleChange = async () => {
     if (!oldPassword || !newPassword) {
       Alert.alert('Error', 'Complete todos los campos');
       return;
     }
+    if (newPassword.length < 8 || newPassword.length > 24) {
+      Alert.alert('Error', 'La nueva contraseña debe tener entre 8 y 24 caracteres');
+      return;
+    }
     if (newPassword !== confirmPassword) {
       Alert.alert('Error', 'Las contraseñas nuevas no coinciden');
       return;
     }
-    await changePassword(oldPassword, newPassword);
-    router.back();
+    setSaving(true);
+    try {
+      await changePassword(oldPassword, newPassword);
+      Alert.alert('Éxito', 'Contraseña actualizada correctamente');
+      router.back();
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.message || err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -29,8 +42,8 @@ export default function ChangePasswordScreen() {
       <TextInput style={styles.input} secureTextEntry placeholder="Contraseña actual" value={oldPassword} onChangeText={setOldPassword} />
       <TextInput style={styles.input} secureTextEntry placeholder="Nueva contraseña" value={newPassword} onChangeText={setNewPassword} />
       <TextInput style={styles.input} secureTextEntry placeholder="Confirmar nueva contraseña" value={confirmPassword} onChangeText={setConfirmPassword} />
-      <TouchableOpacity style={styles.button} onPress={handleChange} disabled={loading}>
-        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Actualizar contraseña</Text>}
+      <TouchableOpacity style={styles.button} onPress={handleChange} disabled={saving}>
+        {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Actualizar contraseña</Text>}
       </TouchableOpacity>
     </View>
   );
