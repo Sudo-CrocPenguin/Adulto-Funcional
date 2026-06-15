@@ -1,1 +1,1 @@
-export src/components/lists/PasswordItem.tsx;
+export {};

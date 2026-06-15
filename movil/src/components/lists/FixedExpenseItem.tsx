@@ -1,1 +1,1 @@
-export src/components/lists/FixedExpenseItem.tsx;
+export {};

@@ -1,1 +1,1 @@
-export src/api/endpoints.ts;
+export {};

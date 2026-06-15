@@ -1,1 +1,1 @@
-export src/api/passwordsApi.ts;
+export {};

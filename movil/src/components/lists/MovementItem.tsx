@@ -1,1 +1,1 @@
-export src/components/lists/MovementItem.tsx;
+export {};

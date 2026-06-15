@@ -1,1 +1,1 @@
-export src/hooks/useAuth.ts;
+export {};

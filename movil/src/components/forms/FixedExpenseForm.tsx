@@ -1,1 +1,1 @@
-export src/components/forms/FixedExpenseForm.tsx;
+export {};
