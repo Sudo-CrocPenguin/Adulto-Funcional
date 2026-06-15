@@ -1,37 +1,19 @@
 // src/pages/Commitments/Commitments.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, X, Trash2, RotateCcw, Flame, StopCircle, CheckCircle2 } from 'lucide-react';
 import styles from './Commitments.module.css';
+import commitmentsService, {
+  type Category,
+  type Commitment,
+  type Frequency,
+  type Priority,
+} from '../../services/commitments.service';
 
-type Priority  = 'Alta' | 'Media' | 'Baja';
-type Frequency = 'Una vez' | 'Diario' | 'Semanal' | 'Mensual';
-type Category  = 'Trabajo' | 'Hogar' | 'Personal' | 'Salud' | 'Finanzas' | 'Otros';
 type Filter    = 'Todas' | 'Pendientes' | 'Completadas';
 
-interface Commitment {
-  id:          number;
-  name:        string;
-  category:    Category;
-  frequency:   Frequency;
-  priority:    Priority;
-  date:        string;
-  reminder:    string;
-  description: string;
-  completed:   boolean;
-  ceased:      boolean;
-}
-
 const CATEGORIES: Category[] = ['Trabajo', 'Hogar', 'Personal', 'Salud', 'Finanzas', 'Otros'];
-const FREQUENCIES: Frequency[] = ['Una vez', 'Diario', 'Semanal', 'Mensual'];
+const FREQUENCIES: Frequency[] = ['Una vez', 'Diario', 'Semanal', 'Mensual', 'Anual'];
 const REMINDERS   = ['7:00 A.M.', '8:00 A.M.', '9:00 A.M.', '12:00 P.M.', '6:00 P.M.', '9:00 P.M.'];
-
-const INITIAL: Commitment[] = [
-  { id: 1, name: 'Preparar presentación', category: 'Trabajo',  frequency: 'Una vez', priority: 'Alta',  date: '2026-05-15', reminder: '9:00 A.M.',  description: '', completed: false, ceased: false },
-  { id: 2, name: 'Pagar recibo de la luz', category: 'Hogar',   frequency: 'Mensual', priority: 'Media', date: '2026-05-20', reminder: '7:00 A.M.',  description: '', completed: false, ceased: false },
-  { id: 3, name: 'Comprar despensa',       category: 'Personal', frequency: 'Semanal', priority: 'Baja',  date: '2026-05-14', reminder: '12:00 P.M.', description: '', completed: false, ceased: false },
-  { id: 4, name: 'Revisar inversiones',    category: 'Finanzas', frequency: 'Mensual', priority: 'Media', date: '2026-06-10', reminder: '8:00 A.M.',  description: '', completed: false, ceased: false },
-  { id: 5, name: 'Ejercicio cardio',       category: 'Salud',    frequency: 'Diario',  priority: 'Baja',  date: '2026-05-22', reminder: '7:00 A.M.',  description: '', completed: false, ceased: false },
-];
 
 const priorityClass: Record<Priority, string> = {
   Alta:  styles.priorityAlta,
@@ -56,6 +38,7 @@ function nextDateFor(frequency: Frequency, fromDate: string): string {
   if (frequency === 'Diario')   return addDays(fromDate, 1);
   if (frequency === 'Semanal')  return addDays(fromDate, 7);
   if (frequency === 'Mensual')  return addMonths(fromDate, 1);
+  if (frequency === 'Anual')    return addMonths(fromDate, 12);
   return fromDate;
 }
 function formatDate(d: string) {
@@ -109,13 +92,25 @@ function saveStreak(count: number, date: string) {
   localStorage.setItem(LAST_KEY, date);
 }
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error === 'object' && error !== null && 'response' in error) {
+    const response = (error as { response?: { data?: { message?: string } } }).response;
+    if (response?.data?.message) return response.data.message;
+  }
+
+  return error instanceof Error ? error.message : fallback;
+};
+
 /* ══════════════════════════════════════════════════════════════════
    COMPONENT
 ══════════════════════════════════════════════════════════════════ */
 export default function Commitments() {
-  const [commitments, setCommitments] = useState<Commitment[]>(INITIAL);
+  const [commitments, setCommitments] = useState<Commitment[]>([]);
   const [filter,      setFilter]      = useState<Filter>('Todas');
   const [showModal,   setShowModal]   = useState(false);
+  const [loading,     setLoading]     = useState(true);
+  const [saving,      setSaving]      = useState(false);
+  const [error,       setError]       = useState('');
   const [streak,      setStreak]      = useState<number>(() => {
     const { count, lastDate } = loadStreak();
     if (lastDate && lastDate < addDays(today(), -1)) return 0;
@@ -127,23 +122,59 @@ export default function Commitments() {
     priority: 'Media' as Priority, date: '', reminder: '7:00 A.M.', description: '',
   });
 
+  useEffect(() => {
+    let mounted = true;
+
+    const loadCommitments = async () => {
+      setLoading(true);
+      setError('');
+
+      try {
+        const data = await commitmentsService.getAll();
+        if (mounted) setCommitments(data);
+      } catch (err) {
+        if (mounted) setError(getErrorMessage(err, 'No se pudieron cargar los compromisos.'));
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    void loadCommitments();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const replaceCommitment = (updated: Commitment) => {
+    setCommitments(prev => prev.map(c => c.id === updated.id ? updated : c));
+  };
+
   /* ── completar ────────────────────────────────────────────────── */
-  const toggleComplete = (id: number) => {
+  const toggleComplete = async (id: string) => {
     const todayStr = today();
     const target   = commitments.find(c => c.id === id);
     if (!target) return;
 
     const isRecurring = target.frequency !== 'Una vez';
+    setError('');
 
-    setCommitments(prev => prev.map(c => {
-      if (c.id !== id) return c;
+    try {
+      let updated: Commitment;
       if (isRecurring) {
-        // avanza fecha, queda activo y desmarcado
-        return { ...c, date: nextDateFor(c.frequency, c.date), completed: false };
+        updated = await commitmentsService.update(id, {
+          date: nextDateFor(target.frequency, target.date),
+          completed: false,
+          ceased: false,
+        });
+      } else {
+        updated = await commitmentsService.toggleComplete(id, !target.completed);
       }
-      // "Una vez": toggle → true manda a sección "Completado"
-      return { ...c, completed: !c.completed };
-    }));
+      replaceCommitment(updated);
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo actualizar el compromiso.'));
+      return;
+    }
 
     // racha: sumar solo 1 vez por día
     const completing = isRecurring || !target.completed;
@@ -156,39 +187,69 @@ export default function Commitments() {
   };
 
   /* ── cesar (solo recurrentes) ─────────────────────────────────── */
-  const ceaseCommitment = (id: number) => {
-    setCommitments(prev => prev.map(c =>
-      c.id === id ? { ...c, ceased: true, completed: false } : c
-    ));
+  const ceaseCommitment = async (id: string) => {
+    setError('');
+
+    try {
+      const updated = await commitmentsService.cease(id);
+      replaceCommitment(updated);
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo cesar el compromiso.'));
+    }
   };
 
   /* ── reactivar (desde "Completado") ──────────────────────────── */
-  const reactivate = (id: number) => {
-    setCommitments(prev => prev.map(c =>
-      c.id === id ? { ...c, completed: false, ceased: false } : c
-    ));
+  const reactivate = async (id: string) => {
+    setError('');
+
+    try {
+      const updated = await commitmentsService.reactivate(id);
+      replaceCommitment(updated);
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo reactivar el compromiso.'));
+    }
   };
 
   /* ── eliminar ─────────────────────────────────────────────────── */
-  const deleteCommitment = (id: number) => {
-    setCommitments(prev => prev.filter(c => c.id !== id));
+  const deleteCommitment = async (id: string) => {
+    setError('');
+
+    try {
+      await commitmentsService.delete(id);
+      setCommitments(prev => prev.filter(c => c.id !== id));
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo eliminar el compromiso.'));
+    }
   };
 
   /* ── guardar nuevo ────────────────────────────────────────────── */
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name || !form.category || !form.frequency || !form.date) {
-      alert('Completa todos los campos obligatorios');
+      setError('Completa todos los campos obligatorios.');
       return;
     }
-    const newC: Commitment = {
-      id: Date.now(), name: form.name, category: form.category as Category,
-      frequency: form.frequency as Frequency, priority: form.priority,
-      date: form.date, reminder: form.reminder, description: form.description,
-      completed: false, ceased: false,
-    };
-    setCommitments(prev => [newC, ...prev]);
-    setForm({ name: '', category: '', frequency: '', priority: 'Media', date: '', reminder: '7:00 A.M.', description: '' });
-    setShowModal(false);
+
+    setSaving(true);
+    setError('');
+
+    try {
+      const created = await commitmentsService.create({
+        name: form.name,
+        category: form.category as Category,
+        frequency: form.frequency as Frequency,
+        priority: form.priority,
+        date: form.date,
+        reminder: form.reminder,
+        description: form.description,
+      });
+      setCommitments(prev => [created, ...prev]);
+      setForm({ name: '', category: '', frequency: '', priority: 'Media', date: '', reminder: '7:00 A.M.', description: '' });
+      setShowModal(false);
+    } catch (err) {
+      setError(getErrorMessage(err, 'No se pudo crear el compromiso.'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   /* ── filtrar y agrupar ────────────────────────────────────────── */
@@ -286,6 +347,7 @@ export default function Commitments() {
   return (
     <section className={styles.container}>
       <h2 className={styles.title}>Compromisos</h2>
+      {error && <p className={styles.empty}>{error}</p>}
 
       {/* ── Racha ── */}
       <div className={styles.streakCard}>
@@ -323,7 +385,9 @@ export default function Commitments() {
       </div>
 
       {/* ── Secciones ── */}
-      {filtered.length === 0
+      {loading
+        ? <p className={styles.empty}>Cargando compromisos...</p>
+        : filtered.length === 0
         ? <p className={styles.empty}>No hay compromisos en esta categoría.</p>
         : <>
             {renderSection('Esta semana',    sections.thisWeek)}
@@ -402,7 +466,9 @@ export default function Commitments() {
 
             <div className={styles.modalButtons}>
               <button className={styles.cancelButton} onClick={() => setShowModal(false)}>Cancelar</button>
-              <button className={styles.saveButton} onClick={handleSave}>Guardar</button>
+              <button className={styles.saveButton} onClick={handleSave} disabled={saving}>
+                {saving ? 'Guardando...' : 'Guardar'}
+              </button>
             </div>
           </div>
         </div>

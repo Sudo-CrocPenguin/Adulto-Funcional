@@ -1,158 +1,254 @@
-import api from './api.config';
+import api from './api.config'
+import categoriesService, { type Category as BackendCategory } from './categories.service'
 
-/**
- * Representa un compromiso o tarea del usuario.
- * Los compromisos pueden ser de una sola vez o recurrentes.
- */
-export interface Commitment {
-  id: number;
-  name: string;
-  category: 'Trabajo' | 'Hogar' | 'Personal' | 'Salud' | 'Finanzas' | 'Otros';
-  frequency: 'Una vez' | 'Diario' | 'Semanal' | 'Mensual';
-  priority: 'Alta' | 'Media' | 'Baja';
-  date: string;
-  reminder: string;
-  description: string;
-  completed: boolean;
-  ceased: boolean;
+interface ApiResponse<T> {
+  status: number
+  message: string
+  data: T
 }
 
-/**
- * DTO para crear un nuevo compromiso.
- * Excluye id, completed y ceased que son gestionados por el backend.
- */
-export type CreateCommitmentDTO = Omit<Commitment, 'id' | 'completed' | 'ceased'>;
+type BackendStatus = 'Pendiente' | 'Completado' | 'Cancelado' | 'Pospuesto'
+
+interface EventResponse {
+  id: string
+  title: string
+  priority?: string | null
+  eventDate: string
+  frequency: number
+  reminder: string
+  startHour: string
+  endHour: string
+  description?: string | null
+  status?: BackendStatus | string | null
+  category?: BackendCategory | null
+}
+
+interface EventRequest {
+  title: string
+  priority: Priority
+  eventDate: string
+  frequency: number
+  reminder: string
+  startHour: string
+  endHour: string
+  description?: string
+  status?: BackendStatus
+  categoryId?: string
+}
+
+export type Priority = 'Alta' | 'Media' | 'Baja'
+export type Frequency = 'Una vez' | 'Diario' | 'Semanal' | 'Mensual' | 'Anual'
+export type Category = 'Trabajo' | 'Hogar' | 'Personal' | 'Salud' | 'Finanzas' | 'Otros'
 
 /**
- * DTO para actualizar parcialmente un compromiso.
- * Permite modificar cualquier campo excepto el id,
- * incluyendo los estados completed y ceased.
+ * Representa un compromiso en el lenguaje de la interfaz web.
  */
+export interface Commitment {
+  id: string
+  name: string
+  category: Category
+  categoryId?: string
+  frequency: Frequency
+  priority: Priority
+  date: string
+  reminder: string
+  description: string
+  completed: boolean
+  ceased: boolean
+}
+
+export type CreateCommitmentDTO = Omit<Commitment, 'id' | 'categoryId' | 'completed' | 'ceased'>
+
 export type UpdateCommitmentDTO = Partial<CreateCommitmentDTO> & {
-  completed?: boolean;
-  ceased?: boolean;
-};
+  completed?: boolean
+  ceased?: boolean
+}
 
-const BASE = '/agenda/events';
+const BASE = '/agenda/events'
 
-/**
- * Servicio para gestion de compromisos y tareas.
- * Utiliza el endpoint de agenda del backend filtrando por tipo "commitment".
- * Todas las peticiones requieren autenticacion JWT.
- */
+const frequencyToBackend: Record<Frequency, number> = {
+  'Una vez': 0,
+  Diario: 1,
+  Semanal: 7,
+  Mensual: 30,
+  Anual: 365,
+}
+
+const frequencyToUi = (frequency: number): Frequency => {
+  if (frequency === 1) return 'Diario'
+  if (frequency === 7) return 'Semanal'
+  if (frequency === 30) return 'Mensual'
+  if (frequency === 365) return 'Anual'
+  return 'Una vez'
+}
+
+const normalizePriority = (priority?: string | null): Priority => {
+  if (priority === 'Alta' || priority === 'Baja') return priority
+  return 'Media'
+}
+
+const normalizeCategory = (category?: BackendCategory | null): Category => {
+  const name = category?.name
+  if (
+    name === 'Trabajo' ||
+    name === 'Hogar' ||
+    name === 'Personal' ||
+    name === 'Salud' ||
+    name === 'Finanzas'
+  ) {
+    return name
+  }
+
+  return 'Otros'
+}
+
+const unwrap = <T>(body: ApiResponse<T>): T => body.data
+
+const toIsoDate = (value?: string | null): string => {
+  if (!value) return ''
+  return value.split('T')[0]
+}
+
+const parseReminderTime = (reminder: string): string => {
+  const [time = '07:00', suffix = 'A.M.'] = reminder.trim().split(/\s+/)
+  const [rawHour, rawMinute = '00'] = time.split(':')
+  let hour = Number(rawHour)
+  const minute = Number(rawMinute)
+  const normalizedSuffix = suffix.toUpperCase()
+
+  if (normalizedSuffix.startsWith('P') && hour < 12) hour += 12
+  if (normalizedSuffix.startsWith('A') && hour === 12) hour = 0
+
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`
+}
+
+const toReminderLabel = (value?: string | null): string => {
+  if (!value) return '7:00 A.M.'
+
+  const [, time = '07:00:00'] = value.split('T')
+  const [rawHour, rawMinute = '00'] = time.split(':')
+  let hour = Number(rawHour)
+  const suffix = hour >= 12 ? 'P.M.' : 'A.M.'
+
+  if (hour === 0) hour = 12
+  if (hour > 12) hour -= 12
+
+  return `${hour}:${rawMinute} ${suffix}`
+}
+
+const addHours = (dateTime: string, hours: number): string => {
+  const [datePart, timePart = '07:00:00'] = dateTime.split('T')
+  const [rawHour, rawMinute = '00'] = timePart.split(':')
+  const hour = Number(rawHour) + hours
+
+  return `${datePart}T${String(hour).padStart(2, '0')}:${rawMinute}:00`
+}
+
+const buildDateTime = (date: string, reminder: string): string => `${date}T${parseReminderTime(reminder)}`
+
+const toBackendStatus = (commitment: Partial<UpdateCommitmentDTO>): BackendStatus | undefined => {
+  if (commitment.ceased) return 'Cancelado'
+  if (commitment.completed) return 'Completado'
+  if (commitment.completed === false || commitment.ceased === false) return 'Pendiente'
+  return undefined
+}
+
+const toUiCommitment = (event: EventResponse): Commitment => ({
+  id: event.id,
+  name: event.title,
+  category: normalizeCategory(event.category),
+  categoryId: event.category?.id,
+  frequency: frequencyToUi(event.frequency),
+  priority: normalizePriority(event.priority),
+  date: toIsoDate(event.eventDate),
+  reminder: toReminderLabel(event.reminder),
+  description: event.description ?? '',
+  completed: event.status === 'Completado',
+  ceased: event.status === 'Cancelado',
+})
+
+const toBackendEvent = async (
+  commitment: Partial<CreateCommitmentDTO | UpdateCommitmentDTO>,
+): Promise<Partial<EventRequest>> => {
+  const payload: Partial<EventRequest> = {}
+
+  if (commitment.name !== undefined) payload.title = commitment.name.trim()
+  if (commitment.priority !== undefined) payload.priority = commitment.priority
+  if (commitment.date !== undefined) payload.eventDate = commitment.date
+  if (commitment.frequency !== undefined) payload.frequency = frequencyToBackend[commitment.frequency]
+  if (commitment.description !== undefined) payload.description = commitment.description.trim()
+
+  const status = toBackendStatus(commitment)
+  if (status) payload.status = status
+
+  if (commitment.date && commitment.reminder) {
+    const startHour = buildDateTime(commitment.date, commitment.reminder)
+    payload.reminder = startHour
+    payload.startHour = startHour
+    payload.endHour = addHours(startHour, 1)
+  }
+
+  if (commitment.category) {
+    payload.categoryId = await categoriesService.ensureAgendaCategoryId(commitment.category)
+  }
+
+  return payload
+}
 
 export const commitmentsService = {
-    /**
+  /**
    * Obtiene todos los compromisos del usuario autenticado.
-   * 
-   * @returns {Promise<Commitment[]>} Lista de compromisos ordenados por fecha
-   * @throws {Error} Si el token ha expirado o no es valido
-   * 
-   * @example
-   * const commitments = await commitmentsService.getAll();
    */
   getAll: async (): Promise<Commitment[]> => {
-    const { data } = await api.get<Commitment[]>(BASE, {
-      params: { type: 'commitment' }
-    });
-    return data;
+    const { data } = await api.get<ApiResponse<EventResponse[]>>(BASE)
+    return unwrap(data).map(toUiCommitment)
   },
 
   /**
    * Obtiene un compromiso especifico por su ID.
-   * 
-   * @param {number} id - Identificador del compromiso
-   * @returns {Promise<Commitment>} Datos completos del compromiso
-   * @throws {Error} Si el compromiso no existe o el token no es valido
-   * 
-   * @example
-   * const commitment = await commitmentsService.getById(10);
    */
-  getById: async (id: number): Promise<Commitment> => {
-    const { data } = await api.get<Commitment>(`${BASE}/${id}`);
-    return data;
+  getById: async (id: string): Promise<Commitment> => {
+    const { data } = await api.get<ApiResponse<EventResponse>>(`${BASE}/${id}`)
+    return toUiCommitment(unwrap(data))
   },
 
   /**
-   * Crea un nuevo compromiso.
-   * Los campos completed y ceased se inicializan automaticamente en false.
-   * 
-   * @param {CreateCommitmentDTO} commitment - Datos del compromiso a crear
-   * @returns {Promise<Commitment>} Compromiso creado con el id asignado
-   * @throws {Error} Si los datos son invalidos o el token no es valido
-   * 
-   * */
+   * Crea un nuevo compromiso como evento de agenda.
+   */
   create: async (commitment: CreateCommitmentDTO): Promise<Commitment> => {
-    const { data } = await api.post<Commitment>(BASE, {
+    const payload = await toBackendEvent({
       ...commitment,
-      type: 'commitment'
-    });
-    return data;
+      completed: false,
+      ceased: false,
+    }) as EventRequest
+    const { data } = await api.post<ApiResponse<EventResponse>>(BASE, payload)
+    return toUiCommitment(unwrap(data))
   },
 
   /**
    * Actualiza parcialmente un compromiso existente.
-   * Solo envia al backend los campos que se desean modificar.
-   * 
-   * @param {number} id - Identificador del compromiso a actualizar
-   * @param {UpdateCommitmentDTO} changes - Campos a modificar
-   * @returns {Promise<Commitment>} Compromiso actualizado
-   * @throws {Error} Si el compromiso no existe o el token no es valido
-   * 
-    */
-  update: async (id: number, changes: UpdateCommitmentDTO): Promise<Commitment> => {
-    const { data } = await api.patch<Commitment>(`${BASE}/${id}`, changes);
-    return data;
+   */
+  update: async (id: string, changes: UpdateCommitmentDTO): Promise<Commitment> => {
+    const payload = await toBackendEvent(changes)
+    const { data } = await api.patch<ApiResponse<EventResponse>>(`${BASE}/${id}`, payload)
+    return toUiCommitment(unwrap(data))
   },
 
-  /**
-   * Alterna el estado de completado de un compromiso.
-   * Metodo de conveniencia que internamente usa update().
-   * 
-   * @param {number} id - Identificador del compromiso
-   * @param {boolean} completed - Nuevo estado de completado
-   * @returns {Promise<Commitment>} Compromiso actualizado
-   * */
-
-  toggleComplete: async (id: number, completed: boolean): Promise<Commitment> => {
-    return commitmentsService.update(id, { completed });
+  toggleComplete: async (id: string, completed: boolean): Promise<Commitment> => {
+    return commitmentsService.update(id, { completed, ceased: false })
   },
 
-  /**
-   * Cesa un compromiso recurrente.
-   * Lo marca como cesado y no completado, moviendolo a la seccion de completados.
-   * Solo aplica para compromisos con frecuencia diferente a "Una vez".
-   * 
-   * @param {number} id - Identificador del compromiso a cesar
-   * @returns {Promise<Commitment>} Compromiso actualizado con ceased = true
-   * */
-  cease: async (id: number): Promise<Commitment> => {
-    return commitmentsService.update(id, { ceased: true, completed: false });
+  cease: async (id: string): Promise<Commitment> => {
+    return commitmentsService.update(id, { ceased: true, completed: false })
   },
 
-  /**
-   * Reactiva un compromiso que fue completado o cesado.
-   * Restablece completed y ceased a false, devolviendolo a la lista activa.
-   * 
-   * @param {number} id - Identificador del compromiso a reactivar
-   * @returns {Promise<Commitment>} Compromiso reactivado
-   * */
-
-  reactivate: async (id: number): Promise<Commitment> => {
-    return commitmentsService.update(id, { completed: false, ceased: false });
+  reactivate: async (id: string): Promise<Commitment> => {
+    return commitmentsService.update(id, { completed: false, ceased: false })
   },
 
-  /**
-   * Elimina un compromiso permanentemente.
-   * Esta accion no se puede deshacer.
-   * 
-   * @param {number} id - Identificador del compromiso a eliminar
-   * @returns {Promise<void>}
-   * @throws {Error} Si el compromiso no existe o el token no es valido
-   * */
-  delete: async (id: number): Promise<void> => {
-    await api.delete(`${BASE}/${id}`);
-  }
-};
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`${BASE}/${id}`)
+  },
+}
 
-export default commitmentsService;
+export default commitmentsService

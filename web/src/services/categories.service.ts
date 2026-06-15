@@ -44,21 +44,27 @@ export const categoriesService = {
   },
 
   /**
-   * Retorna el id de una categoria financiera existente o la crea.
+   * Retorna el id de una categoria existente o la crea.
    * Esto permite que los formularios actuales sigan usando nombres legibles.
    */
-  ensureFinanceCategoryId: async (name: string): Promise<string> => {
+  ensureCategoryId: async (name: string, type: CategoryType): Promise<string> => {
     const cleanName = name.trim()
-    const categories = await categoriesService.getAll('FINANCES')
+    const categories = await categoriesService.getAll(type)
     const existing = categories.find((category) => normalizeName(category.name) === normalizeName(cleanName))
 
     if (existing) {
       return existing.id
     }
 
-    const created = await categoriesService.create(cleanName, 'FINANCES')
+    const created = await categoriesService.create(cleanName, type)
     return created.id
   },
+
+  ensureFinanceCategoryId: async (name: string): Promise<string> =>
+    categoriesService.ensureCategoryId(name, 'FINANCES'),
+
+  ensureAgendaCategoryId: async (name: string): Promise<string> =>
+    categoriesService.ensureCategoryId(name, 'AGENDA'),
 }
 
 export default categoriesService
