@@ -11,7 +11,6 @@ export interface Account {
   email: string;
   phone: string;
   createdAt: string;
-  hasMasterKey: boolean;
 }
 
 interface ApiResponse<T> {

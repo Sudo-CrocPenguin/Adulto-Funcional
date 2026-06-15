@@ -3,8 +3,8 @@ import axios from 'axios';
 /**
  * Instancia de Axios preconfigurada para comunicación con el backend Spring Boot.
  * 
- * Base URL: http://localhost:8080/api
- * Producción: https://audry-subsphenoidal-bovinely.ngrok-free.dev/api
+ * Base URL local por defecto: http://localhost:8080/api
+ * Producción: configurar VITE_API_URL con la URL pública del backend + /api
  * 
  * Características:
  * - URL base configurada una sola vez
@@ -13,7 +13,7 @@ import axios from 'axios';
  * - withCredentials: true para cookies HttpOnly
  */
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api',  
+  baseURL: (import.meta.env.VITE_API_URL ?? 'http://localhost:8080/api').replace(/\/+$/, ''),
   headers: {
     'Content-Type': 'application/json',
   },
@@ -42,6 +42,19 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (error.response?.status === 401) {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
+      sessionStorage.removeItem('accountId');
+      sessionStorage.removeItem('names');
+      sessionStorage.removeItem('masterKeyVerified');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('accountId');
+      localStorage.removeItem('names');
+      localStorage.removeItem('authPersistence');
+      localStorage.removeItem('masterKeyVerified');
+    }
     return Promise.reject(error);
   }
 );

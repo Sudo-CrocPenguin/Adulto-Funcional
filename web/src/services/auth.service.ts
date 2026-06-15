@@ -35,8 +35,8 @@ export interface LoginRequest {
  */
 
 export interface AuthResponse {
-    token: string
-    tokenType: string
+    token?: string | null
+    tokenType?: string | null
     expiresIn: number
     accountId: string
     names: string
@@ -45,6 +45,11 @@ export interface AuthResponse {
     phone: string
     createdAt: string
     hasMasterKey: boolean
+}
+
+export interface MasterKeyStatusResponse {
+    hasMasterKey: boolean
+    verified: boolean
 }
 
 /**
@@ -71,13 +76,6 @@ export async function register(request: RegisterRequest): Promise<AuthResponse> 
         throw new Error(body.message || 'Error al registrar la cuennta.');
     }
 
-    //Guarda token en sessionStorage para peticiones posteriores
-    if (body.data.token) {
-        sessionStorage.setItem('token', body.data.token);
-        sessionStorage.setItem('accountId', body.data.accountId);
-        sessionStorage.setItem('names', body.data.names);
-    }
-
     return body.data;
 
 }
@@ -97,13 +95,6 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
         throw new Error(body.message || 'Correo o contraseña incorrectos.');
     }
 
-    //Guarda token en sessionStorage para peticiones posteriores
-    if (body.data.token) {
-        sessionStorage.setItem('token', body.data.token);
-        sessionStorage.setItem('accountId', body.data.accountId);
-        sessionStorage.setItem('names', body.data.names);
-    }
-
     return body.data;
 }
 
@@ -118,7 +109,6 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
  */
 export async function logout(): Promise<void> {
   await api.post('/auth/logout');   
-  sessionStorage.removeItem('token');  
 }
 
 /**
@@ -156,9 +146,23 @@ export async function resetPassword(token: string, newPassword: string): Promise
  * @throws {Error} Si el token JWT no es valido
  * 
  */
-export async function verifyMasterKey(masterKey: string): Promise<boolean> {
-    const { data: body } = await api.post<ApiResponse<{ valid: boolean }>>('/security/master-key/verify', { masterKey });
-    return body.data.valid;
+export async function getMasterKeyStatus(): Promise<MasterKeyStatusResponse> {
+    const { data: body } = await api.get<ApiResponse<MasterKeyStatusResponse>>('/security/master-key/status');
+    return body.data;
+}
+
+/**
+ * Verifica si la clave maestra ingresada es correcta.
+ * Se usa en la pantalla de acceso al gestor de contrasenas.
+ * 
+ * @param {string} masterKey - Clave maestra a verificar
+ * @returns {Promise<MasterKeyStatusResponse>} estado actualizado del gestor
+ * @throws {Error} Si el token JWT no es valido o la clave es incorrecta
+ * 
+ */
+export async function verifyMasterKey(masterKey: string): Promise<MasterKeyStatusResponse> {
+    const { data: body } = await api.post<ApiResponse<MasterKeyStatusResponse>>('/security/master-key/verify', { masterKey });
+    return body.data;
 }
 
 /**
@@ -169,16 +173,36 @@ export async function verifyMasterKey(masterKey: string): Promise<boolean> {
  * @returns {Promise<void>}
  * @throws {Error} Si el token JWT no es valido
  */
-export async function createMasterKey(masterKey: string): Promise<void> {
-    let accountId = sessionStorage.getItem('accountId');
+export async function createMasterKey(masterKey: string): Promise<MasterKeyStatusResponse> {
+    const { data: body } = await api.post<ApiResponse<MasterKeyStatusResponse>>('/security/master-key', { masterKey });
+    return body.data;
+}
 
-    if (!accountId) {
-        const user = JSON.parse(sessionStorage.getItem('user') || 'null');
-        accountId = user?.accountId ?? null;
-    }
+/**
+ * Cambia la clave maestra y permite al backend recifrar credenciales existentes.
+ *
+ * @param {string} currentMasterKey - Clave maestra actual
+ * @param {string} newMasterKey - Nueva clave maestra
+ * @returns {Promise<MasterKeyStatusResponse>} estado actualizado del gestor
+ */
+export async function changeMasterKey(
+    currentMasterKey: string,
+    newMasterKey: string,
+): Promise<MasterKeyStatusResponse> {
+    const { data: body } = await api.patch<ApiResponse<MasterKeyStatusResponse>>('/security/master-key', {
+        currentMasterKey,
+        newMasterKey,
+    });
+    return body.data;
+}
 
-    if (!accountId) throw new Error ('No se encontró el ID de cuenta');
-    await api.patch(`/account/${accountId}`, { masterKey });
+/**
+ * Cierra la sesion interna de clave maestra en el backend.
+ * No cierra la sesion general del usuario.
+ */
+export async function clearMasterKeySession(): Promise<MasterKeyStatusResponse> {
+    const { data: body } = await api.delete<ApiResponse<MasterKeyStatusResponse>>('/security/master-key/session');
+    return body.data;
 }
 
 /**

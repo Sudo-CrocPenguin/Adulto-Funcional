@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react" 
+import { useMemo, useState } from "react" 
 import styles from "./FixedExpenses.module.css"
 import { Plus, X, Trash2, CheckCircle2, Clock } from "lucide-react"
 

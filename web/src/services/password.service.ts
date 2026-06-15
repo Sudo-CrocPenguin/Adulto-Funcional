@@ -6,9 +6,9 @@ import api from './api.config';
  */
 export interface PasswordCredential {
   id: string;
-  name: string;
-  password: string;
-  createdAt: string;
+  applicationName: string;
+  password?: string;
+  lastChangeDate?: string;
 }
 
 interface ApiResponse<T> {
@@ -44,7 +44,7 @@ export const passwordService = {
    * Guarda una nueva credencial.
    * POST /api/security/passwords
    */
-  create: async (payload: { name: string; password: string }): Promise<PasswordCredential> => {
+  create: async (payload: { applicationName: string; password: string }): Promise<PasswordCredential> => {
     const { data: body } = await api.post<ApiResponse<PasswordCredential>>('/security/passwords', payload);
     return body.data;
   },
@@ -55,7 +55,7 @@ export const passwordService = {
    */
   update: async (
     id: string,
-    payload: Partial<Pick<PasswordCredential, 'name' | 'password'>>,
+    payload: Partial<Pick<PasswordCredential, 'applicationName' | 'password'>>,
   ): Promise<PasswordCredential> => {
     const { data: body } = await api.patch<ApiResponse<PasswordCredential>>(`/security/passwords/${id}`, payload);
     return body.data;

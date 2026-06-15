@@ -12,7 +12,7 @@ import { useState } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import styles from './Register.module.css'
 import { useAuth } from '../../context/AuthContext'
-import { register, login as loginService } from '../../services/auth.service'
+import { register } from '../../services/auth.service'
 import { useNavigate } from 'react-router-dom'
 
 /** Estructura de los campos del formulario de registro */
@@ -168,7 +168,7 @@ function Register({ onClose, onGoToLogin }: RegisterProps) {
     }
 
     try {
-      await register({
+      const session = await register({
         names: form.firstName,
         lastnames: form.lastName,
         phone: `+57${form.phone}`,
@@ -176,18 +176,15 @@ function Register({ onClose, onGoToLogin }: RegisterProps) {
         password: form.password,
       })
 
-      const session = await loginService({
-        email: form.email,
-        password: form.password,
-      })
-
-      login(session.token, {
+      login({
         accountId: session.accountId,
         names: session.names,
         lastnames: session.lastnames,
         email: session.email,
         phone: session.phone,
         hasMasterKey: session.hasMasterKey,
+      }, {
+        token: session.token,
       })
 
       setSuccessMsg('¡Cuenta creada exitosamente! Redirigiendo...')

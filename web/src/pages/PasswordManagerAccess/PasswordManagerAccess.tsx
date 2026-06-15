@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Lock, Eye, EyeOff } from 'lucide-react';
 import styles from './PasswordManagerAccess.module.css';
-import { accountService } from '../../services/account.service';
-import { verifyMasterKey, createMasterKey } from '../../services/auth.service';
+import { verifyMasterKey, createMasterKey, getMasterKeyStatus } from '../../services/auth.service';
 
 type View = 'login' | 'create';
 
@@ -37,12 +36,16 @@ export default function PasswordManagerAccess() {
       navigate('/password-manager/home', { replace: true });
       return;
     }
-    const accountId = sessionStorage.getItem('accountId');
-    if (accountId) {
-      accountService.getById(accountId)
-        .then(acc => { if (!acc.hasMasterKey) setView('create'); })
-        .catch(console.error);
-    }
+    getMasterKeyStatus()
+      .then(status => {
+        if (status.verified) {
+          sessionStorage.setItem('masterKeyVerified', 'true');
+          navigate('/password-manager/home', { replace: true });
+          return;
+        }
+        setView(status.hasMasterKey ? 'login' : 'create');
+      })
+      .catch(console.error);
   }, [navigate]);
 
   const handleLogin = async () => {
@@ -50,13 +53,13 @@ export default function PasswordManagerAccess() {
     setLoading(true);
     setLoginError('');
     try {
-      const isValid = await verifyMasterKey(masterKey);
-      if (!isValid) {
+      const status = await verifyMasterKey(masterKey);
+      if (!status.verified) {
         setLoginError('Contraseña maestra incorrecta');
         return;
       }
       sessionStorage.setItem('masterKeyVerified', 'true');
-      navigate('/password-manager-home');
+      navigate('/password-manager/home');
     } catch {
       setLoginError('Contraseña maestra incorrecta');
     } finally {
@@ -74,9 +77,14 @@ export default function PasswordManagerAccess() {
 
     setLoading(true);
     try {
-      await createMasterKey(newKey);
+      const status = await createMasterKey(newKey);
       setNewKey('');
       setConfirmKey('');
+      if (status.verified) {
+        sessionStorage.setItem('masterKeyVerified', 'true');
+        navigate('/password-manager/home');
+        return;
+      }
       setView('login')
       
     } catch {

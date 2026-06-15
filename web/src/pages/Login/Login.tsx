@@ -123,23 +123,16 @@ function Login({ onClose, onGoToRegister }: LoginProps) {
         password: form.password,
       })
 
-      sessionStorage.setItem('token', response.token)
-      sessionStorage.setItem('user', JSON.stringify({
+      login({
         accountId: response.accountId,
         names: response.names,
         lastnames: response.lastnames,
         email: response.email,
         phone: response.phone,
         hasMasterKey: response.hasMasterKey,
-      }))
-
-      login(response.token, {
-        accountId: response.accountId,
-        names: response.names,
-        lastnames: response.lastnames,
-        email: response.email,
-        phone: response.phone,
-        hasMasterKey: response.hasMasterKey,
+      }, {
+        token: response.token,
+        rememberMe: form.rememberMe,
       })
 
       onClose()

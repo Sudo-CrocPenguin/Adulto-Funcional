@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Plus, Eye, EyeOff, Trash2, Pencil } from 'lucide-react';
 import styles from './PasswordManager.module.css';
 import { passwordService, type PasswordCredential } from '../../services/password.service';
+import { clearMasterKeySession } from '../../services/auth.service';
 
 /* ── Fuerza de contraseña ── */
 type Strength = 'weak' | 'medium' | 'strong';
@@ -51,7 +52,8 @@ function StrengthMeter({ pwd }: { pwd: string }) {
   );
 }
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return 'Sin fecha registrada';
   return new Date(dateStr).toLocaleDateString('es-ES', {
     day: 'numeric', month: 'long', year: 'numeric',
   });
@@ -64,6 +66,7 @@ export default function PasswordManager() {
   const [loading, setLoading]       = useState(true);
   const [showModal, setShowModal]   = useState(false);
   const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set());
+  const [revealedPasswords, setRevealedPasswords] = useState<Record<string, string>>({});
 
   /* Modal nueva / editar contraseña */
   const [editingId, setEditingId]     = useState<string | null>(null);
@@ -80,6 +83,7 @@ export default function PasswordManager() {
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const lockVault = useCallback(() => {
+    void clearMasterKeySession().catch(console.error);
     sessionStorage.removeItem('masterKeyVerified');
     navigate('/password-manager', { replace: true});
   }, [navigate]);
@@ -120,10 +124,41 @@ export default function PasswordManager() {
     }
   };
 
-  const toggleVisible = (id: string) => {
+  const toggleVisible = async (id: string) => {
+    if (visibleIds.has(id)) {
+      setVisibleIds(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      return;
+    }
+
+    try {
+      const fullCredential = await passwordService.getById(id);
+      setRevealedPasswords(prev => ({
+        ...prev,
+        [id]: fullCredential.password ?? '',
+      }));
+      setVisibleIds(prev => {
+        const next = new Set(prev);
+        next.add(id);
+        return next;
+      });
+    } catch (err) {
+      console.error('Error revelando contraseña:', err);
+    }
+  };
+
+  const hideCredential = (id: string) => {
     setVisibleIds(prev => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+      next.delete(id);
+      return next;
+    });
+    setRevealedPasswords(prev => {
+      const next = { ...prev };
+      delete next[id];
       return next;
     });
   };
@@ -139,13 +174,19 @@ export default function PasswordManager() {
   };
 
   /* ── Abrir modal para editar ── */
-  const openEdit = (p: PasswordCredential) => {
+  const openEdit = async (p: PasswordCredential) => {
     setEditingId(p.id);
-    setNewName(p.name);
-    setNewPassword(p.password);
-    setShowNewPwd(false);
+    setNewName(p.applicationName);
     setModalError('');
-    setShowModal(true);
+    setShowNewPwd(false);
+    try {
+      const fullCredential = await passwordService.getById(p.id);
+      setNewPassword(fullCredential.password ?? '');
+      setShowModal(true);
+    } catch (err) {
+      console.error('Error cargando contraseña para editar:', err);
+      setModalError('Error al cargar la contraseña. Inténtalo de nuevo.');
+    }
   };
 
   const handleSave = async () => {
@@ -155,25 +196,18 @@ export default function PasswordManager() {
     setModalError('');
     try {
       if (editingId) {
-        /* TODO: BACKEND - descomentar cuando el endpoint esté listo */
-        // const updated = await passwordService.update(editingId, { name: newName.trim(), password: newPassword });
-        // setPasswords(prev => prev.map(p => p.id === editingId ? updated : p));
-        setPasswords(prev => prev.map(p =>
-          p.id === editingId
-            ? { ...p, name: newName.trim(), password: newPassword }
-            : p
-        ));
-      } else {
-        /* TODO: BACKEND - descomentar cuando el endpoint esté listo */
-        // const created = await passwordService.create({ name: newName.trim(), password: newPassword });
-        // setPasswords(prev => [created, ...prev]);
-        const mock: PasswordCredential = {
-          id: crypto.randomUUID(),
-          name: newName.trim(),
+        const updated = await passwordService.update(editingId, {
+          applicationName: newName.trim(),
           password: newPassword,
-          createdAt: new Date().toISOString(),
-        };
-        setPasswords(prev => [mock, ...prev]);
+        });
+        setPasswords(prev => prev.map(p => p.id === editingId ? updated : p));
+        hideCredential(editingId);
+      } else {
+        const created = await passwordService.create({
+          applicationName: newName.trim(),
+          password: newPassword,
+        });
+        setPasswords(prev => [created, ...prev]);
       }
       closeModal();
     } catch (err) {
@@ -189,6 +223,7 @@ export default function PasswordManager() {
     try {
       await passwordService.remove(confirmDelete.id);
       setPasswords(prev => prev.filter(p => p.id !== confirmDelete.id));
+      hideCredential(confirmDelete.id);
     } catch (err) {
       console.error('Error eliminando contraseña:', err);
     } finally {
@@ -223,10 +258,11 @@ export default function PasswordManager() {
         <div className={styles.grid}>
           {passwords.map(p => {
             const visible = visibleIds.has(p.id);
+            const revealedPassword = revealedPasswords[p.id] ?? '';
             return (
               <div key={p.id} className={styles.card}>
                 <div className={styles.cardTop}>
-                  <span className={styles.cardName}>{p.name}</span>
+                  <span className={styles.cardName}>{p.applicationName}</span>
                   <div className={styles.cardActions}>
                     <button
                       className={styles.editBtn}
@@ -245,18 +281,18 @@ export default function PasswordManager() {
                   </div>
                 </div>
 
-                <StrengthMeter pwd={p.password} />
+                {visible && <StrengthMeter pwd={revealedPassword} />}
 
                 <div className={styles.passwordRow}>
                   <span className={styles.passwordText}>
-                    {visible ? p.password : '•'.repeat(Math.min(p.password.length, 8))}
+                    {visible ? revealedPassword : '••••••••'}
                   </span>
                   <button className={styles.eyeBtn} onClick={() => toggleVisible(p.id)}>
                     {visible ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
 
-                <span className={styles.date}>{formatDate(p.createdAt)}</span>
+                <span className={styles.date}>{formatDate(p.lastChangeDate)}</span>
               </div>
             );
           })}
@@ -323,7 +359,7 @@ export default function PasswordManager() {
             <h3 className={styles.confirmTitle}>¿Eliminar contraseña?</h3>
             <p className={styles.confirmText}>
               Estás a punto de eliminar la contraseña{' '}
-              <span className={styles.confirmName}>"{confirmDelete.name}"</span>.
+              <span className={styles.confirmName}>"{confirmDelete.applicationName}"</span>.
               Esta acción no se puede deshacer.
             </p>
             <div className={styles.confirmActions}>

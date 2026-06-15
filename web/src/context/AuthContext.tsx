@@ -10,7 +10,7 @@ import { createContext, useContext, useState, type ReactNode } from "react";
  * Datos del usuario autenticado.
  * Corresponde a los campos de AuthResponse del backend.
  */
-interface AuthUser {
+export interface AuthUser {
     accountId: string
     names: string
     lastnames: string
@@ -35,7 +35,7 @@ interface AuthContextType {
      * Inicia sesión guardando el token y los datos del usuario.
      * TODO: llamar después de recibir respuesta exitosa del backend.
      */
-    login: (token: string, user: AuthUser) => void
+    login: (user: AuthUser, options?: { token?: string | null; rememberMe?: boolean }) => void
 
     /**
      * Cierra sesión limpiando el token y los datos del usuario.
@@ -45,6 +45,27 @@ interface AuthContextType {
 /** Contexto de autenticación */
 const AuthContext = createContext<AuthContextType | null>(null)
 
+const SESSION_KEYS = ['token', 'user', 'accountId', 'names', 'masterKeyVerified']
+
+const clearAuthStorage = () => {
+    SESSION_KEYS.forEach((key) => {
+        sessionStorage.removeItem(key)
+        localStorage.removeItem(key)
+    })
+    localStorage.removeItem('authPersistence')
+}
+
+const getInitialStorage = (): Storage => {
+    return localStorage.getItem('authPersistence') === 'local'
+        ? localStorage
+        : sessionStorage
+}
+
+const readStoredUser = (): AuthUser | null => {
+    const storage = getInitialStorage()
+    return JSON.parse(storage.getItem('user') || 'null')
+}
+
 /**
  * Proveedor del contexto de autenticación.
  * Debe envolver toda la aplicación en main.tsx para que
@@ -53,11 +74,11 @@ const AuthContext = createContext<AuthContextType | null>(null)
 export function AuthProvider({ children }: { children: ReactNode }) {
 
     const [token, setToken] = useState<string | null>(
-        sessionStorage.getItem('token')
+        getInitialStorage().getItem('token')
     )
     
     const [user, setUser] = useState<AuthUser | null>(
-        JSON.parse(sessionStorage.getItem('user') || 'null')
+        readStoredUser()
     )
 
     /**
@@ -66,11 +87,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
      * @param user - Datos del usuario recibidos del backend
      */
 
-    const login = (token: string, user: AuthUser) => {
-        setToken(token)
+    const login = (user: AuthUser, options?: { token?: string | null; rememberMe?: boolean }) => {
+        const nextToken = options?.token ?? null
+        const storage = options?.rememberMe ? localStorage : sessionStorage
+
+        clearAuthStorage()
+
+        setToken(nextToken)
         setUser(user)
-        sessionStorage.setItem('token', token) 
-        sessionStorage.setItem('user', JSON.stringify(user))
+
+        if (nextToken) storage.setItem('token', nextToken)
+        storage.setItem('user', JSON.stringify(user))
+        storage.setItem('accountId', user.accountId)
+        storage.setItem('names', user.names)
+
+        if (options?.rememberMe) {
+            localStorage.setItem('authPersistence', 'local')
+        }
     }
 
      /**
@@ -79,9 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         setToken(null)
         setUser(null)
-        sessionStorage.removeItem('token')
-        sessionStorage.removeItem('user')
-        sessionStorage.removeItem('masterKeyVerified')
+        clearAuthStorage()
     }
 
     return (

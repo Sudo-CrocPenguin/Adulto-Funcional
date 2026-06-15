@@ -17,6 +17,7 @@ import logo from '../../assets/logo.png';
 import styles from './Layout.module.css';
 import { accountService, type Account } from '../../services/account.service';
 import { logout as authLogout } from '../../services/auth.service';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * Interfaz que define la estructura de una notificación.
@@ -109,6 +110,7 @@ export default function Layout() {
 
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   /** Estado de apertura/cierre del sidebar */
   const [sidebarOpen,   setSidebarOpen]   = useState(true);
@@ -128,7 +130,7 @@ export default function Layout() {
   const [account, setAccount] = useState<Account | null>(null);
 
   const [settings, setSettings] = useState<SettingsState>({
-    username: sessionStorage.getItem('names') || 'Usuario',
+    username: user?.names || sessionStorage.getItem('names') || localStorage.getItem('names') || 'Usuario',
     language: 'Español',
     notifications: { commitments: true, finances: true, fixedExpenses: true },
     mode: 'light',
@@ -143,7 +145,7 @@ export default function Layout() {
 
   //cargar cuenta al montar
   useEffect(() => {
-    const accountId = sessionStorage.getItem('accountId');
+    const accountId = user?.accountId || sessionStorage.getItem('accountId') || localStorage.getItem('accountId');
     if (accountId) {
       accountService.getById(accountId)
         .then((acc) => { 
@@ -153,7 +155,7 @@ export default function Layout() {
 
         .catch(console.error);
     }
-  }, []);
+  }, [user?.accountId]);
 
   /**
    * Efecto para cerrar los popups al hacer clic fuera de ellos.
@@ -179,21 +181,17 @@ export default function Layout() {
     } catch (error) {
       console.error('Error cerrando sesión:', error);
     }
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('accountId');
-    sessionStorage.removeItem('names');
+    logout();
     navigate('/login');
   };
 
   const handleDeleteAccount = async () => {
     setShowDeleteModal(false);
-    const accountId = sessionStorage.getItem('accountId');
+    const accountId = user?.accountId || sessionStorage.getItem('accountId') || localStorage.getItem('accountId');
     if (accountId) {
       try {
         await accountService.remove(accountId);
-        sessionStorage.removeItem('token');
-        sessionStorage.removeItem('accountId');
-        sessionStorage.removeItem('names');
+        logout();
         navigate('/login');
       } catch (error: any) {
         console.error('Error eliminando cuenta:', error.response?.status, error);
@@ -251,7 +249,7 @@ export default function Layout() {
           >
             <UserCircle2 size={30} className={styles.userAvatar} />
             {sidebarOpen && <span className={styles.userName}>
-              {account?.names || sessionStorage.getItem('names') || 'Usuario'}
+              {account?.names || user?.names || sessionStorage.getItem('names') || localStorage.getItem('names') || 'Usuario'}
               </span>}
           </button>
         </div>
