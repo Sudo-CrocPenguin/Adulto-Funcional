@@ -456,23 +456,19 @@ Datos:
 
 Nota:
 
-- Eliminar cuenta muestra `alert('Funcion no implementada')`.
+- Eliminar cuenta navega a `profile/delete-account.tsx`.
 
 ### `app/(app)/profile/edit.tsx`
 
 Formulario de edicion de perfil.
 
-Responsabilidades previstas:
+Responsabilidades:
 
 - Editar nombres, apellidos, telefono y correo.
 - Validar datos.
 - Enviar PATCH a `/api/account/{id}`.
 - Actualizar storage local.
 - Refrescar usuario en contexto.
-
-Problema actual:
-
-- Los `TextInput` usan `onChangeText={() => setError('')}` y no actualizan `names`, `lastnames`, `phone` ni `email`, por lo que el usuario no puede modificar los campos.
 
 ### `app/(app)/profile/change-password.tsx`
 
@@ -481,12 +477,8 @@ Formulario de cambio de contrasena.
 Responsabilidades:
 
 - Captura contrasena actual, nueva y confirmacion.
-- Valida campos y coincidencia.
-- Llama `useProfile().changePassword`.
-
-Nota:
-
-- `changePassword` es un TODO que solo hace `console.log`.
+- Valida campos, longitud y coincidencia.
+- Llama `useProfile().changePassword`, que usa `PATCH /api/account/{id}/password`.
 
 ### `app/(app)/profile/settings.tsx`
 
@@ -501,7 +493,7 @@ Responsabilidades:
 - Persistir preferencias de notificaciones.
 - Alternar 2FA y respaldo automatico solo en memoria.
 - Cerrar sesion.
-- Simular eliminar cuenta con `console.log`.
+- Navegar a eliminacion real de cuenta.
 
 Nota:
 
@@ -509,9 +501,13 @@ Nota:
 
 ### `app/(app)/profile/delete-account.tsx`
 
-Placeholder.
+Pantalla de eliminacion definitiva de cuenta.
 
-Muestra pantalla `En construccion`.
+Responsabilidades:
+
+- Exigir confirmacion escrita con `ELIMINAR`.
+- Llamar `DELETE /api/account/{id}`.
+- Cerrar la sesion local y volver al login cuando la eliminacion finaliza.
 
 ## Categorias
 

@@ -156,36 +156,34 @@ Estado actual:
 
 ## Bugs funcionales detectados
 
-### Edicion de perfil no cambia campos
+### Edicion de perfil conectada
 
 Archivo:
 
 - `app/(app)/profile/edit.tsx`
 
-Problema:
+Estado actual:
 
-- Los `TextInput` usan `onChangeText={() => setError('')}`.
-- No llaman `setNames`, `setLastnames`, `setPhone` ni `setEmail`.
+- Los `TextInput` actualizan `names`, `lastnames`, `phone` y `email`.
+- La pantalla valida datos y llama `PATCH /api/account/{id}` mediante `useProfile`.
+- El storage local se sincroniza con la respuesta del backend.
 
-Impacto:
-
-- El usuario no puede editar realmente el perfil desde la UI.
-
-### Cambio de contrasena no implementado
+### Cambio de contrasena implementado
 
 Archivo:
 
 - `src/hooks/useProfile.ts`
 
-Problema:
+Estado actual:
 
-- `changePassword` solo hace `console.log`.
+- `changePassword` llama `PATCH /api/account/{id}/password`.
+- `profile/change-password.tsx` valida longitud y confirmacion de la nueva contrasena.
 
-Impacto:
+Requisito:
 
-- `profile/change-password.tsx` parece funcional, pero no cambia nada en backend.
+- El backend desplegado debe incluir el endpoint de cambio de contrasena.
 
-### Eliminar cuenta no implementado
+### Eliminar cuenta implementado
 
 Archivos:
 
@@ -193,9 +191,11 @@ Archivos:
 - `app/(app)/profile/settings.tsx`
 - `app/(app)/profile/delete-account.tsx`
 
-Problema:
+Estado actual:
 
-- Hay alertas o placeholders, pero no llamada real al backend.
+- `profile/delete-account.tsx` exige escribir `ELIMINAR`.
+- Llama `DELETE /api/account/{id}` y luego limpia la sesion local.
+- Perfil y configuracion navegan a la pantalla real de eliminacion.
 
 ### Settings no sincroniza tema en vivo
 

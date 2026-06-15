@@ -523,12 +523,14 @@ Retorna:
 - `fetchProfile`
 - `updateProfile`
 - `changePassword`
+- `deleteAccount`
 
 Notas:
 
-- `fetchProfile` arma el perfil desde storage local.
-- `changePassword` es un TODO.
-- `completedEvents` se calcula con estado `Completado`, aunque el tipo API usa `COMPLETADO`.
+- `fetchProfile` consulta `GET /api/account/{id}` y sincroniza storage local.
+- `updateProfile` usa `PATCH /api/account/{id}`.
+- `changePassword` usa `PATCH /api/account/{id}/password`.
+- `deleteAccount` usa `DELETE /api/account/{id}`.
 
 ## Storage seguro
 
