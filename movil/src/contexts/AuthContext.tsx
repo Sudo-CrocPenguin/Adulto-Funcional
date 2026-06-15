@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 import * as authApi from '../api/authApi';
 import { AuthResponse, LoginRequest, RegisterRequest } from '../types/auth.types';
 import { updateStreak, getCurrentStreak, getMaxStreak } from '../services/streakService';
+import { getApiErrorMessage } from '../services/errorHandler';
 
 interface AuthContextType {
   user: Partial<AuthResponse> | null;
@@ -78,8 +79,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setIsAuthenticated(true);
       await updateAndLoadStreak();
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'Error en login';
+    } catch (err: unknown) {
+      const msg = getApiErrorMessage(err, 'Error en login');
       setError(msg);
       throw new Error(msg);
     } finally {
@@ -102,8 +103,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       setIsAuthenticated(true);
       await updateAndLoadStreak();
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || 'Error en registro';
+    } catch (err: unknown) {
+      const msg = getApiErrorMessage(err, 'Error en registro');
       setError(msg);
       throw new Error(msg);
     } finally {

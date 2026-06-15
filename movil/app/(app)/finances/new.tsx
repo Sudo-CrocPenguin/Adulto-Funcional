@@ -8,6 +8,7 @@ import { Colors } from '../../../src/constants/Colors';
 import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { BottomNav } from '../../../src/components/common/BottomNav';
+import { getApiErrorMessage } from '../../../src/services/errorHandler';
 
 export default function NewMovementScreen() {
   const insets = useSafeAreaInsets();
@@ -40,8 +41,8 @@ export default function NewMovementScreen() {
       setSelectedCategoryId(newCat.id);
       setModalVisible(false);
       setNewCategoryName('');
-    } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.message || err.message);
+    } catch (err: unknown) {
+      Alert.alert('Error', getApiErrorMessage(err, 'No se pudo crear la categoría'));
     } finally {
       setCreating(false);
     }
@@ -70,8 +71,8 @@ export default function NewMovementScreen() {
         category: { id: selectedCategory.id, name: selectedCategory.name },
       });
       router.back();
-    } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.message || err.message);
+    } catch (err: unknown) {
+      Alert.alert('Error', getApiErrorMessage(err, 'No se pudo crear el movimiento'));
     }
   };
 

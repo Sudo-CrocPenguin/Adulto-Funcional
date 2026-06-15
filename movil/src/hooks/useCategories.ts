@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { financesApi, Category } from '../api/financesApi';
+import { getApiErrorMessage } from '../services/errorHandler';
 
 export const useCategories = (type: 'FINANCES' | 'AGENDA' = 'FINANCES') => {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -11,18 +12,22 @@ export const useCategories = (type: 'FINANCES' | 'AGENDA' = 'FINANCES') => {
       const response = await financesApi.getCategories();
       const filtered = response.data.data.filter(c => c.type === type);
       setCategories(filtered);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getApiErrorMessage(err, 'No se pudieron cargar las categorías'));
     } finally {
       setLoading(false);
     }
   }, [type]);
 
   const createCategory = async (name: string): Promise<Category> => {
-    const response = await financesApi.createCategory({ name, type });
-    const newCategory = response.data.data;
-    setCategories(prev => [...prev, newCategory]);
-    return newCategory;
+    try {
+      const response = await financesApi.createCategory({ name, type });
+      const newCategory = response.data.data;
+      setCategories(prev => [...prev, newCategory]);
+      return newCategory;
+    } catch (err: unknown) {
+      throw new Error(getApiErrorMessage(err, 'No se pudo crear la categoría'));
+    }
   };
 
   useEffect(() => {
