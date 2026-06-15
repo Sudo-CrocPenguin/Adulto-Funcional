@@ -1,14 +1,14 @@
 /**
- * Dashboard.tsx - Página de inicio 
+ * Dashboard.tsx - Pagina de inicio
  *
  *  - Resumen financiero: saldo, ingresos, egresos, ahorros
  *  - Compromisos pendientes y racha
- *  - Próximos gastos fijos
- *  - Contraseñas guardadas (conteo)
- *  - Datos del gráfico estadístico por período
+ *  - Proximos gastos fijos
+ *  - Contrasenas guardadas (conteo)
+ *  - Datos del grafico estadistico por periodo
  */
 
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -22,8 +22,12 @@ import {
   ChevronDown
 } from 'lucide-react'
 import styles from './Dashboard.module.css'
+import financesService, { type Movement } from '../../services/financeService'
+import fixedExpensesService, { type FixedExpense } from '../../services/fixedExpenses.service'
+import commitmentsService, { type Commitment } from '../../services/commitments.service'
+import { passwordService } from '../../services/password.service'
 
-// ─── Tipos 
+// ─── Tipos
 
 interface SummaryCard {
   label: string
@@ -33,14 +37,14 @@ interface SummaryCard {
 }
 
 interface CommitmentItem {
-  id: number
+  id: string
   title: string
   date: string
   route: string
 }
 
 interface FixedExpenseItem {
-  id: number
+  id: string
   title: string
   date: string
   route: string
@@ -50,120 +54,260 @@ interface ChartDataPoint {
   name: string
   Ingresos: number
   Egresos: number
-  Osio: number
   Ahorros: number
 }
 
-// ─── Datos mock (reemplazar con llamadas al backend) 
-
-// TODO: BACKEND: GET /api/dashboard/summary → { saldo, compromisosPendientes, proximosGastos, contrasenas }
-const MOCK_SUMMARY: SummaryCard[] = [
-  { label: 'SALDO ACTUAL',           value: '$2,500.00', icon: <DollarSign size={24} />,    route: '/finances' },
-  { label: 'COMPROMISOS PENDIENTES', value: 8,           icon: <ClipboardList size={24} />, route: '/commitments' },
-  { label: 'PRÓXIMOS GASTOS',        value: 3,           icon: <Clock size={24} />,         route: '/fixed-expenses' },
-  { label: 'CONTRASEÑAS',            value: 12,          icon: <Lock size={24} />,          route: '/password-manager/home' },
-]
-
-//  TODO: BACKEND: GET /api/dashboard/streak → { diasActivos, meta }
-const MOCK_STREAK = { diasActivos: 7, meta: 30 }
-
-// TODO: BACKEND: GET /api/dashboard/recent-commitments → CommitmentItem[]
-const MOCK_COMMITMENTS: CommitmentItem[] = [
-  { id: 1, title: 'Reunión con equipo', date: '24/Feb', route: '/commitments' },
-  { id: 2, title: 'Pago tarjeta',       date: '28/Feb', route: '/commitments' },
-]
-
-// TODO: BACKEND: GET /api/dashboard/recent-fixed-expenses → FixedExpenseItem[]
-const MOCK_FIXED_EXPENSES: FixedExpenseItem[] = [
-  { id: 1, title: 'Internet', date: '24/Feb', route: '/fixed-expenses' },
-  { id: 2, title: 'Netflix',  date: '01/Mar', route: '/fixed-expenses' },
-]
-
-// TODO: BACKEND: GET /api/dashboard/chart?period=week|month|quarter|semester|year → ChartDataPoint[]
-const MOCK_CHART_DATA: Record<string, ChartDataPoint[]> = {
-  week: [
-    { name: 'Lun', Ingresos: 500,  Egresos: 200, Osio: 80,  Ahorros: 120 },
-    { name: 'Mar', Ingresos: 300,  Egresos: 150, Osio: 50,  Ahorros: 80  },
-    { name: 'Mié', Ingresos: 700,  Egresos: 300, Osio: 100, Ahorros: 200 },
-    { name: 'Jue', Ingresos: 200,  Egresos: 180, Osio: 60,  Ahorros: 40  },
-    { name: 'Vie', Ingresos: 900,  Egresos: 400, Osio: 120, Ahorros: 300 },
-    { name: 'Sáb', Ingresos: 100,  Egresos: 90,  Osio: 200, Ahorros: 20  },
-    { name: 'Dom', Ingresos: 50,   Egresos: 60,  Osio: 300, Ahorros: 10  },
-  ],
-  month: [
-    { name: 'Sem 1', Ingresos: 2000, Egresos: 900,  Osio: 300, Ahorros: 500 },
-    { name: 'Sem 2', Ingresos: 1800, Egresos: 700,  Osio: 250, Ahorros: 450 },
-    { name: 'Sem 3', Ingresos: 2200, Egresos: 1000, Osio: 350, Ahorros: 600 },
-    { name: 'Sem 4', Ingresos: 1500, Egresos: 800,  Osio: 280, Ahorros: 400 },
-  ],
-  quarter: [
-    { name: 'Ene', Ingresos: 3500, Egresos: 900,  Osio: 600, Ahorros: 400 },
-    { name: 'Feb', Ingresos: 2800, Egresos: 1200, Osio: 500, Ahorros: 700 },
-    { name: 'Mar', Ingresos: 3200, Egresos: 1100, Osio: 800, Ahorros: 900 },
-  ],
-  semester: [
-    { name: 'Ene', Ingresos: 3500, Egresos: 900,  Osio: 600, Ahorros: 400  },
-    { name: 'Feb', Ingresos: 2800, Egresos: 1200, Osio: 500, Ahorros: 700  },
-    { name: 'Mar', Ingresos: 3200, Egresos: 1100, Osio: 800, Ahorros: 900  },
-    { name: 'Abr', Ingresos: 4000, Egresos: 1400, Osio: 700, Ahorros: 1200 },
-    { name: 'May', Ingresos: 3600, Egresos: 1300, Osio: 650, Ahorros: 1000 },
-    { name: 'Jun', Ingresos: 3900, Egresos: 1500, Osio: 900, Ahorros: 1100 },
-  ],
-  year: [
-    { name: 'Ene', Ingresos: 3500, Egresos: 900,  Osio: 600,  Ahorros: 400  },
-    { name: 'Feb', Ingresos: 2800, Egresos: 1200, Osio: 500,  Ahorros: 700  },
-    { name: 'Mar', Ingresos: 3200, Egresos: 1100, Osio: 800,  Ahorros: 900  },
-    { name: 'Abr', Ingresos: 4000, Egresos: 1400, Osio: 700,  Ahorros: 1200 },
-    { name: 'May', Ingresos: 3600, Egresos: 1300, Osio: 650,  Ahorros: 1000 },
-    { name: 'Jun', Ingresos: 3900, Egresos: 1500, Osio: 900,  Ahorros: 1100 },
-    { name: 'Jul', Ingresos: 4200, Egresos: 1600, Osio: 750,  Ahorros: 1300 },
-    { name: 'Ago', Ingresos: 3100, Egresos: 1200, Osio: 680,  Ahorros: 900  },
-    { name: 'Sep', Ingresos: 3800, Egresos: 1350, Osio: 720,  Ahorros: 1050 },
-    { name: 'Oct', Ingresos: 4100, Egresos: 1450, Osio: 800,  Ahorros: 1200 },
-    { name: 'Nov', Ingresos: 3700, Egresos: 1250, Osio: 690,  Ahorros: 1000 },
-    { name: 'Dic', Ingresos: 5000, Egresos: 2000, Osio: 1200, Ahorros: 1500 },
-  ],
+interface ChartBucket {
+  name: string
+  start: Date
+  end: Date
 }
 
 const PERIOD_OPTIONS = [
-  { value: 'week',     label: 'Última semana' },
-  { value: 'month',    label: 'Último mes' },
-  { value: 'quarter',  label: 'Últimos 3 meses' },
-  { value: 'semester', label: 'Últimos 6 meses' },
-  { value: 'year',     label: 'Último año' },
+  { value: 'week',     label: 'Ultima semana' },
+  { value: 'month',    label: 'Ultimo mes' },
+  { value: 'quarter',  label: 'Ultimos 3 meses' },
+  { value: 'semester', label: 'Ultimos 6 meses' },
+  { value: 'year',     label: 'Ultimo ano' },
 ]
+
+const MONTHS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+const WEEK_DAYS = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab']
+
+const formatCurrency = (amount: number) =>
+  '$' + amount.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+const formatShortDate = (dateStr: string) => {
+  if (!dateStr) return ''
+  const [year, month, day] = dateStr.split('-')
+  return `${day}/${MONTHS[parseInt(month) - 1]}/${year}`
+}
+
+const parseDate = (dateStr: string) => new Date(`${dateStr}T00:00:00`)
+
+const startOfDay = (date: Date) => {
+  const result = new Date(date)
+  result.setHours(0, 0, 0, 0)
+  return result
+}
+
+const endOfDay = (date: Date) => {
+  const result = new Date(date)
+  result.setHours(23, 59, 59, 999)
+  return result
+}
+
+const addDays = (date: Date, days: number) => {
+  const result = new Date(date)
+  result.setDate(result.getDate() + days)
+  return result
+}
+
+const addMonths = (date: Date, months: number) => {
+  const result = new Date(date)
+  result.setMonth(result.getMonth() + months)
+  return result
+}
+
+const buildChartBuckets = (period: string): ChartBucket[] => {
+  const today = startOfDay(new Date())
+
+  if (period === 'week') {
+    return Array.from({ length: 7 }, (_, index) => {
+      const day = addDays(today, index - 6)
+      return {
+        name: WEEK_DAYS[day.getDay()],
+        start: startOfDay(day),
+        end: endOfDay(day),
+      }
+    })
+  }
+
+  if (period === 'month') {
+    const start = addDays(today, -27)
+    return Array.from({ length: 4 }, (_, index) => {
+      const weekStart = addDays(start, index * 7)
+      return {
+        name: `Sem ${index + 1}`,
+        start: startOfDay(weekStart),
+        end: endOfDay(addDays(weekStart, 6)),
+      }
+    })
+  }
+
+  const monthCount = period === 'quarter' ? 3 : period === 'semester' ? 6 : 12
+  const firstMonth = new Date(today.getFullYear(), today.getMonth() - monthCount + 1, 1)
+
+  return Array.from({ length: monthCount }, (_, index) => {
+    const monthStart = addMonths(firstMonth, index)
+    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0)
+    return {
+      name: MONTHS[monthStart.getMonth()],
+      start: startOfDay(monthStart),
+      end: endOfDay(monthEnd),
+    }
+  })
+}
+
+const buildChartData = (movements: Movement[], period: string): ChartDataPoint[] => {
+  return buildChartBuckets(period).map((bucket) => {
+    const bucketMovements = movements.filter((movement) => {
+      const date = parseDate(movement.entryDate)
+      return date >= bucket.start && date <= bucket.end
+    })
+
+    const ingresos = bucketMovements
+      .filter((movement) => movement.type === 'Ingreso')
+      .reduce((total, movement) => total + movement.amount, 0)
+
+    const egresos = bucketMovements
+      .filter((movement) => movement.type === 'Egreso')
+      .reduce((total, movement) => total + movement.amount, 0)
+
+    return {
+      name: bucket.name,
+      Ingresos: ingresos,
+      Egresos: egresos,
+      Ahorros: Math.max(ingresos - egresos, 0),
+    }
+  })
+}
+
+const sortByDate = <T extends { date: string }>(items: T[]) =>
+  [...items].sort((a, b) => parseDate(a.date).getTime() - parseDate(b.date).getTime())
+
+const getStoredStreak = () => {
+  const diasActivos = Number(localStorage.getItem('af_streak_count') || 0)
+  return { diasActivos, meta: 30 }
+}
+
+const resolveResource = async <T,>(request: Promise<T>, fallback: T) => {
+  try {
+    return { data: await request, failed: false }
+  } catch {
+    return { data: fallback, failed: true }
+  }
+}
 
 // ─── Componente principal
 
 export default function Dashboard() {
   const navigate = useNavigate()
 
-  // TODO: BACKEND: reemplazar useState con useEffect + axios
-  const [summary]       = useState<SummaryCard[]>(MOCK_SUMMARY)
-  const [streak]        = useState(MOCK_STREAK)
-  const [commitments]   = useState<CommitmentItem[]>(MOCK_COMMITMENTS)
-  const [fixedExpenses] = useState<FixedExpenseItem[]>(MOCK_FIXED_EXPENSES)
+  const [movements, setMovements]             = useState<Movement[]>([])
+  const [commitments, setCommitments]         = useState<Commitment[]>([])
+  const [fixedExpenses, setFixedExpenses]     = useState<FixedExpense[]>([])
+  const [passwordCount, setPasswordCount]     = useState(0)
+  const [streak, setStreak]                   = useState(getStoredStreak)
+  const [chartPeriod, setChartPeriod]         = useState<string>('quarter')
+  const [showPeriodMenu, setShowPeriodMenu]   = useState(false)
+  const [loading, setLoading]                 = useState(true)
+  const [error, setError]                     = useState('')
 
-  const [chartPeriod, setChartPeriod]       = useState<string>('quarter')
-  const [chartData, setChartData]           = useState<ChartDataPoint[]>(MOCK_CHART_DATA['quarter'])
-  const [showPeriodMenu, setShowPeriodMenu] = useState(false)
-  const [loading, setLoading]               = useState(false)
-
-  // TODO: BACKEND: al cambiar período → axios.get(`/api/dashboard/chart?period=${chartPeriod}`)
   useEffect(() => {
-    setLoading(true)
-    setTimeout(() => {
-      setChartData(MOCK_CHART_DATA[chartPeriod] ?? [])
-      setLoading(false)
-    }, 300)
-  }, [chartPeriod])
+    let mounted = true
 
+    const loadDashboard = async () => {
+      setLoading(true)
+      setError('')
+
+      const [movementResult, commitmentResult, fixedExpenseResult, passwordResult] = await Promise.all([
+        resolveResource(financesService.getAll(), [] as Movement[]),
+        resolveResource(commitmentsService.getAll(), [] as Commitment[]),
+        resolveResource(fixedExpensesService.getAll(), [] as FixedExpense[]),
+        resolveResource(passwordService.getAll(), []),
+      ])
+
+      if (!mounted) return
+
+      setMovements(movementResult.data)
+      setCommitments(commitmentResult.data)
+      setFixedExpenses(fixedExpenseResult.data)
+      setPasswordCount(passwordResult.data.length)
+      setStreak(getStoredStreak())
+
+      if (
+        movementResult.failed ||
+        commitmentResult.failed ||
+        fixedExpenseResult.failed ||
+        passwordResult.failed
+      ) {
+        setError('Algunos datos del inicio no se pudieron sincronizar.')
+      }
+
+      setLoading(false)
+    }
+
+    void loadDashboard()
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  const totalIncome = useMemo(
+    () => movements.filter((movement) => movement.type === 'Ingreso').reduce((total, movement) => total + movement.amount, 0),
+    [movements],
+  )
+
+  const totalExpenses = useMemo(
+    () => movements.filter((movement) => movement.type === 'Egreso').reduce((total, movement) => total + movement.amount, 0),
+    [movements],
+  )
+
+  const balance = totalIncome - totalExpenses
+
+  const pendingCommitments = useMemo(
+    () => commitments.filter((commitment) => !commitment.completed && !commitment.ceased),
+    [commitments],
+  )
+
+  const upcomingFixedExpenses = useMemo(
+    () => sortByDate(
+      fixedExpenses
+        .filter((expense) => expense.status === 'Pendiente')
+        .map((expense) => ({ ...expense, date: expense.cutOffDate })),
+    ),
+    [fixedExpenses],
+  )
+
+  const summary: SummaryCard[] = useMemo(() => [
+    { label: 'SALDO ACTUAL',           value: formatCurrency(balance),              icon: <DollarSign size={24} />,    route: '/finances' },
+    { label: 'COMPROMISOS PENDIENTES', value: pendingCommitments.length,            icon: <ClipboardList size={24} />, route: '/commitments' },
+    { label: 'PROXIMOS GASTOS',        value: upcomingFixedExpenses.length,         icon: <Clock size={24} />,         route: '/fixed-expenses' },
+    { label: 'CONTRASENAS',            value: passwordCount,                        icon: <Lock size={24} />,          route: '/password-manager/home' },
+  ], [balance, passwordCount, pendingCommitments.length, upcomingFixedExpenses.length])
+
+  const fixedExpenseItems: FixedExpenseItem[] = useMemo(
+    () => upcomingFixedExpenses.slice(0, 2).map((expense) => ({
+      id: expense.id,
+      title: expense.name,
+      date: formatShortDate(expense.cutOffDate),
+      route: '/fixed-expenses',
+    })),
+    [upcomingFixedExpenses],
+  )
+
+  const commitmentItems: CommitmentItem[] = useMemo(
+    () => sortByDate(pendingCommitments)
+      .slice(0, 2)
+      .map((commitment) => ({
+        id: commitment.id,
+        title: commitment.name,
+        date: formatShortDate(commitment.date),
+        route: '/commitments',
+      })),
+    [pendingCommitments],
+  )
+
+  const chartData = useMemo(() => buildChartData(movements, chartPeriod), [movements, chartPeriod])
   const selectedPeriodLabel = PERIOD_OPTIONS.find(p => p.value === chartPeriod)?.label ?? ''
   const streakPercent       = Math.min((streak.diasActivos / streak.meta) * 100, 100)
 
   return (
     <div className={styles.dashboard}>
       <h2 className={styles.pageTitle}>Inicio</h2>
+      {error && <p className={styles.notice}>{error}</p>}
 
       {/* ── Tarjetas resumen ── */}
       <div className={styles.summaryGrid}>
@@ -176,12 +320,12 @@ export default function Dashboard() {
           >
             <span className={styles.summaryIcon}>{card.icon}</span>
             <span className={styles.summaryLabel}>{card.label}</span>
-            <span className={styles.summaryValue}>{card.value}</span>
+            <span className={styles.summaryValue}>{loading ? '...' : card.value}</span>
           </button>
         ))}
       </div>
 
-      {/* ── Fila central: racha + gráfico ── */}
+      {/* ── Fila central: racha + grafico ── */}
       <div className={styles.midRow}>
 
         {/* Racha de compromisos */}
@@ -190,13 +334,13 @@ export default function Dashboard() {
             <span className={styles.streakTitle}>Racha de Compromisos</span>
             <div className={styles.streakBadge}>
               <span className={styles.streakBadgeNumber}>{streak.diasActivos}</span>
-              <span className={styles.streakBadgeSub}>Días</span>
+              <span className={styles.streakBadgeSub}>Dias</span>
             </div>
           </div>
 
           <div className={styles.streakDaysRow}>
             <span className={styles.streakBigNumber}>{streak.diasActivos}</span>
-            <span className={styles.streakDaysLabel}>Días Activos</span>
+            <span className={styles.streakDaysLabel}>Dias Activos</span>
           </div>
 
           <div className={styles.streakBarWrapper}>
@@ -217,10 +361,10 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Gráfico estadístico */}
+        {/* Grafico estadistico */}
         <div className={styles.chartCard}>
           <div className={styles.chartHeader}>
-            <span className={styles.chartTitle}>Reporte estadístico</span>
+            <span className={styles.chartTitle}>Reporte estadistico</span>
 
             <div className={styles.periodSelector}>
               <button
@@ -248,7 +392,7 @@ export default function Dashboard() {
           </div>
 
           {loading ? (
-            <div className={styles.chartLoading}>Cargando…</div>
+            <div className={styles.chartLoading}>Cargando...</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData} barCategoryGap="30%" barGap={2}>
@@ -263,7 +407,6 @@ export default function Dashboard() {
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
                 <Bar dataKey="Ingresos" fill="var(--color-celeste-2)"  radius={[4,4,0,0]} />
                 <Bar dataKey="Egresos"  fill="var(--color-primary-4)"  radius={[4,4,0,0]} />
-                <Bar dataKey="Osio"     fill="var(--color-cyan)"        radius={[4,4,0,0]} />
                 <Bar dataKey="Ahorros"  fill="var(--color-primary)"     radius={[4,4,0,0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -278,13 +421,14 @@ export default function Dashboard() {
         <div className={styles.listCard}>
           <span className={styles.listCardTitle}>GASTOS FIJOS</span>
           <div className={styles.listItems}>
-            {fixedExpenses.map(exp => (
+            {fixedExpenseItems.length === 0 ? (
+              <p className={styles.listEmpty}>Sin gastos proximos.</p>
+            ) : fixedExpenseItems.map(exp => (
               <div key={exp.id} className={styles.listItem}>
                 <div>
                   <p className={styles.listItemTitle}>{exp.title}</p>
                   <p className={styles.listItemDate}>{exp.date}</p>
                 </div>
-                {/* TODO: BACKEND: navega al módulo de gastos fijos */}
                 <button className={styles.verBtn} onClick={() => navigate(exp.route)}>
                   Ver
                 </button>
@@ -297,13 +441,14 @@ export default function Dashboard() {
         <div className={styles.listCard}>
           <span className={styles.listCardTitle}>COMPROMISOS</span>
           <div className={styles.listItems}>
-            {commitments.map(com => (
+            {commitmentItems.length === 0 ? (
+              <p className={styles.listEmpty}>Sin compromisos pendientes.</p>
+            ) : commitmentItems.map(com => (
               <div key={com.id} className={styles.listItem}>
                 <div>
                   <p className={styles.listItemTitle}>{com.title}</p>
                   <p className={styles.listItemDate}>{com.date}</p>
                 </div>
-                {/* TODO: BACKEND: navega al módulo de compromisos */}
                 <button className={styles.verBtn} onClick={() => navigate(com.route)}>
                   Ver
                 </button>

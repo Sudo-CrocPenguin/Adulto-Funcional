@@ -17,6 +17,12 @@
   margin: 0 0 var(--spacing-xs);
 }
 
+.notice {
+  margin: calc(-1 * var(--spacing-sm)) 0 0;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
 /* ── Tarjetas resumen (fila superior)  */
 .summaryGrid {
   display: grid;
@@ -308,6 +314,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-sm);
+}
+
+.listEmpty {
+  margin: var(--spacing-sm) 0;
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
 }
 
 .listItem {
