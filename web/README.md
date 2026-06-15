@@ -114,12 +114,14 @@ src/
 │   ├── FixedExpenses/              # Administración de gastos fijos recurrentes
 │   ├── Profile/                    # Perfil y datos del usuario
 │   ├── PasswordManagerAccess/      # Verificación de acceso al gestor de contraseñas
-│   ├── PasswordManagerReset/       # Restablecimiento del PIN del gestor
+│   ├── PasswordManagerReset/       # Aviso de recuperación no disponible por correo
 │   └── PasswordManager/            # Listado de credenciales guardadas
 ├── services/
 │   ├── api.config.ts               # Configuración base de Axios (baseURL, interceptors)
 │   ├── auth.service.ts             # Login y gestión de sesión
 │   ├── account.service.ts          # Operaciones sobre la cuenta del usuario
+│   ├── categories.service.ts       # Resolución y creación de categorías por dominio
+│   ├── commitments.service.ts      # CRUD de compromisos sobre agenda
 │   ├── financeService.ts           # CRUD de movimientos financieros
 │   ├── fixedExpenses.service.ts    # CRUD de gastos fijos
 │   └── password.service.ts         # CRUD del gestor de contraseñas
@@ -153,7 +155,7 @@ Requieren sesión activa. Si no existe, el usuario es redirigido a `/login`. Tod
 | `/fixed-expenses` | FixedExpenses | Control de pagos recurrentes |
 | `/profile` | Profile | Datos y configuración de la cuenta |
 | `/password-manager` | PasswordManagerAccess | Verificación de acceso al gestor |
-| `/password-manager/reset` | PasswordManagerReset | Restablecimiento del PIN |
+| `/password-manager/reset` | PasswordManagerReset | Aviso de recuperación por correo no disponible |
 | `/password-manager/home` | PasswordManager | Listado de credenciales guardadas |
 
 ---
@@ -163,18 +165,32 @@ Requieren sesión activa. Si no existe, el usuario es redirigido a `/login`. Tod
 La aplicación utiliza JWT (JSON Web Token) para la gestión de sesiones.
 
 - **Login:** el backend devuelve un token JWT al autenticarse correctamente.
-- **Almacenamiento:** el token se guarda en `sessionStorage`.
+- **Almacenamiento:** el token se guarda en `sessionStorage` o `localStorage` según la opción de persistencia del login.
 - **Interceptor:** cada petición saliente incluye automáticamente el encabezado `Authorization: Bearer <token>`.
 - **Protección de rutas:** `ProtectedRoute` redirige a `/login` si no hay sesión activa.
-- **Cierre de sesión:** elimina el token de `sessionStorage` y redirige al login.
+- **Cierre de sesión:** elimina token, datos de usuario y verificación de clave maestra de ambos storages.
 
 **Flujo general**
 
 ```
-Usuario → Login → Backend → JWT → sessionStorage
+Usuario → Login → Backend → JWT → storage elegido
                                        |
 Todas las peticiones ← Interceptor Axios ← Authorization: Bearer <token>
 ```
+
+### Gestor de contraseñas y clave maestra
+
+El gestor de contraseñas depende de una clave maestra independiente de la contraseña de inicio de sesión.
+
+| Operación | Endpoint | Uso |
+|---|---|---|
+| Consultar estado | `GET /api/security/master-key/status` | Saber si la cuenta tiene clave maestra y si está verificada |
+| Crear clave | `POST /api/security/master-key` | Crear clave maestra después del registro si la cuenta no la tiene |
+| Verificar clave | `POST /api/security/master-key/verify` | Abrir la sesión interna del gestor |
+| Cambiar clave | `PATCH /api/security/master-key` | Cambiar clave usando la actual y recifrar credenciales |
+| Cerrar sesión interna | `DELETE /api/security/master-key/session` | Bloquear de nuevo el gestor sin cerrar sesión general |
+
+La recuperación por correo de la clave maestra no está implementada en el backend actual. Si una cuenta no tiene clave, la web permite crearla desde el acceso al gestor; si ya tiene una, debe verificarse antes de cambiarla.
 
 ---
 
@@ -196,9 +212,12 @@ La configuración de Axios en `api.config.ts` centraliza toda la comunicación H
 | Autenticación | `/api/auth` |
 | Cuenta | `/api/account` |
 | Finanzas | `/api/finances` |
+| Categorías | `/api/finances/categories` |
 | Gastos fijos | `/api/finances/fixed-expenses` |
-| Agenda | `/api/agenda` |
+| Agenda / compromisos | `/api/agenda/events` |
 | Contraseñas | `/api/security/passwords` |
+
+Los servicios de finanzas, gastos fijos y compromisos normalizan las respuestas `ApiResponse<T>` del backend, convierten UUIDs a cadenas para la interfaz y resuelven categorías por nombre antes de enviar `categoryId`.
 
 ---
 
