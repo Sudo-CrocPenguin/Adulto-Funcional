@@ -375,11 +375,11 @@ Responsabilidades:
 - Captura fecha de ultimo cambio.
 - Llama `createPassword`.
 
-### `app/(app)/passwords/[id].tsx.bak`
+### `app/(app)/passwords/[id].tsx`
 
-Edicion de contrasena, pero no activa como ruta.
+Edicion de contrasena activa como ruta dinamica.
 
-Responsabilidades previstas:
+Responsabilidades:
 
 - Cargar contrasena por id.
 - Obtener valor descifrado con `securityApi.getPassword`.
@@ -388,9 +388,14 @@ Responsabilidades previstas:
 
 ### `app/(app)/passwords/master-key/create.tsx`
 
-Placeholder funcional.
+Formulario funcional.
 
-Informa que la clave maestra se configura en registro o perfil y ofrece boton hacia perfil.
+Responsabilidades:
+
+- Crear la clave maestra despues del registro.
+- Validar longitud minima y confirmacion.
+- Enviar `POST /api/security/master-key`.
+- Volver al gestor de contrasenas cuando la clave queda creada.
 
 ### `app/(app)/passwords/master-key/verify.tsx`
 
@@ -400,34 +405,33 @@ Muestra `Redirigiendo...`.
 
 ### `app/(app)/passwords/master-key/reset-request.tsx`
 
-Formulario de solicitud de reset de clave maestra.
-
-Problema actual:
-
-- Llama `resetMasterKeyRequest` desde `usePasswords`, pero esa funcion no existe en el hook.
-
-### `app/(app)/passwords/master-key/reset-verify.tsx`
-
-Formulario de codigo de verificacion.
+Pantalla informativa de cambio de clave maestra.
 
 Responsabilidades:
 
-- Captura codigo.
-- Navega a `reset-new` con parametro `code`.
-- Tiene accion de reenviar simulada con alerta.
+- Explicar que el cambio requiere la clave maestra actual.
+- Advertir que no hay recuperacion por correo de contrasenas cifradas.
+- Navegar a `reset-new`.
 
-Nota:
+### `app/(app)/passwords/master-key/reset-verify.tsx`
 
-- Importa `usePasswords`, pero no lo usa.
+Pantalla de compatibilidad para rutas existentes.
+
+Responsabilidades:
+
+- Explicar que el backend actual no usa codigo por correo para este flujo.
+- Redirigir hacia el cambio con clave actual.
 
 ### `app/(app)/passwords/master-key/reset-new.tsx`
 
-Formulario de nueva clave maestra.
+Formulario de cambio de clave maestra.
 
-Problemas actuales:
+Responsabilidades:
 
-- Llama `resetMasterKeyVerify`, pero `usePasswords` no la exporta.
-- Lee `loading` desde `usePasswords`, pero el hook no expone `loading` con ese objetivo de reset.
+- Solicitar clave maestra actual.
+- Solicitar y confirmar nueva clave maestra.
+- Enviar `PATCH /api/security/master-key`.
+- Volver al gestor cuando el backend recifra correctamente las contrasenas.
 
 ## Perfil
 

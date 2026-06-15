@@ -10,13 +10,22 @@ npx tsc --noEmit
 
 Resultado actual:
 
-- Falla con codigo 2.
-- El compilador se detiene en errores sintacticos `TS1128`.
-- La causa inmediata son archivos placeholder con contenido invalido como `export src/...;`.
+- Finaliza correctamente.
+- La compilacion estricta de TypeScript ya no reporta errores.
+- Tambien se verifico el empaquetado Android con:
+
+```bash
+npx expo export --platform android --output-dir /tmp/adulto-funcional-mobile-export
+```
+
+Resultado:
+
+- Finaliza correctamente.
+- Metro genera el bundle Android en `/tmp/adulto-funcional-mobile-export`.
 
 ## Archivos placeholder invalidos
 
-Estos archivos contienen una unica linea invalida de TypeScript y bloquean compilacion:
+Estos archivos contenian una unica linea invalida de TypeScript y bloqueaban compilacion:
 
 - `src/api/endpoints.ts`
 - `src/api/passwordsApi.ts`
@@ -51,28 +60,23 @@ Estos archivos contienen una unica linea invalida de TypeScript y bloquean compi
 - `src/types/finances.types.ts`
 - `src/types/security.types.ts`
 
-Reparacion minima:
+Reparacion aplicada:
 
-- Convertir cada archivo en un modulo valido, por ejemplo `export {};`, si no se usa.
-- O implementar/exportar el contenido real esperado.
+- Cada archivo quedo como modulo valido con `export {};`.
+- Siguen siendo placeholders; si se necesitan en runtime, se deben implementar con el contrato real correspondiente.
 
 ## Problemas de rutas
 
-### Edicion de contrasenas no activa
+### Edicion de contrasenas activa
 
-Existe:
+Antes existia:
 
 - `app/(app)/passwords/[id].tsx.bak`
 
-Pero Expo Router no lo toma como ruta activa.
+Estado actual:
 
-La pantalla `passwords/index.tsx` navega a:
-
-- `/(app)/passwords/${item.id}`
-
-Resultado esperado actual:
-
-- Esa ruta no deberia resolver hasta que el archivo sea renombrado a `[id].tsx`.
+- El archivo fue restaurado como `app/(app)/passwords/[id].tsx`.
+- La pantalla `passwords/index.tsx` navega a la ruta dinamica de edicion.
 
 ### Rutas de categorias son placeholders
 
@@ -83,12 +87,14 @@ Estas rutas no implementan CRUD real:
 
 La creacion de categorias ocurre en modales embebidos.
 
-### Rutas de reset de clave maestra incompletas
+### Rutas de clave maestra alineadas
 
-`reset-request.tsx` y `reset-new.tsx` llaman funciones que no existen en `usePasswords`:
+Estado actual:
 
-- `resetMasterKeyRequest`
-- `resetMasterKeyVerify`
+- `create.tsx` permite crear la clave maestra despues del registro.
+- `reset-request.tsx` explica que no hay recuperacion por correo porque las contrasenas estan cifradas.
+- `reset-new.tsx` cambia la clave maestra usando la clave actual y recifrado backend.
+- `usePasswords` expone `createMasterKey`, `changeMasterKey`, `refreshMasterKeyStatus` y `resetVerification`.
 
 ## Problemas de contratos y tipos
 
@@ -96,55 +102,41 @@ La creacion de categorias ocurre en modales embebidos.
 
 Tipo API:
 
-- `PENDIENTE`
-- `COMPLETADO`
-- `CANCELADO`
-
-UI/hook:
-
 - `Pendiente`
 - `Completado`
 - `Cancelado`
+- `Pospuesto`
 
-Riesgo:
+Estado actual:
 
-- Filtros pueden fallar si backend devuelve mayusculas.
-- TypeScript marcaria errores cuando se supere el bloqueo sintactico de placeholders.
+- Los tipos moviles usan los valores en espanol que devuelve el backend de agenda.
+- Los filtros y calculos usan `Pendiente` / `Completado`.
 
 ### Prioridades de compromisos
 
 Tipo API:
 
-- `ALTA`
-- `MEDIA`
-- `BAJA`
-
-UI/hook:
-
 - `Alta`
 - `Media`
 - `Baja`
 
-Riesgo:
+Estado actual:
 
-- Estilos y payloads pueden quedar desalineados con backend.
+- Los tipos moviles usan los valores en espanol que acepta y devuelve el backend.
+- `useEvents` normaliza entradas antiguas en mayusculas antes de enviar payloads.
 
 ### Frecuencias y estados de gastos fijos
 
 Tipo API:
 
-- Frecuencia: `DIARIO`, `SEMANAL`, `MENSUAL`, `ANUAL`
-- Estado: `ACTIVO`, `INACTIVO`, `PAGADO`
-
-UI/hook:
-
-- Frecuencia: `DAILY`, `WEEKLY`, `BIWEEKLY`, `MONTHLY`, `QUARTERLY`, `SEMIANNUAL`, `ANNUAL`
+- Frecuencia: `WEEKLY`, `BIWEEKLY`, `MONTHLY`, `QUARTERLY`, `SEMIANNUAL`, `ANNUAL`
 - Estado: `ACTIVE`, `INACTIVE`
 
-Riesgo:
+Estado actual:
 
-- `markAsPaid` no recalcula fecha si recibe valores en espanol.
-- Listado muestra `Activo` solo si estado es exactamente `ACTIVE`.
+- Los tipos moviles usan los enums reales del backend financiero.
+- La opcion `DAILY` se retiro porque el backend no la expone.
+- `markAsPaid` recalcula la siguiente fecha con esos enums.
 
 ### Endpoint de verificar clave maestra
 
@@ -154,11 +146,13 @@ En `config.ts`:
 
 En `securityApi.ts`:
 
-- `/api/security/passwords/master-key/verify`
+- `/api/security/master-key/verify`
 
-Riesgo:
+Estado actual:
 
-- Si backend implementa solo uno de los dos, una parte de la app fallara.
+- La app movil usa el endpoint canonico de Master Key.
+- El cambio de clave usa `PATCH /api/security/master-key`.
+- El cierre de sesion de clave usa `DELETE /api/security/master-key/session`.
 
 ## Bugs funcionales detectados
 

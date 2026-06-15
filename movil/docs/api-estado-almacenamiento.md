@@ -242,14 +242,14 @@ Entidad `Event`:
 
 - `id`
 - `title`
-- `priority`: `BAJA`, `MEDIA`, `ALTA`
+- `priority`: `Baja`, `Media`, `Alta`
 - `eventDate`
 - `frequency`
 - `reminder`
 - `startHour`
 - `endHour`
 - `description?`
-- `status`: `PENDIENTE`, `COMPLETADO`, `CANCELADO`
+- `status`: `Pendiente`, `Completado`, `Cancelado`, `Pospuesto`
 - `category?`
 - `streak?`
 - `lastCompletionDate?`
@@ -267,12 +267,17 @@ Archivo: `src/api/securityApi.ts`.
 Endpoints:
 
 - `POST /api/security/master-key`
-- `POST /api/security/passwords/master-key/verify`
+- `POST /api/security/master-key/verify`
+- `PATCH /api/security/master-key`
+- `DELETE /api/security/master-key/session`
 - `GET /api/security/master-key/status`
 
-Advertencia:
+Notas:
 
-- `config.ts` define `VERIFY_MASTER_KEY` como `/api/security/master-key/verify`, pero `securityApi.ts` usa `/api/security/passwords/master-key/verify`.
+- `createMasterKey(masterKey)` crea la clave despues del registro cuando la cuenta no la tiene.
+- `verifyMasterKey(masterKey)` activa la sesion de clave para leer contrasenas.
+- `changeMasterKey(currentMasterKey, newMasterKey)` cambia la clave y recifra las contrasenas en backend.
+- `clearMasterKeySession()` bloquea de nuevo el gestor.
 
 ### Contrasenas
 
@@ -445,17 +450,15 @@ Retorna:
 - `masterKeyVerified`
 - `verifyMasterKey`
 - `resetVerification`
+- `refreshMasterKeyStatus`
+- `createMasterKey`
+- `changeMasterKey`
 - `fetchPasswords`
 - `createPassword`
 - `updatePassword`
 - `deletePassword`
 
-No retorna:
-
-- `resetMasterKeyRequest`
-- `resetMasterKeyVerify`
-
-Esto rompe las pantallas de reset de clave maestra.
+No retorna flujos de recuperacion por correo porque el backend actual no puede recuperar contrasenas cifradas si se pierde la clave maestra.
 
 ### `useCategories`
 
