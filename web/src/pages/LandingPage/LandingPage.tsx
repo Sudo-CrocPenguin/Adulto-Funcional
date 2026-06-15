@@ -8,7 +8,7 @@
  * para abrir el modal de login automáticamente.
  */
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { TrendingUp, ClipboardCheck, LockKeyhole } from 'lucide-react'
 import logo from '../../assets/logo.png'
 import styles from './LandingPage.module.css'
@@ -26,22 +26,12 @@ type ModalType = 'login' | 'register' | null
  * @returns Página landing con hero, features y modales de autenticación
  */
 function LandingPage() {
-
-    const [modal, setModal] = useState<ModalType>(null)
-
     const location = useLocation()
 
-    /**
-   * Detecta si viene de ForgotPassword con state { openLogin: true }
-   * y abre el modal de login automáticamente.
-   */
-    useEffect(() => {
-        
-    if (location.state?.openLogin) {
-        setModal('login')
-    }
+    const [modal, setModal] = useState<ModalType>(() => (
+        location.state?.openLogin ? 'login' : null
+    ))
 
-    }, [location.state])
 
     return (
  

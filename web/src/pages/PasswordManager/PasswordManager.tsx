@@ -5,6 +5,8 @@ import styles from './PasswordManager.module.css';
 import { passwordService, type PasswordCredential } from '../../services/password.service';
 import { clearMasterKeySession } from '../../services/auth.service';
 
+const VAULT_TIMEOUT = 5 * 60 * 1000;
+
 /* ── Fuerza de contraseña ── */
 type Strength = 'weak' | 'medium' | 'strong';
 
@@ -79,7 +81,6 @@ export default function PasswordManager() {
   /* Modal confirmación eliminación */
   const [confirmDelete, setConfirmDelete] = useState<PasswordCredential | null>(null);
 
-  const VAULT_TIMEOUT = 5 * 60 * 1000;
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const lockVault = useCallback(() => {

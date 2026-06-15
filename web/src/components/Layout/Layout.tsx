@@ -193,8 +193,11 @@ export default function Layout() {
         await accountService.remove(accountId);
         logout();
         navigate('/login');
-      } catch (error: any) {
-        console.error('Error eliminando cuenta:', error.response?.status, error);
+      } catch (error: unknown) {
+        const status = typeof error === 'object' && error !== null && 'response' in error
+          ? (error as { response?: { status?: number } }).response?.status
+          : undefined;
+        console.error('Error eliminando cuenta:', status, error);
         alert('La eliminación de cuenta aún no está disponible. Contacta al administrador.');
       }
     }

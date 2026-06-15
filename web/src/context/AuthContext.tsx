@@ -154,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
  * @throws Error si se usa fuera del AuthProvider.
  */
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth(): AuthContextType {
     const context = useContext(AuthContext)
 
