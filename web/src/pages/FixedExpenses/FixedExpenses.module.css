@@ -1,0 +1,596 @@
+/* ─── Reset ─────────────────────────────────────────────── */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ─── Layout ─────────────────────────────────────────────── */
+.content {
+  padding: 16px 28px;
+  font-family: var(--font-primary);
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  color: var(--color-black);
+}
+
+/* ─── Actions row ────────────────────────────────────────── */
+.actionsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.select {
+  height: 44px;
+  min-width: 200px;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  padding: 0 14px;
+  font-size: 14px;
+  font-family: var(--font-primary);
+  color: var(--color-text-primary);
+  outline: none;
+  box-shadow: var(--shadow-input);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.select:focus {
+  border-color: var(--color-primary-4);
+  box-shadow: 0 0 0 3px rgba(62, 99, 160, 0.12);
+}
+
+.newButton {
+  height: 44px;
+  padding: 0 20px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-4);
+  color: var(--color-white);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: var(--shadow-banner);
+}
+
+.newButton:hover {
+  background: var(--color-primary-3);
+  box-shadow: var(--shadow-card);
+}
+
+/* ─── Tabs ───────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.tab {
+  border: 1.5px solid var(--color-border);
+  background: var(--color-white);
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  border-color: var(--color-primary-4);
+  color: var(--color-primary-4);
+}
+
+.activeTab {
+  background: var(--color-primary-4);
+  border-color: var(--color-primary-4);
+  color: var(--color-white);
+}
+
+.activeTab:hover {
+  color: var(--color-white);
+}
+
+/* ─── Cards grid ─────────────────────────────────────────── */
+.cardsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  position: relative;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 20px 20px 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border-left: 5px solid transparent;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.14);
+}
+
+/* Traffic-light borders */
+.redBorder    { border-left-color: var(--color-error-light); }
+.orangeBorder { border-left-color: var(--color-warning); }
+.greenBorder  { border-left-color: var(--color-success-muted); }
+.defaultBorder { border-left-color: var(--color-border); }
+
+/* ─── Card internals ─────────────────────────────────────── */
+.cardActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 4px;
+}
+
+.cardName {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-black);
+  margin-bottom: 4px;
+}
+
+.category {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.description {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.paymentInfo p {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dateRow span {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.redDays {
+  color: var(--color-error);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.orangeDays {
+  color: var(--color-warning);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.amount {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--color-black);
+  margin-bottom: 14px;
+}
+
+/* ─── Card bottom: badges + action ──────────────────────── */
+.cardBottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pendingBadge,
+.paidBadge,
+.frequencyBadge {
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-primary);
+}
+
+.pendingBadge {
+  background: var(--color-warning-light);
+  color: var(--color-warning-2);
+}
+
+.paidBadge {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.frequencyBadge {
+  background: var(--color-background);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+/* ─── Card buttons ───────────────────────────────────────── */
+.deleteBtn {
+  border: none;
+  background: transparent;
+  color: var(--color-gray-light);
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.deleteBtn:hover {
+  color: var(--color-error);
+}
+
+.markPaidBtn,
+.markPendingBtn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1.5px solid transparent;
+}
+
+.markPaidBtn {
+  background: var(--color-success-light);
+  color: var(--color-success);
+  border-color: var(--color-success-muted);
+}
+
+.markPaidBtn:hover {
+  background: var(--color-success-muted);
+  color: var(--color-white);
+}
+
+.markPendingBtn {
+  background: var(--color-warning-light);
+  color: var(--color-warning-2);
+  border-color: var(--color-warning-muted);
+}
+
+.markPendingBtn:hover {
+  background: var(--color-warning-muted);
+  color: var(--color-white);
+}
+
+/* ─── Empty state ────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  margin-top: 48px;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+/* ─── Modal overlay ──────────────────────────────────────── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+/* ─── Modal base ─────────────────────────────────────────── */
+.modal {
+  width: 100%;
+  max-width: 460px;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  /* Cap height so body scrolls on small screens */
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.confirmModal {
+  max-width: 400px;
+}
+
+/* ─── Modal header ───────────────────────────────────────── */
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.modalHeader h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-black);
+}
+
+.closeBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: color 0.2s;
+}
+
+.closeBtn:hover {
+  color: var(--color-black);
+}
+
+/* ─── Modal body (scrollable) ────────────────────────────── */
+.modalBody {
+  padding: 20px 22px;
+  overflow-y: auto;
+  flex: 1;
+
+  /* Custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-gray-light) transparent;
+}
+
+.modalBody::-webkit-scrollbar {
+  width: 5px;
+}
+
+.modalBody::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modalBody::-webkit-scrollbar-thumb {
+  background: var(--color-gray-light);
+  border-radius: 99px;
+}
+
+/* ─── Form ───────────────────────────────────────────────── */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  color: var(--color-text-primary);
+  margin-bottom: 6px;
+}
+
+.required {
+  color: var(--color-error);
+  margin-left: 2px;
+}
+
+.optional {
+  color: var(--color-text-secondary);
+  font-weight: 400;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+/* Shared input / select / textarea styles */
+.input,
+.textarea {
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  padding: 0 14px;
+  font-size: 14px;
+  font-family: var(--font-primary);
+  color: var(--color-text-primary);
+  background: var(--color-white);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input {
+  height: 46px;
+}
+
+.textarea {
+  padding: 12px 14px;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.input:focus,
+.textarea:focus {
+  border-color: var(--color-primary-4);
+  box-shadow: 0 0 0 3px rgba(62, 99, 160, 0.14), var(--shadow-input);
+}
+
+.inputError {
+  border-color: var(--color-error-light) !important;
+}
+
+.inputError:focus {
+  box-shadow: 0 0 0 3px rgba(249, 121, 121, 0.2) !important;
+}
+
+.errorMsg {
+  font-size: 12px;
+  color: var(--color-error-2);
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+/* ─── Modal footer buttons ───────────────────────────────── */
+.modalButtons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 22px;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.cancelButton {
+  border: 1.5px solid var(--color-border);
+  background: var(--color-white);
+  color: var(--color-text-primary);
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.cancelButton:hover {
+  background: var(--color-background);
+  border-color: var(--color-gray-light);
+}
+
+.saveButton {
+  border: none;
+  background: var(--color-primary-4);
+  color: var(--color-white);
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.saveButton:hover {
+  background: var(--color-primary-3);
+}
+
+.deleteConfirmButton {
+  border: none;
+  background: var(--color-error-2);
+  color: var(--color-white);
+  padding: 10px 24px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-primary);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.deleteConfirmButton:hover {
+  background: var(--color-error);
+}
+
+/* ─── Confirm modal body ─────────────────────────────────── */
+.confirmBody {
+  padding: 28px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.confirmIcon {
+  width: 60px;
+  height: 60px;
+  background: var(--color-error-extra-light);
+  color: var(--color-error-2);
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirmText {
+  font-size: 15px;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+.confirmSubtext {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .content {
+    padding: 16px;
+  }
+
+  .actionsRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters {
+    flex-direction: column;
+  }
+
+  .select {
+    width: 100%;
+    min-width: unset;
+  }
+
+  .newButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .cardsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal {
+    max-height: 95vh;
+  }
+}
