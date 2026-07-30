@@ -81,6 +81,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    labels:
+      - "traefik.http.services.app.loadbalancer.server.port=8080"
     networks:
       - internal
       - coolify
