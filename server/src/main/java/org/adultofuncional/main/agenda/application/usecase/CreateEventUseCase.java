@@ -21,8 +21,8 @@ import lombok.RequiredArgsConstructor;
  * Caso de uso: Crear un nuevo evento en la agenda personal.
  *
  * <p>
- * Registra un evento (compromiso) asociado a una cuenta y, opcionalmente, a
- * una categoría. Antes de persistir, verifica que la cuenta y la categoría
+   * Registra un evento (compromiso) asociado a una cuenta y a una categoría.
+   * Antes de persistir, verifica que la cuenta y la categoría
  * existan, que la hora de inicio sea estrictamente anterior a la de fin, y
  * asigna valores por defecto para prioridad y estado si no fueron
  * especificados.
@@ -31,7 +31,7 @@ import lombok.RequiredArgsConstructor;
  * <strong>Reglas de negocio aplicadas:</strong>
  * <ul>
  * <li>La cuenta debe existir en el módulo de cuentas.</li>
- * <li>Si se proporciona {@code categoryId}, la categoría debe existir.</li>
+   * <li>{@code categoryId} es obligatorio y la categoría debe existir.</li>
  * <li>{@code startHour} debe ser anterior a {@code endHour} (no se permiten
  * horas iguales).</li>
  * <li>La prioridad, si no se envía o está en blanco, se asigna como
@@ -89,15 +89,11 @@ public class CreateEventUseCase {
       throw new BusinessException("La hora de inicio debe ser anterior a la hora de fin");
     }
 
-    // 3. Buscar categoría (opcional)
-    Category category = null;
-    UUID categoryId = null;
-    if (request.getCategoryId() != null) {
-      category = categoryRepository.findById(request.getCategoryId())
-          .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: "
-              + request.getCategoryId()));
-      categoryId = category.getId();
-    }
+    // 3. Buscar categoría obligatoria
+    Category category = categoryRepository.findById(request.getCategoryId())
+        .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: "
+            + request.getCategoryId()));
+    UUID categoryId = category.getId();
 
     // 4. Valores por defecto y validación
     String priority = request.getPriority() != null && !request.getPriority().isBlank()

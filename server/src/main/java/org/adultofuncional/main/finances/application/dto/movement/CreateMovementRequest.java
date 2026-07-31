@@ -24,7 +24,7 @@ import lombok.Getter;
  * <li>{@code movementDate} — obligatorio, fecha en la que ocurrió el
  * movimiento.</li>
  * <li>{@code description} — opcional, máximo 65,535 caracteres.</li>
- * <li>{@code categoryId} — opcional, referencia a una categoría existente.</li>
+   * <li>{@code categoryId} — obligatorio, referencia a una categoría existente.</li>
  * </ul>
  *
  * <p>
@@ -129,10 +129,10 @@ public class CreateMovementRequest {
    * Identificador de la categoría financiera asociada al movimiento.
    *
    * <p>
-   * Campo opcional que permite vincular el movimiento con una categoría
+   * Campo obligatorio que vincula el movimiento con una categoría
    * existente en el sistema para facilitar su clasificación y análisis.
    * Corresponde al UUID único de la categoría registrada.
-   * Si es {@code null}, el movimiento se registra sin categoría asociada.
    */
+  @NotNull(message = "La categoría es obligatoria")
   private UUID categoryId;
 }

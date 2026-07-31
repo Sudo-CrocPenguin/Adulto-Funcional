@@ -34,7 +34,7 @@ import lombok.Getter;
  * {@code TEXT} en base de datos), sin HTML.</li>
  * <li>{@code status} — opcional. Si no se envía o está en blanco, el caso de
  * uso asigna {@code "Pendiente"}.</li>
- * <li>{@code categoryId} — opcional, referencia a una categoría existente.</li>
+   * <li>{@code categoryId} — obligatorio, referencia a una categoría existente.</li>
  * </ul>
  *
  * <p>
@@ -134,9 +134,10 @@ public class EventRequest {
    */
   private String status;
 
-  /**
-   * Identificador de la categoría asociada al evento.
-   * Opcional. Si es {@code null}, el evento se registra sin categoría.
+   /**
+    * Identificador de la categoría asociada al evento.
+   * Obligatorio para mantener consistencia con el dominio y la base de datos.
    */
+  @NotNull(message = "La categoría es obligatoria")
   private UUID categoryId;
 }

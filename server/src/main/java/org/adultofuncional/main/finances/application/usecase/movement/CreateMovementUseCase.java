@@ -20,7 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
  * Reglas de negocio:
  * <ul>
  * <li>La cuenta debe existir.</li>
- * <li>Si se especifica una categoría, esta debe existir.</li>
+   * <li>La categoría debe existir.</li>
  * </ul>
  *
  * <p>
@@ -54,24 +54,19 @@ public class CreateMovementUseCase {
    * @param accountId Identificador de la cuenta en la que se registra el
    *                  movimiento.
    * @param request   DTO con los datos validados del movimiento (tipo,
-   *                  monto, fecha, descripción y categoría opcional).
+   *                  monto, fecha, descripción y categoría obligatoria).
    * @return {@link MovementResponse} con los datos del movimiento creado.
    *         La categoría se retorna como {@code null} en esta versión.
-   * @throws NotFoundException si la cuenta o la categoría (si se
-   *                           proporcionó) no existen.
+   * @throws NotFoundException si la cuenta o la categoría no existen.
    */
   @Transactional
   public MovementResponse execute(UUID accountId, CreateMovementRequest request) {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    UUID finalCategoryId = null;
-    if (request.getCategoryId() != null) {
-      finalCategoryId = request.getCategoryId();
-      final UUID categoryIdToCheck = finalCategoryId;
-      categoryRepository.findById(categoryIdToCheck)
-          .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + categoryIdToCheck));
-    }
+    UUID finalCategoryId = request.getCategoryId();
+    categoryRepository.findById(finalCategoryId)
+        .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + finalCategoryId));
 
     Movement movement = Movement.create(
         request.getMovementType(),
