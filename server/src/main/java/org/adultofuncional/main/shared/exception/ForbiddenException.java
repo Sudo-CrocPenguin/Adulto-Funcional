@@ -18,9 +18,9 @@ public class ForbiddenException extends BusinessException {
      *
      * @param message mensaje descriptivo que explica por qué se denegó el acceso
      */
-    
+
     public ForbiddenException(String message) {
         super (message, 403);
     }
-    
+
 }

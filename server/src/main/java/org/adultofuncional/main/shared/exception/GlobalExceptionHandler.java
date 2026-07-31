@@ -206,12 +206,12 @@ public class GlobalExceptionHandler  {
      */
 
     @ExceptionHandler(ConflictException.class)
-    
+
     public ResponseEntity<ApiResponse<Void>> handleConflict(ConflictException ex) {
 
         return handleBusiness(ex);
     }
-    
+
     /**
      * Maneja las excepciones de acceso denegado (HTTP 403).
      *
