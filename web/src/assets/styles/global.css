@@ -1,0 +1,39 @@
+@import './variables.css';
+
+/* Reset básico para consistencia entre navegadores */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Estilos base del cuerpo de la página */
+body {
+  font-family: var(--font-primary);
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  min-height: 100vh;
+}
+
+/* Estilos base para enlaces */
+a {
+  color: var(--color-celeste);
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* Estilos base para botones */
+button {
+  cursor: pointer;
+  font-family: var(--font-primary);
+}
+
+/* Estilos base para inputs */
+input {
+  font-family: var(--font-primary);
+}
