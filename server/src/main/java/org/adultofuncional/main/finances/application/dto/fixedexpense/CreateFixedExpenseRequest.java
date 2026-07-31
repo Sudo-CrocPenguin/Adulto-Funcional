@@ -153,9 +153,8 @@ public class CreateFixedExpenseRequest {
    * Identificador de la categoría financiera asociada al gasto fijo.
    *
    * <p>
-   * Campo opcional que permite vincular el gasto fijo con una categoría
+   * Campo obligatorio que vincula el gasto fijo con una categoría
    * existente en el sistema para facilitar su clasificación y análisis.
-   * Si es {@code null}, el gasto fijo se registra sin categoría asociada.
    */
   @NotNull(message = "La categoria es obligatoria")
   private UUID categoryId;

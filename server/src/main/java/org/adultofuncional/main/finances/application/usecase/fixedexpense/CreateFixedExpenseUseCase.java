@@ -7,6 +7,7 @@ import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.CreateFixedExpenseRequest;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse;
+import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
  * <ul>
  * <li>La cuenta debe existir en el módulo de cuentas.</li>
  * <li>La categoría asociada debe existir.</li>
+ * <li>El estado inicial solicitado se aplica al modelo de dominio.</li>
  * <li>La fecha de cierre debe ser posterior a la fecha actual.</li>
  * <li>La fecha de inicio se establece como la fecha actual y los días de
  * recordatorio se inicializan en 0 automáticamente.</li>
@@ -85,12 +87,13 @@ public class CreateFixedExpenseUseCase {
         LocalDate.now(),
         request.getNextDueDate(),
         0);
+    applyInitialStatus(expense, request.getStatus());
 
     FixedExpense saved = fixedExpenseRepository.save(expense);
 
     CategoryResponse categoryResponse = CategoryResponse.builder()
         .id(category.getId())
-        .name(saved.getName())
+        .name(category.getName())
         .type(category.getType())
         .build();
 
@@ -103,5 +106,14 @@ public class CreateFixedExpenseUseCase {
         .nextDueDate(saved.getNextDueDate())
         .category(categoryResponse)
         .build();
+  }
+
+  private void applyInitialStatus(FixedExpense expense, Status status) {
+    if (Status.INACTIVE.equals(status)) {
+      expense.deactivate();
+      return;
+    }
+
+    expense.activate();
   }
 }
