@@ -1,2 +1,6 @@
+# Mantiene diffs deterministas entre Linux, macOS y Windows.
+* text=auto eol=lf
+
+# Scripts de Maven Wrapper según la plataforma que los ejecuta.
 /mvnw text eol=lf
 *.cmd text eol=crlf
