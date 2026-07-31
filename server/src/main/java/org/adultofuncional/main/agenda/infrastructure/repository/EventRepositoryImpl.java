@@ -25,19 +25,16 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Métodos implementados:</strong>
  * <ul>
- * <li>{@link #findById(UUID)} — busca un evento por ID y lo convierte a
- * dominio.</li>
  * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca un evento por ID y
  * cuenta,
  * garantizando propiedad.</li>
- * <li>{@link #existsByIdAndAccountId(UUID, UUID)} — verifica existencia por ID
- * y cuenta.</li>
  * <li>{@link #findAllByAccountId(UUID)} — lista todos los eventos de una
  * cuenta.</li>
  * <li>{@link #save(Event)} — persiste un evento nuevo o actualizado,
  * devolviendo el
  * modelo de dominio resultante.</li>
- * <li>{@link #deleteById(UUID)} — elimina un evento por su ID.</li>
+ * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina un evento por ID y
+ * cuenta.</li>
  * </ul>
  *
  * @author Jeronimo Ospina Zapata
@@ -52,22 +49,6 @@ public class EventRepositoryImpl implements EventRepository {
 
   private final SpringEventJpaRepository jpaRepository;
   private final EventMapper mapper;
-
-  /**
-   * Busca un evento por su identificador único.
-   *
-   * <p>
-   * Consulta el repositorio Spring Data JPA y convierte la entidad resultante
-   * al modelo de dominio mediante {@link EventMapper#toDomain(EventEntity)}.
-   *
-   * @param id UUID del evento. No debe ser {@code null}.
-   * @return {@link Optional} con el evento si existe;
-   *         {@code Optional.empty()} en caso contrario.
-   */
-  @Override
-  public Optional<Event> findById(UUID id) {
-    return jpaRepository.findById(id).map(mapper::toDomain);
-  }
 
   /**
    * Busca un evento por su ID y el ID de la cuenta propietaria.
@@ -85,18 +66,6 @@ public class EventRepositoryImpl implements EventRepository {
   public Optional<Event> findByIdAndAccountId(UUID eventId, UUID accountId) {
     return jpaRepository.findByEventIdAndAccount_AccountId(eventId, accountId)
         .map(mapper::toDomain);
-  }
-
-  /**
-   * Verifica si existe un evento con el ID dado y que pertenezca a la cuenta.
-   *
-   * @param eventId   UUID del evento. No debe ser {@code null}.
-   * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return {@code true} si el evento existe y pertenece a la cuenta.
-   */
-  @Override
-  public boolean existsByIdAndAccountId(UUID eventId, UUID accountId) {
-    return jpaRepository.existsByEventIdAndAccount_AccountId(eventId, accountId);
   }
 
   /**
@@ -138,17 +107,10 @@ public class EventRepositoryImpl implements EventRepository {
   }
 
   /**
-   * Elimina un evento por su identificador único.
-   *
-   * <p>
-   * Si no existe ningún evento con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso de Spring Data JPA). La validación de existencia
-   * previa se realiza en la capa de aplicación.
-   *
-   * @param id UUID del evento a eliminar. No debe ser {@code null}.
+   * Elimina un evento por identificador y cuenta en una sola sentencia.
    */
   @Override
-  public void deleteById(UUID id) {
-    jpaRepository.deleteById(id);
+  public boolean deleteByIdAndAccountId(UUID eventId, UUID accountId) {
+    return jpaRepository.deleteByEventIdAndAccountId(eventId, accountId) > 0;
   }
 }
