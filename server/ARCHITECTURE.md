@@ -196,9 +196,9 @@ public class AccountController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<AccountResponse>> getAccount(
         @PathVariable UUID id,
-        @AuthenticationPrincipal String loggedEmail) {
+        @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
         AccountResponse account = getAccountUseCase.execute(id);
-        ownershipValidator.validate(account, loggedEmail);
+        ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
         return ResponseEntity.ok(
             ApiResponse.<AccountResponse>builder()
                 .status(HttpStatus.OK.value())
@@ -211,9 +211,9 @@ public class AccountController {
     public ResponseEntity<ApiResponse<AccountResponse>> updateAccount(
         @PathVariable UUID id,
         @Valid @RequestBody UpdateAccountRequest request,
-        @AuthenticationPrincipal String loggedEmail) {
+        @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
         AccountResponse account = getAccountUseCase.execute(id);
-        ownershipValidator.validate(account, loggedEmail);
+        ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
         AccountResponse updated = updateAccountUseCase.execute(id, request);
         return ResponseEntity.ok(
             ApiResponse.<AccountResponse>builder()
