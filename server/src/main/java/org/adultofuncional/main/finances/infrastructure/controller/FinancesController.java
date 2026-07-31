@@ -31,6 +31,7 @@ import org.adultofuncional.main.finances.application.usecase.movement.DeleteMove
 import org.adultofuncional.main.finances.application.usecase.movement.GetMovementUseCase;
 import org.adultofuncional.main.finances.application.usecase.movement.ListMovementsUseCase;
 import org.adultofuncional.main.finances.application.usecase.movement.UpdateMovementUseCase;
+import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

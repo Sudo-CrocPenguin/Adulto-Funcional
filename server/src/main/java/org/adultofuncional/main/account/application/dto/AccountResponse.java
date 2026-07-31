@@ -12,7 +12,7 @@ import java.util.UUID;
  *
  * <p>
  * Implementa {@link OwnedResource} por compatibilidad con contratos previos.
- * La validación de ownership actual se hace con {@link #getId()}, porque el
+ * La validación de ownership actual se hace con el campo {@code id}, porque el
  * UUID de cuenta es estable y no cambia cuando el usuario actualiza su email.
  *
  * <p>

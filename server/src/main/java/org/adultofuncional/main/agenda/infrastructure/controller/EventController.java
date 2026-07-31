@@ -12,6 +12,7 @@ import org.adultofuncional.main.agenda.application.usecase.GetEventUseCase;
 import org.adultofuncional.main.agenda.application.usecase.ListEventsUseCase;
 import org.adultofuncional.main.agenda.application.usecase.UpdateEventUseCase;
 import org.adultofuncional.main.config.security.AuthenticatedAccount;
+import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
