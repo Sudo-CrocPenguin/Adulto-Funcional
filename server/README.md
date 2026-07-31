@@ -145,10 +145,10 @@ MARIADB_PASSWORD=tu_password
 # Redis (para sesiones de Master Key en producción)
 REDIS_HOST=redis
 REDIS_PORT=6379
-REDIS_PASSWORD=
+REDIS_PASSWORD=tu_password_redis
 
 # JWT
-JWT_SECRET=tu_clave_secreta_jwt_muy_segura
+JWT_SECRET=tu_clave_secreta_jwt_muy_segura_minimo_32_caracteres
 JWT_EXPIRATION=86400000
 
 # CORS y cookies
@@ -297,8 +297,8 @@ docker run -p 8080:8080 \
   -e SPRING_DATASOURCE_PASSWORD=password \
   -e REDIS_HOST=redis \
   -e REDIS_PORT=6379 \
-  -e REDIS_PASSWORD= \
-  -e JWT_SECRET=secret \
+  -e REDIS_PASSWORD=tu_password_redis \
+  -e JWT_SECRET=tu_clave_secreta_jwt_muy_segura_minimo_32_caracteres \
   -e JWT_EXPIRATION=86400000 \
   -e CORS_ALLOWED_ORIGINS=http://localhost:5173 \
   -e APP_COOKIE_SECURE=true \
