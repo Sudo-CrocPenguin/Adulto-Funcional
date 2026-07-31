@@ -3,7 +3,6 @@ package org.adultofuncional.main.agenda.infrastructure.controller;
 import java.util.List;
 import java.util.UUID;
 
-import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.agenda.application.dto.EventRequest;
 import org.adultofuncional.main.agenda.application.dto.EventResponse;
 import org.adultofuncional.main.agenda.application.dto.EventUpdateRequest;
@@ -12,7 +11,7 @@ import org.adultofuncional.main.agenda.application.usecase.DeleteEventUseCase;
 import org.adultofuncional.main.agenda.application.usecase.GetEventUseCase;
 import org.adultofuncional.main.agenda.application.usecase.ListEventsUseCase;
 import org.adultofuncional.main.agenda.application.usecase.UpdateEventUseCase;
-import org.adultofuncional.main.shared.exception.NotFoundException;
+import org.adultofuncional.main.config.security.AuthenticatedAccount;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,10 +39,9 @@ import lombok.RequiredArgsConstructor;
  * {@link ApiResponse}, manteniendo la consistencia con el resto de la API.
  *
  * <p>
- * El {@code accountId} se resuelve internamente a partir del correo
- * electrónico del usuario autenticado mediante
- * {@link #resolveAccountId(String)},
- * evitando que el cliente manipule identificadores de cuenta en la URL.
+   * El {@code accountId} se toma del claim {@code sub} del JWT mediante
+   * {@link AuthenticatedAccount},
+   * evitando que el cliente manipule identificadores de cuenta en la URL.
  *
  * <h2>Endpoints expuestos</h2>
  * 
@@ -74,34 +72,19 @@ public class EventController {
   private final ListEventsUseCase listEventsUseCase;
   private final UpdateEventUseCase updateEventUseCase;
   private final DeleteEventUseCase deleteEventUseCase;
-  private final AccountRepository accountRepository;
 
   /**
-   * Resuelve el identificador único de la cuenta a partir del correo
-   * electrónico del usuario autenticado.
-   *
-   * <p>
-   * Consulta el {@link AccountRepository} buscando la cuenta asociada
-   * al correo proporcionado. Si no existe una cuenta con ese correo,
-   * lanza {@link NotFoundException} interrumpiendo el flujo del endpoint.
-   *
-   * @param email correo electrónico del usuario autenticado, obtenido
-   *              desde el contexto de seguridad mediante
-   *              {@code @AuthenticationPrincipal}.
-   * @return UUID de la cuenta asociada al correo electrónico.
-   * @throws NotFoundException si no existe ninguna cuenta con el email dado.
+   * Retorna el identificador estable de la cuenta autenticada.
    */
-  private UUID resolveAccountId(String email) {
-    return accountRepository.findByEmail(email)
-        .orElseThrow(() -> new NotFoundException("Cuenta no encontrada para el email: " + email))
-        .getId();
+  private UUID resolveAccountId(AuthenticatedAccount authenticatedAccount) {
+    return authenticatedAccount.accountId();
   }
 
   /**
    * Crea un nuevo evento en la agenda del usuario autenticado.
    *
    * @param request     DTO con los datos validados del evento a crear.
-   * @param loggedEmail correo electrónico del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 201 Created} con el {@link EventResponse} del evento
    *         creado envuelto en un {@link ApiResponse}.
    * @throws NotFoundException si la cuenta del usuario no existe.
@@ -109,9 +92,9 @@ public class EventController {
   @PostMapping
   public ResponseEntity<ApiResponse<EventResponse>> create(
       @Valid @RequestBody EventRequest request,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     EventResponse response = createEventUseCase.execute(accountId, request);
 
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -126,7 +109,7 @@ public class EventController {
    * Obtiene un evento específico de la agenda del usuario autenticado.
    *
    * @param eventId     UUID del evento a consultar.
-   * @param loggedEmail correo electrónico del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} con el {@link EventResponse} del evento.
    * @throws NotFoundException si el evento no existe o no pertenece a la
    *                           cuenta.
@@ -134,9 +117,9 @@ public class EventController {
   @GetMapping("/{eventId}")
   public ResponseEntity<ApiResponse<EventResponse>> getById(
       @PathVariable UUID eventId,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     EventResponse response = getEventUseCase.execute(accountId, eventId);
 
     return ResponseEntity.ok(ApiResponse.<EventResponse>builder()
@@ -153,7 +136,7 @@ public class EventController {
    * @param status      estado a filtrar (ej. {@code "Pendiente"}); opcional.
    * @param priority    prioridad a filtrar (ej. {@code "Alta"}); opcional.
    * @param categoryId  categoría a filtrar; opcional.
-   * @param loggedEmail correo electrónico del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} con la lista de {@link EventResponse} que
    *         cumplen los criterios. Puede ser una lista vacía.
    * @throws NotFoundException si la cuenta del usuario no existe.
@@ -163,9 +146,9 @@ public class EventController {
       @RequestParam(required = false) String status,
       @RequestParam(required = false) String priority,
       @RequestParam(required = false) UUID categoryId,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     List<EventResponse> response = listEventsUseCase.execute(accountId, status, priority, categoryId);
 
     return ResponseEntity.ok(ApiResponse.<List<EventResponse>>builder()
@@ -185,7 +168,7 @@ public class EventController {
    * @param eventId     UUID del evento a actualizar.
    * @param request     DTO con los campos a modificar; validado con Bean
    *                    Validation.
-   * @param loggedEmail correo electrónico del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} con el {@link EventResponse} actualizado.
    * @throws NotFoundException si el evento no existe o no pertenece a la
    *                           cuenta.
@@ -195,9 +178,9 @@ public class EventController {
   public ResponseEntity<ApiResponse<EventResponse>> update(
       @PathVariable UUID eventId,
       @Valid @RequestBody EventUpdateRequest request,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     EventResponse response = updateEventUseCase.execute(accountId, eventId, request);
 
     return ResponseEntity.ok(ApiResponse.<EventResponse>builder()
@@ -211,7 +194,7 @@ public class EventController {
    * Elimina un evento de la agenda del usuario autenticado.
    *
    * @param eventId     UUID del evento a eliminar.
-   * @param loggedEmail correo electrónico del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} con mensaje de confirmación.
    * @throws NotFoundException si el evento no existe o no pertenece a la
    *                           cuenta.
@@ -219,9 +202,9 @@ public class EventController {
   @DeleteMapping("/{eventId}")
   public ResponseEntity<ApiResponse<Void>> delete(
       @PathVariable UUID eventId,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     deleteEventUseCase.execute(accountId, eventId);
 
     return ResponseEntity.ok(ApiResponse.<Void>builder()

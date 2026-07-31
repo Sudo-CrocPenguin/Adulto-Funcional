@@ -3,6 +3,7 @@ package org.adultofuncional.main.config.security;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
@@ -104,8 +105,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
    * autenticación.</li>
    * <li>Si hay token, lo valida con {@link JwtService#parseAndValidate}.</li>
    * <li>Si es válido y no hay autenticación previa en el contexto, construye
-   * un {@link UsernamePasswordAuthenticationToken} con el email como
-   * principal y los roles como autoridades, y lo registra en el
+   * un {@link UsernamePasswordAuthenticationToken} con el {@code accountId}
+   * del claim {@code sub} como principal estable y los roles como autoridades,
+   * y lo registra en el
    * {@link SecurityContextHolder}.</li>
    * <li>Si el token es inválido, responde {@code 401 Unauthorized} con
    * un {@link ApiResponse} consistente, sin continuar la cadena de filtros.</li>
@@ -141,17 +143,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     try {
       Claims claims = jwtService.parseAndValidate(jwt);
+      UUID accountId = UUID.fromString(claims.getSubject());
       String userEmail = claims.get("email", String.class);
 
-      if (userEmail != null &&
-          SecurityContextHolder.getContext().getAuthentication() == null) {
+      if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
         List<String> roles = claims.get("roles", List.class);
         List<SimpleGrantedAuthority> authorities = roles == null
             ? List.of(new SimpleGrantedAuthority("ROLE_USER"))
             : roles.stream().map(SimpleGrantedAuthority::new).toList();
 
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userEmail, null,
+        AuthenticatedAccount principal = new AuthenticatedAccount(accountId, userEmail);
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(principal, null,
             authorities);
         authToken.setDetails(
             new WebAuthenticationDetailsSource().buildDetails(request));

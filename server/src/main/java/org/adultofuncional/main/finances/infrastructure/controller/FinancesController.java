@@ -3,7 +3,7 @@ package org.adultofuncional.main.finances.infrastructure.controller;
 import java.util.List;
 import java.util.UUID;
 
-import org.adultofuncional.main.account.domain.repository.AccountRepository;
+import org.adultofuncional.main.config.security.AuthenticatedAccount;
 import org.adultofuncional.main.finances.application.dto.category.CategoryFilterRequest;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
 import org.adultofuncional.main.finances.application.dto.category.CreateCategoryRequest;
@@ -31,7 +31,6 @@ import org.adultofuncional.main.finances.application.usecase.movement.DeleteMove
 import org.adultofuncional.main.finances.application.usecase.movement.GetMovementUseCase;
 import org.adultofuncional.main.finances.application.usecase.movement.ListMovementsUseCase;
 import org.adultofuncional.main.finances.application.usecase.movement.UpdateMovementUseCase;
-import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -57,9 +56,9 @@ import lombok.RequiredArgsConstructor;
  * casos de uso correspondientes y retorna respuestas envueltas en
  * {@link ApiResponse}.</p>
  *
- * <p>Los endpoints que operan sobre recursos de una cuenta resuelven el
- * {@code accountId} del usuario autenticado a partir de su correo electrónico
- * mediante {@link #resolveAccountId(String)}. Las categorías son globales y
+   * <p>Los endpoints que operan sobre recursos de una cuenta toman el
+   * {@code accountId} estable desde el claim {@code sub} del JWT mediante
+   * {@link AuthenticatedAccount}. Las categorías son globales y
  * no requieren esta resolución.</p>
  *
  * @author Lidys Jaraba
@@ -134,34 +133,11 @@ public class FinancesController {
      */
     private final DeleteFixedExpenseUseCase deleteFixedExpenseUseCase;
 
-    /**
-     * Repositorio de cuentas utilizado para resolver el UUID de la cuenta
-     * a partir del correo electrónico del usuario autenticado.
-     */
-    private final AccountRepository accountRepository;
-
-
      /**
-     * Resuelve el identificador único de la cuenta a partir del correo
-     * electrónico del usuario autenticado.
-     *
-     * <p>Consulta el {@link AccountRepository} buscando la cuenta asociada
-     * al correo proporcionado. Si no existe una cuenta registrada con ese
-     * correo, lanza una {@link NotFoundException} interrumpiendo el flujo
-     * del endpoint invocante.</p>
-     *
-     * @param email correo electrónico del usuario autenticado, obtenido
-     *              desde el contexto de seguridad mediante
-     *              {@code @AuthenticationPrincipal}.
-     * @return UUID de la cuenta asociada al correo electrónico.
-     * @throws NotFoundException si no existe ninguna cuenta registrada
-     *                           con el correo electrónico proporcionado.
+     * Retorna el identificador estable de la cuenta autenticada.
      */
-
-    private UUID resolveAccountId(String email) {
-        return accountRepository.findByEmail(email)
-            .orElseThrow(() -> new NotFoundException("Cuenta no encontrada para el email: " + email))
-            .getId();
+    private UUID resolveAccountId(AuthenticatedAccount authenticatedAccount) {
+        return authenticatedAccount.accountId();
     }
 
     //Movimientos
@@ -172,7 +148,7 @@ public class FinancesController {
      *
      * @param request    objeto {@link CreateMovementRequest} con los datos
      *                   validados del movimiento a registrar.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 201 Created} y el
      *         {@link MovementResponse} del movimiento creado.
      * @throws NotFoundException si la cuenta del usuario no existe.
@@ -180,9 +156,9 @@ public class FinancesController {
 
     @PostMapping("/movements")
     public ResponseEntity<ApiResponse<MovementResponse>> createMovement(@Validated @RequestBody CreateMovementRequest request,
-         @AuthenticationPrincipal String loggedEmail) {
+         @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        UUID accountId = resolveAccountId(loggedEmail);
+        UUID accountId = resolveAccountId(authenticatedAccount);
         MovementResponse response = createMovementUseCase.execute(accountId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<MovementResponse>builder()
@@ -197,7 +173,7 @@ public class FinancesController {
      * del usuario autenticado.
      *
      * @param id          UUID del movimiento que se desea consultar.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} y el
      *         {@link MovementResponse} del movimiento encontrado.
      * @throws NotFoundException si el movimiento no existe o no pertenece
@@ -206,9 +182,9 @@ public class FinancesController {
 
     @GetMapping("/movements/{id}")
     public ResponseEntity<ApiResponse<MovementResponse>> getMovement(@PathVariable UUID id,
-        @AuthenticationPrincipal String loggedEmail) {
+        @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
         
-        UUID accountId = resolveAccountId(loggedEmail);
+        UUID accountId = resolveAccountId(authenticatedAccount);
         MovementResponse response = getMovementUseCase.execute(accountId, id);
 
        return ResponseEntity.ok(ApiResponse.<MovementResponse>builder()
@@ -226,7 +202,7 @@ public class FinancesController {
      *
      * @param filter      objeto {@link MovementFilterRequest} con los criterios
      *                    de filtrado opcionales. Puede ser {@code null}.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} y la lista de
      *         {@link MovementResponse} que cumplen los criterios del filtro.
      * @throws NotFoundException si la cuenta del usuario no existe.
@@ -234,9 +210,9 @@ public class FinancesController {
 
     @GetMapping("/movements")
     public ResponseEntity<ApiResponse<List<MovementResponse>>> listMovements(MovementFilterRequest filter, 
-        @AuthenticationPrincipal String loggedEmail) {
+        @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        UUID accountId = resolveAccountId(loggedEmail);
+        UUID accountId = resolveAccountId(authenticatedAccount);
         List<MovementResponse> response = listMovementUseCase.execute(accountId, filter);
 
         return ResponseEntity.ok(ApiResponse.<List<MovementResponse>>builder()
@@ -253,7 +229,7 @@ public class FinancesController {
      * @param id          UUID del movimiento que se desea actualizar.
      * @param request     objeto {@link UpdateMovementRequest} con los campos
      *                    a modificar. Los campos no enviados permanecen sin cambios.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} y el
      *         {@link MovementResponse} con los datos actualizados.
      * @throws NotFoundException si el movimiento no existe o no pertenece
@@ -262,9 +238,9 @@ public class FinancesController {
 
     @PatchMapping("/movements/{id}")
     public ResponseEntity<ApiResponse<MovementResponse>> updateMovement(@PathVariable UUID id, @Validated @RequestBody 
-        UpdateMovementRequest request, @AuthenticationPrincipal String loggedEmail) {
+        UpdateMovementRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        UUID accountId = resolveAccountId(loggedEmail);
+        UUID accountId = resolveAccountId(authenticatedAccount);
         MovementResponse response = updateMovementUseCase.execute(accountId, id, request);
 
         return ResponseEntity.ok(ApiResponse.<MovementResponse>builder()
@@ -278,7 +254,7 @@ public class FinancesController {
      * Elimina un movimiento financiero de la cuenta del usuario autenticado.
      *
      * @param id          UUID del movimiento que se desea eliminar.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} confirmando
      *         la eliminación.
      * @throws NotFoundException si el movimiento no existe o no pertenece
@@ -286,9 +262,9 @@ public class FinancesController {
      */
 
     @DeleteMapping("/movements/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteMovement(@PathVariable UUID id, @AuthenticationPrincipal String loggedEmail) {
+    public ResponseEntity<ApiResponse<Void>> deleteMovement(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        UUID accountId = resolveAccountId(loggedEmail);
+        UUID accountId = resolveAccountId(authenticatedAccount);
         deleteMovementUseCase.execute(accountId, id); 
 
         return ResponseEntity.ok(ApiResponse.<Void>builder()
@@ -308,14 +284,14 @@ public class FinancesController {
      *
      * @param request     objeto {@link CreateCategoryRequest} con los datos
      *                    validados de la categoría a crear.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 201 Created} y el
      *         {@link CategoryResponse} de la categoría creada.
      */
 
     @PostMapping("/categories")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Validated @RequestBody 
-        CreateCategoryRequest request, @AuthenticationPrincipal String loggedEmail) {
+        CreateCategoryRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         CategoryResponse response = createCategoryUseCase.execute(request);
 
@@ -330,7 +306,7 @@ public class FinancesController {
      * Obtiene el detalle de una categoría financiera por su identificador.
      *
      * @param id          UUID de la categoría que se desea consultar.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} y el
      *         {@link CategoryResponse} de la categoría encontrada.
      * @throws NotFoundException si no existe ninguna categoría con el
@@ -338,7 +314,7 @@ public class FinancesController {
      */
 
     @GetMapping("/categories/{id}")
-    public ResponseEntity<ApiResponse<CategoryResponse>> getCategory(@PathVariable UUID id, @AuthenticationPrincipal String loggedEmail) {
+    public ResponseEntity<ApiResponse<CategoryResponse>> getCategory(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         CategoryResponse response = getCategoryUseCase.execute(id);
 
@@ -354,14 +330,14 @@ public class FinancesController {
      *
      * @param filter      objeto {@link CategoryFilterRequest} con los criterios
      *                    de filtrado opcionales. Puede ser {@code null}.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} y la lista de
      *         {@link CategoryResponse} que cumplen los criterios del filtro.
      */
 
     @GetMapping("/categories")
     public ResponseEntity<ApiResponse<List<CategoryResponse>>> listCategory(CategoryFilterRequest filter, 
-        @AuthenticationPrincipal String loggedEmail) {
+        @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         List<CategoryResponse> response = listCategoriesUseCase.execute(filter);
 
@@ -378,7 +354,7 @@ public class FinancesController {
      * @param id          UUID de la categoría que se desea actualizar.
      * @param request     objeto {@link UpdateCategoryRequest} con los campos
      *                    a modificar. Los campos no enviados permanecen sin cambios.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} y el
      *         {@link CategoryResponse} con los datos actualizados.
      * @throws NotFoundException si no existe ninguna categoría con el
@@ -387,7 +363,7 @@ public class FinancesController {
 
     @PatchMapping("/categories/{id}")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable UUID id, @Validated
-        @RequestBody UpdateCategoryRequest request, @AuthenticationPrincipal String loggedEmail) {
+        @RequestBody UpdateCategoryRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         CategoryResponse response = updateCategoryUseCase.execute(id,request);
 
@@ -402,7 +378,7 @@ public class FinancesController {
      * Elimina una categoría financiera del sistema.
      *
      * @param id          UUID de la categoría que se desea eliminar.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} confirmando
      *         la eliminación.
      * @throws NotFoundException si no existe ninguna categoría con el
@@ -410,7 +386,7 @@ public class FinancesController {
      */
 
     @DeleteMapping("/categories/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable UUID id, @AuthenticationPrincipal String loggedEmail) {
+    public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         deleteCategoryUseCase.execute(id);
 
@@ -428,7 +404,7 @@ public class FinancesController {
      *
      * @param request     objeto {@link CreateFixedExpenseRequest} con los datos
      *                    validados del gasto fijo a registrar.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 201 Created} y el
      *         {@link FixedExpenseResponse} del gasto fijo creado.
      * @throws NotFoundException si la cuenta del usuario no existe.
@@ -436,9 +412,9 @@ public class FinancesController {
 
     @PostMapping("/fixed-expenses")
     public ResponseEntity<ApiResponse<FixedExpenseResponse>> createFixedExpense(@Validated @RequestBody 
-        CreateFixedExpenseRequest request, @AuthenticationPrincipal String loggedEmail) {
+        CreateFixedExpenseRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        UUID accountId = resolveAccountId(loggedEmail);
+        UUID accountId = resolveAccountId(authenticatedAccount);
         FixedExpenseResponse response = createFixedExpenseUseCase.execute(accountId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<FixedExpenseResponse>builder()
@@ -453,16 +429,16 @@ public class FinancesController {
      * autenticado.
      *
      * @param id          UUID del gasto fijo que se desea consultar.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} y el
      *         {@link FixedExpenseResponse} del gasto fijo encontrado.
      * @throws NotFoundException si el gasto fijo no existe.
      */
 
     @GetMapping("/fixed-expenses/{id}")
-    public ResponseEntity<ApiResponse<FixedExpenseResponse>> getFixedExpense(@PathVariable UUID id, @AuthenticationPrincipal String loggedEmail) {
+    public ResponseEntity<ApiResponse<FixedExpenseResponse>> getFixedExpense(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        UUID accountId = resolveAccountId(loggedEmail);
+        UUID accountId = resolveAccountId(authenticatedAccount);
         FixedExpenseResponse response = getFixedExpenseUseCase.execute(accountId, id);
 
         return ResponseEntity.ok(ApiResponse.<FixedExpenseResponse>builder()
@@ -478,7 +454,7 @@ public class FinancesController {
      *
      * @param filter      objeto {@link FixedExpenseFilterRequest} con los criterios
      *                    de filtrado opcionales. Puede ser {@code null}.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} y la lista de
      *         {@link FixedExpenseResponse} que cumplen los criterios del filtro.
      * @throws NotFoundException si la cuenta del usuario no existe.
@@ -487,9 +463,9 @@ public class FinancesController {
 
     @GetMapping("/fixed-expenses")
     public ResponseEntity<ApiResponse<List<FixedExpenseResponse>>> listFixedExpenses(FixedExpenseFilterRequest filter,
-        @AuthenticationPrincipal String loggedEmail) {
+        @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        UUID accountId = resolveAccountId(loggedEmail);
+        UUID accountId = resolveAccountId(authenticatedAccount);
         List<FixedExpenseResponse> response = listFixedExpensesUseCase.execute(accountId, filter);
 
 
@@ -507,7 +483,7 @@ public class FinancesController {
      * @param id          UUID del gasto fijo que se desea actualizar.
      * @param request     objeto {@link UpdateFixedExpenseRequest} con los campos
      *                    a modificar. Los campos no enviados permanecen sin cambios.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} y el
      *         {@link FixedExpenseResponse} con los datos actualizados.
      * @throws NotFoundException si el gasto fijo no existe.
@@ -515,9 +491,9 @@ public class FinancesController {
 
     @PatchMapping("/fixed-expenses/{id}")
     public ResponseEntity<ApiResponse<FixedExpenseResponse>> updateFixedExpense(@PathVariable UUID id, @Validated
-        @RequestBody UpdateFixedExpenseRequest request, @AuthenticationPrincipal String loggedEmail) {
+        @RequestBody UpdateFixedExpenseRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
         
-        UUID accountId = resolveAccountId(loggedEmail);
+        UUID accountId = resolveAccountId(authenticatedAccount);
         FixedExpenseResponse response = updateFixedExpenseUseCase.execute(accountId, id, request); 
         
         return ResponseEntity.ok(ApiResponse.<FixedExpenseResponse>builder()
@@ -531,7 +507,7 @@ public class FinancesController {
      * Elimina un gasto fijo de la cuenta del usuario autenticado.
      *
      * @param id          UUID del gasto fijo que se desea eliminar.
-     * @param loggedEmail correo electrónico del usuario autenticado.
+     * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} confirmando
      *         la eliminación.
      * @throws NotFoundException si el gasto fijo no existe.
@@ -539,9 +515,9 @@ public class FinancesController {
 
 
     @DeleteMapping("/fixed-expenses/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteFixedExpense(@PathVariable UUID id, @AuthenticationPrincipal String loggedEmail) {
+    public ResponseEntity<ApiResponse<Void>> deleteFixedExpense(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
         
-        UUID accountId = resolveAccountId(loggedEmail);
+        UUID accountId = resolveAccountId(authenticatedAccount);
         deleteFixedExpenseUseCase.execute(accountId, id);
         
         return ResponseEntity.ok(ApiResponse.<Void>builder()
