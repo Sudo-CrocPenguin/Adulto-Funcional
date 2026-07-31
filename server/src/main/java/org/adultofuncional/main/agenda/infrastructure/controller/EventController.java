@@ -45,7 +45,7 @@ import lombok.RequiredArgsConstructor;
    * evitando que el cliente manipule identificadores de cuenta en la URL.
  *
  * <h2>Endpoints expuestos</h2>
- * 
+ *
  * <pre>
  * POST   /api/agenda/events             → crear evento
  * GET    /api/agenda/events/{eventId}   → obtener evento por ID
