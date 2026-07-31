@@ -15,6 +15,8 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import jakarta.servlet.http.Cookie;
+
 class JwtAuthenticationFilterTest {
 
   @AfterEach
@@ -49,5 +51,41 @@ class JwtAuthenticationFilterTest {
     AuthenticatedAccount authenticatedAccount = (AuthenticatedAccount) principal;
     assertThat(authenticatedAccount.accountId()).isEqualTo(accountId);
     assertThat(authenticatedAccount.email()).isEqualTo("correo-antiguo@example.com");
+  }
+
+  @Test
+  void allowsPublicAuthEndpointsWhenCookieTokenIsInvalid() throws Exception {
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService(), new ObjectMapper());
+
+    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+    request.setContentType("application/json");
+    request.setCookies(new Cookie("token", "token-invalido"));
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilterInternal(request, response, new MockFilterChain());
+
+    assertThat(response.getStatus()).isEqualTo(200);
+    assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+  }
+
+  @Test
+  void rejectsProtectedEndpointsWhenCookieTokenIsInvalid() throws Exception {
+    JwtAuthenticationFilter filter = new JwtAuthenticationFilter(jwtService(), new ObjectMapper());
+
+    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/finances/movements");
+    request.setCookies(new Cookie("token", "token-invalido"));
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilterInternal(request, response, new MockFilterChain());
+
+    assertThat(response.getStatus()).isEqualTo(401);
+    assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+  }
+
+  private JwtService jwtService() {
+    JwtProperties jwtProperties = new JwtProperties();
+    jwtProperties.setSecret("test-jwt-secret-with-at-least-32-characters");
+    jwtProperties.setExpiration(60_000);
+    return new JwtService(jwtProperties);
   }
 }
