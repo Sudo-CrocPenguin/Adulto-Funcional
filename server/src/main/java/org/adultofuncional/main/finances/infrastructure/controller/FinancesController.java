@@ -34,6 +34,7 @@ import org.adultofuncional.main.finances.application.usecase.movement.UpdateMove
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -278,9 +279,8 @@ public class FinancesController {
     /**
      * Crea una nueva categoría financiera en el sistema.
      *
-     * <p>Las categorías son globales y no están vinculadas a una cuenta
-     * específica, por lo que no se requiere resolver el {@code accountId}
-     * del usuario autenticado.</p>
+     * <p>Las categorías son globales y forman parte del catálogo interno. Por
+     * eso solo un usuario con {@code ROLE_ADMIN} puede modificarlas.</p>
      *
      * @param request     objeto {@link CreateCategoryRequest} con los datos
      *                    validados de la categoría a crear.
@@ -290,6 +290,7 @@ public class FinancesController {
      */
 
     @PostMapping("/categories")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Validated @RequestBody 
         CreateCategoryRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
@@ -351,6 +352,9 @@ public class FinancesController {
     /**
      * Actualiza parcialmente una categoría financiera existente.
      *
+     * <p>Operación restringida a {@code ROLE_ADMIN} porque las categorías son
+     * globales y afectan a todas las cuentas.</p>
+     *
      * @param id          UUID de la categoría que se desea actualizar.
      * @param request     objeto {@link UpdateCategoryRequest} con los campos
      *                    a modificar. Los campos no enviados permanecen sin cambios.
@@ -362,6 +366,7 @@ public class FinancesController {
      */
 
     @PatchMapping("/categories/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable UUID id, @Validated
         @RequestBody UpdateCategoryRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
@@ -377,6 +382,10 @@ public class FinancesController {
     /**
      * Elimina una categoría financiera del sistema.
      *
+     * <p>Operación restringida a {@code ROLE_ADMIN} porque las categorías son
+     * globales y pueden estar referenciadas por movimientos, eventos o gastos
+     * fijos de cualquier cuenta.</p>
+     *
      * @param id          UUID de la categoría que se desea eliminar.
      * @param authenticatedAccount cuenta autenticada.
      * @return {@link ResponseEntity} con estado {@code 200 OK} confirmando
@@ -386,6 +395,7 @@ public class FinancesController {
      */
 
     @DeleteMapping("/categories/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         deleteCategoryUseCase.execute(id);
