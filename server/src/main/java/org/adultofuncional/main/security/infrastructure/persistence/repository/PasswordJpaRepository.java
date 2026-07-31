@@ -6,6 +6,9 @@ import java.util.UUID;
 
 import org.adultofuncional.main.security.infrastructure.persistence.entity.PasswordEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Repositorio Spring Data JPA para la entidad {@link PasswordEntity}.
@@ -49,17 +52,17 @@ public interface PasswordJpaRepository extends JpaRepository<PasswordEntity, UUI
   Optional<PasswordEntity> findByPasswordIdAndAccount_AccountId(UUID passwordId, UUID accountId);
 
   /**
-     * Verifica si existe una credencial con el ID dado que pertenezca a la cuenta.
-     *
-     * <p>
-     * Usado antes de operaciones de eliminación para validar pertenencia
-     * sin cargar la entidad completa.
-     *
-     * @param passwordId UUID de la credencial.
-     * @param accountId  UUID de la cuenta propietaria.
-     * @return {@code true} si la credencial existe y pertenece a la cuenta.
-     */
-  boolean existsByPasswordIdAndAccount_AccountId(UUID passwordId, UUID accountId);
+   * Elimina de forma atómica una credencial limitada por cuenta propietaria.
+   */
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = """
+      DELETE FROM passwords
+      WHERE password_id = :passwordId
+        AND passwords_fk_account_id = :accountId
+      """, nativeQuery = true)
+  int deleteByPasswordIdAndAccountId(
+      @Param("passwordId") UUID passwordId,
+      @Param("accountId") UUID accountId);
 
   /**
      * Verifica si ya existe una credencial para una cuenta y aplicación específicas.

@@ -26,13 +26,14 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Métodos implementados:</strong>
  * <ul>
- * <li>{@link #findById(UUID)} — busca una credencial por ID y la convierte
- * a dominio.</li>
+ * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca una credencial por ID y
+ * cuenta y la convierte a dominio.</li>
  * <li>{@link #findAllByAccountId(UUID)} — lista todas las credenciales de
  * una cuenta.</li>
  * <li>{@link #save(Password)} — persiste una credencial nueva o actualizada,
  * devolviendo el modelo de dominio resultante.</li>
- * <li>{@link #deleteById(UUID)} — elimina una credencial por su ID.</li>
+ * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina una credencial por
+ * ID y cuenta.</li>
  * </ul>
  *
  * @author Jeronimo Ospina Zapata
@@ -47,23 +48,6 @@ public class PasswordRepositoryImpl implements PasswordRepository {
 
   private final PasswordJpaRepository jpaRepository;
   private final PasswordMapper mapper;
-
-  /**
-   * Busca una credencial por su identificador único.
-   *
-   * <p>
-   * Consulta el repositorio Spring Data JPA y convierte la entidad resultante
-   * al modelo de dominio mediante
-   * {@link PasswordMapper#toDomain(PasswordEntity)}.
-   *
-   * @param id UUID de la credencial. No debe ser {@code null}.
-   * @return {@link Optional} con la credencial si existe;
-   *         {@code Optional.empty()} en caso contrario.
-   */
-  @Override
-  public Optional<Password> findById(UUID id) {
-    return jpaRepository.findById(id).map(mapper::toDomain);
-  }
 
   /**
    * Lista todas las credenciales asociadas a una cuenta específica.
@@ -103,21 +87,6 @@ public class PasswordRepositoryImpl implements PasswordRepository {
     return mapper.toDomain(savedEntity);
   }
 
-  /**
-   * Elimina una credencial por su identificador único.
-   *
-   * <p>
-   * Si no existe ninguna credencial con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso de Spring Data JPA). La validación de existencia
-   * previa se realiza en la capa de aplicación.
-   *
-   * @param id UUID de la credencial a eliminar. No debe ser {@code null}.
-   */
-  @Override
-  public void deleteById(UUID id) {
-    jpaRepository.deleteById(id);
-  }
-
     /**
    * Busca una credencial por su identificador y la cuenta propietaria.
    *
@@ -133,15 +102,11 @@ public class PasswordRepositoryImpl implements PasswordRepository {
   }
 
   /**
-   * Verifica si existe una credencial con el ID dado que pertenezca a la cuenta.
-   *
-   * @param passwordId UUID de la credencial. No debe ser {@code null}.
-   * @param accountId  UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return {@code true} si la credencial existe y pertenece a la cuenta.
+   * Elimina una credencial por identificador y cuenta en una sola sentencia.
    */
   @Override
-  public boolean existsByIdAndAccountId(UUID passwordId, UUID accountId) {
-      return jpaRepository.existsByPasswordIdAndAccount_AccountId(passwordId, accountId);
+  public boolean deleteByIdAndAccountId(UUID passwordId, UUID accountId) {
+    return jpaRepository.deleteByPasswordIdAndAccountId(passwordId, accountId) > 0;
   }
 
   /**
