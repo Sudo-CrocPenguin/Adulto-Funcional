@@ -27,8 +27,9 @@ La siguiente migración disponible añadirá, sin modificar V1--V3:
 - `owner_account_id`, nullable y con clave foránea a `accounts`.
 - `category_scope`, con valores `SYSTEM` o `PERSONAL`.
 - `normalized_name`, no nullable.
-- Un discriminador no nullable para imponer unicidad tanto a categorías del
-  sistema como personales aun cuando `owner_account_id` sea `NULL`.
+- `ownership_discriminator`, columna generada no nullable para imponer
+  unicidad tanto a categorías del sistema como personales aun cuando
+  `owner_account_id` sea `NULL`.
 
 Las filas existentes se migrarán como `SYSTEM`. La base de datos impondrá estas
 invariantes:
@@ -38,9 +39,35 @@ invariantes:
 - Nombre normalizado único por propietario, tipo y alcance.
 - Tipo y alcance no pueden ser nulos.
 
-El nombre normalizado se obtendrá con Unicode normalizado, espacios exteriores
-eliminados, secuencias internas de espacios colapsadas y minúsculas
-independientes del locale. El valor original se conservará para presentación.
+El nombre normalizado se calculará exactamente en este orden:
+
+1. `Normalizer.normalize(name, Normalizer.Form.NFKC)`;
+2. reemplazar cada secuencia de separadores Unicode o whitespace
+   (`[\p{Z}\s]+`) por un espacio ASCII;
+3. aplicar `String.strip()`;
+4. aplicar `toLowerCase(Locale.ROOT)`.
+
+El valor original se conservará para presentación. Dominio, backfill y
+validaciones usarán la misma función compartida; no se mantendrán
+implementaciones distintas por módulo.
+
+`ownership_discriminator` será `VARCHAR(36) GENERATED ALWAYS AS`:
+
+```sql
+CASE
+  WHEN category_scope = 'SYSTEM' THEN 'SYSTEM'
+  ELSE owner_account_id
+END
+```
+
+La restricción se llamará `uk_categories_scope_owner_type_name` y cubrirá:
+
+```text
+(category_scope, ownership_discriminator, category_type, normalized_name)
+```
+
+Las restricciones `CHECK` impedirán `SYSTEM` con propietario y `PERSONAL` sin
+propietario, por lo que el discriminador nunca será nulo en una fila válida.
 
 ## Autorización y consultas
 
@@ -59,6 +86,14 @@ categoría personal ajena. Un recurso ajeno o no visible se representa como
 El tipo de categoría será inmutable después de crearla. Una eliminación que
 viole referencias existentes producirá `409 Conflict`; no habrá eliminación en
 cascada de movimientos, eventos o gastos.
+
+Al eliminar una cuenta se eliminarán también sus categorías personales. La
+operación de cuenta será transaccional y retirará primero movimientos, eventos,
+gastos fijos y credenciales dependientes; después eliminará las categorías
+personales y finalmente la cuenta. La FK `owner_account_id` usará
+`ON DELETE CASCADE` como garantía de integridad, pero no sustituirá ese orden
+explícito del caso de uso. El catálogo `SYSTEM` nunca se elimina al borrar una
+cuenta.
 
 ## Integridad entre módulos
 
