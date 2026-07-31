@@ -1,0 +1,12 @@
+{
+  "name": "adulto-funcional-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 5173",
+    "lint": "node --check src/shared/api/ApiClient.js && node --check src/auth/infrastructure/SessionStore.js && node --check src/app/AdultoFuncionalApp.js && node --check src/main.js && node --check tests/api-client.test.js && node --check tests/session-store.test.js",
+    "typecheck": "npm run lint",
+    "test": "node --test tests/*.test.js"
+  }
+}
