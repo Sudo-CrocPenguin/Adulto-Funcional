@@ -70,7 +70,7 @@ public class PasswordMapper {
      * @param password modelo de dominio a convertir; si es {@code null} retorna {@code null}
      * @return entidad JPA lista para persistir, o {@code null} si el modelo es {@code null}
      */
-    
+
     public PasswordEntity toEntity(Password password) {
         if (password == null) return null;
 
