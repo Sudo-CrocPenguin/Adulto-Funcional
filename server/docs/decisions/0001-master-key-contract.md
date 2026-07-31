@@ -46,12 +46,30 @@ respuesta ni en logs. El estado público tendrá esta forma dentro de `data`:
 `expiresAt` será `null` cuando no exista una sesión desbloqueada. Los errores
 seguirán el contrato uniforme definido para toda la API.
 
+Los DTO de escritura tendrán estos campos mínimos:
+
+- Configuración inicial: `currentPassword` y `newMasterKey`.
+- Verificación: `masterKey`.
+- Cambio: `currentPassword`, `currentMasterKey` y `newMasterKey`.
+
+`currentPassword` constituye una reautenticación explícita en el momento de la
+operación. El servidor la compara con el hash de la contraseña principal y no
+la persiste, registra ni reutiliza. De esta forma, un JWT robado no basta para
+configurar la primera Master Key ni para reemplazar una existente.
+
 ## Reglas de negocio
 
 - Crear una clave cuando ya existe produce `409 Conflict`.
 - Verificar o cambiar una clave no configurada produce `409 Conflict`.
-- Una clave incorrecta produce `401 Unauthorized` sin revelar información
-  adicional.
+- Una Master Key incorrecta produce `403 Forbidden` con el código
+  `MASTER_KEY_INVALID`, sin cerrar ni invalidar la sesión de autenticación.
+- Intentar operar sobre el gestor sin desbloquear la sesión produce
+  `403 Forbidden` con el código `MASTER_KEY_REQUIRED`.
+- `401 Unauthorized` queda reservado para fallos de login, JWT ausente,
+  inválido, expirado o revocado.
+- Configurar o cambiar la Master Key exige reautenticación mediante
+  `currentPassword`; una contraseña principal incorrecta produce
+  `403 Forbidden` con el código `REAUTHENTICATION_FAILED`.
 - Cambiar la clave exige la clave actual y una nueva clave válida.
 - El cambio recifra todas las credenciales dentro de una sola transacción. Un
   fallo revierte el hash y todos los cifrados.
