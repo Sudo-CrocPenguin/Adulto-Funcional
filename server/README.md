@@ -22,7 +22,7 @@ Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una a
 | Spring Data JPA      | -       | Persistencia ORM                                   |
 | Spring Security      | -       | Autenticación y autorización                       |
 | MariaDB              | 11.8    | Base de datos relacional                           |
-| Redis                | 7       | Almacén distribuido para sesiones de Master Key    |
+| Redis                | 7       | Almacén distribuido efímero para sesiones de Master Key |
 | Flyway               | -       | Migraciones de base de datos                       |
 | Lombok               | -       | Reducción de boilerplate                           |
 | JWT                  | -       | Autenticación stateless                            |
@@ -142,14 +142,15 @@ MARIADB_DATABASE=adulto_funcional
 MARIADB_USER=afs_user
 MARIADB_PASSWORD=tu_password
 
-# Redis (para sesiones de Master Key en producción)
+# Redis (para sesiones de Master Key efímeras en producción)
 REDIS_HOST=redis
 REDIS_PORT=6379
 REDIS_PASSWORD=tu_password_redis
 
-# JWT
+# JWT y sesiones de Master Key
 JWT_SECRET=tu_clave_secreta_jwt_muy_segura_minimo_32_caracteres
 JWT_EXPIRATION=86400000
+MASTER_KEY_SESSION_SECRET=tu_clave_secreta_para_sesiones_master_key_minimo_32_caracteres
 
 # CORS y cookies
 CORS_ALLOWED_ORIGINS=http://localhost:5173
@@ -300,6 +301,7 @@ docker run -p 8080:8080 \
   -e REDIS_PASSWORD=tu_password_redis \
   -e JWT_SECRET=tu_clave_secreta_jwt_muy_segura_minimo_32_caracteres \
   -e JWT_EXPIRATION=86400000 \
+  -e MASTER_KEY_SESSION_SECRET=tu_clave_secreta_para_sesiones_master_key_minimo_32_caracteres \
   -e CORS_ALLOWED_ORIGINS=http://localhost:5173 \
   -e APP_COOKIE_SECURE=true \
   -e APP_COOKIE_SAME_SITE=Lax \
