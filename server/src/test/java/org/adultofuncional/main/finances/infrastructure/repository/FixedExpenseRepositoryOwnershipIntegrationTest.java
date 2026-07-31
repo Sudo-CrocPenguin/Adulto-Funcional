@@ -16,38 +16,18 @@ import org.adultofuncional.main.finances.infrastructure.persistence.entity.Fixed
 import org.adultofuncional.main.finances.infrastructure.persistence.mapper.FixedExpenseMapper;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringCategoryJpaRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringFixedExpenseJpaRepository;
+import org.adultofuncional.main.testsupport.MariaDbIntegrationTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MariaDBContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 @DataJpaTest
-@Testcontainers
-@ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import(FixedExpenseMapper.class)
-class FixedExpenseRepositoryOwnershipIntegrationTest {
-
-  @Container
-  static MariaDBContainer<?> mariadb = new MariaDBContainer<>("mariadb:11.8")
-      .withDatabaseName("fixed_expense_ownership_test")
-      .withUsername("test")
-      .withPassword("test");
-
-  @DynamicPropertySource
-  static void datasourceProperties(DynamicPropertyRegistry registry) {
-    registry.add("spring.datasource.url", mariadb::getJdbcUrl);
-    registry.add("spring.datasource.username", mariadb::getUsername);
-    registry.add("spring.datasource.password", mariadb::getPassword);
-  }
+class FixedExpenseRepositoryOwnershipIntegrationTest extends MariaDbIntegrationTestSupport {
 
   @Autowired
   SpringFixedExpenseJpaRepository fixedExpenseJpaRepository;

@@ -19,17 +19,12 @@ import org.adultofuncional.main.finances.infrastructure.persistence.repository.S
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringMovementJpaRepository;
 import org.adultofuncional.main.security.infrastructure.persistence.entity.PasswordEntity;
 import org.adultofuncional.main.security.infrastructure.persistence.repository.PasswordJpaRepository;
+import org.adultofuncional.main.testsupport.MariaDbIntegrationTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.MariaDBContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Verifica en MariaDB que los repositorios con recursos privados incorporen
@@ -37,23 +32,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * una entidad de otra cuenta.
  */
 @DataJpaTest
-@Testcontainers
-@ActiveProfiles("test")
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class OwnershipPersistenceIntegrationTest {
-
-  @Container
-  static MariaDBContainer<?> mariadb = new MariaDBContainer<>("mariadb:11.8")
-      .withDatabaseName("ownership_persistence_test")
-      .withUsername("test")
-      .withPassword("test");
-
-  @DynamicPropertySource
-  static void datasourceProperties(DynamicPropertyRegistry registry) {
-    registry.add("spring.datasource.url", mariadb::getJdbcUrl);
-    registry.add("spring.datasource.username", mariadb::getUsername);
-    registry.add("spring.datasource.password", mariadb::getPassword);
-  }
+class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport {
 
   @Autowired
   SpringAccountJpaRepository accountRepository;
