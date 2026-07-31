@@ -45,12 +45,8 @@ public class GetMovementUseCase {
    */
   @Transactional(readOnly = true)
   public MovementResponse execute(UUID accountId, UUID movementId) {
-    Movement movement = movementRepository.findById(movementId)
+    Movement movement = movementRepository.findByIdAndAccountId(movementId, accountId)
         .orElseThrow(() -> new NotFoundException("Movimiento no encontrado con id: " + movementId));
-
-    if (!movement.getAccountId().equals(accountId)) {
-      throw new NotFoundException("Movimiento no pertenece a la cuenta");
-    }
 
     return MovementResponse.builder()
         .id(movement.getId())

@@ -15,10 +15,8 @@ public class DeleteMovementUseCase {
 
   @Transactional
   public void execute(UUID accountId, UUID movementId) {
-    movementRepository.findById(movementId)
-        .filter(movement -> movement.getAccountId().equals(accountId))
-        .orElseThrow(() -> new NotFoundException("Movimiento no encontrado con id: " + movementId));
-
-    movementRepository.deleteById(movementId);
+    if (!movementRepository.deleteByIdAndAccountId(movementId, accountId)) {
+      throw new NotFoundException("Movimiento no encontrado con id: " + movementId);
+    }
   }
 }
