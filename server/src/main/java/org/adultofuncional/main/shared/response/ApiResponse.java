@@ -16,7 +16,7 @@ import lombok.Builder;
  * <p>
  * Ejemplo de uso:
  * </p>
- * 
+ *
  * <pre>
  * new ApiResponse&lt;&gt;(200, "Usuario encontrado", usuarioDto);
  * new ApiResponse&lt;&gt;(404, "Usuario no encontrado", null);

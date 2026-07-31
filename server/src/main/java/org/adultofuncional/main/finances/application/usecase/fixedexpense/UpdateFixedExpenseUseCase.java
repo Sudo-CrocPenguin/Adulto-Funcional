@@ -69,12 +69,8 @@ public class UpdateFixedExpenseUseCase {
    */
   @Transactional
   public FixedExpenseResponse execute(UUID accountId, UUID expenseId, UpdateFixedExpenseRequest request) {
-    FixedExpense expense = fixedExpenseRepository.findById(expenseId)
+    FixedExpense expense = fixedExpenseRepository.findByIdAndAccountId(expenseId, accountId)
         .orElseThrow(() -> new NotFoundException("Gasto fijo no encontrado con id: " + expenseId));
-
-    if (!expense.getAccountId().equals(accountId)) {
-      throw new NotFoundException("Gasto fijo no pertenece a la cuenta");
-    }
 
     // Valores actuales como base para la actualización parcial
     String name = expense.getName();

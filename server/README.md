@@ -56,7 +56,11 @@ org.adultofuncional.main
     └── security/       # Validación de ownership reutilizable (OwnedResource, OwnershipValidator)
 ```
 
-Para una documentación técnica detallada de la arquitectura, consulta [ARCHITECTURE.md](./ARCHITECTURE.md).
+Para una documentación técnica detallada de la arquitectura, consulta
+[ARCHITECTURE.md](./ARCHITECTURE.md). Las decisiones transversales se registran
+en [docs/decisions](./docs/decisions/README.md) y el patrón obligatorio para
+recursos privados se explica en
+[RESOURCE_OWNERSHIP.md](./docs/RESOURCE_OWNERSHIP.md).
 
 ## Estructura de la base de datos
 

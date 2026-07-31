@@ -12,13 +12,13 @@ package org.adultofuncional.main.shared.exception;
  */
 
 public class UnauthorizedException extends BusinessException {
-    
+
     /**
      * Construye una nueva excepción de acceso no autorizado.
      *
      * @param message mensaje descriptivo que explica por qué no se autorizó el acceso
      */
-    
+
     public UnauthorizedException(String message) {
 
         super(message, 401);

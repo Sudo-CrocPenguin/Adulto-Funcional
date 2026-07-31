@@ -185,7 +185,7 @@ public class FinancesController {
     @GetMapping("/movements/{id}")
     public ResponseEntity<ApiResponse<MovementResponse>> getMovement(@PathVariable UUID id,
         @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
-        
+
         UUID accountId = resolveAccountId(authenticatedAccount);
         MovementResponse response = getMovementUseCase.execute(accountId, id);
 
@@ -211,7 +211,7 @@ public class FinancesController {
      */
 
     @GetMapping("/movements")
-    public ResponseEntity<ApiResponse<List<MovementResponse>>> listMovements(MovementFilterRequest filter, 
+    public ResponseEntity<ApiResponse<List<MovementResponse>>> listMovements(MovementFilterRequest filter,
         @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         UUID accountId = resolveAccountId(authenticatedAccount);
@@ -239,7 +239,7 @@ public class FinancesController {
      */
 
     @PatchMapping("/movements/{id}")
-    public ResponseEntity<ApiResponse<MovementResponse>> updateMovement(@PathVariable UUID id, @Validated @RequestBody 
+    public ResponseEntity<ApiResponse<MovementResponse>> updateMovement(@PathVariable UUID id, @Validated @RequestBody
         UpdateMovementRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         UUID accountId = resolveAccountId(authenticatedAccount);
@@ -267,7 +267,7 @@ public class FinancesController {
     public ResponseEntity<ApiResponse<Void>> deleteMovement(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         UUID accountId = resolveAccountId(authenticatedAccount);
-        deleteMovementUseCase.execute(accountId, id); 
+        deleteMovementUseCase.execute(accountId, id);
 
         return ResponseEntity.ok(ApiResponse.<Void>builder()
             .status(HttpStatus.OK.value())
@@ -292,7 +292,7 @@ public class FinancesController {
 
     @PostMapping("/categories")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Validated @RequestBody 
+    public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Validated @RequestBody
         CreateCategoryRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         CategoryResponse response = createCategoryUseCase.execute(request);
@@ -338,7 +338,7 @@ public class FinancesController {
      */
 
     @GetMapping("/categories")
-    public ResponseEntity<ApiResponse<List<CategoryResponse>>> listCategory(CategoryFilterRequest filter, 
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> listCategory(CategoryFilterRequest filter,
         @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         List<CategoryResponse> response = listCategoriesUseCase.execute(filter);
@@ -422,7 +422,7 @@ public class FinancesController {
      */
 
     @PostMapping("/fixed-expenses")
-    public ResponseEntity<ApiResponse<FixedExpenseResponse>> createFixedExpense(@Validated @RequestBody 
+    public ResponseEntity<ApiResponse<FixedExpenseResponse>> createFixedExpense(@Validated @RequestBody
         CreateFixedExpenseRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         UUID accountId = resolveAccountId(authenticatedAccount);
@@ -503,10 +503,10 @@ public class FinancesController {
     @PatchMapping("/fixed-expenses/{id}")
     public ResponseEntity<ApiResponse<FixedExpenseResponse>> updateFixedExpense(@PathVariable UUID id, @Validated
         @RequestBody UpdateFixedExpenseRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
-        
+
         UUID accountId = resolveAccountId(authenticatedAccount);
-        FixedExpenseResponse response = updateFixedExpenseUseCase.execute(accountId, id, request); 
-        
+        FixedExpenseResponse response = updateFixedExpenseUseCase.execute(accountId, id, request);
+
         return ResponseEntity.ok(ApiResponse.<FixedExpenseResponse>builder()
             .status(HttpStatus.OK.value())
             .message("Gasto fijo actualizado exitosamente")
@@ -527,14 +527,14 @@ public class FinancesController {
 
     @DeleteMapping("/fixed-expenses/{id}")
     public ResponseEntity<ApiResponse<Void>> deleteFixedExpense(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
-        
+
         UUID accountId = resolveAccountId(authenticatedAccount);
         deleteFixedExpenseUseCase.execute(accountId, id);
-        
+
         return ResponseEntity.ok(ApiResponse.<Void>builder()
             .status(HttpStatus.OK.value())
             .message("Gasto fijo eliminado exitosamente")
             .build());
     }
-    
+
 }

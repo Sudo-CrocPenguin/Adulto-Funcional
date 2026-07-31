@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 /**
  * Componente que convierte entre las diferentes representaciones de una
  * categoria.
- * 
+ *
  * <p>
  * Traduce entre:
  * <ul>
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
  * {@link CategoryType}
  * asume que los valores almacenados en base de datos coinciden exactamente con
  * los nombres de las constantes del enum (sensible a mayúsculas).
- * 
+ *
  * @author Lidys Jaraba
  * @since 0.0.1
  * @see Category

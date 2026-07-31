@@ -25,13 +25,14 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Métodos implementados:</strong>
  * <ul>
- * <li>{@link #findById(UUID)} — busca un movimiento por ID y lo convierte
- * a dominio.</li>
+ * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca un movimiento por ID y
+ * cuenta y lo convierte a dominio.</li>
  * <li>{@link #findAllByAccountId(UUID)} — lista todos los movimientos
  * asociados a una cuenta.</li>
  * <li>{@link #save(Movement)} — persiste un movimiento nuevo o actualizado,
  * devolviendo el modelo de dominio resultante.</li>
- * <li>{@link #deleteById(UUID)} — elimina un movimiento por su ID.</li>
+ * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina un movimiento por
+ * ID y cuenta.</li>
  * </ul>
  *
  * @author Lidys Jaraba
@@ -48,20 +49,12 @@ public class MovementRepositoryImpl implements MovementRepository {
   private final MovementMapper mapper;
 
   /**
-   * Busca un movimiento por su identificador único.
-   *
-   * <p>
-   * Consulta el repositorio Spring Data JPA y convierte la entidad resultante
-   * al modelo de dominio mediante
-   * {@link MovementMapper#toDomain(MovementEntity)}.
-   *
-   * @param id UUID del movimiento. No debe ser {@code null}.
-   * @return {@link Optional} con el movimiento si existe;
-   *         {@code Optional.empty()} en caso contrario.
+   * Busca un movimiento por identificador y cuenta antes de materializarlo.
    */
   @Override
-  public Optional<Movement> findById(UUID id) {
-    return jpaRepository.findById(id).map(mapper::toDomain);
+  public Optional<Movement> findByIdAndAccountId(UUID id, UUID accountId) {
+    return jpaRepository.findByMovementIdAndAccount_AccountId(id, accountId)
+        .map(mapper::toDomain);
   }
 
   /**
@@ -101,17 +94,10 @@ public class MovementRepositoryImpl implements MovementRepository {
   }
 
   /**
-   * Elimina un movimiento por su identificador único.
-   *
-   * <p>
-   * Si no existe ningún movimiento con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso de Spring Data JPA). La validación de existencia
-   * previa se realiza en la capa de aplicación.
-   *
-   * @param id UUID del movimiento a eliminar. No debe ser {@code null}.
+   * Elimina un movimiento por identificador y cuenta en una sola sentencia.
    */
   @Override
-  public void deleteById(UUID id) {
-    jpaRepository.deleteById(id);
+  public boolean deleteByIdAndAccountId(UUID id, UUID accountId) {
+    return jpaRepository.deleteByMovementIdAndAccountId(id, accountId) > 0;
   }
 }

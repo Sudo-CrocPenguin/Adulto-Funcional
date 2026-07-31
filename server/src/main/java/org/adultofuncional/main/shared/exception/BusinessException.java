@@ -54,9 +54,9 @@ public class BusinessException extends RuntimeException {
      *
      * @return código de estado HTTP del error
      */
-    
+
     public int getStatus() {
         return status;
     }
-    
+
 }

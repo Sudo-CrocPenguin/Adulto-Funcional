@@ -1,10 +1,14 @@
 package org.adultofuncional.main.finances.infrastructure.persistence.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.MovementEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Repositorio Spring Data JPA para la entidad {@link MovementEntity}.
@@ -19,6 +23,26 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * @since 1.0
  */
 public interface SpringMovementJpaRepository extends JpaRepository<MovementEntity, UUID> {
+
+  /**
+   * Busca un movimiento por identificador y cuenta propietaria.
+   */
+  Optional<MovementEntity> findByMovementIdAndAccount_AccountId(
+      UUID movementId,
+      UUID accountId);
+
+  /**
+   * Elimina de forma atómica un movimiento limitado por cuenta.
+   */
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = """
+      DELETE FROM movements
+      WHERE movement_id = :movementId
+        AND movement_fk_account_id = :accountId
+      """, nativeQuery = true)
+  int deleteByMovementIdAndAccountId(
+      @Param("movementId") UUID movementId,
+      @Param("accountId") UUID accountId);
 
   /**
    * Busca todos los movimientos financieros asociados a una cuenta específica.

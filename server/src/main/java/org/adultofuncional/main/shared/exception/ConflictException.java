@@ -11,13 +11,13 @@ package org.adultofuncional.main.shared.exception;
  */
 
 public class ConflictException extends BusinessException {
-    
+
     /**
      * Construye una nueva excepción de conflicto de datos.
      *
      * @param message mensaje descriptivo que explica el conflicto ocurrido
      */
-    
+
     public ConflictException(String message) {
 
         super(message, 409);

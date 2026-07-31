@@ -6,6 +6,9 @@ import java.util.UUID;
 
 import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Repositorio Spring Data JPA para la entidad {@link EventEntity}.
@@ -49,12 +52,15 @@ public interface SpringEventJpaRepository extends JpaRepository<EventEntity, UUI
   Optional<EventEntity> findByEventIdAndAccount_AccountId(UUID eventId, UUID accountId);
 
   /**
-   * Verifica si existe un evento con el ID dado y que pertenezca a
-   * la cuenta indicada.
-   *
-   * @param eventId   UUID del evento.
-   * @param accountId UUID de la cuenta propietaria.
-   * @return {@code true} si el evento existe y pertenece a la cuenta.
+   * Elimina de forma atómica un evento limitado por cuenta propietaria.
    */
-  boolean existsByEventIdAndAccount_AccountId(UUID eventId, UUID accountId);
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = """
+      DELETE FROM events
+      WHERE event_id = :eventId
+        AND event_fk_account_id = :accountId
+      """, nativeQuery = true)
+  int deleteByEventIdAndAccountId(
+      @Param("eventId") UUID eventId,
+      @Param("accountId") UUID accountId);
 }

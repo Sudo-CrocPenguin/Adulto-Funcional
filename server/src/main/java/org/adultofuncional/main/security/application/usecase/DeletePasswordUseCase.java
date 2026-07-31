@@ -57,10 +57,8 @@ public class DeletePasswordUseCase {
       throw new ForbiddenException("Master Key no verificada");
     }
 
-    if (!passwordRepository.existsByIdAndAccountId(passwordId, accountId)) {
+    if (!passwordRepository.deleteByIdAndAccountId(passwordId, accountId)) {
       throw new NotFoundException("Contraseña no encontrada con id: " + passwordId);
     }
-
-    passwordRepository.deleteById(passwordId);
   }
 }

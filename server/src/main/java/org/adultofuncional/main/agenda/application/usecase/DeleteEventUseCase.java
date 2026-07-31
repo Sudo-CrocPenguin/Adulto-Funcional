@@ -12,10 +12,8 @@ import java.util.UUID;
  * Caso de uso: Eliminar un evento de la agenda.
  *
  * <p>
- * Verifica que el evento exista y pertenezca a la cuenta indicada, y lo
- * elimina permanentemente del sistema. La verificación de propiedad se realiza
- * mediante {@link EventRepository#existsByIdAndAccountId(UUID, UUID)} antes de
- * proceder a la eliminación.
+ * Elimina el evento mediante una operación atómica limitada por cuenta. Un ID
+ * ajeno y un ID inexistente producen la misma respuesta.
  *
  * <p>
  * La operación se ejecuta dentro de una transacción ({@code @Transactional}),
@@ -44,9 +42,8 @@ public class DeleteEventUseCase {
    */
   @Transactional
   public void execute(UUID accountId, UUID eventId) {
-    if (!eventRepository.existsByIdAndAccountId(eventId, accountId)) {
+    if (!eventRepository.deleteByIdAndAccountId(eventId, accountId)) {
       throw new NotFoundException("Evento no encontrado con id: " + eventId);
     }
-    eventRepository.deleteById(eventId);
   }
 }

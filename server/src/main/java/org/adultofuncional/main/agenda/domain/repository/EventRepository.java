@@ -18,12 +18,10 @@ import org.adultofuncional.main.agenda.domain.model.Event;
  * <p>
  * <strong>Operaciones expuestas:</strong>
  * <ul>
- * <li>Búsqueda individual por ID.</li>
  * <li>Búsqueda por ID y cuenta propietaria (validación de propiedad).</li>
- * <li>Verificación de existencia por ID y cuenta.</li>
  * <li>Listado de todos los eventos de una cuenta.</li>
  * <li>Persistencia de nuevos eventos o actualización de existentes.</li>
- * <li>Eliminación por ID.</li>
+ * <li>Eliminación limitada por ID y cuenta propietaria.</li>
  * </ul>
  *
  * @author Daniel Salazar
@@ -32,15 +30,6 @@ import org.adultofuncional.main.agenda.domain.model.Event;
  * @see org.adultofuncional.main.agenda.infrastructure.repository.EventRepositoryImpl
  */
 public interface EventRepository {
-
-  /**
-   * Busca un evento por su identificador único.
-   *
-   * @param id UUID del evento. No debe ser {@code null}.
-   * @return {@link Optional} con el evento si existe;
-   *         {@code Optional.empty()} en caso contrario.
-   */
-  Optional<Event> findById(UUID id);
 
   /**
    * Busca un evento por su identificador y la cuenta propietaria.
@@ -55,16 +44,6 @@ public interface EventRepository {
    *         {@code Optional.empty()} en caso contrario.
    */
   Optional<Event> findByIdAndAccountId(UUID eventId, UUID accountId);
-
-  /**
-   * Verifica si existe un evento con el ID dado y que pertenezca a la cuenta
-   * indicada.
-   *
-   * @param eventId   UUID del evento. No debe ser {@code null}.
-   * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return {@code true} si el evento existe y pertenece a la cuenta.
-   */
-  boolean existsByIdAndAccountId(UUID eventId, UUID accountId);
 
   /**
    * Lista todos los eventos asociados a una cuenta específica.
@@ -94,14 +73,11 @@ public interface EventRepository {
   Event save(Event event);
 
   /**
-   * Elimina un evento por su identificador único.
+   * Elimina un evento únicamente cuando pertenece a la cuenta indicada.
    *
-   * <p>
-   * Si no existe un evento con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso). La validación de existencia previa se
-   * realiza en la capa de aplicación.
-   *
-   * @param id UUID del evento a eliminar. No debe ser {@code null}.
+   * @param eventId   UUID del evento
+   * @param accountId UUID de la cuenta propietaria
+   * @return {@code true} cuando se eliminó una fila
    */
-  void deleteById(UUID id);
+  boolean deleteByIdAndAccountId(UUID eventId, UUID accountId);
 }

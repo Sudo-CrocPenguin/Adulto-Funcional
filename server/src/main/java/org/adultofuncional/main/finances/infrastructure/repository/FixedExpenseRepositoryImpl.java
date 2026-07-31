@@ -25,13 +25,14 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Métodos implementados:</strong>
  * <ul>
- * <li>{@link #findById(UUID)} — busca un gasto fijo por ID y lo convierte
- * a dominio.</li>
+ * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca un gasto fijo por ID y
+ * cuenta y lo convierte a dominio.</li>
  * <li>{@link #findAllByAccountId(UUID)} — lista todos los gastos fijos
  * asociados a una cuenta.</li>
  * <li>{@link #save(FixedExpense)} — persiste un gasto fijo nuevo o actualizado,
  * devolviendo el modelo de dominio resultante.</li>
- * <li>{@link #deleteById(UUID)} — elimina un gasto fijo por su ID.</li>
+ * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina un gasto fijo por
+ * ID y cuenta propietaria.</li>
  * </ul>
  *
  * @author Juan Sebastian Rios
@@ -48,20 +49,18 @@ public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
   private final FixedExpenseMapper fixedExpenseMapper;
 
   /**
-   * Busca un gasto fijo por su identificador único.
+   * Busca un gasto fijo por identificador y cuenta propietaria en una única
+   * consulta, antes de materializar el modelo de dominio.
    *
-   * <p>
-   * Consulta el repositorio Spring Data JPA y convierte la entidad resultante
-   * al modelo de dominio mediante
-   * {@link FixedExpenseMapper#toDomain(FixedExpensesEntity)}.
-   *
-   * @param id UUID del gasto fijo. No debe ser {@code null}.
-   * @return {@link Optional} con el gasto fijo si existe;
-   *         {@code Optional.empty()} en caso contrario.
+   * @param id        UUID del gasto fijo
+   * @param accountId UUID de la cuenta propietaria
+   * @return gasto fijo cuando ambos identificadores coinciden
    */
   @Override
-  public Optional<FixedExpense> findById(UUID id) {
-    return fixedExpenseJpaRepository.findById(id).map(fixedExpenseMapper::toDomain);
+  public Optional<FixedExpense> findByIdAndAccountId(UUID id, UUID accountId) {
+    return fixedExpenseJpaRepository
+        .findByFixedExpenseIdAndAccount_AccountId(id, accountId)
+        .map(fixedExpenseMapper::toDomain);
   }
 
   /**
@@ -101,17 +100,15 @@ public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
   }
 
   /**
-   * Elimina un gasto fijo por su identificador único.
+   * Elimina un gasto fijo por identificador y cuenta en una sola sentencia.
    *
-   * <p>
-   * Si no existe ningún gasto fijo con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso de Spring Data JPA). La validación de existencia
-   * previa se realiza en la capa de aplicación.
-   *
-   * @param id UUID del gasto fijo a eliminar. No debe ser {@code null}.
+   * @param id        UUID del gasto fijo
+   * @param accountId UUID de la cuenta propietaria
+   * @return {@code true} cuando la base de datos eliminó una fila
    */
   @Override
-  public void deleteById(UUID id) {
-    fixedExpenseJpaRepository.deleteById(id);
+  public boolean deleteByIdAndAccountId(UUID id, UUID accountId) {
+    return fixedExpenseJpaRepository
+        .deleteByFixedExpenseIdAndAccountId(id, accountId) > 0;
   }
 }

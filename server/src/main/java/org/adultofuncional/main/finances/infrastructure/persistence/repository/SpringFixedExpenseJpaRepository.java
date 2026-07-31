@@ -1,10 +1,14 @@
 package org.adultofuncional.main.finances.infrastructure.persistence.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.FixedExpensesEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Repositorio Spring Data JPA para la entidad {@link FixedExpensesEntity}.
@@ -19,6 +23,34 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * @since 1.0
  */
 public interface SpringFixedExpenseJpaRepository extends JpaRepository<FixedExpensesEntity, UUID> {
+
+  /**
+   * Busca un gasto fijo limitando la consulta por identificador y propietario.
+   *
+   * @param fixedExpenseId identificador del gasto fijo
+   * @param accountId      identificador de la cuenta propietaria
+   * @return entidad únicamente cuando ambos identificadores coinciden
+   */
+  Optional<FixedExpensesEntity> findByFixedExpenseIdAndAccount_AccountId(
+      UUID fixedExpenseId,
+      UUID accountId);
+
+  /**
+   * Elimina de forma atómica un gasto fijo limitado por cuenta propietaria.
+   *
+   * @param fixedExpenseId identificador del gasto fijo
+   * @param accountId      identificador de la cuenta propietaria
+   * @return cantidad de filas eliminadas
+   */
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = """
+      DELETE FROM fixed_expenses
+      WHERE fixed_expense_id = :fixedExpenseId
+        AND fixed_expense_fk_account_id = :accountId
+      """, nativeQuery = true)
+  int deleteByFixedExpenseIdAndAccountId(
+      @Param("fixedExpenseId") UUID fixedExpenseId,
+      @Param("accountId") UUID accountId);
 
   /**
    * Busca todos los gastos fijos asociados a una cuenta específica.
