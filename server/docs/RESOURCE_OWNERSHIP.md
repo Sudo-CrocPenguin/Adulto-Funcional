@@ -43,9 +43,15 @@ Para eliminación utiliza una única operación atómica:
 boolean deleteByIdAndAccountId(UUID resourceId, UUID accountId);
 ```
 
-La eliminación no realiza primero `exists` o `find` seguido de un DELETE global.
-La sentencia incluye ambas condiciones y el caso de uso decide según el número
-de filas afectadas.
+La eliminación del recurso no realiza primero `exists` o `find` seguido de un
+DELETE global. La sentencia de eliminación incluye ambas condiciones y el caso
+de uso decide según el número de filas afectadas.
+
+Esto describe la sentencia que elimina el recurso, no necesariamente toda la
+petición HTTP. Un caso de uso puede realizar validaciones previas legítimas,
+como comprobar que la cuenta exista o que la Master Key esté desbloqueada. Por
+ejemplo, eliminar una credencial todavía consulta la cuenta antes del DELETE
+atómico delimitado.
 
 ## Reglas para nuevos recursos
 
@@ -67,7 +73,10 @@ La suite incluye:
 - matrices unitarias de GET, PATCH y DELETE para gastos fijos y movimientos;
 - pruebas unitarias de eliminación para eventos y credenciales;
 - pruebas de integración con MariaDB 11.8 que comprueban consultas, filas
-  afectadas y conservación de datos ante una cuenta ajena.
+  afectadas y conservación de datos ante una cuenta ajena;
+- una matriz HTTP con JWT reales que atraviesa filtro, principal autenticado,
+  controlador, aplicación y persistencia para movimientos, eventos y
+  credenciales.
 
 Las pruebas de persistencia son necesarias porque una prueba con mocks no puede
 detectar un nombre de columna incorrecto ni confirmar que el filtro se ejecuta
