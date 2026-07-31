@@ -14,8 +14,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.adultofuncional.main.config.security.JwtProperties;
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
@@ -41,8 +41,9 @@ import org.springframework.stereotype.Component;
  * <h2>Seguridad</h2>
  * <p>
  * La Master Key nunca se guarda en Redis en texto plano. Antes de persistir el
- * valor temporal, se cifra con AES-GCM usando una clave derivada del secreto
- * JWT y un IV aleatorio por verificación. Se recomienda:
+ * valor temporal, se cifra con AES-GCM usando una clave derivada de
+ * {@code MASTER_KEY_SESSION_SECRET} y un IV aleatorio por verificación. Se
+ * recomienda:
  * <ul>
  * <li>Usar una instancia de Redis dedicada (o una base de datos separada con
  * {@code SELECT db}) para las sesiones de Master Key.</li>
@@ -114,12 +115,15 @@ public class RedisMasterKeyService implements MasterKeySessionService {
    *
    * @param redisTemplate template inyectado por Spring, configurado
    *                      automáticamente desde {@code spring.data.redis.*}.
-   * @param jwtProperties propiedades JWT usadas como material raíz para derivar
-   *                      la clave AES que protege la sesión en Redis.
+   * @param masterKeySessionSecret secreto dedicado usado como material raíz para
+   *                               derivar la clave AES que protege la sesión en
+   *                               Redis.
    */
-  public RedisMasterKeyService(StringRedisTemplate redisTemplate, JwtProperties jwtProperties) {
+  public RedisMasterKeyService(
+      StringRedisTemplate redisTemplate,
+      @Value("${master-key.session.secret}") String masterKeySessionSecret) {
     this.redisTemplate = redisTemplate;
-    this.redisEncryptionKey = deriveRedisEncryptionKey(jwtProperties.getSecret());
+    this.redisEncryptionKey = deriveRedisEncryptionKey(masterKeySessionSecret);
   }
 
   /**
@@ -189,15 +193,16 @@ public class RedisMasterKeyService implements MasterKeySessionService {
     redisTemplate.delete(buildKey(accountId));
   }
 
-  private SecretKey deriveRedisEncryptionKey(String jwtSecret) {
-    if (jwtSecret == null || jwtSecret.length() < 32) {
-      throw new IllegalStateException("JWT_SECRET debe tener mínimo 32 caracteres para proteger Redis");
+  private SecretKey deriveRedisEncryptionKey(String masterKeySessionSecret) {
+    if (masterKeySessionSecret == null || masterKeySessionSecret.length() < 32) {
+      throw new IllegalStateException(
+          "MASTER_KEY_SESSION_SECRET debe tener mínimo 32 caracteres para proteger Redis");
     }
 
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       digest.update(KEY_DERIVATION_CONTEXT.getBytes(StandardCharsets.UTF_8));
-      byte[] keyBytes = digest.digest(jwtSecret.getBytes(StandardCharsets.UTF_8));
+      byte[] keyBytes = digest.digest(masterKeySessionSecret.getBytes(StandardCharsets.UTF_8));
       return new SecretKeySpec(keyBytes, "AES");
     } catch (NoSuchAlgorithmException e) {
       throw new IllegalStateException("SHA-256 no está disponible para derivar la clave de Redis", e);

@@ -24,6 +24,7 @@ jobs:
           MARIADB_PASSWORD=ci_password
           JWT_SECRET=ci-jwt-secret-key-for-testing-only-must-be-32-chars
           JWT_EXPIRATION=86400000
+          MASTER_KEY_SESSION_SECRET=ci-master-key-session-secret-for-testing-only-32-chars
           REDIS_PASSWORD=ci_redis_password
           CORS_ALLOWED_ORIGINS=http://localhost:5173/
           APP_COOKIE_SECURE=false
