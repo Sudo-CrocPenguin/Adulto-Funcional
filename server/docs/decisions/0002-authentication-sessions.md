@@ -33,8 +33,20 @@ uso, con una duración predeterminada de 30 días. Solo se persistirá un hash d
 refresh token.
 
 Cada renovación rotará el refresh token dentro de la misma familia. Intentar
-reutilizar un token ya rotado revocará toda la sesión y sus desbloqueos de
-Master Key.
+reutilizar un token ya rotado fuera de la ventana de concurrencia revocará toda
+la sesión y sus desbloqueos de Master Key.
+
+Las rutas canónicas serán:
+
+| Método | Ruta | Propósito |
+|---|---|---|
+| `POST` | `/api/auth/refresh` | Rotar el refresh token y emitir un nuevo par |
+| `DELETE` | `/api/auth/sessions/current` | Revocar únicamente la sesión autenticada |
+| `DELETE` | `/api/auth/sessions` | Revocar todas las sesiones de la cuenta |
+
+La ruta histórica `/api/auth/logout` delegará temporalmente en el cierre de la
+sesión actual. Cerrar todas las sesiones también invalidará todos los
+desbloqueos de Master Key de la cuenta.
 
 ## Ciclo de vida
 
@@ -52,17 +64,56 @@ igual al tiempo restante del token. La sesión y el hash del refresh token se
 persistirán para sobrevivir reinicios y permitir auditoría. Nunca se guardarán
 tokens completos ni se escribirán en logs.
 
+## Rotación y concurrencia
+
+La fila de sesión se bloqueará con `SELECT ... FOR UPDATE` durante la rotación.
+La validación del hash actual y su reemplazo ocurrirán dentro de esa misma
+transacción. No se implementará una secuencia de leer y actualizar sin control
+de concurrencia.
+
+Además del hash actual se conservarán temporalmente:
+
+- `previous_refresh_token_hash`;
+- `previous_rotated_at`;
+- `refresh_token_expires_at`;
+- el estado de revocación de la familia.
+
+Después de una rotación, el hash anterior será reconocible durante cinco
+segundos:
+
+1. La primera solicitud válida rota el token y confirma la transacción.
+2. Una solicitud concurrente con el token anterior durante esos cinco segundos
+   recibe `409 Conflict` con código `REFRESH_ALREADY_ROTATED`. No se emite otro
+   par y no se revoca la sesión.
+3. Reutilizar el token anterior después de la ventana se considera replay:
+   revoca toda la familia, bloquea los access tokens activos conocidos e
+   invalida el desbloqueo de Master Key.
+
+La ventana es configurable, pero debe ser corta y medirse desde la hora del
+servidor mediante un `Clock` inyectado. Las pruebas incluirán dos renovaciones
+concurrentes y reutilización posterior a la ventana.
+
 ## Transporte
 
-- Navegador: access y refresh token en cookies `HttpOnly` y `Secure` en
-  producción. La cookie de refresh tendrá ruta limitada al endpoint de
-  renovación.
-- Cliente nativo: tokens en el cuerpo de la respuesta y `Authorization: Bearer`
-  para el access token.
+- Navegador: access token en la cookie `token`, con `Path=/`, `HttpOnly`,
+  `SameSite=Lax`, duración de 15 minutos y `Secure` en producción. Refresh token
+  en `refresh_token`, con `Path=/api/auth/refresh`, `HttpOnly`, `SameSite=Lax`,
+  duración de 30 días y `Secure` en producción. El body nunca expone esos
+  tokens al navegador.
+- Cliente nativo: login y refresh conservan los campos `token`, `tokenType` y
+  `expiresIn` del contrato actual, y añaden `refreshToken` y
+  `refreshExpiresIn`. El access token se envía posteriormente como
+  `Authorization: Bearer` y el refresh token solo en el body de
+  `POST /api/auth/refresh`.
 - Las solicitudes autenticadas por cookie usarán protección CSRF. Una petición
   se considerará nativa solo cuando presente un Bearer válido; no se decidirá
   por `User-Agent`.
 - CORS no se considerará una defensa CSRF.
+
+Al cerrar una sesión, el servidor limpia ambas cookies usando exactamente el
+mismo `Path`, `Secure` y `SameSite` con los que se crearon. El endpoint de
+refresh requiere CSRF para navegador, pero no exige un access token vigente;
+la identidad se obtiene del refresh token rotativo.
 
 ## Aislamiento de Master Key
 
