@@ -2,6 +2,7 @@ package org.adultofuncional.main.config.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -79,6 +80,9 @@ class JwtAuthenticationFilterTest {
     filter.doFilterInternal(request, response, new MockFilterChain());
 
     assertThat(response.getStatus()).isEqualTo(401);
+    assertThat(response.getCharacterEncoding()).isEqualTo(StandardCharsets.UTF_8.name());
+    assertThat(response.getContentType()).contains("charset=UTF-8");
+    assertThat(response.getContentAsString()).contains("Token JWT inválido");
     assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
   }
 

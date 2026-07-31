@@ -1,6 +1,7 @@
 package org.adultofuncional.main.config.security;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -240,7 +241,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         .message(message)
         .build();
     response.setStatus(HttpStatus.UNAUTHORIZED.value());
-    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+    response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=" + StandardCharsets.UTF_8.name());
     objectMapper.writeValue(response.getWriter(), apiResponse);
   }
 
