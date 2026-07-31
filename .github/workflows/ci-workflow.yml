@@ -30,6 +30,9 @@ jobs:
           APP_COOKIE_SAME_SITE=Lax
           EOF
 
+      - name: Ensure external Docker network exists
+        run: docker network inspect coolify >/dev/null 2>&1 || docker network create coolify
+
       - name: Build Docker containers
         run: docker compose up -d --build
 
