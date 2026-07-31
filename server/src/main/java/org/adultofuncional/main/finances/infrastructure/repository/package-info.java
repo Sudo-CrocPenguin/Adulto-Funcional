@@ -1,34 +1,22 @@
 /**
- * Repositorios Spring Data JPA del módulo de finanzas.
+ * Adaptadores de persistencia del módulo de finanzas.
  *
- * <p>
- * Contiene las interfaces que extienden
- * {@link org.springframework.data.jpa.repository.JpaRepository}
- * para las entidades JPA del módulo financiero. Estas interfaces son utilizadas
- * por los adaptadores de repositorio en la capa de infraestructura para
- * traducir las operaciones de los puertos de dominio
- * ({@link org.adultofuncional.main.finances.domain.repository}) a consultas JPA
- * contra MariaDB.
+ * <p><strong>Qué contiene:</strong> implementaciones de los puertos de
+ * repositorio definidos por el dominio para categorías, movimientos y gastos
+ * fijos.</p>
  *
- * <h2>Repositorios incluidos</h2>
- * <ul>
- * <li>{@link org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringCategoryJpaRepository}
- * —
- * Acceso a la tabla {@code categories}. Incluye consulta por tipo de
- * categoría.</li>
- * <li>{@link org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringFixedExpenseJpaRepository}
- * —
- * Acceso a la tabla {@code fixed_expenses}. Incluye consulta por cuenta
- * propietaria.</li>
- * <li>{@link org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringMovementJpaRepository}
- * —
- * Acceso a la tabla {@code movements}. Incluye consulta por cuenta
- * propietaria.</li>
- * </ul>
+ * <p><strong>Para qué sirve:</strong> mantiene al dominio y a los casos de uso
+ * independientes de Spring Data JPA. Cada adaptador traduce modelos de dominio
+ * a entidades de persistencia mediante su mapper correspondiente.</p>
  *
- * @author Daniel Salazar
- * @since 1.0
- * @see org.adultofuncional.main.finances.infrastructure.persistence.entity
- * @see org.adultofuncional.main.finances.infrastructure.repository
+ * <p><strong>Cómo funciona:</strong> los adaptadores delegan las consultas SQL
+ * en las interfaces del paquete
+ * {@link org.adultofuncional.main.finances.infrastructure.persistence.repository}
+ * y convierten el resultado al tipo expresado por el puerto de dominio.</p>
+ *
+ * @see org.adultofuncional.main.finances.domain.repository
+ * @see org.adultofuncional.main.finances.infrastructure.repository.CategoryRepositoryImpl
+ * @see org.adultofuncional.main.finances.infrastructure.repository.MovementRepositoryImpl
+ * @see org.adultofuncional.main.finances.infrastructure.repository.FixedExpenseRepositoryImpl
  */
-package org.adultofuncional.main.finances.infrastructure.persistence.repository;
+package org.adultofuncional.main.finances.infrastructure.repository;
