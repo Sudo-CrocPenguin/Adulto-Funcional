@@ -25,8 +25,8 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Métodos implementados:</strong>
  * <ul>
- * <li>{@link #findById(UUID)} — busca un gasto fijo por ID y lo convierte
- * a dominio.</li>
+ * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca un gasto fijo por ID y
+ * cuenta y lo convierte a dominio.</li>
  * <li>{@link #findAllByAccountId(UUID)} — lista todos los gastos fijos
  * asociados a una cuenta.</li>
  * <li>{@link #save(FixedExpense)} — persiste un gasto fijo nuevo o actualizado,
@@ -48,20 +48,18 @@ public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
   private final FixedExpenseMapper fixedExpenseMapper;
 
   /**
-   * Busca un gasto fijo por su identificador único.
+   * Busca un gasto fijo por identificador y cuenta propietaria en una única
+   * consulta, antes de materializar el modelo de dominio.
    *
-   * <p>
-   * Consulta el repositorio Spring Data JPA y convierte la entidad resultante
-   * al modelo de dominio mediante
-   * {@link FixedExpenseMapper#toDomain(FixedExpensesEntity)}.
-   *
-   * @param id UUID del gasto fijo. No debe ser {@code null}.
-   * @return {@link Optional} con el gasto fijo si existe;
-   *         {@code Optional.empty()} en caso contrario.
+   * @param id        UUID del gasto fijo
+   * @param accountId UUID de la cuenta propietaria
+   * @return gasto fijo cuando ambos identificadores coinciden
    */
   @Override
-  public Optional<FixedExpense> findById(UUID id) {
-    return fixedExpenseJpaRepository.findById(id).map(fixedExpenseMapper::toDomain);
+  public Optional<FixedExpense> findByIdAndAccountId(UUID id, UUID accountId) {
+    return fixedExpenseJpaRepository
+        .findByFixedExpenseIdAndAccount_AccountId(id, accountId)
+        .map(fixedExpenseMapper::toDomain);
   }
 
   /**

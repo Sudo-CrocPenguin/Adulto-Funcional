@@ -32,16 +32,15 @@ public class DeleteFixedExpenseUseCase {
   /**
    * Ejecuta la eliminación de un gasto fijo por su identificador.
    *
-   * @param accountId Identificador de la cuenta propietaria (contexto de
-   *                  trazabilidad; la eliminación se realiza por
-   *                  {@code expenseId}).
+   * @param accountId Identificador de la cuenta propietaria que limita la
+   *                  consulta previa a la eliminación.
    * @param expenseId Identificador único del gasto fijo a eliminar.
    * @throws NotFoundException si no existe un gasto fijo con el ID
    *                           proporcionado.
    */
   @Transactional
   public void execute(UUID accountId, UUID expenseId) {
-    if (!fixedExpenseRepository.findById(expenseId).isPresent()) {
+    if (fixedExpenseRepository.findByIdAndAccountId(expenseId, accountId).isEmpty()) {
       throw new NotFoundException("Gasto fijo no encontrado con id: " + expenseId);
     }
     fixedExpenseRepository.deleteById(expenseId);

@@ -1,6 +1,7 @@
 package org.adultofuncional.main.finances.infrastructure.persistence.repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.FixedExpensesEntity;
@@ -19,6 +20,17 @@ import org.springframework.data.jpa.repository.JpaRepository;
  * @since 1.0
  */
 public interface SpringFixedExpenseJpaRepository extends JpaRepository<FixedExpensesEntity, UUID> {
+
+  /**
+   * Busca un gasto fijo limitando la consulta por identificador y propietario.
+   *
+   * @param fixedExpenseId identificador del gasto fijo
+   * @param accountId      identificador de la cuenta propietaria
+   * @return entidad únicamente cuando ambos identificadores coinciden
+   */
+  Optional<FixedExpensesEntity> findByFixedExpenseIdAndAccount_AccountId(
+      UUID fixedExpenseId,
+      UUID accountId);
 
   /**
    * Busca todos los gastos fijos asociados a una cuenta específica.

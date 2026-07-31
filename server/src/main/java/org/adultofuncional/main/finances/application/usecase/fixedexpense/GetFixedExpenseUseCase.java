@@ -41,8 +41,8 @@ public class GetFixedExpenseUseCase {
   /**
    * Ejecuta la consulta de un gasto fijo por su ID.
    *
-   * @param accountId Identificador de la cuenta propietaria (contexto de
-   *                  trazabilidad; la consulta se realiza por {@code expenseId}).
+   * @param accountId Identificador de la cuenta propietaria que limita la
+   *                  consulta.
    * @param expenseId Identificador único del gasto fijo.
    * @return {@link FixedExpenseResponse} con los datos del gasto fijo y su
    *         categoría asociada como {@link CategoryResponse}.
@@ -51,7 +51,7 @@ public class GetFixedExpenseUseCase {
    */
   @Transactional(readOnly = true)
   public FixedExpenseResponse execute(UUID accountId, UUID expenseId) {
-    FixedExpense expense = fixedExpenseRepository.findById(expenseId)
+    FixedExpense expense = fixedExpenseRepository.findByIdAndAccountId(expenseId, accountId)
         .orElseThrow(() -> new NotFoundException("Gasto fijo no encontrado con id: " + expenseId));
 
     Category category = categoryRepository.findById(expense.getCategoryId())
