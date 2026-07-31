@@ -31,7 +31,8 @@ import lombok.RequiredArgsConstructor;
  * asociados a una cuenta.</li>
  * <li>{@link #save(FixedExpense)} — persiste un gasto fijo nuevo o actualizado,
  * devolviendo el modelo de dominio resultante.</li>
- * <li>{@link #deleteById(UUID)} — elimina un gasto fijo por su ID.</li>
+ * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina un gasto fijo por
+ * ID y cuenta propietaria.</li>
  * </ul>
  *
  * @author Juan Sebastian Rios
@@ -99,17 +100,15 @@ public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
   }
 
   /**
-   * Elimina un gasto fijo por su identificador único.
+   * Elimina un gasto fijo por identificador y cuenta en una sola sentencia.
    *
-   * <p>
-   * Si no existe ningún gasto fijo con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso de Spring Data JPA). La validación de existencia
-   * previa se realiza en la capa de aplicación.
-   *
-   * @param id UUID del gasto fijo a eliminar. No debe ser {@code null}.
+   * @param id        UUID del gasto fijo
+   * @param accountId UUID de la cuenta propietaria
+   * @return {@code true} cuando la base de datos eliminó una fila
    */
   @Override
-  public void deleteById(UUID id) {
-    fixedExpenseJpaRepository.deleteById(id);
+  public boolean deleteByIdAndAccountId(UUID id, UUID accountId) {
+    return fixedExpenseJpaRepository
+        .deleteByFixedExpenseIdAndAccountId(id, accountId) > 0;
   }
 }

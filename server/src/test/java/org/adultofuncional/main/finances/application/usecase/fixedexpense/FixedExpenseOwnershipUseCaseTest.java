@@ -28,8 +28,8 @@ class FixedExpenseOwnershipUseCaseTest {
     UUID expenseId = UUID.randomUUID();
     UUID categoryId = UUID.randomUUID();
 
-    when(fixedExpenseRepository.findByIdAndAccountId(expenseId, authenticatedAccountId))
-        .thenReturn(Optional.empty());
+    when(fixedExpenseRepository.deleteByIdAndAccountId(expenseId, authenticatedAccountId))
+        .thenReturn(false);
 
     assertThatThrownBy(() -> useCase.execute(authenticatedAccountId, expenseId))
         .isInstanceOf(NotFoundException.class);
@@ -51,6 +51,6 @@ class FixedExpenseOwnershipUseCaseTest {
     assertThatThrownBy(() -> useCase.execute(authenticatedAccountId, expenseId))
         .isInstanceOf(NotFoundException.class);
 
-    verify(fixedExpenseRepository, never()).deleteById(expenseId);
+    verify(fixedExpenseRepository).deleteByIdAndAccountId(expenseId, authenticatedAccountId);
   }
 }

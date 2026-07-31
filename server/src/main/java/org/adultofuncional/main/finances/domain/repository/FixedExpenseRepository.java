@@ -21,7 +21,7 @@ import org.adultofuncional.main.finances.domain.model.FixedExpense;
  * <li>Búsqueda individual limitada por ID y cuenta propietaria.</li>
  * <li>Listado de todos los gastos fijos asociados a una cuenta.</li>
  * <li>Persistencia de nuevos gastos fijos o actualización de existentes.</li>
- * <li>Eliminación por ID.</li>
+ * <li>Eliminación limitada por ID y cuenta propietaria.</li>
  * </ul>
  *
  * @author Daniel Salazar
@@ -74,14 +74,12 @@ public interface FixedExpenseRepository {
   FixedExpense save(FixedExpense fixedExpense);
 
   /**
-   * Elimina un gasto fijo por su identificador único.
+   * Elimina un gasto fijo únicamente cuando pertenece a la cuenta indicada.
    *
-   * <p>
-   * Si no existe un gasto fijo con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso). La validación de existencia previa se
-   * realiza en la capa de aplicación.
-   *
-   * @param id UUID del gasto fijo a eliminar. No debe ser {@code null}.
+   * @param id        UUID del gasto fijo a eliminar
+   * @param accountId UUID de la cuenta propietaria
+   * @return {@code true} cuando se eliminó una fila; {@code false} cuando el
+   *         recurso no existe dentro de la cuenta
    */
-  void deleteById(UUID id);
+  boolean deleteByIdAndAccountId(UUID id, UUID accountId);
 }
