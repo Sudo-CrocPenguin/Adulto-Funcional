@@ -78,6 +78,28 @@ public class AccountMapper {
   }
 
   /**
+   * Copia los campos escalares de una cuenta de dominio sobre una entidad JPA ya
+   * gestionada.
+   *
+   * <p>
+   * Se usa en actualizaciones para no reemplazar las colecciones hijas de
+   * {@link AccountEntity}. La entidad tiene relaciones con {@code orphanRemoval},
+   * por lo que hacer {@code merge} de una instancia nueva sin hijos puede borrar
+   * movimientos, eventos, gastos fijos o contraseñas por accidente.
+   *
+   * @param account modelo de dominio con los nuevos valores escalares
+   * @param entity  entidad gestionada por el contexto de persistencia
+   */
+  public void copyScalarsToEntity(Account account, AccountEntity entity) {
+    entity.setAccountNames(account.getNames());
+    entity.setAccountLastNames(account.getLastnames());
+    entity.setAccountEmail(account.getEmail());
+    entity.setAccountPhone(account.getPhone());
+    entity.setAccountPassword(account.getPasswordHash());
+    entity.setAccountMasterKey(account.getMasterKeyHash());
+  }
+
+  /**
    * Convierte el modelo de dominio {@link Account} al DTO
    * {@link AccountResponse}.
    *
