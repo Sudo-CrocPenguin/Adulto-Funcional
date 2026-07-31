@@ -42,6 +42,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Password {
 
+  private static final int IV_LENGTH_BYTES = 12;
+
   /**
    * Identificador único de la credencial (UUID v7). Generado en {@link #create}.
    */
@@ -60,7 +62,7 @@ public class Password {
    */
   String salt;
 
-  /** Vector de inicialización (16 bytes) para el cifrado AES. */
+  /** Vector de inicialización (12 bytes) para el cifrado AES-GCM. */
   byte[] iv;
 
   /**
@@ -197,8 +199,8 @@ public class Password {
   }
 
   private static void validateIv(byte[] iv) {
-    if (iv == null || iv.length == 0) {
-      throw new IllegalArgumentException("IV cannot be null or empty");
+    if (iv == null || iv.length != IV_LENGTH_BYTES) {
+      throw new IllegalArgumentException("IV must be 12 bytes for AES-GCM");
     }
   }
 

@@ -6,7 +6,7 @@
  * {@link org.adultofuncional.main.security.infrastructure.persistence.entity.PasswordEntity},
  * que mapea la tabla {@code passwords} de MariaDB. Almacena credenciales de
  * servicios externos cifradas con AES-256, utilizando un salt único, un vector
- * de inicialización (IV) de 16 bytes y el texto cifrado que puede incluir el
+ * de inicialización (IV) de 12 bytes y el texto cifrado que puede incluir el
  * tag de autenticación (AES-GCM). La entidad se relaciona obligatoriamente con
  * una cuenta propietaria a través de {@code passwords_fk_account_id}.
  *
