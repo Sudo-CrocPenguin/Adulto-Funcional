@@ -10,4 +10,4 @@ jwt:
 
 APP_COOKIE_SECURE: false
 APP_COOKIE_SAME_SITE: None
-CORS_ALLOWED_ORIGINS: http://localhost:5173/
+CORS_ALLOWED_ORIGINS: http://localhost:5173

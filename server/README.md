@@ -116,7 +116,7 @@ jwt:
 
 APP_COOKIE_SECURE: false
 APP_COOKIE_SAME_SITE: None
-CORS_ALLOWED_ORIGINS: http://localhost:5173/
+CORS_ALLOWED_ORIGINS: http://localhost:5173
 ```
 
 Ejecuta con el perfil activo:
@@ -152,7 +152,7 @@ JWT_SECRET=tu_clave_secreta_jwt_muy_segura_minimo_32_caracteres
 JWT_EXPIRATION=86400000
 
 # CORS y cookies
-CORS_ALLOWED_ORIGINS=http://localhost:5173/
+CORS_ALLOWED_ORIGINS=http://localhost:5173
 APP_COOKIE_SECURE=true
 APP_COOKIE_SAME_SITE=Lax
 ```
