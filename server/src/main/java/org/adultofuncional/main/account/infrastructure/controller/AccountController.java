@@ -7,6 +7,7 @@ import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
 import org.adultofuncional.main.account.application.usecase.DeleteAccountUseCase;
 import org.adultofuncional.main.account.application.usecase.GetAccountUseCase;
 import org.adultofuncional.main.account.application.usecase.UpdateAccountUseCase;
+import org.adultofuncional.main.config.security.AuthenticatedAccount;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.adultofuncional.main.shared.security.OwnershipValidator;
 import org.springframework.http.HttpStatus;
@@ -72,8 +73,8 @@ public class AccountController {
    * validación como para la respuesta.
    *
    * @param id          UUID de la cuenta a consultar
-   * @param loggedEmail email del usuario autenticado, extraído del JWT por
-   *                    {@link org.adultofuncional.main.config.security.JwtAuthenticationFilter}
+   * @param authenticatedAccount cuenta autenticada resuelta desde el claim
+   *                             {@code sub} del JWT
    * @return 200 OK con los datos de la cuenta
    * @throws org.adultofuncional.main.shared.exception.NotFoundException
    *                                                                         si no
@@ -94,10 +95,10 @@ public class AccountController {
   @GetMapping("/{id}")
   public ResponseEntity<ApiResponse<AccountResponse>> getAccount(
       @PathVariable UUID id,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     AccountResponse account = getAccountUseCase.execute(id);
-    ownershipValidator.validate(account, loggedEmail);
+    ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
 
     return ResponseEntity.ok(
         ApiResponse.<AccountResponse>builder()
@@ -118,7 +119,8 @@ public class AccountController {
    * @param id          UUID de la cuenta a actualizar
    * @param request     nuevos datos de la cuenta, validados con Jakarta
    *                    Validation
-   * @param loggedEmail email del usuario autenticado, extraído del JWT
+   * @param authenticatedAccount cuenta autenticada resuelta desde el claim
+   *                             {@code sub} del JWT
    * @return 200 OK con los datos actualizados
    * @throws org.adultofuncional.main.shared.exception.NotFoundException
    *                                                                         si no
@@ -150,10 +152,10 @@ public class AccountController {
   public ResponseEntity<ApiResponse<AccountResponse>> updateAccount(
       @PathVariable UUID id,
       @Valid @RequestBody UpdateAccountRequest request,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     AccountResponse account = getAccountUseCase.execute(id);
-    ownershipValidator.validate(account, loggedEmail);
+    ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
     AccountResponse updated = updateAccountUseCase.execute(id, request);
 
     return ResponseEntity.ok(
@@ -173,7 +175,8 @@ public class AccountController {
    * Una vez eliminada la cuenta, no se puede recuperar.
    *
    * @param id          UUID de la cuenta a eliminar
-   * @param loggedEmail email del usuario autenticado, extraído del JWT
+   * @param authenticatedAccount cuenta autenticada resuelta desde el claim
+   *                             {@code sub} del JWT
    * @return 200 No Content si la eliminación fue exitosa
    * @throws org.adultofuncional.main.shared.exception.NotFoundException
    *                                                                         si no
@@ -194,10 +197,10 @@ public class AccountController {
   @DeleteMapping("/{id}")
   public ResponseEntity<ApiResponse<Void>> deleteAccount(
       @PathVariable UUID id,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     AccountResponse account = getAccountUseCase.execute(id);
-    ownershipValidator.validate(account, loggedEmail);
+    ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
     deleteAccountUseCase.execute(id);
 
     return ResponseEntity.ok(

@@ -11,11 +11,9 @@ import java.util.UUID;
  * DTO de respuesta que expone únicamente los datos no sensibles de una cuenta.
  *
  * <p>
- * Implementa {@link OwnedResource} para permitir que
- * {@link org.adultofuncional.main.shared.security.OwnershipValidator}
- * valide el acceso sin acoplarse al módulo de cuentas. El método
- * {@link #getEmail()} ya existe en este DTO y satisface el contrato
- * sin requerir ningún cambio adicional.
+ * Implementa {@link OwnedResource} por compatibilidad con contratos previos.
+ * La validación de ownership actual se hace con el campo {@code id}, porque el
+ * UUID de cuenta es estable y no cambia cuando el usuario actualiza su email.
  *
  * <p>
  * Nunca expone campos sensibles como {@code account_password} ni
@@ -42,9 +40,8 @@ public class AccountResponse implements OwnedResource {
 
   /**
    * Correo electrónico del titular. Corresponde a {@code account_email}.
-   * Usado como username en la autenticación JWT y como identificador
-   * de ownership en
-   * {@link org.adultofuncional.main.shared.security.OwnershipValidator}.
+   * Se conserva como dato visible del perfil, pero no se usa como identificador
+   * de ownership porque puede cambiar.
    */
   private final String email;
 

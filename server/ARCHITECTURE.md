@@ -196,9 +196,9 @@ public class AccountController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<AccountResponse>> getAccount(
         @PathVariable UUID id,
-        @AuthenticationPrincipal String loggedEmail) {
+        @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
         AccountResponse account = getAccountUseCase.execute(id);
-        ownershipValidator.validate(account, loggedEmail);
+        ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
         return ResponseEntity.ok(
             ApiResponse.<AccountResponse>builder()
                 .status(HttpStatus.OK.value())
@@ -211,9 +211,9 @@ public class AccountController {
     public ResponseEntity<ApiResponse<AccountResponse>> updateAccount(
         @PathVariable UUID id,
         @Valid @RequestBody UpdateAccountRequest request,
-        @AuthenticationPrincipal String loggedEmail) {
+        @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
         AccountResponse account = getAccountUseCase.execute(id);
-        ownershipValidator.validate(account, loggedEmail);
+        ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
         AccountResponse updated = updateAccountUseCase.execute(id, request);
         return ResponseEntity.ok(
             ApiResponse.<AccountResponse>builder()
@@ -317,7 +317,7 @@ Incluye:
 
 - Modelo de dominio `Password`.
 - Puerto de repositorio `PasswordRepository` y puertos de servicio `EncryptionService`, `MasterKeySessionService`.
-- Implementaciones `AesEncryptionService` (AES‑256‑GCM), `InMemoryMasterKeyService` (sesión en memoria para desarrollo) y `RedisMasterKeyService` (almacén distribuido con Redis para producción).
+- Implementaciones `AesEncryptionService` (AES‑256‑GCM), `InMemoryMasterKeyService` (sesión en memoria para desarrollo) y `RedisMasterKeyService` (sesión efímera distribuida con Redis para producción, cifrada con `MASTER_KEY_SESSION_SECRET` y TTL).
 - Casos de uso (`CreatePasswordUseCase`, `GetPasswordUseCase`, `ListPasswordsUseCase`, `UpdatePasswordUseCase`, `DeletePasswordUseCase`).
 - DTOs de entrada y salida (`PasswordRequest`, `PasswordUpdateRequest`, `PasswordResponse`) con protección `@NoHtml`.
 - Controlador REST `SecurityController` bajo `/api/security/passwords`.
@@ -330,7 +330,7 @@ Módulo responsable de toda la infraestructura de autenticación y autorización
 - **`SecurityConfig`**: Cadena de filtros de Spring Security. Configura CSRF (deshabilitado para API stateless), sesiones stateless, CORS con credenciales y headers de seguridad (CSP, X-Frame-Options, X-XSS-Protection, X-Content-Type-Options, HSTS).
 - **`JwtProperties`**: Clase `@ConfigurationProperties(prefix = "jwt")` que vincula automáticamente `jwt.secret` y `jwt.expiration` desde cualquier fuente de configuración de Spring (YAML, variables de entorno, etc.). La vinculación relajada permite que tanto `JWT_SECRET` (formato env) como `jwt.secret` (formato YAML) se mapeen correctamente.
 - **`JwtService`**: Generación, validación y extracción de claims de tokens JWT. Recibe `JwtProperties` por constructor en lugar de anotaciones `@Value`, centralizando la configuración JWT.
-- **`JwtAuthenticationFilter`**: Filtro que intercepta cada request, extrae el token de la cookie HttpOnly o del header `Authorization`, lo valida y establece el contexto de seguridad de Spring.
+- **`JwtAuthenticationFilter`**: Filtro que intercepta cada request, extrae el token de la cookie HttpOnly o del header `Authorization`, lo valida y establece el contexto de seguridad de Spring. Si una ruta pública (`/api/auth/**` o `/actuator/health`) recibe una cookie JWT inválida o expirada, el request continúa sin principal para no bloquear login, registro, logout ni health checks.
 - **`DatabaseUserDetailsService`**: Implementación de `UserDetailsService` que carga las credenciales desde `accounts` en la base de datos, integrando Spring Security con el repositorio de cuentas.
 - **`CookieUtils`**: Gestión segura de la cookie `token` (crear/eliminar) con atributos HttpOnly, Secure (configurable) y SameSite.
 - **`ClientTypeResolver`**: Detecta si un request proviene de una app nativa (móvil/desktop) o de un navegador web mediante señales pasivas (User-Agent, ausencia de Origin) y un header declarativo (`X-Client-Type`). Determina si el token JWT se incluye en el body de la respuesta además de la cookie.
@@ -347,7 +347,7 @@ La configuración sensible se segrega por perfiles de Spring Boot:
 
 - **`application.yml`**: Configuración base compartida (JPA, Flyway, server port). Se aplica siempre, independientemente del perfil activo.
 - **`application-dev.yml`**: Define `spring.datasource`, `jwt.secret`, `APP_COOKIE_SECURE`, etc. con valores para el entorno local. No se incluye en el repositorio.
-- **`application-prod.yml`**: Usa placeholders de variables de entorno (`${JWT_SECRET}`, `${SPRING_DATASOURCE_URL}`). Se activa automáticamente en Docker mediante `SPRING_PROFILES_ACTIVE=prod`.
+- **`application-prod.yml`**: Usa placeholders de variables de entorno (`${JWT_SECRET}`, `${MASTER_KEY_SESSION_SECRET}`, `${SPRING_DATASOURCE_URL}`). Se activa automáticamente en Docker mediante `SPRING_PROFILES_ACTIVE=prod`.
 
 ## Componentes compartidos (`shared/`)
 
@@ -501,7 +501,7 @@ passwords
 ├── password_id CHAR(36) PRIMARY KEY
 ├── password_application_name VARCHAR(35) NOT NULL
 ├── password_salt VARCHAR(255) NOT NULL (salt para derivar clave AES)
-├── password_iv BINARY(16) NOT NULL (IV de 16 bytes para cifrado AES)
+├── password_iv BINARY(12) NOT NULL (IV de 12 bytes recomendado para AES-GCM)
 ├── password_ciphertext VARBINARY(2048) NOT NULL (ciphertext + tag AES-GCM)
 ├── password_last_change_date DATE NULL
 └── passwords_fk_account_id CHAR(36) FK → accounts(account_id)
@@ -531,10 +531,10 @@ Etapa 2 (runtime): eclipse-temurin:21-jre-alpine
 ### Docker Compose
 
 - **Servicio mariadb**: Imagen oficial 11.8 con healthcheck nativo
-- **Servicio redis**: Imagen oficial 7-alpine con healthcheck nativo y persistencia AOF
+- **Servicio redis**: Imagen oficial 7-alpine con `requirepass`, healthcheck autenticado y persistencia AOF/RDB deshabilitada. Redis guarda sesiones de Master Key con TTL; no debe persistirlas en disco.
 - **Servicio app**: Construido desde Dockerfile, depende de `mariadb` y `redis` (ambos con `condition: service_healthy`)
-- **Red**: `afs-network` (bridge) para comunicación entre contenedores
-- **Volúmenes**: `mariadb_data` para datos, `redis_data` para persistencia de sesiones
+- **Redes**: `internal` (bridge) para comunicación entre contenedores y `coolify` externa para el proxy/Traefik.
+- **Volúmenes**: `mariadb_data` para datos de negocio. Redis no define volumen porque sus sesiones son efímeras.
 
 ### Variables de entorno requeridas (.env)
 
@@ -548,9 +548,10 @@ Las variables definidas en `.env` son utilizadas por `docker-compose.yml` y por 
 | `MARIADB_PASSWORD`      | Password del usuario                                    | userpass                       |
 | `REDIS_HOST`            | Host del servidor Redis                                 | redis                          |
 | `REDIS_PORT`            | Puerto del servidor Redis                               | 6379                           |
-| `REDIS_PASSWORD`        | Password de conexión a Redis                            | (vacío si no se requiere)      |
+| `REDIS_PASSWORD`        | Password obligatorio de conexión a Redis                | redis-secret                   |
 | `JWT_SECRET`            | Clave secreta para firmar JWT (mín. 32 caracteres)      | my-jwt-secret                  |
 | `JWT_EXPIRATION`        | Tiempo de expiración JWT en milisegundos                | 86400000                       |
+| `MASTER_KEY_SESSION_SECRET` | Clave dedicada para cifrar sesiones de Master Key en Redis (mín. 32 caracteres) | master-key-session-secret |
 | `CORS_ALLOWED_ORIGINS`  | Orígenes permitidos para CORS                           | http://localhost:5173          |
 | `APP_COOKIE_SECURE`     | Atributo Secure de la cookie (true en producción HTTPS) | true                           |
 | `APP_COOKIE_SAME_SITE`  | Atributo SameSite de la cookie (Lax, Strict o None)     | Lax                            |
@@ -632,7 +633,7 @@ Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, S
 - [x] Módulo financiero: todos los casos de uso, DTOs y controladores
 - [x] Módulo agenda: todos los casos de uso, DTOs y controladores
 - [x] Gestor de contraseñas: PasswordUseCase con encriptación AES-256
-- [x] Implementación distribuida de MasterKeySessionService con Redis para producción (`RedisMasterKeyService`)
+- [x] Implementación distribuida de MasterKeySessionService con Redis para producción (`RedisMasterKeyService`) cifrada con secreto dedicado y sin persistencia en disco
 - [x] Perfiles de Spring Boot: `dev` y `prod` con configuración segregada
 - [x] `JwtProperties` como `@ConfigurationProperties` centralizada para JWT
 - [x] Fix en `NoHtmlValidator`: `strip()` para permitir espacios en campos de registro

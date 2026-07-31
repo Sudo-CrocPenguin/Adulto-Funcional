@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -59,6 +60,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -184,7 +186,7 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(allowedOrigins);
+    config.setAllowedOrigins(normalizedAllowedOrigins());
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of(
         "Content-Type",
@@ -198,5 +200,21 @@ public class SecurityConfig {
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", config);
     return source;
+  }
+
+  /**
+   * Normaliza los orígenes configurados desde entorno.
+   *
+   * <p>
+   * El header {@code Origin} enviado por navegadores no incluye slash final
+   * (por ejemplo, {@code http://localhost:5173}). Esta normalización evita
+   * rechazos CORS por variables configuradas como {@code http://localhost:5173/}.
+   */
+  private List<String> normalizedAllowedOrigins() {
+    return allowedOrigins.stream()
+        .map(String::trim)
+        .filter(origin -> !origin.isBlank())
+        .map(origin -> origin.replaceAll("/+$", ""))
+        .toList();
   }
 }

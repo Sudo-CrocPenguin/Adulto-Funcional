@@ -5,12 +5,15 @@ import org.adultofuncional.main.auth.application.dto.LoginRequest;
 import org.adultofuncional.main.auth.application.dto.RegisterRequest;
 import org.adultofuncional.main.auth.application.usecase.LoginUseCase;
 import org.adultofuncional.main.auth.application.usecase.RegisterUseCase;
+import org.adultofuncional.main.config.security.AuthenticatedAccount;
 import org.adultofuncional.main.config.security.ClientTypeResolver;
 import org.adultofuncional.main.config.security.CookieUtils;
 import org.adultofuncional.main.config.security.JwtService;
+import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -70,6 +73,7 @@ public class AuthController {
   private final CookieUtils cookieUtils;
   private final JwtService jwtService;
   private final ClientTypeResolver clientTypeResolver;
+  private final MasterKeySessionService masterKeySessionService;
 
   /**
    * Inicia sesión con las credenciales del usuario.
@@ -147,18 +151,25 @@ public class AuthController {
   }
 
   /**
-   * Cierra la sesión del usuario eliminando la cookie de autenticación.
+   * Cierra la sesión del usuario eliminando la cookie de autenticación y la
+   * Master Key verificada en el gestor de contraseñas.
    *
    * <p>
    * Instruye al navegador a invalidar la cookie {@code token} estableciendo
-   * {@code Max-Age=0}. No requiere body ni autenticación activa — es seguro
-   * llamarlo aunque el token ya haya expirado.
+   * {@code Max-Age=0}. Si el request incluye un JWT válido, también elimina la
+   * Master Key efímera asociada a esa cuenta.
    *
+   * @param authenticatedAccount principal autenticado cuando el JWT sigue vigente
    * @param response respuesta HTTP donde se escribe el header de limpieza
    * @return 200 OK con un {@link ApiResponse} de confirmación
    */
   @PostMapping("/logout")
-  public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
+  public ResponseEntity<ApiResponse<Void>> logout(
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount,
+      HttpServletResponse response) {
+    if (authenticatedAccount != null) {
+      masterKeySessionService.clear(authenticatedAccount.accountId());
+    }
     cookieUtils.clearTokenCookie(response);
     return ResponseEntity.ok(
         ApiResponse.<Void>builder()

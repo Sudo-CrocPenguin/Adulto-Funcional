@@ -6,7 +6,7 @@
  * gastos fijos bajo la ruta base {@code /api/finances}. Todos los endpoints
  * que operan sobre recursos de una cuenta resuelven el {@code accountId}
  * del usuario autenticado a partir de su correo electrónico mediante
- * {@link org.adultofuncional.main.finances.infrastructure.controller.FinancesController#resolveAccountId(String)},
+ * {@link org.adultofuncional.main.finances.infrastructure.controller.FinancesController},
  * evitando que el cliente manipule identificadores de cuenta en la URL.
  * Las categorías son globales y no requieren esta resolución.
  *

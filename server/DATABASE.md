@@ -114,8 +114,8 @@ Almacena las credenciales de aplicaciones externas cifradas con AES‑256 median
 | password_id               | CHAR(36)        | NOT NULL PRIMARY KEY | Identificador único.                                                                                                           |
 | password_application_name | VARCHAR(35)     | NOT NULL             | Nombre de la aplicación o sitio web (ej. "Facebook", "Gmail").                                                                 |
 | password_salt             | VARCHAR(255)    | NOT NULL             | Valor aleatorio único (generalmente Base64) que se combina con la clave maestra para derivar la clave AES de este secreto.     |
-| password_iv               | BINARY(16)      | NOT NULL             | Vector de inicialización (IV) de 16 bytes usado en el cifrado.                                                                 |
-| password_ciphertext       | VARBINARY(2048) | NOT NULL             | Texto cifrado (nombre de usuario + contraseña) protegido con AES‑256-GCM o CBC. Incluye el tag de autenticación si se usa GCM. |
+| password_iv               | BINARY(12)      | NOT NULL             | Vector de inicialización (IV) de 12 bytes usado por AES‑256-GCM.                                                               |
+| password_ciphertext       | VARBINARY(2048) | NOT NULL             | Texto cifrado protegido con AES‑256-GCM. Incluye el tag de autenticación generado por GCM.                                     |
 | password_last_change_date | DATE            | NULL                 | Fecha de la última modificación de esta credencial.                                                                            |
 | passwords_fk_account_id   | CHAR(36)        | NOT NULL             | FK a `accounts`.                                                                                                               |
 
@@ -130,12 +130,13 @@ Almacena las credenciales de aplicaciones externas cifradas con AES‑256 median
 - **Generación de IDs**: Todos los `*_id` son UUID v7 generados en la aplicación (no por la base de datos). Esto permite controlar la identidad desde el dominio y garantiza ordenación temporal.
 - **Fechas**: Las columnas de tipo `TIMESTAMP` (`account_created_at`, `movement_register_date`, etc.) son asignadas por la aplicación mediante `@PrePersist` en las entidades JPA. La base de datos no aplica `DEFAULT CURRENT_TIMESTAMP` para mantener la coherencia.
 - **Categorías obligatorias**: `movements.movement_fk_category_id` y `events.event_fk_category_id` son `NOT NULL`; todo movimiento y evento debe estar asociado a una categoría.
+- **Categorías globales iniciales**: Flyway siembra categorías base de finanzas y agenda para que una instalación limpia pueda crear movimientos, eventos y gastos fijos sin depender de mutaciones manuales.
 - **Valores de enumerados**: Las columnas que representan enumerados Java (`category_type`, `movement_type`, `fixed_expense_frequency`, `fixed_expense_status`) almacenan los nombres de las constantes del enum en inglés, tal como los genera `Enum.name()`. Las columnas `event_priority` y `event_status` se almacenan en español por decisión de dominio.
 - **Eliminación en cascada**: Las foreign keys en el SQL **no** tienen `ON DELETE CASCADE`. El borrado en cascada se maneja a nivel de JPA mediante `@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)` en `AccountEntity`. Esto significa que la cascada solo opera cuando se elimina a través de la aplicación (Spring Data JPA), no con DELETEs directos en la base de datos.
 - **Cifrado de contraseñas externas**:
   - La clave maestra del usuario se ingresa en cada sesión (o se deriva de la contraseña de login) y nunca se persiste.
-  - Para cada credencial se genera un salt aleatorio, un IV aleatorio, y se deriva una clave AES de 256 bits usando HKDF (o PBKDF2) a partir de la clave maestra y el salt.
-  - El texto cifrado almacena el par `usuario:contraseña` (o cualquier otro formato) y, si se usa AES‑GCM, también el tag de autenticación.
+  - Para cada credencial se genera un salt aleatorio y un IV aleatorio de 12 bytes, y se deriva una clave AES de 256 bits usando PBKDF2-HMAC-SHA256 a partir de la clave maestra y el salt.
+  - El texto cifrado almacena el secreto protegido y el tag de autenticación generado por AES‑GCM.
   - Un atacante que obtenga acceso completo a la base de datos no podrá descifrar ninguna credencial sin conocer la clave maestra del usuario correspondiente.
 - **Índices**: Los índices adicionales mejoran el rendimiento en consultas por `account_id` (muy frecuentes) y por fechas en movimientos y eventos.
 - **Migraciones**: El esquema se gestiona mediante Flyway (`src/main/resources/database/migrations/`), siguiendo las convenciones de versionado del proyecto (referenciado en README.md).

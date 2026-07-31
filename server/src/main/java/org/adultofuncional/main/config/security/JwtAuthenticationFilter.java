@@ -1,8 +1,10 @@
 package org.adultofuncional.main.config.security;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
@@ -60,6 +62,8 @@ import lombok.extern.slf4j.Slf4j;
  * {@code GlobalExceptionHandler} deba conocer detalles de JWT.
  * Los tokens expirados se loguean en {@code DEBUG}; las firmas inválidas
  * en {@code WARN}, ya que pueden indicar un intento de manipulación.
+ * En endpoints públicos, una cookie expirada o corrupta no bloquea el request:
+ * el filtro limpia el contexto y delega al controlador sin autenticar.
  *
  * @author Juan Sebastian Rios
  * @since 0.0.1
@@ -104,11 +108,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
    * autenticación.</li>
    * <li>Si hay token, lo valida con {@link JwtService#parseAndValidate}.</li>
    * <li>Si es válido y no hay autenticación previa en el contexto, construye
-   * un {@link UsernamePasswordAuthenticationToken} con el email como
-   * principal y los roles como autoridades, y lo registra en el
+   * un {@link UsernamePasswordAuthenticationToken} con el {@code accountId}
+   * del claim {@code sub} como principal estable y los roles como autoridades,
+   * y lo registra en el
    * {@link SecurityContextHolder}.</li>
-   * <li>Si el token es inválido, responde {@code 401 Unauthorized} con
-   * un {@link ApiResponse} consistente, sin continuar la cadena de filtros.</li>
+   * <li>Si el token es inválido en una ruta protegida, responde
+   * {@code 401 Unauthorized} con un {@link ApiResponse} consistente, sin
+   * continuar la cadena de filtros. En rutas públicas, el request continúa sin
+   * autenticar para no bloquear login, registro, logout ni health checks.</li>
    * </ol>
    *
    * <p>
@@ -141,17 +148,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     try {
       Claims claims = jwtService.parseAndValidate(jwt);
+      UUID accountId = UUID.fromString(claims.getSubject());
       String userEmail = claims.get("email", String.class);
 
-      if (userEmail != null &&
-          SecurityContextHolder.getContext().getAuthentication() == null) {
+      if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
         List<String> roles = claims.get("roles", List.class);
         List<SimpleGrantedAuthority> authorities = roles == null
             ? List.of(new SimpleGrantedAuthority("ROLE_USER"))
             : roles.stream().map(SimpleGrantedAuthority::new).toList();
 
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userEmail, null,
+        AuthenticatedAccount principal = new AuthenticatedAccount(accountId, userEmail);
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(principal, null,
             authorities);
         authToken.setDetails(
             new WebAuthenticationDetailsSource().buildDetails(request));
@@ -161,20 +169,57 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     } catch (ExpiredJwtException e) {
       log.debug("Token JWT expirado para request {}: {}",
           request.getRequestURI(), e.getMessage());
+      if (shouldContinueWithoutAuthentication(request)) {
+        continueWithoutAuthentication(request, response, filterChain);
+        return;
+      }
       writeUnauthorizedResponse(response, "Token JWT expirado");
       return;
     } catch (SignatureException e) {
       log.warn("Firma JWT inválida en request {} — posible intento de manipulación: {}",
           request.getRequestURI(), e.getMessage());
+      if (shouldContinueWithoutAuthentication(request)) {
+        continueWithoutAuthentication(request, response, filterChain);
+        return;
+      }
       writeUnauthorizedResponse(response, "Firma JWT inválida");
       return;
     } catch (JwtException | IllegalArgumentException e) {
       log.warn("Token JWT malformado o inválido en request {}: {}",
           request.getRequestURI(), e.getMessage());
+      if (shouldContinueWithoutAuthentication(request)) {
+        continueWithoutAuthentication(request, response, filterChain);
+        return;
+      }
       writeUnauthorizedResponse(response, "Token JWT inválido");
       return;
     }
 
+    filterChain.doFilter(request, response);
+  }
+
+  private boolean shouldContinueWithoutAuthentication(HttpServletRequest request) {
+    String path = resolveRequestPath(request);
+    return path.startsWith("/api/auth/") || path.equals("/actuator/health");
+  }
+
+  private String resolveRequestPath(HttpServletRequest request) {
+    String requestUri = request.getRequestURI();
+    String contextPath = request.getContextPath();
+
+    if (contextPath != null && !contextPath.isBlank() && requestUri.startsWith(contextPath)) {
+      return requestUri.substring(contextPath.length());
+    }
+
+    return requestUri;
+  }
+
+  private void continueWithoutAuthentication(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      FilterChain filterChain)
+      throws IOException, ServletException {
+    SecurityContextHolder.clearContext();
     filterChain.doFilter(request, response);
   }
 
@@ -196,7 +241,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         .message(message)
         .build();
     response.setStatus(HttpStatus.UNAUTHORIZED.value());
-    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+    response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+    response.setContentType(MediaType.APPLICATION_JSON_VALUE + ";charset=" + StandardCharsets.UTF_8.name());
     objectMapper.writeValue(response.getWriter(), apiResponse);
   }
 

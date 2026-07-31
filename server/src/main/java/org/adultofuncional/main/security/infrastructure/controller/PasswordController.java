@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
+import org.adultofuncional.main.config.security.AuthenticatedAccount;
 import org.adultofuncional.main.security.application.dto.PasswordRequest;
 import org.adultofuncional.main.security.application.dto.PasswordResponse;
 import org.adultofuncional.main.security.application.dto.PasswordUpdateRequest;
@@ -45,9 +46,9 @@ import lombok.RequiredArgsConstructor;
  * de acceder al gestor.
  *
  * <p>
- * El {@code accountId} se resuelve internamente a partir del correo
- * electrónico del usuario autenticado, evitando que el cliente manipule
- * identificadores de cuenta.
+   * El {@code accountId} se toma del claim {@code sub} del JWT mediante
+   * {@link AuthenticatedAccount}, evitando que el cliente manipule
+   * identificadores de cuenta o dependa del email mutable.
  *
  * <p>
  * Todos los endpoints del gestor (excepto la verificación de Master Key)
@@ -76,22 +77,14 @@ public class PasswordController {
   private final PasswordEncoder passwordEncoder;
   private final MasterKeySessionService masterKeySessionService;
 
-  /** Repositorio de cuentas para resolver el UUID del usuario autenticado. */
+  /** Repositorio de cuentas para validar la Master Key contra el hash persistido. */
   private final AccountRepository accountRepository;
 
   /**
-   * Resuelve el identificador único de la cuenta a partir del correo
-   * electrónico del usuario autenticado.
-   *
-   * @param email correo electrónico del usuario autenticado, obtenido
-   *              mediante {@code @AuthenticationPrincipal}.
-   * @return UUID de la cuenta asociada al email.
-   * @throws NotFoundException si no existe una cuenta con ese email.
+   * Retorna el identificador estable de la cuenta autenticada.
    */
-  private UUID resolveAccountId(String email) {
-    return accountRepository.findByEmail(email)
-        .orElseThrow(() -> new NotFoundException("Cuenta no encontrada para el email: " + email))
-        .getId();
+  private UUID resolveAccountId(AuthenticatedAccount authenticatedAccount) {
+    return authenticatedAccount.accountId();
   }
 
   /**
@@ -105,7 +98,7 @@ public class PasswordController {
    * {@link MasterKeySessionService#verify}.
    *
    * @param body        mapa con la clave {@code masterKey} en texto plano.
-   * @param loggedEmail correo electrónico del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} si la Master Key es correcta.
    * @throws NotFoundException     si la cuenta no existe.
    * @throws UnauthorizedException si la Master Key es incorrecta o no está
@@ -114,9 +107,9 @@ public class PasswordController {
   @PostMapping("/master-key/verify")
   public ResponseEntity<ApiResponse<Void>> verifyMasterKey(
       @RequestBody Map<String, String> body,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     String providedMasterKey = body.get("masterKey");
 
     Account account = accountRepository.findById(accountId)
@@ -140,16 +133,16 @@ public class PasswordController {
    * Registra una nueva credencial en el gestor del usuario autenticado.
    *
    * @param request     DTO con los datos de la credencial.
-   * @param loggedEmail correo del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 201 Created} con la respuesta de la credencial creada.
    * @throws NotFoundException si la cuenta no existe.
    */
   @PostMapping
   public ResponseEntity<ApiResponse<PasswordResponse>> createPassword(
       @Validated @RequestBody PasswordRequest request,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     PasswordResponse response = createPasswordUseCase.execute(accountId, request);
 
     return ResponseEntity.status(HttpStatus.CREATED)
@@ -160,15 +153,15 @@ public class PasswordController {
   /**
    * Lista todas las credenciales almacenadas del usuario autenticado.
    *
-   * @param loggedEmail correo del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} con la lista de credenciales.
    * @throws NotFoundException si la cuenta no existe.
    */
   @GetMapping
   public ResponseEntity<ApiResponse<List<PasswordResponse>>> listPasswords(
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     List<PasswordResponse> response = listPasswordsUseCase.execute(accountId);
 
     return ResponseEntity.ok(
@@ -180,7 +173,7 @@ public class PasswordController {
    * Obtiene una credencial específica con la contraseña descifrada.
    *
    * @param id          UUID de la credencial.
-   * @param loggedEmail correo del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} con los datos de la credencial.
    * @throws NotFoundException si la credencial no existe o no pertenece a la
    *                           cuenta.
@@ -188,9 +181,9 @@ public class PasswordController {
   @GetMapping("/{id}")
   public ResponseEntity<ApiResponse<PasswordResponse>> getPassword(
       @PathVariable UUID id,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     PasswordResponse response = getPasswordUseCase.execute(accountId, id);
 
     return ResponseEntity.ok(
@@ -207,7 +200,7 @@ public class PasswordController {
    *
    * @param id          UUID de la credencial.
    * @param request     DTO con los campos a actualizar.
-   * @param loggedEmail correo del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} con los datos actualizados.
    * @throws NotFoundException si la credencial no existe o no pertenece a la
    *                           cuenta.
@@ -216,9 +209,9 @@ public class PasswordController {
   public ResponseEntity<ApiResponse<PasswordResponse>> updatePassword(
       @PathVariable UUID id,
       @Validated @RequestBody PasswordUpdateRequest request,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     PasswordResponse response = updatePasswordUseCase.execute(accountId, id, request);
 
     return ResponseEntity.ok(
@@ -230,7 +223,7 @@ public class PasswordController {
    * Elimina una credencial del gestor.
    *
    * @param id          UUID de la credencial.
-   * @param loggedEmail correo del usuario autenticado.
+   * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} con confirmación de eliminación.
    * @throws NotFoundException si la credencial no existe o no pertenece a la
    *                           cuenta.
@@ -238,9 +231,9 @@ public class PasswordController {
   @DeleteMapping("/{id}")
   public ResponseEntity<ApiResponse<Void>> deletePassword(
       @PathVariable UUID id,
-      @AuthenticationPrincipal String loggedEmail) {
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(loggedEmail);
+    UUID accountId = resolveAccountId(authenticatedAccount);
     deletePasswordUseCase.execute(accountId, id);
 
     return ResponseEntity.ok(

@@ -4,11 +4,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.adultofuncional.main.shared.response.ApiResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import jakarta.validation.ConstraintViolationException;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Manejador global de excepciones de la aplicación.
@@ -24,6 +31,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * al cliente.</p>
  */
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler  {
 
@@ -90,6 +98,65 @@ public class GlobalExceptionHandler  {
     }
 
     /**
+     * Maneja errores de dominio o argumentos inválidos que no pasan por Bean
+     * Validation.
+     *
+     * <p>No expone el mensaje interno de la excepción porque puede contener
+     * detalles de implementación del dominio.</p>
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
+        log.debug("Solicitud inválida", ex);
+        return buildError(HttpStatus.BAD_REQUEST, "Solicitud inválida");
+    }
+
+    /**
+     * Maneja errores de formato JSON, enums desconocidos o cuerpos no legibles.
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException ex) {
+        log.debug("JSON inválido o valor no permitido", ex);
+        return buildError(HttpStatus.BAD_REQUEST, "Formato JSON inválido o valor no permitido");
+    }
+
+    /**
+     * Maneja errores de conversión de parámetros de ruta o query, como UUIDs mal
+     * formados.
+     */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        log.debug("Parámetro inválido", ex);
+        return buildError(HttpStatus.BAD_REQUEST, "Parámetro inválido");
+    }
+
+    /**
+     * Maneja violaciones de validación en parámetros simples.
+     */
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
+        log.debug("Parámetros inválidos", ex);
+        return buildError(HttpStatus.BAD_REQUEST, "Parámetros inválidos");
+    }
+
+    /**
+     * Maneja conflictos de integridad de base de datos, como UNIQUE o FK.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
+        log.debug("Conflicto de integridad de datos", ex);
+        return buildError(HttpStatus.CONFLICT, "Conflicto de integridad de datos");
+    }
+
+    /**
+     * Maneja denegaciones de Spring Security, por ejemplo {@code @PreAuthorize}.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
+        log.debug("Acceso denegado", ex);
+        return buildError(HttpStatus.FORBIDDEN, "Acceso denegado");
+    }
+
+    /**
      * Maneja cualquier excepción no controlada por los demás handlers (HTTP 500).
      *
      * <p>Actúa como red de seguridad del sistema — captura cualquier excepción
@@ -104,9 +171,8 @@ public class GlobalExceptionHandler  {
 
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
 
-        ApiResponse<Void> response = new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Error interno" + ex.getMessage(), null);
-
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        log.error("Error interno no controlado", ex);
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno");
 
     }
 
@@ -162,5 +228,10 @@ public class GlobalExceptionHandler  {
     public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenException ex) {
 
         return handleBusiness(ex);
+    }
+
+    private ResponseEntity<ApiResponse<Void>> buildError(HttpStatus status, String message) {
+        ApiResponse<Void> response = new ApiResponse<>(status.value(), message, null);
+        return ResponseEntity.status(status).body(response);
     }
 }

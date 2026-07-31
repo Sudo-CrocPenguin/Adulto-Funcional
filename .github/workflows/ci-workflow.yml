@@ -4,17 +4,10 @@ on:
   pull_request:
     branches: ["develop"]
 
-# ================================================================== #
-# trabajos que va realizar el workflow; los cuales incluyen un       #
-# apartado de Checkout code para clonar el repositorio en la maquina #
-# virtual además de establecer el sistema de dicha maquina, siendo   #
-# en este caso Ubuntu Linux                                          #
-# ================================================================== #
+defaults:
+  run:
+    working-directory: server
 
-# ================================================================== #
-# Job para validar el correcto funcionamiento de los contenedores    #
-# verificando que sus estados sean "healthy", mediante Bash scripts  #
-# ================================================================== #
 jobs:
   docker-validation:
     runs-on: ubuntu-latest
@@ -31,10 +24,15 @@ jobs:
           MARIADB_PASSWORD=ci_password
           JWT_SECRET=ci-jwt-secret-key-for-testing-only-must-be-32-chars
           JWT_EXPIRATION=86400000
+          MASTER_KEY_SESSION_SECRET=ci-master-key-session-secret-for-testing-only-32-chars
+          REDIS_PASSWORD=ci_redis_password
           CORS_ALLOWED_ORIGINS=http://localhost:5173/
           APP_COOKIE_SECURE=false
           APP_COOKIE_SAME_SITE=Lax
           EOF
+
+      - name: Ensure external Docker network exists
+        run: docker network inspect coolify >/dev/null 2>&1 || docker network create coolify
 
       - name: Build Docker containers
         run: docker compose up -d --build
@@ -59,22 +57,15 @@ jobs:
 
           echo "Timeout: App no se puso saludable"
           docker compose logs app
-
           exit 1
 
       - name: Verify app responds to requests
-        run: |
-          curl --fail http://localhost:8080/actuator/health
+        run: curl --fail http://localhost:8080/actuator/health
 
       - name: Down containers
         if: always()
         run: docker compose down -v
 
-  # ================================================================== #
-  # Job para ejecutar las pruebas unitarias con Maven Wrapper (mvnw).  #
-  # Usa Testcontainers para la base de datos, por lo que Docker está  #
-  # disponible en el runner de GitHub Actions.                         #
-  # ================================================================== #
   unit-tests:
     runs-on: ubuntu-latest
     steps:
@@ -109,4 +100,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: javadoc
-          path: doc/
+          path: server/doc/

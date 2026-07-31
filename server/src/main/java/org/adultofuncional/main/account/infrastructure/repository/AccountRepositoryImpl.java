@@ -35,14 +35,30 @@ public class AccountRepositoryImpl implements AccountRepository {
    * Guarda o actualiza una cuenta.
    *
    * <p>
-   * Flujo: {@code Account} → {@code mapper.toEntity()}
-   * → {@code jpaRepository.save()} → {@code mapper.toDomain()}
+   * Flujo de creación: {@code Account} → {@code mapper.toEntity()}
+   * → {@code jpaRepository.save()} → {@code mapper.toDomain()}.
+   *
+   * <p>
+   * Flujo de actualización: si el ID ya existe, se carga la entidad gestionada y
+   * se copian únicamente campos escalares. Esto evita que Hibernate interprete
+   * colecciones hijas ausentes como huérfanas y borre datos relacionados por las
+   * relaciones {@code orphanRemoval}.
    *
    * @param account modelo de dominio a persistir. No puede ser {@code null}.
    * @return modelo de dominio con los campos actualizados tras la persistencia.
    */
   @Override
   public Account save(Account account) {
+    if (account.getId() != null) {
+      Optional<AccountEntity> existing = jpaRepository.findById(account.getId());
+      if (existing.isPresent()) {
+        AccountEntity managedEntity = existing.get();
+        mapper.copyScalarsToEntity(account, managedEntity);
+        AccountEntity saved = jpaRepository.save(managedEntity);
+        return mapper.toDomain(saved);
+      }
+    }
+
     AccountEntity entity = mapper.toEntity(account);
     AccountEntity saved = jpaRepository.save(entity);
     return mapper.toDomain(saved);
