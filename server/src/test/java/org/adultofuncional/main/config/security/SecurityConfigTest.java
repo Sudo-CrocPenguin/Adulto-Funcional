@@ -13,7 +13,7 @@ class SecurityConfigTest {
 
   @Test
   void corsConfigurationNormalizesTrailingSlashOrigins() {
-    SecurityConfig securityConfig = new SecurityConfig(null);
+    SecurityConfig securityConfig = new SecurityConfig(null, null, null);
     ReflectionTestUtils.setField(securityConfig, "allowedOrigins",
         List.of(" http://localhost:5173/ "));
 
@@ -24,5 +24,7 @@ class SecurityConfigTest {
     assertThat(corsConfiguration).isNotNull();
     assertThat(corsConfiguration.getAllowedOrigins())
         .containsExactly("http://localhost:5173");
+    assertThat(corsConfiguration.getExposedHeaders())
+        .contains("X-Trace-Id");
   }
 }

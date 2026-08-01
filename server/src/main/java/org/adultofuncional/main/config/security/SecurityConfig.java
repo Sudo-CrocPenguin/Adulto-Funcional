@@ -70,6 +70,12 @@ public class SecurityConfig {
    */
   private final JwtAuthenticationFilter jwtAuthFilter;
 
+  /** Respuesta uniforme para peticiones que requieren autenticación. */
+  private final ApiAuthenticationEntryPoint authenticationEntryPoint;
+
+  /** Respuesta uniforme para principales sin permisos suficientes. */
+  private final ApiAccessDeniedHandler accessDeniedHandler;
+
   /**
    * Lista de orígenes permitidos para CORS, inyectada desde la variable de
    * entorno {@code CORS_ALLOWED_ORIGINS}. Debe contener URLs absolutas
@@ -137,6 +143,9 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
             .anyRequest().authenticated())
+        .exceptionHandling(exceptions -> exceptions
+            .authenticationEntryPoint(authenticationEntryPoint)
+            .accessDeniedHandler(accessDeniedHandler))
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -193,7 +202,7 @@ public class SecurityConfig {
         "X-Requested-With",
         "X-Client-Type",
         "Authorization"));
-    config.setExposedHeaders(List.of("X-Total-Count"));
+    config.setExposedHeaders(List.of("X-Total-Count", "X-Trace-Id"));
     config.setAllowCredentials(true);
     config.setMaxAge(3600L);
 
