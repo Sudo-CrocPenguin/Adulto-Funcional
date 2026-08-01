@@ -35,7 +35,6 @@ import lombok.Builder;
  *
  * @param <T> tipo del dato que se incluye en la respuesta
  */
-@Builder
 public class ApiResponse<T> {
 
   /** Código de estado HTTP de la respuesta (ej. 200, 404, 500). */

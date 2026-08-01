@@ -75,14 +75,6 @@ public class AccountController {
    * @param authenticatedAccount cuenta autenticada resuelta desde el claim
    *                             {@code sub} del JWT
    * @return 200 OK con los datos de la cuenta
-   * @throws org.adultofuncional.main.shared.exception.NotFoundException
-   *                                                                         si no
-   *                                                                         existe
-   *                                                                         una
-   *                                                                         cuenta
-   *                                                                         con
-   *                                                                         el ID
-   *                                                                         dado
    * @throws org.adultofuncional.main.shared.exception.NotFoundException si la
    *         cuenta es inexistente o ajena
    */
@@ -116,14 +108,6 @@ public class AccountController {
    * @param authenticatedAccount cuenta autenticada resuelta desde el claim
    *                             {@code sub} del JWT
    * @return 200 OK con los datos actualizados
-   * @throws org.adultofuncional.main.shared.exception.NotFoundException
-   *                                                                         si no
-   *                                                                         existe
-   *                                                                         una
-   *                                                                         cuenta
-   *                                                                         con
-   *                                                                         el ID
-   *                                                                         dado
    * @throws org.adultofuncional.main.shared.exception.NotFoundException si la
    *         cuenta es inexistente o ajena
    * @throws org.adultofuncional.main.shared.exception.ConflictException
@@ -165,15 +149,7 @@ public class AccountController {
    * @param id          UUID de la cuenta a eliminar
    * @param authenticatedAccount cuenta autenticada resuelta desde el claim
    *                             {@code sub} del JWT
-   * @return 200 No Content si la eliminación fue exitosa
-   * @throws org.adultofuncional.main.shared.exception.NotFoundException
-   *                                                                         si no
-   *                                                                         existe
-   *                                                                         una
-   *                                                                         cuenta
-   *                                                                         con
-   *                                                                         el ID
-   *                                                                         dado
+   * @return 200 OK si la eliminación fue exitosa
    * @throws org.adultofuncional.main.shared.exception.NotFoundException si la
    *         cuenta es inexistente o ajena
    */
