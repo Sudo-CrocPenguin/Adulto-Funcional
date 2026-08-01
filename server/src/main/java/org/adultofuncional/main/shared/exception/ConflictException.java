@@ -21,6 +21,16 @@ public class ConflictException extends BusinessException {
      */
 
     public ConflictException(String message) {
-        super(message, 409, ApiErrorCode.RESOURCE_CONFLICT);
+        this(message, ApiErrorCode.RESOURCE_CONFLICT);
+    }
+
+    /**
+     * Construye una excepción 409 con un código de conflicto específico.
+     *
+     * @param message mensaje seguro para el cliente
+     * @param code    código estable del conflicto
+     */
+    public ConflictException(String message, ApiErrorCode code) {
+        super(message, 409, code);
     }
 }

@@ -1,7 +1,6 @@
 package org.adultofuncional.main.security.infrastructure.controller;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.domain.model.Account;
@@ -10,6 +9,7 @@ import org.adultofuncional.main.config.security.AuthenticatedAccount;
 import org.adultofuncional.main.security.application.dto.PasswordRequest;
 import org.adultofuncional.main.security.application.dto.PasswordResponse;
 import org.adultofuncional.main.security.application.dto.PasswordUpdateRequest;
+import org.adultofuncional.main.security.application.dto.VerifyMasterKeyRequest;
 import org.adultofuncional.main.security.application.usecase.CreatePasswordUseCase;
 import org.adultofuncional.main.security.application.usecase.DeletePasswordUseCase;
 import org.adultofuncional.main.security.application.usecase.GetPasswordUseCase;
@@ -17,7 +17,9 @@ import org.adultofuncional.main.security.application.usecase.ListPasswordsUseCas
 import org.adultofuncional.main.security.application.usecase.UpdatePasswordUseCase;
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
 import org.adultofuncional.main.shared.exception.NotFoundException;
-import org.adultofuncional.main.shared.exception.UnauthorizedException;
+import org.adultofuncional.main.shared.exception.ConflictException;
+import org.adultofuncional.main.shared.exception.ForbiddenException;
+import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -53,7 +56,7 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * Todos los endpoints del gestor (excepto la verificación de Master Key)
  * exigen que la Master Key haya sido verificada previamente. Los casos de
- * uso lanzan {@link UnauthorizedException} si no es así.
+ * uso lanzan {@link ForbiddenException} si no es así.
  *
  * @author Lidys Jaraba
  * @since 0.0.1
@@ -97,27 +100,34 @@ public class PasswordController {
    * almacena la Master Key en la sesión mediante
    * {@link MasterKeySessionService#verify}.
    *
-   * @param body        mapa con la clave {@code masterKey} en texto plano.
+   * @param request     DTO validado con la Master Key en texto plano.
    * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} si la Master Key es correcta.
    * @throws NotFoundException     si la cuenta no existe.
-   * @throws UnauthorizedException si la Master Key es incorrecta o no está
-   *                               configurada.
+   * @throws ConflictException  si la Master Key no está configurada.
+   * @throws ForbiddenException si la Master Key es incorrecta.
    */
   @PostMapping("/master-key/verify")
   public ResponseEntity<ApiResponse<Void>> verifyMasterKey(
-      @RequestBody Map<String, String> body,
+      @Valid @RequestBody VerifyMasterKeyRequest request,
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
-    String providedMasterKey = body.get("masterKey");
+    String providedMasterKey = request.masterKey();
 
     Account account = accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada"));
 
-    if (account.getMasterKeyHash() == null ||
-        !passwordEncoder.matches(providedMasterKey, account.getMasterKeyHash())) {
-      throw new UnauthorizedException("Master Key incorrecta");
+    if (account.getMasterKeyHash() == null) {
+      throw new ConflictException(
+          "La cuenta no tiene una Master Key configurada",
+          ApiErrorCode.MASTER_KEY_NOT_CONFIGURED);
+    }
+
+    if (!passwordEncoder.matches(providedMasterKey, account.getMasterKeyHash())) {
+      throw new ForbiddenException(
+          "Master Key incorrecta",
+          ApiErrorCode.MASTER_KEY_INVALID);
     }
 
     masterKeySessionService.verify(accountId, providedMasterKey);
