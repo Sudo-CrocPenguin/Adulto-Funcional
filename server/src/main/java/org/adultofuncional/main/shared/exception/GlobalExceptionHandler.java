@@ -1,237 +1,387 @@
 package org.adultofuncional.main.shared.exception;
 
-import java.util.HashMap;
-import java.util.Map;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.ACCESS_DENIED;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.BUSINESS_RULE_VIOLATION;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.DATA_INTEGRITY_CONFLICT;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.ENDPOINT_NOT_FOUND;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.INTERNAL_ERROR;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.MEDIA_TYPE_UNSUPPORTED;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.METHOD_NOT_ALLOWED;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.PARAMETER_INVALID;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.REQUEST_BODY_INVALID;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.REQUIRED_PARAMETER_MISSING;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.REPRESENTATION_NOT_ACCEPTABLE;
+import static org.adultofuncional.main.shared.response.ApiErrorCode.VALIDATION_FAILED;
 
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.adultofuncional.main.shared.response.ApiErrorCode;
+import org.adultofuncional.main.shared.response.ApiErrorFactory;
 import org.adultofuncional.main.shared.response.ApiResponse;
+import org.adultofuncional.main.shared.response.FieldValidationError;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.validation.BindException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Manejador global de excepciones de la aplicación.
+ * Traduce excepciones de MVC, seguridad, aplicación y persistencia al contrato
+ * uniforme definido por el ADR 0004.
  *
- * <p>Intercepta todas las excepciones lanzadas en cualquier parte del sistema y
- * las convierte en respuestas HTTP estandarizadas usando {@link ApiResponse}.
- * De esta forma, todos los errores de la aplicación siguen el mismo formato
- * de respuesta, evitando que cada controlador tenga que manejar sus propios
- * errores individualmente.</p>
- *
- * <p>Funciona gracias a la anotación {@code @RestControllerAdvice}, que le indica
- * a Spring que esta clase debe interceptar las excepciones antes de que lleguen
- * al cliente.</p>
+ * <p>Los mensajes públicos no incluyen detalles internos. Cada respuesta usa
+ * un código estable, una lista determinista de errores de campo y el trace ID
+ * generado para la petición. Las excepciones inesperadas conservan el stack
+ * trace exclusivamente en logs.</p>
  */
-
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler  {
+@RequiredArgsConstructor
+public class GlobalExceptionHandler {
 
-    /**
-     * Maneja las excepciones de negocio generales de la aplicación.
-     *
-     * <p>Captura cualquier {@link BusinessException} y construye una respuesta
-     * HTTP usando el código de estado y el mensaje que trae la excepción.</p>
-     *
-     * @param ex excepción de negocio lanzada
-     * @return respuesta HTTP con el código y mensaje de la excepción
-     */
+  private static final MediaType APPLICATION_JSON_UTF8 =
+      new MediaType("application", "json", StandardCharsets.UTF_8);
 
-    @ExceptionHandler(BusinessException.class)
+  private final ApiErrorFactory errorFactory;
 
-    public ResponseEntity<ApiResponse<Void>> handleBusiness(BusinessException ex) {
+  /** Maneja errores de negocio conservando estado, código y mensaje seguros. */
+  @ExceptionHandler(BusinessException.class)
+  public ResponseEntity<ApiResponse<Void>> handleBusiness(
+      BusinessException exception,
+      HttpServletRequest request) {
+    log.debug("Error de negocio status={} code={}", exception.getStatus(), exception.getCode());
+    return buildError(
+        request,
+        exception.getStatus(),
+        exception.getCode(),
+        exception.getMessage());
+  }
 
-        ApiResponse<Void> response = new ApiResponse<>(ex.getStatus(), ex.getMessage(), null );
+  /** Maneja Bean Validation sobre cuerpos y objetos enlazados por MVC. */
+  @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+  public ResponseEntity<ApiResponse<Void>> handleMethodArgumentNotValid(
+      org.springframework.web.bind.MethodArgumentNotValidException exception,
+      HttpServletRequest request) {
+    return validationError(request, bindingErrors(exception));
+  }
 
-        return ResponseEntity.status(ex.getStatus()).body(response);
+  /** Maneja validación de objetos enlazados fuera de un cuerpo JSON. */
+  @ExceptionHandler(BindException.class)
+  public ResponseEntity<ApiResponse<Void>> handleBind(
+      BindException exception,
+      HttpServletRequest request) {
+    return validationError(request, bindingErrors(exception));
+  }
+
+  /** Maneja validación directa de parámetros de métodos de controlador. */
+  @ExceptionHandler(HandlerMethodValidationException.class)
+  public ResponseEntity<ApiResponse<Void>> handleMethodValidation(
+      HandlerMethodValidationException exception,
+      HttpServletRequest request) {
+    List<FieldValidationError> errors = new ArrayList<>();
+    exception.getParameterValidationResults().forEach(result -> {
+      String parameterName = result.getMethodParameter().getParameterName();
+      String field = parameterName == null
+          ? "arg" + result.getMethodParameter().getParameterIndex()
+          : parameterName;
+      result.getResolvableErrors().forEach(error ->
+          errors.add(toFieldError(field, error)));
+    });
+    exception.getCrossParameterValidationResults().forEach(error ->
+        errors.add(toFieldError("$", error)));
+    return validationError(request, errors);
+  }
+
+  /** Maneja restricciones declaradas directamente sobre parámetros. */
+  @ExceptionHandler(ConstraintViolationException.class)
+  public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(
+      ConstraintViolationException exception,
+      HttpServletRequest request) {
+    List<FieldValidationError> errors = exception.getConstraintViolations().stream()
+        .map(this::toFieldError)
+        .toList();
+    return validationError(request, errors);
+  }
+
+  /** Maneja cuerpos JSON truncados, inválidos o con tipos incompatibles. */
+  @ExceptionHandler(HttpMessageNotReadableException.class)
+  public ResponseEntity<ApiResponse<Void>> handleNotReadable(
+      HttpMessageNotReadableException exception,
+      HttpServletRequest request) {
+    log.debug("Cuerpo de solicitud inválido", exception);
+    return buildError(
+        request,
+        HttpStatus.BAD_REQUEST,
+        REQUEST_BODY_INVALID,
+        "El cuerpo de la solicitud no es válido");
+  }
+
+  /** Maneja parámetros de ruta o query con un tipo incompatible. */
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(
+      MethodArgumentTypeMismatchException exception,
+      HttpServletRequest request) {
+    log.debug("Parámetro con tipo inválido: {}", exception.getName());
+    return buildError(
+        request,
+        HttpStatus.BAD_REQUEST,
+        PARAMETER_INVALID,
+        "Uno o más parámetros no son válidos");
+  }
+
+  /** Maneja query parameters obligatorios ausentes. */
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<ApiResponse<Void>> handleMissingParameter(
+      MissingServletRequestParameterException exception,
+      HttpServletRequest request) {
+    log.debug("Parámetro obligatorio ausente: {}", exception.getParameterName());
+    return buildError(
+        request,
+        HttpStatus.BAD_REQUEST,
+        REQUIRED_PARAMETER_MISSING,
+        "Falta un parámetro obligatorio");
+  }
+
+  /** Maneja headers u otros valores obligatorios de la petición ausentes. */
+  @ExceptionHandler(ServletRequestBindingException.class)
+  public ResponseEntity<ApiResponse<Void>> handleRequestBinding(
+      ServletRequestBindingException exception,
+      HttpServletRequest request) {
+    log.debug("Valor obligatorio de la petición ausente", exception);
+    return buildError(
+        request,
+        HttpStatus.BAD_REQUEST,
+        REQUIRED_PARAMETER_MISSING,
+        "Falta un valor obligatorio en la solicitud");
+  }
+
+  /** Maneja reglas de dominio expresadas como argumentos inválidos. */
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(
+      IllegalArgumentException exception,
+      HttpServletRequest request) {
+    log.debug("Regla de negocio incumplida", exception);
+    return buildError(
+        request,
+        HttpStatus.BAD_REQUEST,
+        BUSINESS_RULE_VIOLATION,
+        "La solicitud incumple una regla de negocio");
+  }
+
+  /** Maneja rutas inexistentes sin convertirlas en errores internos. */
+  @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class})
+  public ResponseEntity<ApiResponse<Void>> handleEndpointNotFound(
+      Exception exception,
+      HttpServletRequest request) {
+    log.debug("Endpoint no encontrado: {}", request.getRequestURI());
+    return buildError(
+        request,
+        HttpStatus.NOT_FOUND,
+        ENDPOINT_NOT_FOUND,
+        "Endpoint no encontrado");
+  }
+
+  /** Maneja métodos HTTP no permitidos por una ruta existente. */
+  @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+  public ResponseEntity<ApiResponse<Void>> handleMethodNotAllowed(
+      HttpRequestMethodNotSupportedException exception,
+      HttpServletRequest request) {
+    log.debug("Método HTTP no permitido: {}", exception.getMethod());
+    return buildError(
+        request,
+        HttpStatus.METHOD_NOT_ALLOWED,
+        METHOD_NOT_ALLOWED,
+        "Método HTTP no permitido");
+  }
+
+  /** Maneja Content-Type no soportado por el endpoint. */
+  @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+  public ResponseEntity<ApiResponse<Void>> handleMediaTypeNotSupported(
+      HttpMediaTypeNotSupportedException exception,
+      HttpServletRequest request) {
+    log.debug("Content-Type no soportado: {}", exception.getContentType());
+    return buildError(
+        request,
+        HttpStatus.UNSUPPORTED_MEDIA_TYPE,
+        MEDIA_TYPE_UNSUPPORTED,
+        "Tipo de contenido no soportado");
+  }
+
+  /**
+   * Maneja negociación de respuesta incompatible. El cuerpo puede ser omitido
+   * por el contenedor si el cliente rechaza también {@code application/json}.
+   */
+  @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+  public ResponseEntity<ApiResponse<Void>> handleMediaTypeNotAcceptable(
+      HttpMediaTypeNotAcceptableException exception,
+      HttpServletRequest request) {
+    log.debug("Formato de respuesta no aceptable", exception);
+    return buildError(
+        request,
+        HttpStatus.NOT_ACCEPTABLE,
+        REPRESENTATION_NOT_ACCEPTABLE,
+        "No existe un formato de respuesta aceptable");
+  }
+
+  /** Maneja restricciones de integridad sin exponer SQL ni nombres internos. */
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(
+      DataIntegrityViolationException exception,
+      HttpServletRequest request) {
+    log.debug("Conflicto de integridad de datos", exception);
+    return buildError(
+        request,
+        HttpStatus.CONFLICT,
+        DATA_INTEGRITY_CONFLICT,
+        "La operación entra en conflicto con los datos existentes");
+  }
+
+  /** Maneja denegaciones producidas dentro de Spring MVC, como PreAuthorize. */
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<ApiResponse<Void>> handleAccessDenied(
+      AccessDeniedException exception,
+      HttpServletRequest request) {
+    log.debug("Acceso denegado", exception);
+    return buildError(
+        request,
+        HttpStatus.FORBIDDEN,
+        ACCESS_DENIED,
+        "No tienes permiso para realizar esta operación");
+  }
+
+  /** Red de seguridad para errores inesperados no atribuibles al cliente. */
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<ApiResponse<Void>> handleGeneral(
+      Exception exception,
+      HttpServletRequest request) {
+    ApiResponse<Void> body = errorFactory.create(
+        request,
+        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+        INTERNAL_ERROR,
+        "Ocurrió un error interno");
+    log.error("Error interno no controlado traceId={}", body.getTraceId(), exception);
+    return response(HttpStatus.INTERNAL_SERVER_ERROR.value(), body);
+  }
+
+  private ResponseEntity<ApiResponse<Void>> validationError(
+      HttpServletRequest request,
+      List<FieldValidationError> errors) {
+    return buildError(
+        request,
+        HttpStatus.BAD_REQUEST,
+        VALIDATION_FAILED,
+        "La solicitud contiene datos inválidos",
+        errors);
+  }
+
+  private List<FieldValidationError> bindingErrors(BindException exception) {
+    List<FieldValidationError> errors = new ArrayList<>();
+    exception.getBindingResult().getFieldErrors().stream()
+        .map(this::toFieldError)
+        .forEach(errors::add);
+    exception.getBindingResult().getGlobalErrors().stream()
+        .map(error -> toFieldError("$", error))
+        .forEach(errors::add);
+    return errors;
+  }
+
+  private FieldValidationError toFieldError(FieldError error) {
+    return new FieldValidationError(
+        error.getField(),
+        error.getCode() == null ? "Invalid" : error.getCode(),
+        safeMessage(error));
+  }
+
+  private FieldValidationError toFieldError(
+      String field,
+      MessageSourceResolvable error) {
+    String[] codes = error.getCodes();
+    String code = codes == null || codes.length == 0 ? "Invalid" : codes[0];
+    int separator = code.indexOf('.');
+    if (separator > 0) {
+      code = code.substring(0, separator);
     }
+    return new FieldValidationError(field, code, safeMessage(error));
+  }
 
-    /**
-     * Maneja las excepciones de recurso no encontrado (HTTP 404).
-     *
-     * <p>Captura {@link NotFoundException} y delega a {@link #handleBusiness}
-     * ya que comparte el mismo formato de respuesta.</p>
-     *
-     * @param ex excepción lanzada cuando un recurso no existe
-     * @return respuesta HTTP 404 con el mensaje de la excepción
-     */
+  private FieldValidationError toFieldError(ConstraintViolation<?> violation) {
+    String path = violation.getPropertyPath().toString();
+    int separator = path.lastIndexOf('.');
+    String field = separator >= 0 ? path.substring(separator + 1) : path;
+    String code = violation.getConstraintDescriptor()
+        .getAnnotation()
+        .annotationType()
+        .getSimpleName();
+    return new FieldValidationError(field, code, violation.getMessage());
+  }
 
-    @ExceptionHandler(NotFoundException.class)
+  private String safeMessage(MessageSourceResolvable error) {
+    String message = error.getDefaultMessage();
+    return message == null || message.isBlank() ? "Valor inválido" : message;
+  }
 
-    public ResponseEntity<ApiResponse<Void>> handleNotFound(NotFoundException ex) {
+  private ResponseEntity<ApiResponse<Void>> buildError(
+      HttpServletRequest request,
+      HttpStatus status,
+      ApiErrorCode code,
+      String message) {
+    return buildError(request, status.value(), code, message, List.of());
+  }
 
-        return handleBusiness(ex);
-    }
+  private ResponseEntity<ApiResponse<Void>> buildError(
+      HttpServletRequest request,
+      int status,
+      ApiErrorCode code,
+      String message) {
+    return buildError(request, status, code, message, List.of());
+  }
 
+  private ResponseEntity<ApiResponse<Void>> buildError(
+      HttpServletRequest request,
+      HttpStatus status,
+      ApiErrorCode code,
+      String message,
+      List<FieldValidationError> errors) {
+    return buildError(request, status.value(), code, message, errors);
+  }
 
-     /**
-     * Maneja los errores de validación de los campos del request (HTTP 400).
-     *
-     * <p>Captura {@link MethodArgumentNotValidException}, que Spring lanza
-     * automáticamente cuando un campo anotado con {@code @Valid} no cumple
-     * las restricciones definidas. Recorre todos los errores de validación
-     * y los agrupa en un mapa donde la clave es el nombre del campo y el
-     * valor es el mensaje de error correspondiente.</p>
-     *
-     * @param ex excepción lanzada por Spring cuando la validación de campos falla
-     * @return respuesta HTTP 400 con un mapa de los campos que fallaron y sus errores
-     */
+  private ResponseEntity<ApiResponse<Void>> buildError(
+      HttpServletRequest request,
+      int status,
+      ApiErrorCode code,
+      String message,
+      List<FieldValidationError> errors) {
+    return response(status, errorFactory.create(request, status, code, message, errors));
+  }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidation (MethodArgumentNotValidException ex){
-
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(fe -> errors.put(fe.getField(), fe.getDefaultMessage()));
-
-        ApiResponse<Map<String, String>> response = new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Error de validación", errors);
-
-        return ResponseEntity.badRequest().body(response);
-    }
-
-    /**
-     * Maneja errores de dominio o argumentos inválidos que no pasan por Bean
-     * Validation.
-     *
-     * <p>No expone el mensaje interno de la excepción porque puede contener
-     * detalles de implementación del dominio.</p>
-     */
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex) {
-        log.debug("Solicitud inválida", ex);
-        return buildError(HttpStatus.BAD_REQUEST, "Solicitud inválida");
-    }
-
-    /**
-     * Maneja errores de formato JSON, enums desconocidos o cuerpos no legibles.
-     */
-    @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<ApiResponse<Void>> handleNotReadable(HttpMessageNotReadableException ex) {
-        log.debug("JSON inválido o valor no permitido", ex);
-        return buildError(HttpStatus.BAD_REQUEST, "Formato JSON inválido o valor no permitido");
-    }
-
-    /**
-     * Maneja errores de conversión de parámetros de ruta o query, como UUIDs mal
-     * formados.
-     */
-    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public ResponseEntity<ApiResponse<Void>> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
-        log.debug("Parámetro inválido", ex);
-        return buildError(HttpStatus.BAD_REQUEST, "Parámetro inválido");
-    }
-
-    /**
-     * Maneja violaciones de validación en parámetros simples.
-     */
-    @ExceptionHandler(ConstraintViolationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleConstraintViolation(ConstraintViolationException ex) {
-        log.debug("Parámetros inválidos", ex);
-        return buildError(HttpStatus.BAD_REQUEST, "Parámetros inválidos");
-    }
-
-    /**
-     * Maneja conflictos de integridad de base de datos, como UNIQUE o FK.
-     */
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(DataIntegrityViolationException ex) {
-        log.debug("Conflicto de integridad de datos", ex);
-        return buildError(HttpStatus.CONFLICT, "Conflicto de integridad de datos");
-    }
-
-    /**
-     * Maneja denegaciones de Spring Security, por ejemplo {@code @PreAuthorize}.
-     */
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ApiResponse<Void>> handleAccessDenied(AccessDeniedException ex) {
-        log.debug("Acceso denegado", ex);
-        return buildError(HttpStatus.FORBIDDEN, "Acceso denegado");
-    }
-
-    /**
-     * Maneja cualquier excepción no controlada por los demás handlers (HTTP 500).
-     *
-     * <p>Actúa como red de seguridad del sistema — captura cualquier excepción
-     * inesperada que no haya sido contemplada y retorna un error genérico al
-     * cliente, evitando que información sensible del servidor quede expuesta.</p>
-     *
-     * @param ex excepción inesperada lanzada en cualquier parte del sistema
-     * @return respuesta HTTP 500 con un mensaje de error interno
-     */
-
-    @ExceptionHandler(Exception.class)
-
-    public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
-
-        log.error("Error interno no controlado", ex);
-        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno");
-
-    }
-
-    /**
-     * Maneja las excepciones de acceso no autorizado (HTTP 401).
-     *
-     * <p>Captura {@link UnauthorizedException} y delega a {@link #handleBusiness}.
-     * Se lanza típicamente cuando las credenciales de inicio de sesión son
-     * incorrectas.</p>
-     *
-     * @param ex excepción lanzada cuando el usuario no está autenticado
-     * @return respuesta HTTP 401 con el mensaje de la excepción
-     */
-
-    @ExceptionHandler(UnauthorizedException.class)
-
-    public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException ex) {
-
-        return handleBusiness(ex);
-    }
-
-    /**
-     * Maneja las excepciones de conflicto de datos (HTTP 409).
-     *
-     * <p>Captura {@link ConflictException} y delega a {@link #handleBusiness}.
-     * Se lanza típicamente cuando se intenta registrar un correo electrónico
-     * que ya existe en el sistema.</p>
-     *
-     * @param ex excepción lanzada cuando hay un conflicto con datos existentes
-     * @return respuesta HTTP 409 con el mensaje de la excepción
-     */
-
-    @ExceptionHandler(ConflictException.class)
-
-    public ResponseEntity<ApiResponse<Void>> handleConflict(ConflictException ex) {
-
-        return handleBusiness(ex);
-    }
-
-    /**
-     * Maneja las excepciones de acceso denegado (HTTP 403).
-     *
-     * <p>Captura {@link ForbiddenException} y delega a {@link #handleBusiness}.
-     * Se lanza cuando un usuario autenticado intenta acceder al gestor de
-     * contraseñas sin haber verificado su contraseña maestra.</p>
-     *
-     * @param ex excepción lanzada cuando se deniega el acceso a un recurso protegido
-     * @return respuesta HTTP 403 con el mensaje de la excepción
-     */
-
-    @ExceptionHandler(ForbiddenException.class)
-
-    public ResponseEntity<ApiResponse<Void>> handleForbidden(ForbiddenException ex) {
-
-        return handleBusiness(ex);
-    }
-
-    private ResponseEntity<ApiResponse<Void>> buildError(HttpStatus status, String message) {
-        ApiResponse<Void> response = new ApiResponse<>(status.value(), message, null);
-        return ResponseEntity.status(status).body(response);
-    }
+  private ResponseEntity<ApiResponse<Void>> response(
+      int status,
+      ApiResponse<Void> body) {
+    return ResponseEntity.status(status)
+        .contentType(APPLICATION_JSON_UTF8)
+        .body(body);
+  }
 }

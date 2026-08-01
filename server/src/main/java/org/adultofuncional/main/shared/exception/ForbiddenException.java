@@ -1,5 +1,7 @@
 package org.adultofuncional.main.shared.exception;
 
+import org.adultofuncional.main.shared.response.ApiErrorCode;
+
 /**
  * Excepción que representa un acceso denegado a un recurso protegido (HTTP 403).
  *
@@ -20,7 +22,17 @@ public class ForbiddenException extends BusinessException {
      */
 
     public ForbiddenException(String message) {
-        super (message, 403);
+        this(message, ApiErrorCode.ACCESS_DENIED);
+    }
+
+    /**
+     * Construye una excepción 403 con un código de autorización específico.
+     *
+     * @param message mensaje seguro para el cliente
+     * @param code    código estable del fallo de autorización
+     */
+    public ForbiddenException(String message, ApiErrorCode code) {
+        super(message, 403, code);
     }
 
 }
