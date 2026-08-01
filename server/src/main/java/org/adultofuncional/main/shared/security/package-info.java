@@ -33,8 +33,9 @@
  * de usuario obtienen el recurso mediante el caso de uso correspondiente y
  * luego llaman a {@code OwnershipValidator.validate(resourceAccountId, accountId)}
  * antes de retornarlo o modificarlo. Si el UUID del recurso no coincide con el
- * UUID autenticado, se lanza
- * {@link org.adultofuncional.main.shared.exception.UnauthorizedException}.</li>
+ * UUID autenticado, se responde como recurso inexistente mediante
+ * {@link org.adultofuncional.main.shared.exception.NotFoundException}, evitando
+ * confirmar la existencia de recursos ajenos.</li>
  * </ul>
  *
  * @author Juan Sebastian Rios
