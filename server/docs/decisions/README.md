@@ -26,3 +26,4 @@ documentación operativa del módulo.
 | [0003](0003-category-ownership.md) | Categorías de sistema y personales | Aceptada |
 | [0004](0004-api-error-contract.md) | Contrato uniforme de errores HTTP | Aceptada |
 | [0005](0005-pagination-time-money.md) | Paginación, tiempo y precisión monetaria | Aceptada |
+| [0006](0006-master-key-error-semantics.md) | Semántica HTTP de los errores de Master Key | Aceptada |

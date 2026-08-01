@@ -4,6 +4,10 @@
 - Fecha: 2026-07-31
 - Alcance: toda la API REST
 
+> La clasificación de una Master Key incorrecta fue reemplazada por el
+> [ADR 0006](0006-master-key-error-semantics.md). El resto de esta decisión
+> permanece vigente.
+
 ## Contexto
 
 Los controladores usan `ApiResponse`, pero los errores producidos dentro de la
