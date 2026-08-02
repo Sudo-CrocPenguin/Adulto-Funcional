@@ -95,6 +95,31 @@ class JwtAuthenticationFilterTest {
     assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
   }
 
+  @Test
+  void returnsSpecificErrorWhenJwtIsExpired() throws Exception {
+    JwtProperties jwtProperties = new JwtProperties();
+    jwtProperties.setSecret("test-jwt-secret-with-at-least-32-characters");
+    jwtProperties.setExpiration(-60_000);
+    JwtService jwtService = new JwtService(jwtProperties);
+    JwtAuthenticationFilter filter = filter(jwtService);
+    String expiredToken = jwtService.generateToken(
+        UUID.randomUUID().toString(),
+        "token-expirado@example.com",
+        List.of(new SimpleGrantedAuthority("ROLE_USER")));
+
+    MockHttpServletRequest request =
+        new MockHttpServletRequest("GET", "/api/finances/movements");
+    request.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + expiredToken);
+    MockHttpServletResponse response = new MockHttpServletResponse();
+
+    filter.doFilterInternal(request, response, new MockFilterChain());
+
+    assertThat(response.getStatus()).isEqualTo(401);
+    assertThat(response.getHeader(HttpHeaders.WWW_AUTHENTICATE)).isEqualTo("Bearer");
+    assertThat(response.getContentAsString()).contains("\"code\":\"JWT_EXPIRED\"");
+    assertThat(SecurityContextHolder.getContext().getAuthentication()).isNull();
+  }
+
   private JwtAuthenticationFilter filter(JwtService jwtService) {
     TraceIdProvider traceIdProvider = new TraceIdProvider();
     ApiErrorFactory errorFactory = new ApiErrorFactory(traceIdProvider);
