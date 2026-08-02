@@ -12,6 +12,10 @@ spring:
     baseline-on-migrate: true
     validate-on-migrate: true
 
+logging:
+  pattern:
+    level: "%5p [traceId=%X{traceId:-none}]"
+
 server:
   port: ${SERVER_PORT:8080}
   address: ${SERVER_ADDRESS:127.0.0.1}

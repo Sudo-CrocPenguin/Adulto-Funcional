@@ -16,9 +16,12 @@ import org.adultofuncional.main.config.security.JwtService;
 import org.adultofuncional.main.shared.observability.TraceIdProvider;
 import org.adultofuncional.main.testsupport.MariaDbIntegrationTestSupport;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -65,7 +68,8 @@ class ApiSecurityErrorContractIntegrationTest extends MariaDbIntegrationTestSupp
   }
 
   @Test
-  void returnsSpecificCodeForInvalidJwt() throws Exception {
+  @ExtendWith(OutputCaptureExtension.class)
+  void returnsSpecificCodeForInvalidJwt(CapturedOutput output) throws Exception {
     MvcResult result = mockMvc.perform(get("/api/finances/categories")
             .header(HttpHeaders.AUTHORIZATION, "Bearer token-invalido"))
         .andExpect(status().isUnauthorized())
@@ -74,6 +78,8 @@ class ApiSecurityErrorContractIntegrationTest extends MariaDbIntegrationTestSupp
         .andReturn();
 
     assertUniformTransport(result);
+    assertThat(output.getOut())
+        .contains("traceId=" + result.getResponse().getHeader(TraceIdProvider.TRACE_ID_HEADER));
   }
 
   @Test
