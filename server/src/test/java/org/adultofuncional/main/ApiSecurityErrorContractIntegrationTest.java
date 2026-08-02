@@ -55,6 +55,7 @@ class ApiSecurityErrorContractIntegrationTest extends MariaDbIntegrationTestSupp
   void returnsUniformContractWhenAuthenticationIsMissing() throws Exception {
     MvcResult result = mockMvc.perform(get("/api/finances/categories"))
         .andExpect(status().isUnauthorized())
+        .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, "Bearer"))
         .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, max-age=0, must-revalidate"))
         .andExpect(jsonPath("$.status").value(401))
         .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"))
@@ -73,6 +74,7 @@ class ApiSecurityErrorContractIntegrationTest extends MariaDbIntegrationTestSupp
     MvcResult result = mockMvc.perform(get("/api/finances/categories")
             .header(HttpHeaders.AUTHORIZATION, "Bearer token-invalido"))
         .andExpect(status().isUnauthorized())
+        .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, "Bearer"))
         .andExpect(jsonPath("$.code").value("JWT_INVALID"))
         .andExpect(jsonPath("$.fieldErrors").isEmpty())
         .andReturn();
@@ -80,6 +82,24 @@ class ApiSecurityErrorContractIntegrationTest extends MariaDbIntegrationTestSupp
     assertUniformTransport(result);
     assertThat(output.getOut())
         .contains("traceId=" + result.getResponse().getHeader(TraceIdProvider.TRACE_ID_HEADER));
+  }
+
+  @Test
+  void returnsBearerChallengeWhenCredentialsAreInvalid() throws Exception {
+    MvcResult result = mockMvc.perform(post("/api/auth/login")
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("""
+                {
+                  "email": "cuenta-inexistente@example.com",
+                  "password": "password-seguro"
+                }
+                """))
+        .andExpect(status().isUnauthorized())
+        .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, "Bearer"))
+        .andExpect(jsonPath("$.code").value("AUTHENTICATION_FAILED"))
+        .andReturn();
+
+    assertUniformTransport(result);
   }
 
   @Test
@@ -158,6 +178,7 @@ class ApiSecurityErrorContractIntegrationTest extends MariaDbIntegrationTestSupp
 
     mockMvc.perform(get("/api/auth/login"))
         .andExpect(status().isMethodNotAllowed())
+        .andExpect(header().string(HttpHeaders.ALLOW, "POST"))
         .andExpect(jsonPath("$.code").value("METHOD_NOT_ALLOWED"));
 
     mockMvc.perform(post("/api/auth/login")

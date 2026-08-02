@@ -23,6 +23,8 @@ import org.adultofuncional.main.shared.response.ApiResponse;
 import org.adultofuncional.main.shared.response.FieldValidationError;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -210,11 +212,16 @@ public class GlobalExceptionHandler {
       HttpRequestMethodNotSupportedException exception,
       HttpServletRequest request) {
     log.debug("Método HTTP no permitido: {}", exception.getMethod());
-    return buildError(
+    ApiResponse<Void> body = errorFactory.create(
         request,
-        HttpStatus.METHOD_NOT_ALLOWED,
+        HttpStatus.METHOD_NOT_ALLOWED.value(),
         METHOD_NOT_ALLOWED,
         "Método HTTP no permitido");
+    ResponseEntity.BodyBuilder response = responseBuilder(HttpStatus.METHOD_NOT_ALLOWED.value());
+    if (exception.getSupportedHttpMethods() != null) {
+      response.allow(exception.getSupportedHttpMethods().toArray(HttpMethod[]::new));
+    }
+    return response.body(body);
   }
 
   /** Maneja Content-Type no soportado por el endpoint. */
@@ -380,8 +387,15 @@ public class GlobalExceptionHandler {
   private ResponseEntity<ApiResponse<Void>> response(
       int status,
       ApiResponse<Void> body) {
-    return ResponseEntity.status(status)
-        .contentType(APPLICATION_JSON_UTF8)
-        .body(body);
+    return responseBuilder(status).body(body);
+  }
+
+  private ResponseEntity.BodyBuilder responseBuilder(int status) {
+    ResponseEntity.BodyBuilder response = ResponseEntity.status(status)
+        .contentType(APPLICATION_JSON_UTF8);
+    if (status == HttpStatus.UNAUTHORIZED.value()) {
+      response.header(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+    }
+    return response;
   }
 }

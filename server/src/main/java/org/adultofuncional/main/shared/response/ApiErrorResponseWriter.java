@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
 import org.adultofuncional.main.shared.observability.TraceIdProvider;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
@@ -42,6 +44,9 @@ public class ApiErrorResponseWriter {
     response.setCharacterEncoding(StandardCharsets.UTF_8.name());
     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
     response.setHeader(TraceIdProvider.TRACE_ID_HEADER, body.getTraceId());
+    if (status == HttpStatus.UNAUTHORIZED.value()) {
+      response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+    }
     objectMapper.writeValue(response.getWriter(), body);
   }
 }

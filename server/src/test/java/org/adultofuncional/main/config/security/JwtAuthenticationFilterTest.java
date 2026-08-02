@@ -11,6 +11,7 @@ import org.adultofuncional.main.shared.response.ApiErrorFactory;
 import org.adultofuncional.main.shared.response.ApiErrorResponseWriter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.HttpHeaders;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -83,6 +84,7 @@ class JwtAuthenticationFilterTest {
     filter.doFilterInternal(request, response, new MockFilterChain());
 
     assertThat(response.getStatus()).isEqualTo(401);
+    assertThat(response.getHeader(HttpHeaders.WWW_AUTHENTICATE)).isEqualTo("Bearer");
     assertThat(response.getCharacterEncoding()).isEqualTo(StandardCharsets.UTF_8.name());
     assertThat(response.getContentType()).contains("charset=UTF-8");
     assertThat(response.getContentAsString()).contains("Token JWT inválido");
