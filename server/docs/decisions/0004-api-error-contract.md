@@ -60,7 +60,7 @@ exitosas conservarán el contrato existente.
 |---|---|
 | `400 Bad Request` | JSON inválido, parámetros inválidos o validación de campos |
 | `401 Unauthorized` | Credenciales ausentes/incorrectas, JWT inválido o Master Key incorrecta |
-| `403 Forbidden` | Principal válido sin permiso para una operación conocida |
+| `403 Forbidden` | Principal válido sin permiso o solicitud rechazada por la política CORS |
 | `404 Not Found` | Ruta inexistente, recurso inexistente o recurso ajeno por UUID |
 | `409 Conflict` | Unicidad, estado incompatible o recurso referenciado |
 | `429 Too Many Requests` | Límite de intentos o solicitudes excedido |
@@ -77,11 +77,17 @@ conocido.
   excepciones de dominio.
 - `AuthenticationEntryPoint` y `AccessDeniedHandler` serializarán el mismo
   contrato desde la cadena de seguridad.
+- Los rechazos del filtro CORS, incluidas las solicitudes preflight, usarán el
+  mismo JSON mediante el código estable `CORS_REQUEST_REJECTED`.
 - `NoResourceFoundException` y rutas no registradas producirán `404`.
+- Los errores conservarán las cabeceras normativas de HTTP: los `401`
+  anunciarán `WWW-Authenticate: Bearer` y los `405` publicarán `Allow`.
 - Restricciones de base de datos conocidas se traducirán a códigos `409`
   específicos; los detalles SQL no saldrán del servidor.
 - Errores inesperados se registrarán con stack trace y `traceId`, pero la
   respuesta pública será genérica.
+- El patrón global de logging incluirá el `traceId` almacenado en MDC para que
+  la correlación aplique también a mensajes que no lo interpolan manualmente.
 - Ningún log incluirá contraseñas, Master Keys, tokens ni cuerpos sensibles.
 
 ## Consecuencias

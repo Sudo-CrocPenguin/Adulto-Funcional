@@ -70,7 +70,7 @@ códigos de autenticación `AUTHENTICATION_REQUIRED`, `AUTHENTICATION_FAILED`,
 | 406 | `REPRESENTATION_NOT_ACCEPTABLE` | El cliente no acepta un formato disponible. |
 | 415 | `MEDIA_TYPE_UNSUPPORTED` | El endpoint no admite el `Content-Type` recibido. |
 
-### Autenticación y autorización
+### Seguridad HTTP, autenticación y autorización
 
 | Estado | Código | Significado |
 |---:|---|---|
@@ -78,6 +78,7 @@ códigos de autenticación `AUTHENTICATION_REQUIRED`, `AUTHENTICATION_FAILED`,
 | 401 | `AUTHENTICATION_FAILED` | Las credenciales de login no son válidas. |
 | 401 | `JWT_INVALID` | El JWT está malformado, manipulado o no es válido. |
 | 401 | `JWT_EXPIRED` | El JWT superó su vencimiento. |
+| 403 | `CORS_REQUEST_REJECTED` | El origen, método o header CORS no está permitido. |
 | 403 | `ACCESS_DENIED` | El principal es válido, pero no tiene el rol o permiso requerido. |
 
 ### Master Key
@@ -122,6 +123,22 @@ SQL, rutas internas, tokens, contraseñas ni Master Keys.
 Spring Security conserva sus cabeceras de no-cache. La cobertura HTTP verifica
 explícitamente `Cache-Control: no-cache, no-store, max-age=0, must-revalidate`
 en respuestas protegidas; no depende de una afirmación documental sin prueba.
+
+Cada línea de log emitida durante una petición incorpora
+`traceId=<identificador>`. Los mensajes producidos fuera de una petición usan
+`traceId=none`, por lo que no se confunden con una correlación HTTP real.
+
+## Cabeceras de semántica HTTP
+
+- Toda respuesta `401 Unauthorized` incluye `WWW-Authenticate: Bearer`, tanto
+  si se origina en la cadena de seguridad como en una regla de aplicación.
+- Una respuesta `405 Method Not Allowed` incluye `Allow` con los métodos
+  admitidos por la ruta.
+- Un rechazo CORS normal o preflight mantiene el cuerpo uniforme, su
+  `Content-Type` JSON y `X-Trace-Id`. No incluye
+  `Access-Control-Allow-Origin`: un navegador no debe exponer esa respuesta al
+  origen rechazado, aunque el contrato siga siendo observable por el servidor,
+  proxies y clientes HTTP no sujetos a CORS.
 
 ## Compatibilidad
 
