@@ -3,6 +3,7 @@ package org.adultofuncional.main;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -84,6 +85,31 @@ class ApiSecurityErrorContractIntegrationTest extends MariaDbIntegrationTestSupp
         .andExpect(status().isForbidden())
         .andExpect(jsonPath("$.code").value("ACCESS_DENIED"))
         .andExpect(jsonPath("$.data").doesNotExist())
+        .andReturn();
+
+    assertUniformTransport(result);
+  }
+
+  @Test
+  void returnsUniformContractWhenCorsRejectsActualRequest() throws Exception {
+    MvcResult result = mockMvc.perform(get("/api/finances/categories")
+            .header(HttpHeaders.ORIGIN, "https://origen-no-permitido.example"))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("CORS_REQUEST_REJECTED"))
+        .andExpect(jsonPath("$.fieldErrors").isEmpty())
+        .andReturn();
+
+    assertUniformTransport(result);
+  }
+
+  @Test
+  void returnsUniformContractWhenCorsRejectsPreflightRequest() throws Exception {
+    MvcResult result = mockMvc.perform(options("/api/finances/categories")
+            .header(HttpHeaders.ORIGIN, "https://origen-no-permitido.example")
+            .header(HttpHeaders.ACCESS_CONTROL_REQUEST_METHOD, "GET"))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("CORS_REQUEST_REJECTED"))
+        .andExpect(jsonPath("$.fieldErrors").isEmpty())
         .andReturn();
 
     assertUniformTransport(result);
