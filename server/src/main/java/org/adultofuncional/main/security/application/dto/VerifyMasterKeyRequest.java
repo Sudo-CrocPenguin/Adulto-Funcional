@@ -10,10 +10,11 @@ import jakarta.validation.constraints.Size;
  * respuesta. Los límites coinciden con el contrato de registro vigente para
  * evitar diferencias entre creación y verificación.</p>
  *
- * @param masterKey clave maestra en texto plano, entre 12 y 24 caracteres
+ * @param masterKey clave en texto plano; admite las cuentas históricas y
+ *                  limita el coste máximo de Argon2
  */
 public record VerifyMasterKeyRequest(
     @NotBlank(message = "La Master Key es obligatoria")
-    @Size(min = 12, max = 24, message = "La Master Key debe tener entre 12 y 24 caracteres")
+    @Size(max = 128, message = "La Master Key no puede exceder 128 caracteres")
     String masterKey) {
 }
