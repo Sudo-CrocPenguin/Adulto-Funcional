@@ -103,7 +103,8 @@ public class ListFixedExpensesUseCase {
     Set<UUID> categoryIds = expenses.stream()
         .map(FixedExpense::getCategoryId)
         .collect(Collectors.toSet());
-    Map<UUID, Category> categoryMap = categoryRepository.findAllById(categoryIds).stream()
+    Map<UUID, Category> categoryMap = categoryRepository
+        .findAllAccessibleById(accountId, categoryIds).stream()
         .collect(Collectors.toMap(Category::getId, Function.identity()));
 
     return expenses.stream()
@@ -113,6 +114,7 @@ public class ListFixedExpensesUseCase {
               .id(cat.getId())
               .name(cat.getName())
               .type(cat.getType())
+              .scope(cat.getScope())
               .build() : null;
 
           return FixedExpenseResponse.builder()

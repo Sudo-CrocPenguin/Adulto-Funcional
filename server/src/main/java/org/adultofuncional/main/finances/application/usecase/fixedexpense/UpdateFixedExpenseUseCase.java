@@ -9,6 +9,7 @@ import org.adultofuncional.main.finances.application.dto.category.CategoryRespon
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.UpdateFixedExpenseRequest;
 import org.adultofuncional.main.finances.domain.enums.Status;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
@@ -94,11 +95,14 @@ public class UpdateFixedExpenseUseCase {
       }
       nextDueDate = request.getNextDueDate();
     }
-    if (request.getCategoryId() != null) {
-      categoryRepository.findById(request.getCategoryId())
-          .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
+    if (request.getCategoryId() != null)
       categoryId = request.getCategoryId();
-    }
+
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            categoryId,
+            CategoryType.FINANCES)
+        .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
 
     expense.update(name, amount, categoryId, frequency, startDate, nextDueDate, reminderDays);
 
@@ -111,15 +115,11 @@ public class UpdateFixedExpenseUseCase {
 
     FixedExpense saved = fixedExpenseRepository.save(expense);
 
-    // La categoría ya fue validada, pero se carga de nuevo para construir la
-    // respuesta
-    Category category = categoryRepository.findById(saved.getCategoryId())
-        .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
-
     CategoryResponse categoryResponse = CategoryResponse.builder()
         .id(category.getId())
         .name(category.getName())
         .type(category.getType())
+        .scope(category.getScope())
         .build();
 
     return FixedExpenseResponse.builder()

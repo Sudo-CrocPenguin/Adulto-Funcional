@@ -8,6 +8,7 @@ import org.adultofuncional.main.finances.application.dto.category.CategoryRespon
 import org.adultofuncional.main.finances.application.dto.fixedexpense.CreateFixedExpenseRequest;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse;
 import org.adultofuncional.main.finances.domain.enums.Status;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
@@ -75,7 +76,10 @@ public class CreateFixedExpenseUseCase {
       throw new BusinessException("La fecha de cierre debe ser posterior a la fecha actual");
     }
 
-    Category category = categoryRepository.findById(request.getCategoryId())
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            request.getCategoryId(),
+            CategoryType.FINANCES)
         .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + request.getCategoryId()));
 
     FixedExpense expense = FixedExpense.create(
@@ -95,6 +99,7 @@ public class CreateFixedExpenseUseCase {
         .id(category.getId())
         .name(category.getName())
         .type(category.getType())
+        .scope(category.getScope())
         .build();
 
     return FixedExpenseResponse.builder()
