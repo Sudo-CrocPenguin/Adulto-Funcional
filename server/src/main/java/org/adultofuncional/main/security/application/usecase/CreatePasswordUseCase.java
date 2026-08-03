@@ -9,6 +9,7 @@ import org.adultofuncional.main.security.application.dto.PasswordResponse;
 import org.adultofuncional.main.security.domain.model.Password;
 import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.domain.service.EncryptionService;
+import org.adultofuncional.main.security.domain.service.EncryptionService.EncryptionContext;
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
 import org.adultofuncional.main.shared.exception.BusinessException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
@@ -89,9 +90,12 @@ public class CreatePasswordUseCase {
           "Ya existe una contraseña para la aplicación: " + request.getApplicationName());
     }
 
-    // 4. Cifrar contraseña con AES‑256
+    // 4. Generar identidad y cifrar vinculando cuenta + credencial como AAD
+    UUID passwordId = Password.nextId();
     EncryptionService.EncryptedData encryptedData = encryptionService.encrypt(
-        request.getPassword(), masterKey);
+        request.getPassword(),
+        masterKey,
+        new EncryptionContext(accountId, passwordId));
 
     // 5. Fecha de último cambio
     LocalDate lastChangeDate = request.getLastChangeDate() != null
@@ -100,8 +104,10 @@ public class CreatePasswordUseCase {
 
     // 6. Crear modelo de dominio
     Password password = Password.create(
+        passwordId,
         request.getApplicationName(),
         encryptedData.salt(),
+        encryptedData.cryptoVersion(),
         encryptedData.iv(),
         encryptedData.ciphertext(),
         lastChangeDate,
