@@ -8,6 +8,7 @@ import org.adultofuncional.main.agenda.application.dto.EventResponse;
 import org.adultofuncional.main.agenda.domain.model.Event;
 import org.adultofuncional.main.agenda.domain.repository.EventRepository;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.shared.exception.BusinessException;
@@ -90,7 +91,10 @@ public class CreateEventUseCase {
     }
 
     // 3. Buscar categoría obligatoria
-    Category category = categoryRepository.findById(request.getCategoryId())
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            request.getCategoryId(),
+            CategoryType.AGENDA)
         .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: "
             + request.getCategoryId()));
     UUID categoryId = category.getId();
@@ -167,6 +171,7 @@ public class CreateEventUseCase {
           .id(category.getId())
           .name(category.getName())
           .type(category.getType())
+          .scope(category.getScope())
           .build();
     }
 

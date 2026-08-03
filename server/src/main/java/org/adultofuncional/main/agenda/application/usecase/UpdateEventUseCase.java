@@ -6,6 +6,7 @@ import org.adultofuncional.main.agenda.application.dto.EventUpdateRequest;
 import org.adultofuncional.main.agenda.domain.model.Event;
 import org.adultofuncional.main.agenda.domain.repository.EventRepository;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.shared.exception.BusinessException;
@@ -105,10 +106,14 @@ public class UpdateEventUseCase {
       status = request.getStatus();
     }
     if (request.getCategoryId() != null) {
-      categoryRepository.findById(request.getCategoryId())
-          .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
       categoryId = request.getCategoryId();
     }
+
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            categoryId,
+            CategoryType.AGENDA)
+        .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
 
     // Validar coherencia de horas si ambas se enviaron, o usar combinaciones
     // parciales
@@ -131,17 +136,12 @@ public class UpdateEventUseCase {
     Event updated = eventRepository.save(event);
 
     // Construir categoría anidada si existe
-    CategoryResponse categoryResponse = null;
-    if (updated.getCategoryId() != null) {
-      Category cat = categoryRepository.findById(updated.getCategoryId()).orElse(null);
-      if (cat != null) {
-        categoryResponse = CategoryResponse.builder()
-            .id(cat.getId())
-            .name(cat.getName())
-            .type(cat.getType())
-            .build();
-      }
-    }
+    CategoryResponse categoryResponse = CategoryResponse.builder()
+        .id(category.getId())
+        .name(category.getName())
+        .type(category.getType())
+        .scope(category.getScope())
+        .build();
 
     return EventResponse.builder()
         .id(updated.getId())

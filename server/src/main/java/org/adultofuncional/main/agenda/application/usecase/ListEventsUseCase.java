@@ -88,7 +88,8 @@ public class ListEventsUseCase {
     Set<UUID> categoryIds = events.stream()
         .map(Event::getCategoryId)
         .collect(Collectors.toSet());
-    Map<UUID, Category> categoryMap = categoryRepository.findAllById(categoryIds).stream()
+    Map<UUID, Category> categoryMap = categoryRepository
+        .findAllAccessibleById(accountId, categoryIds).stream()
         .collect(Collectors.toMap(Category::getId, Function.identity()));
 
     return events.stream()
@@ -100,6 +101,7 @@ public class ListEventsUseCase {
                 .id(cat.getId())
                 .name(cat.getName())
                 .type(cat.getType())
+                .scope(cat.getScope())
                 .build();
           }
 

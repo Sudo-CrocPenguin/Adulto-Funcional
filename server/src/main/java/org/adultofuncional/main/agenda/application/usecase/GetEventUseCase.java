@@ -5,6 +5,7 @@ import org.adultofuncional.main.agenda.application.dto.EventResponse;
 import org.adultofuncional.main.agenda.domain.model.Event;
 import org.adultofuncional.main.agenda.domain.repository.EventRepository;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
@@ -50,7 +51,10 @@ public class GetEventUseCase {
         .orElseThrow(() -> new NotFoundException("Evento no encontrado con id: " + eventId));
 
     Category category = event.getCategoryId() != null
-        ? categoryRepository.findById(event.getCategoryId()).orElse(null)
+        ? categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            event.getCategoryId(),
+            CategoryType.AGENDA).orElse(null)
         : null;
 
     CategoryResponse categoryResponse = null;
@@ -59,6 +63,7 @@ public class GetEventUseCase {
           .id(category.getId())
           .name(category.getName())
           .type(category.getType())
+          .scope(category.getScope())
           .build();
     }
 
