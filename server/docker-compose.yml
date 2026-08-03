@@ -1,7 +1,7 @@
 services:
   # Base de datos MariaDB
   mariadb:
-    image: mariadb:11.8
+    image: mariadb:11.8.8@sha256:efb4959ef2c835cd735dbc388eb9ad6aab0c78dd64febcd51bc17481111890c4
     restart: unless-stopped
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?MARIADB_ROOT_PASSWORD is required}
@@ -20,7 +20,7 @@ services:
 
   # Almacén distribuido para sesiones de Master Key
   redis:
-    image: redis:7-alpine
+    image: redis:7.4.7-alpine3.21@sha256:02f2cc4882f8bf87c79a220ac958f58c700bdec0dfb9b9ea61b62fb0e8f1bfcf
     restart: unless-stopped
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
@@ -72,8 +72,10 @@ services:
       APP_COOKIE_SECURE: ${APP_COOKIE_SECURE:?APP_COOKIE_SECURE is required}
       APP_COOKIE_SAME_SITE: ${APP_COOKIE_SAME_SITE:?APP_COOKIE_SAME_SITE is required}
       REDIS_HOST: redis
-      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    ports:
+      - "${SERVER_HOST_ADDRESS:-127.0.0.1}:${SERVER_HOST_PORT:-8080}:8080"
     healthcheck:
       test:
         [
@@ -88,11 +90,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    labels:
-      - "traefik.http.services.app.loadbalancer.server.port=8080"
     networks:
       - internal
-      - coolify
 
 volumes:
   mariadb_data:
@@ -100,5 +99,3 @@ volumes:
 networks:
   internal: # Red para comunicación entre servicios
     driver: bridge
-  coolify: # Red externa donde está Traefik
-    external: true

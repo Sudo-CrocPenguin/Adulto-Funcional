@@ -1,0 +1,12 @@
+services:
+  app:
+    labels:
+      - "traefik.http.services.app.loadbalancer.server.port=8080"
+    networks:
+      - internal
+      - coolify
+
+networks:
+  coolify:
+    name: ${COOLIFY_NETWORK:-coolify}
+    external: true
