@@ -79,7 +79,7 @@ public class PasswordMapper {
         entity.setPasswordId(password.getId());
         entity.setPasswordApplicationName(password.getApplicationName());
         entity.setPasswordSalt(password.getSalt());
-        entity.setPasswordCryptoVersion(password.getCryptoVersion());
+        entity.setPasswordCryptoVersion((short) password.getCryptoVersion());
         entity.setPasswordIv(password.getIv());
         entity.setPasswordCiphertext(password.getCiphertext());
         entity.setPasswordLastChangeDate(password.getLastChangeDate());

@@ -88,7 +88,7 @@ public class PasswordEntity {
 
   /** Versión de KDF y AAD necesaria para interpretar el ciphertext. */
   @Column(name = "password_crypto_version", nullable = false)
-  private int passwordCryptoVersion;
+  private short passwordCryptoVersion;
 
   /**
    * Vector de inicialización (IV) de 12 bytes utilizado en el cifrado AES-GCM.
