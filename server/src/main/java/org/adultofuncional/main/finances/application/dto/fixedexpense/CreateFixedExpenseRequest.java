@@ -7,6 +7,7 @@ import org.adultofuncional.main.finances.domain.enums.Frequency;
 import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.shared.security.NoHtml;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -24,7 +25,8 @@ import lombok.Getter;
  * <li>{@code name} — obligatorio, máximo 20 caracteres.</li>
  * <li>{@code frequency} — obligatorio, debe ser un valor válido de
  * {@link Frequency}.</li>
- * <li>{@code amount} — obligatorio, debe ser mayor a 0.01.</li>
+ * <li>{@code amount} — obligatorio, desde 0.01 hasta 99,999,999.99 y con
+ * máximo dos decimales.</li>
  * <li>{@code status} — obligatorio, debe ser un valor válido de
  * {@link Status}.</li>
  * <li>{@code nextDueDate} — obligatorio, debe ser una fecha futura.</li>
@@ -105,10 +107,13 @@ public class CreateFixedExpenseRequest {
    * <li>{@code @NotNull}: el monto no puede ser nulo.</li>
    * <li>{@code @DecimalMin("0.01")}: el monto debe ser mayor a cero,
    * garantizando que no se registren gastos sin valor económico.</li>
+   * <li>{@code @Digits}: limita el valor a la precisión {@code DECIMAL(10,2)}
+   * utilizada por MariaDB.</li>
    * </ul>
    */
   @NotNull(message = "El monto es obligatorio")
   @DecimalMin(value = "0.01", message = "El monto debe ser mayor a 0")
+  @Digits(integer = 8, fraction = 2, message = "El monto admite máximo 8 enteros y 2 decimales")
   private BigDecimal amount;
 
   /**

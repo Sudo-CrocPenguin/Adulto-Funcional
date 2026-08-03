@@ -66,7 +66,7 @@ public class Movement {
    */
   MovementType type;
 
-  /** Monto monetario del movimiento. Debe ser mayor que cero. */
+  /** Monto monetario representable como {@code DECIMAL(10,2)}. */
   BigDecimal amount;
 
   /**
@@ -214,8 +214,12 @@ public class Movement {
     if (amount == null) {
       throw new IllegalArgumentException("Amount cannot be null");
     }
-    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-      throw new IllegalArgumentException("Amount must be greater than zero");
+    if (amount.compareTo(new BigDecimal("0.01")) < 0) {
+      throw new IllegalArgumentException("Amount must be at least 0.01");
+    }
+    int integerDigits = amount.precision() - amount.scale();
+    if (integerDigits > 8 || amount.scale() > 2) {
+      throw new IllegalArgumentException("Amount exceeds DECIMAL(10,2) precision");
     }
   }
 

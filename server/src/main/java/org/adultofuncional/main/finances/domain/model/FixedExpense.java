@@ -65,7 +65,7 @@ public class FixedExpense {
   /** Nombre descriptivo del gasto fijo. No puede ser nulo ni vacío. */
   String name;
 
-  /** Monto monetario del gasto. Debe ser mayor que cero. */
+  /** Monto monetario representable como {@code DECIMAL(10,2)}. */
   BigDecimal amount;
 
   /** Identificador de la categoría asociada. No puede ser nulo. */
@@ -276,8 +276,12 @@ public class FixedExpense {
     if (amount == null) {
       throw new IllegalArgumentException("Amount cannot be null");
     }
-    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-      throw new IllegalArgumentException("Amount must be greater than zero");
+    if (amount.compareTo(new BigDecimal("0.01")) < 0) {
+      throw new IllegalArgumentException("Amount must be at least 0.01");
+    }
+    int integerDigits = amount.precision() - amount.scale();
+    if (integerDigits > 8 || amount.scale() > 2) {
+      throw new IllegalArgumentException("Amount exceeds DECIMAL(10,2) precision");
     }
   }
 

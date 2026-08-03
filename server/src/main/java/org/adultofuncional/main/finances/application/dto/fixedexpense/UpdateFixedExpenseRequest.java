@@ -7,6 +7,7 @@ import org.adultofuncional.main.finances.domain.enums.Frequency;
 import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.shared.security.NoHtml;
 import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
@@ -102,9 +103,12 @@ public class UpdateFixedExpenseRequest {
    * <ul>
    * <li>{@code @DecimalMin("0.01")}: el monto debe ser mayor a cero,
    * garantizando que no se registren gastos sin valor económico.</li>
+   * <li>{@code @Digits}: admite hasta ocho enteros y dos decimales, en
+   * correspondencia con {@code DECIMAL(10,2)}.</li>
    * </ul>
    */
   @DecimalMin(value = "0.01", message = "El monto debe ser mayor a 0")
+  @Digits(integer = 8, fraction = 2, message = "El monto admite máximo 8 enteros y 2 decimales")
   private BigDecimal amount;
 
   /**
