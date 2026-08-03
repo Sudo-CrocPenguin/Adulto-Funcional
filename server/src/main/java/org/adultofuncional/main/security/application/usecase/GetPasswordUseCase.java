@@ -7,6 +7,7 @@ import org.adultofuncional.main.security.application.dto.PasswordResponse;
 import org.adultofuncional.main.security.domain.model.Password;
 import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.domain.service.EncryptionService;
+import org.adultofuncional.main.security.domain.service.EncryptionService.EncryptionContext;
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
@@ -77,7 +78,9 @@ public class GetPasswordUseCase {
         password.getSalt(),
         password.getIv(),
         password.getCiphertext(),
-        masterKey);
+        masterKey,
+        password.getCryptoVersion(),
+        new EncryptionContext(accountId, password.getId()));
 
     return PasswordResponse.builder()
         .id(password.getId())
