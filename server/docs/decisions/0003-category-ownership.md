@@ -1,6 +1,7 @@
 # ADR 0003: Categorías de sistema y categorías personales
 
 - Estado: aceptada
+- Implementación: completa
 - Fecha: 2026-07-31
 - Alcance: módulos `finances`, `agenda` y persistencia
 

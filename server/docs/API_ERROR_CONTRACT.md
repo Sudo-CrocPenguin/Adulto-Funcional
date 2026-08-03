@@ -37,9 +37,9 @@ Todo error controlado devuelve `application/json;charset=UTF-8`:
 | `traceId` | Correlaciona respuesta y logs sin exponer detalles internos. |
 | `data` | Siempre es `null` en errores para conservar el contrato histórico. |
 
-Las respuestas exitosas mantienen exclusivamente `status`, `message` y
-`data`. De esta forma, añadir metadatos a los errores no altera la forma JSON
-que ya consumían los clientes en operaciones exitosas.
+Las respuestas exitosas mantienen `status`, `message` y `data`. Los listados
+pueden añadir `page` sin cambiar el tipo histórico de `data`. De esta forma,
+los metadatos nuevos son aditivos para clientes existentes.
 
 ## Cómo debe consumirlo un cliente
 
@@ -51,9 +51,10 @@ que ya consumían los clientes en operaciones exitosas.
 5. Conservar `traceId` al reportar un problema, pero no presentarlo como causa
    del error.
 
-Un cliente no debe cerrar la sesión ante cualquier error de la bóveda. Solo los
-códigos de autenticación `AUTHENTICATION_REQUIRED`, `AUTHENTICATION_FAILED`,
-`JWT_INVALID` y `JWT_EXPIRED` pertenecen a la identidad de la cuenta.
+Un cliente no debe cerrar la sesión ante cualquier error de la bóveda. Los
+códigos `AUTHENTICATION_REQUIRED`, `AUTHENTICATION_FAILED`, `JWT_INVALID`,
+`JWT_EXPIRED`, `AUTH_SESSION_REVOKED`, `REFRESH_TOKEN_INVALID`,
+`REFRESH_TOKEN_EXPIRED` y `REFRESH_TOKEN_REUSED` pertenecen a autenticación.
 
 ## Catálogo implementado
 
@@ -66,6 +67,7 @@ códigos de autenticación `AUTHENTICATION_REQUIRED`, `AUTHENTICATION_FAILED`,
 | 400 | `PARAMETER_INVALID` | Path o query parameter con tipo inválido. |
 | 400 | `REQUIRED_PARAMETER_MISSING` | Falta un parámetro, header u otro valor obligatorio. |
 | 400 | `BUSINESS_RULE_VIOLATION` | La entrada incumple una regla del dominio. |
+| 413 | `REQUEST_TOO_LARGE` | El cuerpo supera el límite configurado, declarado o chunked. |
 | 405 | `METHOD_NOT_ALLOWED` | La ruta existe, pero no admite el método HTTP usado. |
 | 406 | `REPRESENTATION_NOT_ACCEPTABLE` | El cliente no acepta un formato disponible. |
 | 415 | `MEDIA_TYPE_UNSUPPORTED` | El endpoint no admite el `Content-Type` recibido. |
@@ -78,8 +80,14 @@ códigos de autenticación `AUTHENTICATION_REQUIRED`, `AUTHENTICATION_FAILED`,
 | 401 | `AUTHENTICATION_FAILED` | Las credenciales de login no son válidas. |
 | 401 | `JWT_INVALID` | El JWT está malformado, manipulado o no es válido. |
 | 401 | `JWT_EXPIRED` | El JWT superó su vencimiento. |
+| 401 | `AUTH_SESSION_REVOKED` | El `jti` fue revocado antes de su expiración. |
+| 401 | `REFRESH_TOKEN_INVALID` | El refresh token no corresponde a una sesión activa. |
+| 401 | `REFRESH_TOKEN_EXPIRED` | El refresh token superó su vencimiento. |
+| 401 | `REFRESH_TOKEN_REUSED` | Se detectó replay y la familia fue revocada. |
+| 403 | `CSRF_TOKEN_INVALID` | Falta o no coincide el token CSRF de una petición por cookie. |
 | 403 | `CORS_REQUEST_REJECTED` | El origen, método o header CORS no está permitido. |
 | 403 | `ACCESS_DENIED` | El principal es válido, pero no tiene el rol o permiso requerido. |
+| 409 | `REFRESH_ALREADY_ROTATED` | Otra petición ya rotó ese refresh dentro de la ventana concurrente. |
 
 ### Master Key
 
@@ -90,8 +98,8 @@ códigos de autenticación `AUTHENTICATION_REQUIRED`, `AUTHENTICATION_FAILED`,
 | 403 | `REAUTHENTICATION_FAILED` | La contraseña principal no superó una reautenticación sensible. |
 | 409 | `MASTER_KEY_NOT_CONFIGURED` | La cuenta todavía no tiene Master Key. |
 
-`REAUTHENTICATION_FAILED` forma parte del contrato aceptado y será utilizado
-cuando se implemente la configuración y rotación canónica de Master Key.
+`REAUTHENTICATION_FAILED` se usa al configurar o rotar la Master Key y al
+eliminar la cuenta cuando la contraseña principal no coincide.
 
 ### Recursos, conflictos y servidor
 
@@ -101,13 +109,12 @@ cuando se implemente la configuración y rotación canónica de Master Key.
 | 404 | `ENDPOINT_NOT_FOUND` | No hay una ruta registrada para la petición. |
 | 409 | `RESOURCE_CONFLICT` | El estado actual impide la operación. |
 | 409 | `DATA_INTEGRITY_CONFLICT` | Una restricción de persistencia impide la operación. |
+| 409 | `CONCURRENT_MODIFICATION` | Una versión optimista quedó obsoleta. |
 | 429 | `RATE_LIMIT_EXCEEDED` | Se excedió un límite de intentos o solicitudes. |
 | 500 | `INTERNAL_ERROR` | Fallo inesperado no atribuible al cliente. |
 
-`RATE_LIMIT_EXCEEDED` queda reservado para los controles de intentos aceptados
-en los ADR de sesiones y Master Key. Las restricciones conocidas de base de
-datos podrán recibir códigos más específicos conforme se incorporen sus
-migraciones.
+`RATE_LIMIT_EXCEEDED` incluye `Retry-After`. Las restricciones conocidas de
+base de datos se traducen a conflicto sin exponer SQL ni nombres internos.
 
 ## Trazabilidad y seguridad
 

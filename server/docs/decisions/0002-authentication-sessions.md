@@ -1,6 +1,7 @@
 # ADR 0002: Sesiones de autenticación y revocación
 
 - Estado: aceptada
+- Implementación: completa
 - Fecha: 2026-07-31
 - Alcance: módulos `auth`, `security` y configuración de seguridad
 

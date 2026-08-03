@@ -1,6 +1,7 @@
 # ADR 0005: Paginación, tiempo y precisión monetaria
 
 - Estado: aceptada
+- Implementación: completa
 - Fecha: 2026-07-31
 - Alcance: contratos REST, dominio y persistencia
 
