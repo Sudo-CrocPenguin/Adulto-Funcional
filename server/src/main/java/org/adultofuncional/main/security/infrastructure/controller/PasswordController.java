@@ -21,6 +21,8 @@ import org.adultofuncional.main.shared.exception.ConflictException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
 import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.adultofuncional.main.shared.response.ApiResponse;
+import org.adultofuncional.main.shared.ratelimit.RateLimitGuard;
+import org.adultofuncional.main.shared.ratelimit.RateLimitPolicy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -82,6 +84,7 @@ public class PasswordController {
 
   /** Repositorio de cuentas para validar la Master Key contra el hash persistido. */
   private final AccountRepository accountRepository;
+  private final RateLimitGuard rateLimitGuard;
 
   /**
    * Retorna el identificador estable de la cuenta autenticada.
@@ -113,6 +116,9 @@ public class PasswordController {
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
+    check(
+        RateLimitPolicy.MASTER_KEY_SESSION,
+        authenticatedAccount);
     String providedMasterKey = request.masterKey();
 
     Account account = accountRepository.findById(accountId)
@@ -125,11 +131,16 @@ public class PasswordController {
     }
 
     if (!passwordEncoder.matches(providedMasterKey, account.getMasterKeyHash())) {
+      recordFailure(
+          RateLimitPolicy.MASTER_KEY_SESSION,
+          authenticatedAccount);
+      check(RateLimitPolicy.MASTER_KEY_SESSION, authenticatedAccount);
       throw new ForbiddenException(
           "Master Key incorrecta",
           ApiErrorCode.MASTER_KEY_INVALID);
     }
 
+    reset(RateLimitPolicy.MASTER_KEY_SESSION, authenticatedAccount);
     masterKeySessionService.unlock(
         accountId,
         authenticatedAccount.sessionId(),
@@ -156,6 +167,7 @@ public class PasswordController {
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
+    consume(RateLimitPolicy.VAULT_CRYPTO_SESSION, authenticatedAccount);
     PasswordResponse response = createPasswordUseCase.execute(
         accountId,
         authenticatedAccount.sessionId(),
@@ -202,6 +214,7 @@ public class PasswordController {
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
+    consume(RateLimitPolicy.VAULT_CRYPTO_SESSION, authenticatedAccount);
     PasswordResponse response = getPasswordUseCase.execute(
         accountId,
         authenticatedAccount.sessionId(),
@@ -233,6 +246,7 @@ public class PasswordController {
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
+    consume(RateLimitPolicy.VAULT_CRYPTO_SESSION, authenticatedAccount);
     PasswordResponse response = updatePasswordUseCase.execute(
         accountId,
         authenticatedAccount.sessionId(),
@@ -267,5 +281,35 @@ public class PasswordController {
     return ResponseEntity.ok(
         new ApiResponse<>(HttpStatus.OK.value(),
             "Contraseña eliminada exitosamente", null));
+  }
+
+  private void check(
+      RateLimitPolicy policy,
+      AuthenticatedAccount account) {
+    rateLimitGuard.check(
+        policy,
+        rateLimitSubject(account));
+  }
+
+  private void recordFailure(
+      RateLimitPolicy policy,
+      AuthenticatedAccount account) {
+    rateLimitGuard.recordFailure(policy, rateLimitSubject(account));
+  }
+
+  private void consume(
+      RateLimitPolicy policy,
+      AuthenticatedAccount account) {
+    rateLimitGuard.consume(policy, rateLimitSubject(account));
+  }
+
+  private void reset(
+      RateLimitPolicy policy,
+      AuthenticatedAccount account) {
+    rateLimitGuard.reset(policy, rateLimitSubject(account));
+  }
+
+  private String rateLimitSubject(AuthenticatedAccount account) {
+    return account.accountId() + ":" + account.sessionId();
   }
 }
