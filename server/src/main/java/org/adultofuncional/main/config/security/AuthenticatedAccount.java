@@ -1,5 +1,6 @@
 package org.adultofuncional.main.config.security;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -12,7 +13,20 @@ import java.util.UUID;
  * puede cambiar durante la vida de una cuenta.
  *
  * @param accountId UUID estable de la cuenta autenticada
- * @param email     email incluido en el JWT al momento de emitirlo
+ * @param email                email incluido en el JWT al momento de emitirlo
+ * @param sessionId            familia de autenticación identificada por {@code sid}
+ * @param accessTokenId        token concreto identificado por {@code jti}
+ * @param accessTokenExpiresAt expiración usada para calcular la revocación
  */
-public record AuthenticatedAccount(UUID accountId, String email) {
+public record AuthenticatedAccount(
+    UUID accountId,
+    String email,
+    UUID sessionId,
+    UUID accessTokenId,
+    Instant accessTokenExpiresAt) {
+
+  /** Constructor de compatibilidad para pruebas y adaptadores sin sesión. */
+  public AuthenticatedAccount(UUID accountId, String email) {
+    this(accountId, email, null, null, null);
+  }
 }

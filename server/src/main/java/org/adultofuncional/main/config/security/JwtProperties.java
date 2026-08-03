@@ -62,5 +62,11 @@ public class JwtProperties {
    * Valor típico: {@code 86400000} (24 horas). Configurable por entorno
    * mediante {@code jwt.expiration} (YAML) o {@code JWT_EXPIRATION} (env).
    */
-  private long expiration;
+  private long expiration = 900_000;
+
+  /** Emisor que debe aparecer en {@code iss}. */
+  private String issuer = "adulto-funcional-server";
+
+  /** Audiencia que debe aparecer en {@code aud}. */
+  private String audience = "adulto-funcional-clients";
 }
