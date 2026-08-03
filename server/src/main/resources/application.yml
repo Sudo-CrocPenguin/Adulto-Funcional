@@ -44,3 +44,5 @@ server:
 app:
   http:
     max-request-body-size: ${APP_HTTP_MAX_REQUEST_BODY_SIZE:1MB}
+  time:
+    default-zone: ${APP_DEFAULT_TIME_ZONE:America/Bogota}
