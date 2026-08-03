@@ -3,6 +3,7 @@ package org.adultofuncional.main.security.application.dto;
 import java.time.LocalDate;
 
 import org.adultofuncional.main.shared.security.NoHtml;
+import org.adultofuncional.main.shared.validation.Utf8ByteLength;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -66,6 +67,9 @@ public class PasswordRequest {
    * creación o actualización.
    */
   @NotBlank(message = "La contraseña es obligatoria")
+  @Utf8ByteLength(
+      max = 2032,
+      message = "La contraseña no puede exceder 2032 bytes en UTF-8")
   private String password;
 
   /**
