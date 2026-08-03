@@ -3,6 +3,8 @@ package org.adultofuncional.main.finances.domain.model;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.domain.enums.CategoryType;
+import org.adultofuncional.main.finances.domain.enums.CategoryScope;
+import org.adultofuncional.main.shared.normalization.CategoryNameNormalizer;
 
 import com.fasterxml.uuid.Generators;
 
@@ -68,24 +70,42 @@ public class Category {
    */
   String name;
 
+  /** Nombre canónico usado exclusivamente para unicidad. */
+  String normalizedName;
+
   /**
    * Tipo o ámbito de la categoría.
    * Valores definidos en {@link CategoryType}.
    */
   CategoryType type;
 
+  CategoryScope scope;
+
+  UUID ownerAccountId;
+
   /**
    * Constructor privado. Usar los métodos de fábrica {@link #create} o
    * {@link #reconstitute}.
    */
-  private Category(UUID id, String name, CategoryType type) {
+  private Category(
+      UUID id,
+      String name,
+      String normalizedName,
+      CategoryType type,
+      CategoryScope scope,
+      UUID ownerAccountId) {
     validateId(id);
     validateName(name);
     validateType(type);
+    validateScope(scope, ownerAccountId);
+    validateNormalizedName(name, normalizedName);
 
     this.id = id;
     this.name = name;
+    this.normalizedName = normalizedName;
     this.type = type;
+    this.scope = scope;
+    this.ownerAccountId = ownerAccountId;
   }
 
   /**
@@ -105,7 +125,25 @@ public class Category {
    */
   public static Category create(String name, CategoryType type) {
     UUID id = Generators.timeBasedEpochGenerator().generate();
-    return new Category(id, name, type);
+    return new Category(
+        id,
+        name,
+        CategoryNameNormalizer.normalize(name),
+        type,
+        CategoryScope.SYSTEM,
+        null);
+  }
+
+  /** Crea una categoría mutable propiedad de la cuenta autenticada. */
+  public static Category createPersonal(String name, CategoryType type, UUID ownerAccountId) {
+    UUID id = Generators.timeBasedEpochGenerator().generate();
+    return new Category(
+        id,
+        name,
+        CategoryNameNormalizer.normalize(name),
+        type,
+        CategoryScope.PERSONAL,
+        ownerAccountId);
   }
 
   /**
@@ -124,7 +162,24 @@ public class Category {
    * @return instancia de {@code Category} reconstituida.
    */
   public static Category reconstitute(UUID id, String name, CategoryType type) {
-    return new Category(id, name, type);
+    return new Category(
+        id,
+        name,
+        CategoryNameNormalizer.normalize(name),
+        type,
+        CategoryScope.SYSTEM,
+        null);
+  }
+
+  /** Reconstituye alcance, propietario y nombre normalizado persistidos. */
+  public static Category reconstitute(
+      UUID id,
+      String name,
+      String normalizedName,
+      CategoryType type,
+      CategoryScope scope,
+      UUID ownerAccountId) {
+    return new Category(id, name, normalizedName, type, scope, ownerAccountId);
   }
 
   /**
@@ -136,6 +191,7 @@ public class Category {
   public void updateName(String name) {
     validateName(name);
     this.name = name;
+    this.normalizedName = CategoryNameNormalizer.normalize(name);
   }
 
   /**
@@ -166,6 +222,24 @@ public class Category {
   private static void validateType(CategoryType type) {
     if (type == null) {
       throw new IllegalArgumentException("Type cannot be null");
+    }
+  }
+
+  private static void validateScope(CategoryScope scope, UUID ownerAccountId) {
+    if (scope == null) {
+      throw new IllegalArgumentException("Scope cannot be null");
+    }
+    if (scope == CategoryScope.SYSTEM && ownerAccountId != null) {
+      throw new IllegalArgumentException("System categories cannot have an owner");
+    }
+    if (scope == CategoryScope.PERSONAL && ownerAccountId == null) {
+      throw new IllegalArgumentException("Personal categories require an owner");
+    }
+  }
+
+  private static void validateNormalizedName(String name, String normalizedName) {
+    if (!CategoryNameNormalizer.normalize(name).equals(normalizedName)) {
+      throw new IllegalArgumentException("Normalized name does not match category name");
     }
   }
 }
