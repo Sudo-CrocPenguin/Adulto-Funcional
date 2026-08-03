@@ -2,7 +2,7 @@ package org.adultofuncional.main.shared.security;
 
 import java.util.UUID;
 
-import org.adultofuncional.main.shared.exception.UnauthorizedException;
+import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Component;
 
 /**
@@ -36,11 +36,12 @@ public class OwnershipValidator {
    *
    * @param resourceAccountId      identificador de la cuenta dueña del recurso
    * @param authenticatedAccountId identificador de la cuenta autenticada
-   * @throws UnauthorizedException si el usuario autenticado no es el propietario
+   * @throws NotFoundException si el usuario autenticado no es el propietario;
+   *                           se usa 404 para no confirmar recursos ajenos
    */
   public void validate(UUID resourceAccountId, UUID authenticatedAccountId) {
     if (resourceAccountId == null || !resourceAccountId.equals(authenticatedAccountId)) {
-      throw new UnauthorizedException("No tienes permiso para acceder a este recurso");
+      throw new NotFoundException("Recurso no encontrado");
     }
   }
 }

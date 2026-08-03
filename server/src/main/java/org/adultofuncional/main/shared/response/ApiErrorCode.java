@@ -1,0 +1,34 @@
+package org.adultofuncional.main.shared.response;
+
+/**
+ * Catálogo de códigos estables para errores públicos de la API.
+ *
+ * <p>El estado HTTP clasifica el resultado y este código identifica la causa
+ * que los clientes pueden procesar sin depender de mensajes traducibles.</p>
+ */
+public enum ApiErrorCode {
+  VALIDATION_FAILED,
+  REQUEST_BODY_INVALID,
+  PARAMETER_INVALID,
+  REQUIRED_PARAMETER_MISSING,
+  BUSINESS_RULE_VIOLATION,
+  AUTHENTICATION_REQUIRED,
+  AUTHENTICATION_FAILED,
+  JWT_INVALID,
+  JWT_EXPIRED,
+  CORS_REQUEST_REJECTED,
+  ACCESS_DENIED,
+  MASTER_KEY_INVALID,
+  MASTER_KEY_REQUIRED,
+  MASTER_KEY_NOT_CONFIGURED,
+  REAUTHENTICATION_FAILED,
+  RESOURCE_NOT_FOUND,
+  ENDPOINT_NOT_FOUND,
+  RESOURCE_CONFLICT,
+  DATA_INTEGRITY_CONFLICT,
+  METHOD_NOT_ALLOWED,
+  MEDIA_TYPE_UNSUPPORTED,
+  REPRESENTATION_NOT_ACCEPTABLE,
+  RATE_LIMIT_EXCEEDED,
+  INTERNAL_ERROR
+}

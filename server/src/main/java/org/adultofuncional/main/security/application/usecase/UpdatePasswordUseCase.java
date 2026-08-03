@@ -13,6 +13,7 @@ import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
 import org.adultofuncional.main.shared.exception.BusinessException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
+import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -72,7 +73,9 @@ public class UpdatePasswordUseCase {
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
     if (!masterKeyService.isVerified(accountId)) {
-      throw new ForbiddenException("Master Key no verificada");
+      throw new ForbiddenException(
+          "Master Key no verificada",
+          ApiErrorCode.MASTER_KEY_REQUIRED);
     }
 
     Password password = passwordRepository.findByIdAndAccountId(passwordId, accountId)

@@ -68,37 +68,23 @@ public class AccountController {
    * Obtiene los datos de una cuenta por su ID.
    *
    * <p>
-   * Valida ownership antes de retornar los datos. La consulta a base de datos
-   * se realiza una sola vez y el resultado se reutiliza tanto para la
-   * validación como para la respuesta.
+   * Valida el identificador solicitado contra el principal antes de consultar
+   * la base de datos, evitando materializar una cuenta ajena.
    *
    * @param id          UUID de la cuenta a consultar
    * @param authenticatedAccount cuenta autenticada resuelta desde el claim
    *                             {@code sub} del JWT
    * @return 200 OK con los datos de la cuenta
-   * @throws org.adultofuncional.main.shared.exception.NotFoundException
-   *                                                                         si no
-   *                                                                         existe
-   *                                                                         una
-   *                                                                         cuenta
-   *                                                                         con
-   *                                                                         el ID
-   *                                                                         dado
-   * @throws org.adultofuncional.main.shared.exception.UnauthorizedException
-   *                                                                         si el
-   *                                                                         usuario
-   *                                                                         autenticado
-   *                                                                         no es
-   *                                                                         el
-   *                                                                         propietario
+   * @throws org.adultofuncional.main.shared.exception.NotFoundException si la
+   *         cuenta es inexistente o ajena
    */
   @GetMapping("/{id}")
   public ResponseEntity<ApiResponse<AccountResponse>> getAccount(
       @PathVariable UUID id,
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
+    ownershipValidator.validate(id, authenticatedAccount.accountId());
     AccountResponse account = getAccountUseCase.execute(id);
-    ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
 
     return ResponseEntity.ok(
         ApiResponse.<AccountResponse>builder()
@@ -112,7 +98,7 @@ public class AccountController {
    * Actualiza los datos de una cuenta.
    *
    * <p>
-   * Valida ownership consultando la cuenta actual antes de aplicar los cambios.
+   * Valida ownership antes de consultar o aplicar los cambios.
    * Si el email nuevo ya pertenece a otra cuenta, el caso de uso lanza una
    * excepción de conflicto (409).
    *
@@ -122,21 +108,8 @@ public class AccountController {
    * @param authenticatedAccount cuenta autenticada resuelta desde el claim
    *                             {@code sub} del JWT
    * @return 200 OK con los datos actualizados
-   * @throws org.adultofuncional.main.shared.exception.NotFoundException
-   *                                                                         si no
-   *                                                                         existe
-   *                                                                         una
-   *                                                                         cuenta
-   *                                                                         con
-   *                                                                         el ID
-   *                                                                         dado
-   * @throws org.adultofuncional.main.shared.exception.UnauthorizedException
-   *                                                                         si el
-   *                                                                         usuario
-   *                                                                         autenticado
-   *                                                                         no es
-   *                                                                         el
-   *                                                                         propietario
+   * @throws org.adultofuncional.main.shared.exception.NotFoundException si la
+   *         cuenta es inexistente o ajena
    * @throws org.adultofuncional.main.shared.exception.ConflictException
    *                                                                         si el
    *                                                                         nuevo
@@ -154,8 +127,7 @@ public class AccountController {
       @Valid @RequestBody UpdateAccountRequest request,
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    AccountResponse account = getAccountUseCase.execute(id);
-    ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
+    ownershipValidator.validate(id, authenticatedAccount.accountId());
     AccountResponse updated = updateAccountUseCase.execute(id, request);
 
     return ResponseEntity.ok(
@@ -177,30 +149,16 @@ public class AccountController {
    * @param id          UUID de la cuenta a eliminar
    * @param authenticatedAccount cuenta autenticada resuelta desde el claim
    *                             {@code sub} del JWT
-   * @return 200 No Content si la eliminación fue exitosa
-   * @throws org.adultofuncional.main.shared.exception.NotFoundException
-   *                                                                         si no
-   *                                                                         existe
-   *                                                                         una
-   *                                                                         cuenta
-   *                                                                         con
-   *                                                                         el ID
-   *                                                                         dado
-   * @throws org.adultofuncional.main.shared.exception.UnauthorizedException
-   *                                                                         si el
-   *                                                                         usuario
-   *                                                                         autenticado
-   *                                                                         no es
-   *                                                                         el
-   *                                                                         propietario
+   * @return 200 OK si la eliminación fue exitosa
+   * @throws org.adultofuncional.main.shared.exception.NotFoundException si la
+   *         cuenta es inexistente o ajena
    */
   @DeleteMapping("/{id}")
   public ResponseEntity<ApiResponse<Void>> deleteAccount(
       @PathVariable UUID id,
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    AccountResponse account = getAccountUseCase.execute(id);
-    ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
+    ownershipValidator.validate(id, authenticatedAccount.accountId());
     deleteAccountUseCase.execute(id);
 
     return ResponseEntity.ok(

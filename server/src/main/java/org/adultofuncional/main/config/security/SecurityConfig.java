@@ -13,11 +13,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import lombok.RequiredArgsConstructor;
 
@@ -70,6 +72,12 @@ public class SecurityConfig {
    */
   private final JwtAuthenticationFilter jwtAuthFilter;
 
+  /** Respuesta uniforme para peticiones que requieren autenticación. */
+  private final ApiAuthenticationEntryPoint authenticationEntryPoint;
+
+  /** Respuesta uniforme para principales sin permisos suficientes. */
+  private final ApiAccessDeniedHandler accessDeniedHandler;
+
   /**
    * Lista de orígenes permitidos para CORS, inyectada desde la variable de
    * entorno {@code CORS_ALLOWED_ORIGINS}. Debe contener URLs absolutas
@@ -114,10 +122,12 @@ public class SecurityConfig {
    * @throws Exception si ocurre un error durante la configuración
    */
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain filterChain(
+      HttpSecurity http,
+      ApiCorsProcessor corsProcessor) throws Exception {
     http
         .csrf(csrf -> csrf.disable())
-        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .cors(cors -> cors.disable())
         .headers(headers -> headers
             .contentSecurityPolicy(csp -> csp
                 .policyDirectives(
@@ -137,8 +147,12 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
             .anyRequest().authenticated())
+        .exceptionHandling(exceptions -> exceptions
+            .authenticationEntryPoint(authenticationEntryPoint)
+            .accessDeniedHandler(accessDeniedHandler))
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .addFilterBefore(apiCorsFilter(corsProcessor), LogoutFilter.class)
         .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();
@@ -193,13 +207,23 @@ public class SecurityConfig {
         "X-Requested-With",
         "X-Client-Type",
         "Authorization"));
-    config.setExposedHeaders(List.of("X-Total-Count"));
+    config.setExposedHeaders(List.of("X-Total-Count", "X-Trace-Id"));
     config.setAllowCredentials(true);
     config.setMaxAge(3600L);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", config);
     return source;
+  }
+
+  /**
+   * Construye el filtro CORS que participa exclusivamente en la cadena de
+   * Spring Security y utiliza el escritor uniforme ante rechazos.
+   */
+  private CorsFilter apiCorsFilter(ApiCorsProcessor corsProcessor) {
+    CorsFilter corsFilter = new CorsFilter(corsConfigurationSource());
+    corsFilter.setCorsProcessor(corsProcessor);
+    return corsFilter;
   }
 
   /**

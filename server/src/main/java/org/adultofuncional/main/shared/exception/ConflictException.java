@@ -1,5 +1,7 @@
 package org.adultofuncional.main.shared.exception;
 
+import org.adultofuncional.main.shared.response.ApiErrorCode;
+
 /**
  * Excepción que representa un conflicto con el estado actual de un recurso (HTTP 409).
  *
@@ -19,7 +21,16 @@ public class ConflictException extends BusinessException {
      */
 
     public ConflictException(String message) {
+        this(message, ApiErrorCode.RESOURCE_CONFLICT);
+    }
 
-        super(message, 409);
+    /**
+     * Construye una excepción 409 con un código de conflicto específico.
+     *
+     * @param message mensaje seguro para el cliente
+     * @param code    código estable del conflicto
+     */
+    public ConflictException(String message, ApiErrorCode code) {
+        super(message, 409, code);
     }
 }

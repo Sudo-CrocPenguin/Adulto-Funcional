@@ -1,6 +1,6 @@
 # Adulto Funcional Server
 
-Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una arquitectura limpia (Clean Architecture) para la gestión financiera personal, agenda de eventos y almacenamiento seguro de contraseñas.
+Backend construido con **Spring Boot 3.5.13** y **Java 21** como monolito modular por capas, inspirado en Clean Architecture y DDD, para la gestión financiera personal, agenda de eventos y almacenamiento seguro de contraseñas.
 
 ## Características principales
 
@@ -52,6 +52,7 @@ org.adultofuncional.main
 ├── security/           # Gestor de contraseñas con Master Key
 └── shared/             # Componentes transversales
     ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
+    ├── observability/  # Trace ID por petición para respuestas y logs
     ├── response/       # Formato estándar de respuestas API (ApiResponse)
     └── security/       # Validación de ownership reutilizable (OwnedResource, OwnershipValidator)
 ```
@@ -60,7 +61,9 @@ Para una documentación técnica detallada de la arquitectura, consulta
 [ARCHITECTURE.md](./ARCHITECTURE.md). Las decisiones transversales se registran
 en [docs/decisions](./docs/decisions/README.md) y el patrón obligatorio para
 recursos privados se explica en
-[RESOURCE_OWNERSHIP.md](./docs/RESOURCE_OWNERSHIP.md).
+[RESOURCE_OWNERSHIP.md](./docs/RESOURCE_OWNERSHIP.md). El contrato consumible de
+errores está documentado en
+[API_ERROR_CONTRACT.md](./docs/API_ERROR_CONTRACT.md).
 
 ## Estructura de la base de datos
 
@@ -333,7 +336,7 @@ docker-compose restart app
 
 - `GET /api/account/{id}` - Obtener datos de una cuenta (requiere autenticación + ownership)
 - `PATCH /api/account/{id}` - Actualizar datos de una cuenta (requiere autenticación + ownership)
-- `DELETE /api/account/{id}` - Eliminar una cuenta (endpoint existe, lógica pendiente — retorna 501 Not Implemented)
+- `DELETE /api/account/{id}` - Eliminar una cuenta propia
 
 ### Autenticación (`/api/auth`)
 
@@ -375,7 +378,7 @@ docker-compose restart app
 - `PATCH /api/security/passwords/{id}` - Actualizar credencial
 - `DELETE /api/security/passwords/{id}` - Eliminar credencial
 
-### Health Check
+### Verificación histórica de Master Key
 
 - `POST /api/security/passwords/master-key/verify` - Verificar Master Key para acceder al gestor
 
@@ -395,9 +398,15 @@ Todas las respuestas de la API siguen el formato `ApiResponse<T>`:
 }
 ```
 
+Las respuestas de error conservan esos campos y añaden `code`,
+`fieldErrors` y `traceId`. Consulta el
+[contrato completo de errores](./docs/API_ERROR_CONTRACT.md) para conocer la
+forma, el catálogo de códigos y las reglas de compatibilidad.
+
 ## Manejo de errores
 
-El sistema usa una jerarquía de excepciones centralizada:
+El sistema usa una jerarquía de excepciones centralizada. Spring MVC, Bean
+Validation, persistencia y Spring Security se traducen al mismo contrato:
 
 | Excepción               | HTTP Status | Descripción                              |
 | ----------------------- | ----------- | ---------------------------------------- |
@@ -406,6 +415,10 @@ El sistema usa una jerarquía de excepciones centralizada:
 | `UnauthorizedException` | 401         | Credenciales incorrectas                 |
 | `ConflictException`     | 409         | Conflicto de datos (ej. email duplicado) |
 | `ForbiddenException`    | 403         | Acceso denegado (Master Key requerida)   |
+
+Una Master Key incorrecta usa `403/MASTER_KEY_INVALID`; `401` queda reservado
+para autenticación. Los recursos ajenos se representan como inexistentes con
+`404/RESOURCE_NOT_FOUND`.
 
 ## Documentación Javadoc
 
@@ -439,8 +452,8 @@ En desarrollo activo. Estado por módulo:
 
 | Módulo             | Estado     | Detalle                                                                                                                           |
 | ------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Autenticación      | Completado | Login resistente a enumeración, registro con `ConflictException` (409), logout con `ApiResponse` 204, protección anti‑XSS en DTOs |
-| Cuentas            | Parcial    | GET y PATCH funcionales con ownership y unicidad de email; DELETE implementado en use case pero no expuesto en controller (501)   |
+| Autenticación      | Parcial    | Login, registro y logout funcionales; faltan sesiones revocables, refresh rotation, CSRF y mitigación temporal del login |
+| Cuentas            | Parcial    | GET, PATCH y DELETE funcionales; una cuenta ajena se rechaza antes de consultarla y responde como inexistente |
 | Financiero         | Completado | CRUD completo de movimientos, gastos fijos y categorías con filtros, `@NoHtml` y controlador REST bajo `/api/finances`            |
 | Agenda             | Completado | CRUD completo de eventos con prioridad, recurrencia, recordatorios y controlador REST bajo `/api/agenda`                          |
 | Gestor contraseñas | Completado | Cifrado AES‑256, verificación de Master Key, CRUD completo bajo `/api/security/passwords`                                         |
