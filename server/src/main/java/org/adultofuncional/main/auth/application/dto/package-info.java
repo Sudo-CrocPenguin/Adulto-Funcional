@@ -23,6 +23,12 @@
  * Datos para el registro de un nuevo usuario: nombres, apellidos,
  * teléfono, email, contraseña y clave maestra opcional. Todos los campos
  * visibles están anotados con {@code @NoHtml} para prevenir XSS.</li>
+ * <li>{@link org.adultofuncional.main.auth.application.dto.RefreshRequest} —
+ * refresh token opaco enviado por clientes nativos.</li>
+ * <li>{@link org.adultofuncional.main.auth.application.dto.CsrfResponse} —
+ * token, nombre de header y nombre de parámetro para clientes web.</li>
+ * <li>{@link org.adultofuncional.main.auth.application.dto.SessionTokens} —
+ * resultado interno de emitir o rotar una familia de sesión.</li>
  * </ul>
  *
  * <h2>Seguridad</h2>
@@ -31,7 +37,8 @@
  * {@code LoginRequest} y {@code RegisterRequest} están protegidos con
  * {@link org.adultofuncional.main.shared.security.NoHtml}, que utiliza
  * Jsoup con {@code Safelist.none()} para rechazar cualquier contenido
- * HTML malicioso.</li>
+ * HTML malicioso. Los secretos no usan esta validación porque no se
+ * renderizan.</li>
  * <li><strong>Exposición del token:</strong> El token JWT solo se incluye
  * en el body para clientes nativos; los clientes web usan la cookie
  * HttpOnly gestionada por

@@ -64,10 +64,10 @@ import org.springframework.stereotype.Component;
  * <h2>Estructura de claves</h2>
  * <p>
  * Cada Master Key se almacena con la clave:
- * <pre>{@code master-key:<accountId>}</pre>
+ * <pre>{@code master-key:<accountId>:<sessionId>}</pre>
  * El valor es un payload cifrado con formato {@code base64(iv):base64(ciphertext)}.
- * El TTL se define en {@link #TTL_SECONDS} y se refresca en cada llamada a
- * {@link #verify}.
+ * El TTL procede de {@code master-key.session.ttl}. Un índice por cuenta
+ * permite limpiar todos los desbloqueos durante una revocación global.
  *
  * <h2>Thread-safety</h2>
  * <p>
@@ -99,14 +99,7 @@ public class RedisMasterKeyService implements MasterKeySessionService {
 
   private static final String PAYLOAD_SEPARATOR = ":";
 
-  /**
-   * Tiempo de vida de la Master Key en Redis (1 hora).
-   * <p>
-   * Pasado este tiempo, el usuario deberá volver a verificar su Master Key
-   * para acceder al gestor de contraseñas. Una hora es un valor razonable
-   * para una sesión activa, pero puede ajustarse según la política de
-   * seguridad del despliegue.
-   */
+  /** Cliente Redis usado para los valores cifrados y sus índices por cuenta. */
   private final StringRedisTemplate redisTemplate;
 
   private final SecretKey redisEncryptionKey;
@@ -146,10 +139,11 @@ public class RedisMasterKeyService implements MasterKeySessionService {
   }
 
   /**
-   * Construye la clave Redis a partir del identificador de cuenta.
+   * Construye la clave Redis a partir de cuenta y familia de sesión.
    *
    * @param accountId identificador de la cuenta
-   * @return clave Redis con el formato {@code master-key:<accountId>}
+   * @param sessionId identificador de la familia de sesión
+   * @return clave con formato {@code master-key:<accountId>:<sessionId>}
    */
   private String buildKey(UUID accountId, UUID sessionId) {
     return KEY_PREFIX + accountId + ":" + sessionId;
@@ -175,12 +169,12 @@ public class RedisMasterKeyService implements MasterKeySessionService {
   /**
    * Almacena la Master Key en Redis con TTL.
    * <p>
-   * Si ya existía una clave para esta cuenta, el TTL se reinicia al valor
-   * completo de {@link #TTL_SECONDS}. Esto permite que el usuario extienda
-   * su sesión del gestor simplemente accediendo a él.
+   * Si ya existía un desbloqueo para la misma sesión, su TTL se reinicia al
+   * valor configurado. Otra sesión de la cuenta conserva un estado aislado.
    *
    * @param accountId identificador de la cuenta
-   * @param masterKey Master Key en texto plano
+   * @param sessionId familia de sesión que queda desbloqueada
+   * @param masterKey Master Key en texto plano, cifrada antes de persistir
    */
   @Override
   public void unlock(UUID accountId, UUID sessionId, String masterKey) {
@@ -193,11 +187,12 @@ public class RedisMasterKeyService implements MasterKeySessionService {
   }
 
   /**
-   * Elimina la Master Key de Redis (logout del gestor).
+   * Elimina la Master Key de una sesión (cierre de la bóveda o logout).
    * <p>
    * Si la clave no existía, la operación no tiene efecto.
    *
    * @param accountId identificador de la cuenta
+   * @param sessionId familia de sesión que se debe bloquear
    */
   @Override
   public void clear(UUID accountId, UUID sessionId) {

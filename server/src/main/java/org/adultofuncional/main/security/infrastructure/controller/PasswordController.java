@@ -15,6 +15,7 @@ import org.adultofuncional.main.security.application.usecase.GetPasswordUseCase;
 import org.adultofuncional.main.security.application.usecase.ListPasswordsUseCase;
 import org.adultofuncional.main.security.application.usecase.UpdatePasswordUseCase;
 import org.adultofuncional.main.security.application.usecase.VerifyMasterKeyUseCase;
+import org.adultofuncional.main.shared.exception.ConflictException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
 import org.adultofuncional.main.shared.pagination.PageMetadata;

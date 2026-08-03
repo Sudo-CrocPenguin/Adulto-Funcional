@@ -43,7 +43,7 @@ import lombok.RequiredArgsConstructor;
  * Controlador REST del módulo de autenticación.
  *
  * <p>
- * Expone los endpoints públicos para login, registro y logout de usuarios.
+ * Expone login, registro, refresh, logout y revocación de sesiones.
  * Delega la lógica de negocio a los casos de uso correspondientes y
  * coordina la entrega del JWT según el tipo de cliente detectado por
  * {@link ClientTypeResolver}.
@@ -51,13 +51,11 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Estrategia de entrega del JWT:</strong>
  * <ul>
- * <li>El token siempre se establece en una cookie {@code HttpOnly} mediante
- * {@link CookieUtils}, independientemente del tipo de cliente.</li>
- * <li>Los clientes nativos (móvil/desktop) identificados por
- * {@link ClientTypeResolver#isNativeClient} reciben además el token
- * en el body de la respuesta para facilitar su almacenamiento fuera
- * del navegador.</li>
- * <li>Los clientes web reciben el body sin token — deben usar la cookie.</li>
+ * <li>Los clientes web reciben access y refresh en cookies {@code HttpOnly};
+ * el body omite ambos valores.</li>
+ * <li>Los clientes nativos identificados por
+ * {@link ClientTypeResolver#isNativeClient} reciben ambos tokens en el body y
+ * no reciben cookies de autenticación.</li>
  * </ul>
  *
  * <p>
@@ -67,9 +65,8 @@ import lombok.RequiredArgsConstructor;
  * scripts maliciosos.
  *
  * <p>
- * Todas las rutas están bajo el prefijo {@code /api/auth} y son públicas
- * (no requieren autenticación previa). Ver
- * {@link org.adultofuncional.main.config.security.SecurityConfig}.
+ * Las rutas están bajo {@code /api/auth}. CSRF, login, registro y refresh son
+ * públicas; logout y revocación requieren un access token válido.
  *
  * @author Lydis Esther Jaraba, Juan Sebastian Rios
  * @since 0.0.1

@@ -12,7 +12,8 @@
  * <strong>Nota de seguridad:</strong> el campo {@code password} en los DTOs
  * de entrada contiene la contraseña en texto plano. La encriptación AES‑256
  * se realiza en la capa de aplicación usando la Master Key del usuario. Este
- * valor nunca se almacena ni se expone en las respuestas.
+ * valor nunca se almacena en texto plano. Solo la consulta individual lo
+ * devuelve, después de validar la sesión de Master Key; los listados lo omiten.
  *
  * <h2>DTOs incluidos</h2>
  * <ul>
@@ -29,9 +30,17 @@
  * conservan su valor actual.</li>
  * <li>{@link org.adultofuncional.main.security.application.dto.PasswordResponse}
  * —
- * Proyección de los datos no sensibles de una credencial retornados al
- * cliente. Nunca expone material criptográfico ({@code salt}, {@code iv},
- * {@code ciphertext}) ni la contraseña en texto plano.</li>
+ * Proyección de una credencial. Nunca expone material criptográfico
+ * ({@code salt}, {@code iv}, {@code ciphertext}); el secreto descifrado solo
+ * se llena en la consulta individual y nunca en listados.</li>
+ * <li>{@link org.adultofuncional.main.security.application.dto.PasswordFilterRequest}
+ * — filtros, página y orden del listado de bóveda.</li>
+ * <li>{@link org.adultofuncional.main.security.application.dto.ConfigureMasterKeyRequest}
+ * y {@link org.adultofuncional.main.security.application.dto.ChangeMasterKeyRequest}
+ * — configuración y rotación reautenticadas.</li>
+ * <li>{@link org.adultofuncional.main.security.application.dto.VerifyMasterKeyRequest}
+ * y {@link org.adultofuncional.main.security.application.dto.MasterKeyStatusResponse}
+ * — desbloqueo y estado de la Master Key en la sesión actual.</li>
  * </ul>
  *
  * <h2>Seguridad</h2>
