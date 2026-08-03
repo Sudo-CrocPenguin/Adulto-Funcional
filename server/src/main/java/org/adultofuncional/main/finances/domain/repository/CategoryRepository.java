@@ -16,15 +16,8 @@ import java.util.UUID;
  * manteniendo el dominio desacoplado de los detalles de almacenamiento.
  *
  * <p>
- * <strong>Operaciones expuestas:</strong>
- * <ul>
- * <li>Búsqueda individual por ID.</li>
- * <li>Listado completo.</li>
- * <li>Búsqueda por lote de IDs (para evitar consultas N+1 en listados que
- * requieren categorías asociadas).</li>
- * <li>Persistencia de nuevas categorías o actualización de existentes.</li>
- * <li>Eliminación por ID.</li>
- * </ul>
+ * Todas las lecturas públicas reciben una cuenta para impedir que la capa de
+ * aplicación omita accidentalmente el alcance SYSTEM/PERSONAL.
  *
  * @author Daniel Salazar
  * @since 1.0
@@ -55,36 +48,6 @@ public interface CategoryRepository {
   boolean deletePersonalByIdAndOwner(UUID accountId, UUID categoryId);
 
   /**
-   * Busca una categoría por su identificador único.
-   *
-   * @param id UUID de la categoría. No debe ser {@code null}.
-   * @return {@link Optional} con la categoría si existe; {@code Optional.empty()}
-   *         en caso contrario.
-   */
-  Optional<Category> findById(UUID id);
-
-  /**
-   * Retorna todas las categorías registradas en el sistema.
-   *
-   * @return lista de categorías. Puede ser vacía si no hay registros.
-   */
-  List<Category> findAll();
-
-  /**
-   * Busca múltiples categorías por sus identificadores en un solo lote.
-   *
-   * <p>
-   * Utilizado por los casos de uso de listado de gastos fijos y movimientos
-   * para cargar las categorías asociadas de forma eficiente, evitando
-   * múltiples consultas individuales (problema N+1).
-   *
-   * @param ids colección de UUIDs de las categorías a buscar.
-   * @return lista de categorías encontradas. Puede ser de menor tamaño que
-   *         la entrada si algunos IDs no existen.
-   */
-  List<Category> findAllById(Iterable<UUID> ids);
-
-  /**
    * Persiste una categoría nueva o actualiza una existente.
    *
    * <p>
@@ -97,15 +60,4 @@ public interface CategoryRepository {
    */
   Category save(Category category);
 
-  /**
-   * Elimina una categoría por su identificador único.
-   *
-   * <p>
-   * Si no existe una categoría con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso). La validación de existencia previa se realiza
-   * en la capa de aplicación.
-   *
-   * @param id UUID de la categoría a eliminar. No debe ser {@code null}.
-   */
-  void deleteById(UUID id);
 }

@@ -38,15 +38,13 @@ class FixedExpenseOwnershipUseCaseTest {
 
     UUID authenticatedAccountId = UUID.randomUUID();
     UUID expenseId = UUID.randomUUID();
-    UUID categoryId = UUID.randomUUID();
-
     when(fixedExpenseRepository.findByIdAndAccountId(expenseId, authenticatedAccountId))
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> useCase.execute(authenticatedAccountId, expenseId))
         .isInstanceOf(NotFoundException.class);
 
-    verify(categoryRepository, never()).findById(categoryId);
+    verify(categoryRepository, never()).findAccessibleByIdAndType(any(), any(), any());
   }
 
   @Test

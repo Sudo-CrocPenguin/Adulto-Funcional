@@ -93,11 +93,4 @@ public interface SpringCategoryJpaRepository extends JpaRepository<CategoryEntit
       @Param("accountId") UUID accountId,
       @Param("categoryId") UUID categoryId);
 
-  /**
-   * Busca categorías por su tipo (Ingreso o Egreso).
-   *
-   * @param categoryType el tipo de categoría (ej: "Ingreso", "Egreso")
-   * @return lista de categorías que coinciden con el tipo (puede estar vacía)
-   */
-  List<CategoryEntity> findByCategoryType(String categoryType);
 }
