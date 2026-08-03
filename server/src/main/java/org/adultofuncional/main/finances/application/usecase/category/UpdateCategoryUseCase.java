@@ -17,11 +17,10 @@ import org.springframework.util.StringUtils;
  * <p>
  * Reglas de negocio:
  * <ul>
- * <li>La categoría debe existir.</li>
- * <li>Solo se actualizan los campos proporcionados (nombre y tipo).</li>
+ * <li>La categoría debe ser PERSONAL y pertenecer a la cuenta.</li>
+ * <li>El tipo es inmutable después de la creación.</li>
  * <li>El nombre solo se actualiza si tiene texto significativo
  * (verificado con {@link StringUtils#hasText}).</li>
- * <li>El tipo se actualiza si se proporciona un valor no nulo.</li>
  * </ul>
  *
  * @author Miguel Angel Blandon Montes
@@ -46,22 +45,22 @@ public class UpdateCategoryUseCase {
    *                           proporcionado.
    */
   @Transactional
-  public CategoryResponse execute(UUID categoryId, UpdateCategoryRequest request) {
-    Category category = categoryRepository.findById(categoryId)
+  public CategoryResponse execute(
+      UUID accountId,
+      UUID categoryId,
+      UpdateCategoryRequest request) {
+    Category category = categoryRepository.findPersonalByIdAndOwner(accountId, categoryId)
         .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + categoryId));
 
     if (StringUtils.hasText(request.getName())) {
       category.updateName(request.getName());
     }
-    if (request.getType() != null) {
-      category.updateType(request.getType());
-    }
-
     Category saved = categoryRepository.save(category);
     return CategoryResponse.builder()
         .id(saved.getId())
         .name(saved.getName())
         .type(saved.getType())
+        .scope(saved.getScope())
         .build();
   }
 }

@@ -11,10 +11,9 @@ import lombok.Getter;
  * DTO que encapsula los filtros opcionales para la consulta de gastos fijos.
  *
  * <p>
- * Permite filtrar por {@link Status}, categoría y un término de búsqueda
- * libre sobre el nombre del gasto. Todos los filtros son opcionales y
- * pueden combinarse libremente; los campos nulos no se aplican en la
- * consulta al repositorio.
+ * Permite filtrar por {@link Status}, categoría y un término de búsqueda,
+ * además de solicitar página y orden. Todos los valores son opcionales; la
+ * política común usa página 0, tamaño 20 y un máximo de 100 registros.
  *
  * <p>
  * <strong>Filtros disponibles:</strong>
@@ -85,4 +84,16 @@ public class FixedExpenseFilterRequest {
   @Size(max = 50, message = "Término de búsqueda demasiado largo")
   @NoHtml
   private String searchTerm;
+
+  /** Campo lógico permitido para ordenar el listado. */
+  private String sortBy;
+
+  /** Dirección de orden {@code ASC} o {@code DESC}. */
+  private String sortDirection;
+
+  /** Página base cero; usa 0 cuando se omite. */
+  private Integer page;
+
+  /** Registros por página; usa 20 por defecto y admite hasta 100. */
+  private Integer size;
 }

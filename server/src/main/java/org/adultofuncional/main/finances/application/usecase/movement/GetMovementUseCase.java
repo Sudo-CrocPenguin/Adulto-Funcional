@@ -3,7 +3,11 @@ package org.adultofuncional.main.finances.application.usecase.movement;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
+import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
+import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.Movement;
+import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
@@ -33,6 +37,7 @@ public class GetMovementUseCase {
 
   /** Puerto de dominio para la consulta de movimientos. */
   private final MovementRepository movementRepository;
+  private final CategoryRepository categoryRepository;
 
   /**
    * Ejecuta la consulta de un movimiento por su ID.
@@ -47,6 +52,11 @@ public class GetMovementUseCase {
   public MovementResponse execute(UUID accountId, UUID movementId) {
     Movement movement = movementRepository.findByIdAndAccountId(movementId, accountId)
         .orElseThrow(() -> new NotFoundException("Movimiento no encontrado con id: " + movementId));
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            movement.getCategoryId(),
+            CategoryType.FINANCES)
+        .orElseThrow(() -> new NotFoundException("Categoría asociada no encontrada"));
 
     return MovementResponse.builder()
         .id(movement.getId())
@@ -55,7 +65,12 @@ public class GetMovementUseCase {
         .registerDate(movement.getCreatedAt())
         .description(movement.getDescription())
         .movementDate(movement.getDate())
-        .category(null)
+        .category(CategoryResponse.builder()
+            .id(category.getId())
+            .name(category.getName())
+            .type(category.getType())
+            .scope(category.getScope())
+            .build())
         .build();
   }
 }

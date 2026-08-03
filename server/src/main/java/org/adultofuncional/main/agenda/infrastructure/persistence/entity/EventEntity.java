@@ -1,5 +1,6 @@
 package org.adultofuncional.main.agenda.infrastructure.persistence.entity;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -75,6 +77,11 @@ public class EventEntity {
   @Column(name = "event_id", columnDefinition = "CHAR(36)")
   private UUID eventId;
 
+  /** Versión de bloqueo optimista para detectar actualizaciones concurrentes. */
+  @Version
+  @Column(name = "event_version", nullable = false)
+  private long version;
+
   /**
    * Título del evento.
    *
@@ -122,6 +129,10 @@ public class EventEntity {
   @Column(name = "event_reminder", nullable = false)
   private LocalDateTime eventReminder;
 
+  /** Instante UTC equivalente al recordatorio civil. */
+  @Column(name = "event_reminder_instant", nullable = false)
+  private Instant eventReminderInstant;
+
   /**
    * Hora de inicio del evento.
    *
@@ -131,6 +142,10 @@ public class EventEntity {
   @Column(name = "event_start_hour", nullable = false)
   private LocalDateTime eventStartHour;
 
+  /** Instante UTC equivalente al inicio civil. */
+  @Column(name = "event_start_instant", nullable = false)
+  private Instant eventStartInstant;
+
   /**
    * Hora de finalización del evento.
    *
@@ -139,6 +154,14 @@ public class EventEntity {
    */
   @Column(name = "event_end_hour", nullable = false)
   private LocalDateTime eventEndHour;
+
+  /** Instante UTC equivalente al fin civil. */
+  @Column(name = "event_end_instant", nullable = false)
+  private Instant eventEndInstant;
+
+  /** Identificador IANA usado para interpretar las horas civiles. */
+  @Column(name = "event_zone_id", length = 63, nullable = false)
+  private String eventZoneId;
 
   /**
    * Descripción detallada del evento.

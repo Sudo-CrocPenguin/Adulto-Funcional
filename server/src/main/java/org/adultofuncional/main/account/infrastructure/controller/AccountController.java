@@ -3,6 +3,7 @@ package org.adultofuncional.main.account.infrastructure.controller;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.application.dto.AccountResponse;
+import org.adultofuncional.main.account.application.dto.DeleteAccountRequest;
 import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
 import org.adultofuncional.main.account.application.usecase.DeleteAccountUseCase;
 import org.adultofuncional.main.account.application.usecase.GetAccountUseCase;
@@ -142,11 +143,12 @@ public class AccountController {
    * Elimina una cuenta y todos sus datos asociados en cascada.
    *
    * <p>
-   * La validación de ownership se ejecuta antes de la eliminación para
-   * evitar que un usuario no autorizado pueda eliminar una cuenta ajena.
-   * Una vez eliminada la cuenta, no se puede recuperar.
+   * La validación de ownership se ejecuta antes de la eliminación y el caso de
+   * uso exige la contraseña principal actual como reautenticación. Una vez
+   * eliminada la cuenta, no se puede recuperar.
    *
    * @param id          UUID de la cuenta a eliminar
+   * @param request     contraseña principal actual
    * @param authenticatedAccount cuenta autenticada resuelta desde el claim
    *                             {@code sub} del JWT
    * @return 200 OK si la eliminación fue exitosa
@@ -156,10 +158,11 @@ public class AccountController {
   @DeleteMapping("/{id}")
   public ResponseEntity<ApiResponse<Void>> deleteAccount(
       @PathVariable UUID id,
+      @Valid @RequestBody DeleteAccountRequest request,
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     ownershipValidator.validate(id, authenticatedAccount.accountId());
-    deleteAccountUseCase.execute(id);
+    deleteAccountUseCase.execute(id, request);
 
     return ResponseEntity.ok(
         ApiResponse.<Void>builder()

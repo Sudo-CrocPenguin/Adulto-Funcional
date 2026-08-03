@@ -13,6 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -64,6 +65,11 @@ public class FixedExpensesEntity {
   @Id
   @Column(name = "fixed_expense_id", columnDefinition = "CHAR(36)")
   private UUID fixedExpenseId;
+
+  /** Versión de bloqueo optimista para detectar actualizaciones concurrentes. */
+  @Version
+  @Column(name = "fixed_expense_version", nullable = false)
+  private long version;
 
   /**
    * Nombre descriptivo del gasto.

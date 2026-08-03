@@ -1,8 +1,9 @@
 package org.adultofuncional.main.finances.infrastructure.persistence.entity;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
@@ -15,6 +16,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -62,6 +64,11 @@ public class MovementEntity {
   @Column(name = "movement_id", columnDefinition = "CHAR(36)")
   private UUID movementId;
 
+  /** Versión de bloqueo optimista para detectar actualizaciones concurrentes. */
+  @Version
+  @Column(name = "movement_version", nullable = false)
+  private long version;
+
   /**
    * Tipo de movimiento.
    *
@@ -91,7 +98,7 @@ public class MovementEntity {
    * Se establece automáticamente en {@link #onCreate()} y no es modificable.
    */
   @Column(name = "movement_register_date", nullable = false, updatable = false)
-  private LocalDateTime movementRegisterDate;
+  private Instant movementRegisterDate;
 
   /**
    * Descripción opcional del movimiento.
@@ -133,12 +140,12 @@ public class MovementEntity {
   @JoinColumn(name = "movement_fk_category_id", nullable = false)
   private CategoryEntity category;
 
-  /**
-   * Callback JPA que establece {@code movement_register_date} antes del primer
-   * {@code INSERT}.
-   */
+  /** Conserva compatibilidad sin sobrescribir el timestamp creado por el dominio. */
   @PrePersist
-  protected void onCreate() {
-    movementRegisterDate = LocalDateTime.now();
+  void ensureRegisterDate() {
+    if (movementRegisterDate == null) {
+      movementRegisterDate = Clock.systemUTC().instant();
+    }
   }
+
 }

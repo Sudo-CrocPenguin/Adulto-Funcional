@@ -32,10 +32,11 @@ import org.adultofuncional.main.finances.application.usecase.movement.GetMovemen
 import org.adultofuncional.main.finances.application.usecase.movement.ListMovementsUseCase;
 import org.adultofuncional.main.finances.application.usecase.movement.UpdateMovementUseCase;
 import org.adultofuncional.main.shared.exception.NotFoundException;
+import org.adultofuncional.main.shared.pagination.PageMetadata;
+import org.adultofuncional.main.shared.pagination.PageResult;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -48,6 +49,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 
 
 /**
@@ -211,16 +213,18 @@ public class FinancesController {
      */
 
     @GetMapping("/movements")
-    public ResponseEntity<ApiResponse<List<MovementResponse>>> listMovements(MovementFilterRequest filter,
+    public ResponseEntity<ApiResponse<List<MovementResponse>>> listMovements(
+        @Valid MovementFilterRequest filter,
         @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         UUID accountId = resolveAccountId(authenticatedAccount);
-        List<MovementResponse> response = listMovementUseCase.execute(accountId, filter);
+        PageResult<MovementResponse> response = listMovementUseCase.execute(accountId, filter);
 
         return ResponseEntity.ok(ApiResponse.<List<MovementResponse>>builder()
             .status(HttpStatus.OK.value())
             .message("Movimientos listados exitosamente")
-            .data(response)
+            .data(response.content())
+            .page(PageMetadata.from(response))
             .build());
     }
 
@@ -278,10 +282,7 @@ public class FinancesController {
     //Categorias
 
     /**
-     * Crea una nueva categoría financiera en el sistema.
-     *
-     * <p>Las categorías son globales y forman parte del catálogo interno. Por
-     * eso solo un usuario con {@code ROLE_ADMIN} puede modificarlas.</p>
+     * Crea una categoría personal para la cuenta autenticada.
      *
      * @param request     objeto {@link CreateCategoryRequest} con los datos
      *                    validados de la categoría a crear.
@@ -291,11 +292,11 @@ public class FinancesController {
      */
 
     @PostMapping("/categories")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CategoryResponse>> createCategory(@Validated @RequestBody
         CreateCategoryRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        CategoryResponse response = createCategoryUseCase.execute(request);
+        UUID accountId = resolveAccountId(authenticatedAccount);
+        CategoryResponse response = createCategoryUseCase.execute(accountId, request);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.<CategoryResponse>builder()
             .status(HttpStatus.CREATED.value())
@@ -318,7 +319,8 @@ public class FinancesController {
     @GetMapping("/categories/{id}")
     public ResponseEntity<ApiResponse<CategoryResponse>> getCategory(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        CategoryResponse response = getCategoryUseCase.execute(id);
+        UUID accountId = resolveAccountId(authenticatedAccount);
+        CategoryResponse response = getCategoryUseCase.execute(accountId, id);
 
         return ResponseEntity.ok(ApiResponse.<CategoryResponse>builder()
             .status(HttpStatus.OK.value())
@@ -338,23 +340,25 @@ public class FinancesController {
      */
 
     @GetMapping("/categories")
-    public ResponseEntity<ApiResponse<List<CategoryResponse>>> listCategory(CategoryFilterRequest filter,
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> listCategory(
+        @Valid CategoryFilterRequest filter,
         @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        List<CategoryResponse> response = listCategoriesUseCase.execute(filter);
+        UUID accountId = resolveAccountId(authenticatedAccount);
+        PageResult<CategoryResponse> response = listCategoriesUseCase.execute(accountId, filter);
 
         return ResponseEntity.ok(ApiResponse.<List<CategoryResponse>>builder()
             .status(HttpStatus.OK.value())
             .message("Categorías listadas exitosamente")
-            .data(response)
+            .data(response.content())
+            .page(PageMetadata.from(response))
             .build());
     }
 
     /**
      * Actualiza parcialmente una categoría financiera existente.
      *
-     * <p>Operación restringida a {@code ROLE_ADMIN} porque las categorías son
-     * globales y afectan a todas las cuentas.</p>
+     * <p>Solo permite renombrar una categoría PERSONAL de la cuenta.</p>
      *
      * @param id          UUID de la categoría que se desea actualizar.
      * @param request     objeto {@link UpdateCategoryRequest} con los campos
@@ -367,11 +371,11 @@ public class FinancesController {
      */
 
     @PatchMapping("/categories/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<CategoryResponse>> updateCategory(@PathVariable UUID id, @Validated
         @RequestBody UpdateCategoryRequest request, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        CategoryResponse response = updateCategoryUseCase.execute(id,request);
+        UUID accountId = resolveAccountId(authenticatedAccount);
+        CategoryResponse response = updateCategoryUseCase.execute(accountId, id, request);
 
         return ResponseEntity.ok(ApiResponse.<CategoryResponse>builder()
             .status(HttpStatus.OK.value())
@@ -381,11 +385,7 @@ public class FinancesController {
     }
 
     /**
-     * Elimina una categoría financiera del sistema.
-     *
-     * <p>Operación restringida a {@code ROLE_ADMIN} porque las categorías son
-     * globales y pueden estar referenciadas por movimientos, eventos o gastos
-     * fijos de cualquier cuenta.</p>
+     * Elimina una categoría PERSONAL de la cuenta autenticada.
      *
      * @param id          UUID de la categoría que se desea eliminar.
      * @param authenticatedAccount cuenta autenticada.
@@ -396,10 +396,10 @@ public class FinancesController {
      */
 
     @DeleteMapping("/categories/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteCategory(@PathVariable UUID id, @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-        deleteCategoryUseCase.execute(id);
+        UUID accountId = resolveAccountId(authenticatedAccount);
+        deleteCategoryUseCase.execute(accountId, id);
 
         return ResponseEntity.ok(ApiResponse.<Void>builder()
             .status(HttpStatus.OK.value())
@@ -473,17 +473,19 @@ public class FinancesController {
 
 
     @GetMapping("/fixed-expenses")
-    public ResponseEntity<ApiResponse<List<FixedExpenseResponse>>> listFixedExpenses(FixedExpenseFilterRequest filter,
+    public ResponseEntity<ApiResponse<List<FixedExpenseResponse>>> listFixedExpenses(
+        @Valid FixedExpenseFilterRequest filter,
         @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         UUID accountId = resolveAccountId(authenticatedAccount);
-        List<FixedExpenseResponse> response = listFixedExpensesUseCase.execute(accountId, filter);
+        PageResult<FixedExpenseResponse> response = listFixedExpensesUseCase.execute(accountId, filter);
 
 
         return ResponseEntity.ok(ApiResponse.<List<FixedExpenseResponse>>builder()
             .status(HttpStatus.OK.value())
             .message("Gastos fijos listados exitosamente")
-            .data(response)
+            .data(response.content())
+            .page(PageMetadata.from(response))
             .build());
     }
 

@@ -76,6 +76,12 @@ public class AccountRepositoryImpl implements AccountRepository {
         .map(mapper::toDomain);
   }
 
+  @Override
+  public Optional<Account> findByIdForUpdate(UUID id) {
+    return jpaRepository.findByIdForUpdate(id)
+        .map(mapper::toDomain);
+  }
+
 /**
    * Busca una cuenta por su correo electrónico.
    *
@@ -114,7 +120,7 @@ public class AccountRepositoryImpl implements AccountRepository {
    */
   @Override
   public void deleteById(UUID id) {
-    jpaRepository.deleteById(id);
+    jpaRepository.deleteAccountById(id);
   }
 
   @Override

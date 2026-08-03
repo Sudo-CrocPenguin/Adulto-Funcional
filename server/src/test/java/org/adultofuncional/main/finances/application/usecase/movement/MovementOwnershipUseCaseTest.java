@@ -10,14 +10,16 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
 import org.adultofuncional.main.finances.application.dto.movement.UpdateMovementRequest;
 import org.adultofuncional.main.finances.domain.enums.MovementType;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
+import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
@@ -29,7 +31,8 @@ class MovementOwnershipUseCaseTest {
   @Test
   void doesNotReturnMovementOwnedByAnotherAccount() {
     MovementRepository repository = mock(MovementRepository.class);
-    GetMovementUseCase useCase = new GetMovementUseCase(repository);
+    CategoryRepository categoryRepository = mock(CategoryRepository.class);
+    GetMovementUseCase useCase = new GetMovementUseCase(repository, categoryRepository);
     UUID accountId = UUID.randomUUID();
     UUID movementId = UUID.randomUUID();
 
@@ -76,13 +79,19 @@ class MovementOwnershipUseCaseTest {
   @Test
   void returnsMovementToOwningAccount() {
     MovementRepository repository = mock(MovementRepository.class);
-    GetMovementUseCase useCase = new GetMovementUseCase(repository);
+    CategoryRepository categoryRepository = mock(CategoryRepository.class);
+    GetMovementUseCase useCase = new GetMovementUseCase(repository, categoryRepository);
     UUID accountId = UUID.randomUUID();
     UUID movementId = UUID.randomUUID();
     Movement movement = movement(movementId, accountId);
 
     when(repository.findByIdAndAccountId(movementId, accountId))
         .thenReturn(Optional.of(movement));
+    when(categoryRepository.findAccessibleByIdAndType(
+        accountId,
+        movement.getCategoryId(),
+        CategoryType.FINANCES))
+        .thenReturn(Optional.of(category(movement.getCategoryId())));
 
     MovementResponse response = useCase.execute(accountId, movementId);
 
@@ -103,6 +112,11 @@ class MovementOwnershipUseCaseTest {
 
     when(repository.findByIdAndAccountId(movementId, accountId))
         .thenReturn(Optional.of(movement));
+    when(categoryRepository.findAccessibleByIdAndType(
+        accountId,
+        movement.getCategoryId(),
+        CategoryType.FINANCES))
+        .thenReturn(Optional.of(category(movement.getCategoryId())));
     when(repository.save(movement)).thenReturn(movement);
 
     MovementResponse response = useCase.execute(accountId, movementId, request);
@@ -133,6 +147,10 @@ class MovementOwnershipUseCaseTest {
         accountId,
         "Compra",
         LocalDate.now(),
-        LocalDateTime.now().minusMinutes(1));
+        Instant.now().minusSeconds(60));
+  }
+
+  private Category category(UUID categoryId) {
+    return Category.reconstitute(categoryId, "Compras", CategoryType.FINANCES);
   }
 }

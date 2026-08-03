@@ -5,7 +5,11 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Base64;
+import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
@@ -15,6 +19,7 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -102,13 +107,15 @@ public class RedisMasterKeyService implements MasterKeySessionService {
    * para una sesión activa, pero puede ajustarse según la política de
    * seguridad del despliegue.
    */
-  private static final long TTL_SECONDS = 3_600;
-
   private final StringRedisTemplate redisTemplate;
 
   private final SecretKey redisEncryptionKey;
 
   private final SecureRandom secureRandom = new SecureRandom();
+
+  private final Clock clock;
+
+  private final long ttlMillis;
 
   /**
    * Construye el servicio con el template de Redis proporcionado por Spring.
@@ -122,8 +129,20 @@ public class RedisMasterKeyService implements MasterKeySessionService {
   public RedisMasterKeyService(
       StringRedisTemplate redisTemplate,
       @Value("${master-key.session.secret}") String masterKeySessionSecret) {
+    this(redisTemplate, masterKeySessionSecret, Clock.systemUTC(), 3_600_000L);
+  }
+
+  /** Construye el adaptador con reloj y TTL configurables. */
+  @Autowired
+  public RedisMasterKeyService(
+      StringRedisTemplate redisTemplate,
+      @Value("${master-key.session.secret}") String masterKeySessionSecret,
+      Clock clock,
+      @Value("${master-key.session.ttl:3600000}") long ttlMillis) {
     this.redisTemplate = redisTemplate;
     this.redisEncryptionKey = deriveRedisEncryptionKey(masterKeySessionSecret);
+    this.clock = clock;
+    this.ttlMillis = ttlMillis;
   }
 
   /**
@@ -132,37 +151,25 @@ public class RedisMasterKeyService implements MasterKeySessionService {
    * @param accountId identificador de la cuenta
    * @return clave Redis con el formato {@code master-key:<accountId>}
    */
-  private String buildKey(UUID accountId) {
-    return KEY_PREFIX + accountId;
+  private String buildKey(UUID accountId, UUID sessionId) {
+    return KEY_PREFIX + accountId + ":" + sessionId;
   }
 
-  /**
-   * Verifica si la Master Key está presente en Redis y no ha expirado.
-   *
-   * @param accountId identificador de la cuenta
-   * @return {@code true} si la clave existe en Redis
-   */
   @Override
-  public boolean isVerified(UUID accountId) {
-    return Boolean.TRUE.equals(redisTemplate.hasKey(buildKey(accountId)));
-  }
-
-  /**
-   * Obtiene la Master Key descifrada desde Redis.
-   *
-   * @param accountId identificador de la cuenta
-   * @return Master Key en texto plano
-   * @throws IllegalStateException si la clave no existe o expiró
-   */
-  @Override
-  public String getMasterKey(UUID accountId) {
-    String key = buildKey(accountId);
+  public Optional<UnlockedMasterKey> find(UUID accountId, UUID sessionId) {
+    String key = buildKey(accountId, sessionId);
     String encryptedMasterKey = redisTemplate.opsForValue().get(key);
     if (encryptedMasterKey == null) {
-      throw new IllegalStateException(
-          "Master Key no verificada para la cuenta " + accountId);
+      return Optional.empty();
     }
-    return decrypt(encryptedMasterKey);
+    Long ttlSeconds = redisTemplate.getExpire(key, TimeUnit.SECONDS);
+    if (ttlSeconds == null || ttlSeconds < 0) {
+      redisTemplate.delete(key);
+      return Optional.empty();
+    }
+    return Optional.of(new UnlockedMasterKey(
+        decrypt(encryptedMasterKey, key),
+        clock.instant().plusSeconds(ttlSeconds)));
   }
 
   /**
@@ -176,9 +183,13 @@ public class RedisMasterKeyService implements MasterKeySessionService {
    * @param masterKey Master Key en texto plano
    */
   @Override
-  public void verify(UUID accountId, String masterKey) {
+  public void unlock(UUID accountId, UUID sessionId, String masterKey) {
+    String key = buildKey(accountId, sessionId);
     redisTemplate.opsForValue()
-        .set(buildKey(accountId), encrypt(masterKey), TTL_SECONDS, TimeUnit.SECONDS);
+        .set(key, encrypt(masterKey, key), ttlMillis, TimeUnit.MILLISECONDS);
+    String indexKey = buildIndexKey(accountId);
+    redisTemplate.opsForSet().add(indexKey, key);
+    redisTemplate.expire(indexKey, ttlMillis, TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -189,8 +200,24 @@ public class RedisMasterKeyService implements MasterKeySessionService {
    * @param accountId identificador de la cuenta
    */
   @Override
-  public void clear(UUID accountId) {
-    redisTemplate.delete(buildKey(accountId));
+  public void clear(UUID accountId, UUID sessionId) {
+    String key = buildKey(accountId, sessionId);
+    redisTemplate.delete(key);
+    redisTemplate.opsForSet().remove(buildIndexKey(accountId), key);
+  }
+
+  @Override
+  public void clearAll(UUID accountId) {
+    String indexKey = buildIndexKey(accountId);
+    Set<String> keys = redisTemplate.opsForSet().members(indexKey);
+    if (keys != null && !keys.isEmpty()) {
+      redisTemplate.delete(keys);
+    }
+    redisTemplate.delete(indexKey);
+  }
+
+  private String buildIndexKey(UUID accountId) {
+    return KEY_PREFIX + "sessions:" + accountId;
   }
 
   private SecretKey deriveRedisEncryptionKey(String masterKeySessionSecret) {
@@ -209,13 +236,14 @@ public class RedisMasterKeyService implements MasterKeySessionService {
     }
   }
 
-  private String encrypt(String masterKey) {
+  private String encrypt(String masterKey, String redisKey) {
     try {
       byte[] iv = new byte[IV_LENGTH_BYTES];
       secureRandom.nextBytes(iv);
 
       Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);
       cipher.init(Cipher.ENCRYPT_MODE, redisEncryptionKey, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+      cipher.updateAAD(redisKey.getBytes(StandardCharsets.UTF_8));
       byte[] ciphertext = cipher.doFinal(masterKey.getBytes(StandardCharsets.UTF_8));
 
       return Base64.getEncoder().encodeToString(iv)
@@ -226,7 +254,7 @@ public class RedisMasterKeyService implements MasterKeySessionService {
     }
   }
 
-  private String decrypt(String encryptedMasterKey) {
+  private String decrypt(String encryptedMasterKey, String redisKey) {
     String[] parts = encryptedMasterKey.split(PAYLOAD_SEPARATOR, 2);
     if (parts.length != 2) {
       throw new IllegalStateException("La Master Key de sesión tiene un formato inválido");
@@ -238,6 +266,7 @@ public class RedisMasterKeyService implements MasterKeySessionService {
 
       Cipher cipher = Cipher.getInstance(AES_TRANSFORMATION);
       cipher.init(Cipher.DECRYPT_MODE, redisEncryptionKey, new GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv));
+      cipher.updateAAD(redisKey.getBytes(StandardCharsets.UTF_8));
       return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
     } catch (GeneralSecurityException | IllegalArgumentException e) {
       throw new IllegalStateException("No fue posible descifrar la Master Key de sesión", e);

@@ -4,6 +4,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.MariaDBContainer;
+import org.testcontainers.utility.DockerImageName;
 
 /**
  * Infraestructura compartida para las pruebas de integración con MariaDB.
@@ -27,7 +28,10 @@ import org.testcontainers.containers.MariaDBContainer;
 public abstract class MariaDbIntegrationTestSupport {
 
   private static final MariaDBContainer<?> MARIA_DB =
-      new MariaDBContainer<>("mariadb:11.8")
+      new MariaDBContainer<>(
+          DockerImageName.parse(
+              "mariadb:11.8.8@sha256:efb4959ef2c835cd735dbc388eb9ad6aab0c78dd64febcd51bc17481111890c4")
+              .asCompatibleSubstituteFor("mariadb"))
           .withDatabaseName("adulto_funcional_test")
           .withUsername("test")
           .withPassword("test");

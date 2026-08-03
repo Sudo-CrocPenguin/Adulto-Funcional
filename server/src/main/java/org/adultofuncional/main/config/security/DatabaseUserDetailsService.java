@@ -1,6 +1,8 @@
 package org.adultofuncional.main.config.security;
 
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
+import org.adultofuncional.main.auth.domain.model.AccountRole;
+import org.adultofuncional.main.auth.domain.repository.AccountRoleRepository;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -44,6 +46,9 @@ public class DatabaseUserDetailsService implements UserDetailsService {
    */
   private final AccountRepository accountRepository;
 
+  /** Puerto de roles persistidos; evita autoridades codificadas en Java. */
+  private final AccountRoleRepository roleRepository;
+
   /**
    * Carga los detalles del usuario a partir de su email.
    *
@@ -56,18 +61,23 @@ public class DatabaseUserDetailsService implements UserDetailsService {
    * @return {@link UserDetails} con las credenciales y autoridades del usuario
    * @throws UsernameNotFoundException si no existe una cuenta con el email dado
    */
-  // TODO: Cargar roles dinámicamente desde la base de datos cuando se implemente
-  // el sistema de roles en la entidad Account.
   @Override
   public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
     var account = accountRepository.findByEmail(email)
         .orElseThrow(() -> new UsernameNotFoundException(
             "Usuario no encontrado: " + email));
 
+    var authorities = roleRepository.findByAccountId(account.getId()).stream()
+        .map(AccountRole::asAuthority)
+        .toArray(String[]::new);
+    if (authorities.length == 0) {
+      authorities = new String[] {AccountRole.USER.asAuthority()};
+    }
+
     return User.builder()
         .username(account.getEmail())
         .password(account.getPasswordHash())
-        .roles("USER")
+        .authorities(authorities)
         .build();
   }
 }

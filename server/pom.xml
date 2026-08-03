@@ -17,7 +17,8 @@
   <url>https://github.com/adulto-funcional/adulto-funcional-server</url>
   <licenses>
     <license>
-      <name>Proprietary License</name>
+      <name>MIT License</name>
+      <url>https://opensource.org/license/mit</url>
     </license>
   </licenses>
   <developers>
@@ -45,6 +46,7 @@
   </scm>
   <properties>
     <java.version>21</java.version>
+    <dependency-check.version>12.2.2</dependency-check.version>
   </properties>
 
   <dependencies>
@@ -284,5 +286,40 @@
 
     </plugins>
   </build>
+
+  <profiles>
+    <!--
+      Escaneo explícito para CI o revisión local:
+      ./mvnw -Psecurity-scan verify
+      Se mantiene fuera del ciclo normal porque la base NVD requiere red y una
+      actualización inicial considerable.
+    -->
+    <profile>
+      <id>security-scan</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.owasp</groupId>
+            <artifactId>dependency-check-maven</artifactId>
+            <version>${dependency-check.version}</version>
+            <configuration>
+              <failBuildOnCVSS>7</failBuildOnCVSS>
+              <formats>
+                <format>HTML</format>
+                <format>JSON</format>
+              </formats>
+            </configuration>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
 </project>

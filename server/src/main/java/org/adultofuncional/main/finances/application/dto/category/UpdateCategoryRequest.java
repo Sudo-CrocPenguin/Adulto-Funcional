@@ -2,6 +2,9 @@ package org.adultofuncional.main.finances.application.dto.category;
 
 import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.shared.security.NoHtml;
+import org.adultofuncional.main.shared.validation.InputPatterns;
+import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,8 +24,7 @@ import lombok.Getter;
  * <strong>Validaciones aplicadas a cada campo:</strong>
  * <ul>
  * <li>{@code name} — opcional, máximo 50 caracteres si se proporciona.</li>
- * <li>{@code type} — opcional, debe ser un valor válido de {@link CategoryType}
- * si se proporciona.</li>
+ * <li>{@code type} — atributo histórico rechazado porque el tipo es inmutable.</li>
  * </ul>
  *
  * <p>
@@ -61,6 +63,7 @@ public class UpdateCategoryRequest {
    * </ul>
    */
   @Size(max = 50, message = "El nombre no puede exceder 50 caracteres")
+  @Pattern(regexp = InputPatterns.NON_BLANK, message = "El nombre no puede estar vacío")
   @NoHtml
   private String name;
 
@@ -68,10 +71,9 @@ public class UpdateCategoryRequest {
    * Nuevo tipo que se desea asignar a la categoría financiera.
    *
    * <p>
-   * Campo opcional. Si se proporciona, reemplaza la clasificación actual
-   * de la categoría según el enumerado {@link CategoryType}
-   * (por ejemplo: ingreso, gasto, ahorro, entre otros).
-   * Si es {@code null}, el tipo de la categoría permanece sin cambios.
+   * Se conserva temporalmente para producir un error de validación explícito
+   * cuando un cliente antiguo intenta cambiarlo.
    */
+  @Null(message = "El tipo de una categoría no puede modificarse")
   private CategoryType type;
 }

@@ -1,6 +1,7 @@
 package org.adultofuncional.main.finances.application.usecase.fixedexpense;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.adultofuncional.main.finances.application.dto.category.CategoryRespon
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.UpdateFixedExpenseRequest;
 import org.adultofuncional.main.finances.domain.enums.Status;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
@@ -54,6 +56,9 @@ public class UpdateFixedExpenseUseCase {
   /** Puerto de dominio para la validación de categorías. */
   private final CategoryRepository categoryRepository;
 
+  /** Reloj que define el día actual de las reglas de negocio. */
+  private final Clock clock;
+
   /**
    * Ejecuta la actualización parcial de un gasto fijo.
    *
@@ -88,17 +93,24 @@ public class UpdateFixedExpenseUseCase {
       amount = request.getAmount();
     if (request.getFrequency() != null)
       frequency = request.getFrequency();
+    if (request.getStartDate() != null)
+      startDate = request.getStartDate();
+    if (request.getReminderDays() != null)
+      reminderDays = request.getReminderDays();
     if (request.getNextDueDate() != null) {
-      if (request.getNextDueDate().isBefore(LocalDate.now())) {
+      if (!request.getNextDueDate().isAfter(LocalDate.now(clock))) {
         throw new BusinessException("La fecha de cierre debe ser futura");
       }
       nextDueDate = request.getNextDueDate();
     }
-    if (request.getCategoryId() != null) {
-      categoryRepository.findById(request.getCategoryId())
-          .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
+    if (request.getCategoryId() != null)
       categoryId = request.getCategoryId();
-    }
+
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            categoryId,
+            CategoryType.FINANCES)
+        .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
 
     expense.update(name, amount, categoryId, frequency, startDate, nextDueDate, reminderDays);
 
@@ -111,15 +123,11 @@ public class UpdateFixedExpenseUseCase {
 
     FixedExpense saved = fixedExpenseRepository.save(expense);
 
-    // La categoría ya fue validada, pero se carga de nuevo para construir la
-    // respuesta
-    Category category = categoryRepository.findById(saved.getCategoryId())
-        .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
-
     CategoryResponse categoryResponse = CategoryResponse.builder()
         .id(category.getId())
         .name(category.getName())
         .type(category.getType())
+        .scope(category.getScope())
         .build();
 
     return FixedExpenseResponse.builder()
@@ -128,6 +136,8 @@ public class UpdateFixedExpenseUseCase {
         .frequency(saved.getFrequency())
         .amount(saved.getAmount())
         .status(saved.getStatus())
+        .startDate(saved.getStartDate())
+        .reminderDays(saved.getReminderDays())
         .nextDueDate(saved.getNextDueDate())
         .category(categoryResponse)
         .build();

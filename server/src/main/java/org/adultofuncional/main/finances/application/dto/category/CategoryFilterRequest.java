@@ -1,6 +1,8 @@
 package org.adultofuncional.main.finances.application.dto.category;
 
 import org.adultofuncional.main.finances.domain.enums.CategoryType;
+import org.adultofuncional.main.shared.security.NoHtml;
+import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -18,7 +20,11 @@ import lombok.Getter;
  * <li>{@link #type} — permite restringir las categorías por su
  * {@link CategoryType} (ej. {@code Finanzas}, {@code Agenda}). Si es
  * {@code null} se retornan todas las categorías sin distinción de tipo.</li>
+ * <li>{@link #searchTerm} — búsqueda insensible a mayúsculas por nombre.</li>
  * </ul>
+
+ * <p>La página predeterminada es 0, el tamaño 20 y el máximo 100. Los campos
+ * ordenables se validan mediante una lista blanca en aplicación.</p>
  *
  * <p>
  * <strong>Nota sobre borrado lógico:</strong> El campo {@code includeDeleted}
@@ -51,4 +57,21 @@ public class CategoryFilterRequest {
    * no se aplica y se devuelven categorías de todos los tipos.
    */
   private CategoryType type;
+
+  /** Búsqueda opcional e insensible a mayúsculas sobre el nombre. */
+  @Size(max = 50, message = "El término de búsqueda no puede exceder 50 caracteres")
+  @NoHtml
+  private String searchTerm;
+
+  /** Campo lógico permitido para ordenar. */
+  private String sortBy;
+
+  /** Dirección {@code ASC} o {@code DESC}. */
+  private String sortDirection;
+
+  /** Página base cero; usa 0 por defecto. */
+  private Integer page;
+
+  /** Registros por página; usa 20 por defecto y admite hasta 100. */
+  private Integer size;
 }

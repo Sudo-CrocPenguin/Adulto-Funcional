@@ -1,14 +1,22 @@
 package org.adultofuncional.main.finances.infrastructure.repository;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.FixedExpenseRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.FixedExpensesEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.mapper.FixedExpenseMapper;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringFixedExpenseJpaRepository;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,8 +35,7 @@ import lombok.RequiredArgsConstructor;
  * <ul>
  * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca un gasto fijo por ID y
  * cuenta y lo convierte a dominio.</li>
- * <li>{@link #findAllByAccountId(UUID)} — lista todos los gastos fijos
- * asociados a una cuenta.</li>
+ * <li>Consulta páginas filtradas y ordenadas dentro de una cuenta.</li>
  * <li>{@link #save(FixedExpense)} — persiste un gasto fijo nuevo o actualizado,
  * devolviendo el modelo de dominio resultante.</li>
  * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina un gasto fijo por
@@ -44,6 +51,14 @@ import lombok.RequiredArgsConstructor;
 @Repository
 @RequiredArgsConstructor
 public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
+
+  private static final Map<String, String> SORT_FIELDS = Map.of(
+      "nextDueDate", "fixedExpenseNextDueDate",
+      "amount", "fixedExpenseAmount",
+      "name", "fixedExpenseName",
+      "status", "fixedExpenseStatus",
+      "frequency", "fixedExpenseFrequency",
+      "id", "fixedExpenseId");
 
   private final SpringFixedExpenseJpaRepository fixedExpenseJpaRepository;
   private final FixedExpenseMapper fixedExpenseMapper;
@@ -64,20 +79,51 @@ public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
   }
 
   /**
-   * Lista todos los gastos fijos asociados a una cuenta específica.
+   * Consulta una página acotada de gastos fijos.
    *
    * <p>
-   * Utiliza el método {@code findByAccount_AccountId} de Spring Data JPA
-   * para recuperar las entidades y luego las convierte una a una al modelo
-   * de dominio {@link FixedExpense} mediante el mapper.
+   * Traduce el campo lógico a la propiedad JPA, añade el UUID como desempate
+   * y aplica filtros y límites directamente en MariaDB.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
    * @return lista de gastos fijos de la cuenta (vacía si no hay registros).
    */
   @Override
-  public List<FixedExpense> findAllByAccountId(UUID accountId) {
-    return fixedExpenseJpaRepository.findByAccount_AccountId(accountId)
-        .stream().map(fixedExpenseMapper::toDomain).toList();
+  public PageResult<FixedExpense> findPageByAccountId(
+      UUID accountId,
+      Status status,
+      UUID categoryId,
+      String searchTerm,
+      PageQuery pageQuery) {
+    String entitySortField = SORT_FIELDS.get(pageQuery.sortBy());
+    Sort.Direction direction = pageQuery.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort sort = Sort.by(direction, entitySortField);
+    if (!entitySortField.equals("fixedExpenseId")) {
+      sort = sort.and(Sort.by(direction, "fixedExpenseId"));
+    }
+    PageRequest pageable = PageRequest.of(pageQuery.number(), pageQuery.size(), sort);
+    Page<FixedExpensesEntity> page = fixedExpenseJpaRepository.findPageByAccountId(
+        accountId,
+        status == null ? null : status.name(),
+        categoryId,
+        searchTerm,
+        pageable);
+    return new PageResult<>(
+        page.getContent().stream().map(fixedExpenseMapper::toDomain).toList(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.hasNext(),
+        page.hasPrevious());
+  }
+
+  @Override
+  public List<FixedExpense> findDueForUpdate(LocalDate cutoff, int batchSize) {
+    PageRequest batch = PageRequest.of(0, batchSize);
+    return fixedExpenseJpaRepository.findDueForUpdate(cutoff, batch).stream()
+        .map(fixedExpenseMapper::toDomain)
+        .toList();
   }
 
   /**
@@ -95,6 +141,8 @@ public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
   @Override
   public FixedExpense save(FixedExpense fixedExpense) {
     FixedExpensesEntity entity = fixedExpenseMapper.toEntity(fixedExpense);
+    fixedExpenseJpaRepository.findById(fixedExpense.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     FixedExpensesEntity saved = fixedExpenseJpaRepository.save(entity);
     return fixedExpenseMapper.toDomain(saved);
   }

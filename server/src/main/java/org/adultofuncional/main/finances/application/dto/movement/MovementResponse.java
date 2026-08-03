@@ -1,8 +1,8 @@
 package org.adultofuncional.main.finances.application.dto.movement;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
 import org.adultofuncional.main.finances.domain.enums.MovementType;
@@ -76,7 +76,7 @@ public class MovementResponse {
    * el movimiento real.
    * </p>
    */
-  private LocalDateTime registerDate;
+  private Instant registerDate;
 
   /**
    * Descripción textual del movimiento financiero.

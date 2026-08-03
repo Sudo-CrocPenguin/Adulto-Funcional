@@ -23,6 +23,7 @@ import org.adultofuncional.main.shared.response.ApiResponse;
 import org.adultofuncional.main.shared.response.FieldValidationError;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -68,6 +69,21 @@ public class GlobalExceptionHandler {
       new MediaType("application", "json", StandardCharsets.UTF_8);
 
   private final ApiErrorFactory errorFactory;
+
+  /** Devuelve 429 y comunica cuándo puede reintentarse la operación. */
+  @ExceptionHandler(RateLimitExceededException.class)
+  public ResponseEntity<ApiResponse<Void>> handleRateLimit(
+      RateLimitExceededException exception,
+      HttpServletRequest request) {
+    ApiResponse<Void> body = errorFactory.create(
+        request,
+        exception.getStatus(),
+        exception.getCode(),
+        exception.getMessage());
+    return responseBuilder(exception.getStatus())
+        .header(HttpHeaders.RETRY_AFTER, Long.toString(exception.getRetryAfterSeconds()))
+        .body(body);
+  }
 
   /** Maneja errores de negocio conservando estado, código y mensaje seguros. */
   @ExceptionHandler(BusinessException.class)
@@ -251,6 +267,19 @@ public class GlobalExceptionHandler {
         HttpStatus.NOT_ACCEPTABLE,
         REPRESENTATION_NOT_ACCEPTABLE,
         "No existe un formato de respuesta aceptable");
+  }
+
+  /** Maneja restricciones de integridad sin exponer SQL ni nombres internos. */
+  @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+  public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(
+      ObjectOptimisticLockingFailureException exception,
+      HttpServletRequest request) {
+    log.debug("Actualización concurrente detectada", exception);
+    return buildError(
+        request,
+        HttpStatus.CONFLICT,
+        ApiErrorCode.CONCURRENT_MODIFICATION,
+        "El recurso fue modificado por otra solicitud; vuelve a intentarlo");
   }
 
   /** Maneja restricciones de integridad sin exponer SQL ni nombres internos. */

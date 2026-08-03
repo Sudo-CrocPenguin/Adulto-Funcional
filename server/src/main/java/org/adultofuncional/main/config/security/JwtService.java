@@ -1,6 +1,8 @@
 package org.adultofuncional.main.config.security;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -8,6 +10,9 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
+import com.fasterxml.uuid.Generators;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
 
@@ -71,6 +76,12 @@ public class JwtService {
    */
   private final long expiration;
 
+  private final String issuer;
+
+  private final String audience;
+
+  private final Clock clock;
+
   /**
    * Inicializa el servicio derivando la clave de firma y validando que el
    * secreto cumpla el mínimo de seguridad requerido por HS256.
@@ -82,6 +93,12 @@ public class JwtService {
    *                               arrancará en ese caso
    */
   public JwtService(JwtProperties jwtProperties) {
+    this(jwtProperties, Clock.systemUTC());
+  }
+
+  /** Construye el servicio con un reloj inyectable para expiraciones deterministas. */
+  @Autowired
+  public JwtService(JwtProperties jwtProperties, Clock clock) {
     String secret = jwtProperties.getSecret();
     long expiration = jwtProperties.getExpiration();
 
@@ -93,6 +110,9 @@ public class JwtService {
 
     this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     this.expiration = expiration;
+    this.issuer = requireText(jwtProperties.getIssuer(), "jwt.issuer");
+    this.audience = requireText(jwtProperties.getAudience(), "jwt.audience");
+    this.clock = clock;
   }
 
   /**
@@ -111,22 +131,64 @@ public class JwtService {
    */
   public String generateToken(String accountId, String email,
       Collection<? extends GrantedAuthority> authorities) {
+    Instant issuedAt = clock.instant();
+    return issueToken(
+        UUID.fromString(accountId),
+        Generators.timeBasedEpochGenerator().generate(),
+        email,
+        authorities,
+        Generators.timeBasedEpochGenerator().generate(),
+        issuedAt,
+        issuedAt.plusMillis(expiration)).value();
+  }
 
-    Date now = new Date();
-    Date expiryDate = new Date(now.getTime() + expiration);
+  /** Emite el access token de una sesión usando la duración configurada. */
+  public IssuedAccessToken issueToken(
+      UUID accountId,
+      UUID sessionId,
+      String email,
+      Collection<? extends GrantedAuthority> authorities,
+      UUID tokenId) {
+    Instant issuedAt = clock.instant();
+    return issueToken(
+        accountId,
+        sessionId,
+        email,
+        authorities,
+        tokenId,
+        issuedAt,
+        issuedAt.plusMillis(expiration));
+  }
 
+  /**
+   * Firma un access token con identidad de cuenta, sesión y token individual.
+   */
+  public IssuedAccessToken issueToken(
+      UUID accountId,
+      UUID sessionId,
+      String email,
+      Collection<? extends GrantedAuthority> authorities,
+      UUID tokenId,
+      Instant issuedAt,
+      Instant expiresAt) {
     List<String> roles = authorities.stream()
         .map(GrantedAuthority::getAuthority)
         .toList();
 
-    return Jwts.builder()
-        .subject(accountId)
+    String value = Jwts.builder()
+        .subject(accountId.toString())
+        .id(tokenId.toString())
+        .issuer(issuer)
+        .audience().add(audience).and()
+        .claim("sid", sessionId.toString())
         .claim("email", email)
         .claim("roles", roles)
-        .issuedAt(now)
-        .expiration(expiryDate)
+        .issuedAt(Date.from(issuedAt))
+        .expiration(Date.from(expiresAt))
         .signWith(secretKey)
         .compact();
+
+    return new IssuedAccessToken(value, tokenId, issuedAt, expiresAt);
   }
 
   /**
@@ -164,6 +226,16 @@ public class JwtService {
    */
   public List<String> extractRoles(String token) {
     return extractClaims(token).get("roles", List.class);
+  }
+
+  /** Extrae el identificador de la familia de sesión ({@code sid}). */
+  public UUID extractSessionId(String token) {
+    return UUID.fromString(extractClaims(token).get("sid", String.class));
+  }
+
+  /** Extrae el identificador individual del access token ({@code jti}). */
+  public UUID extractTokenId(String token) {
+    return UUID.fromString(extractClaims(token).getId());
   }
 
   /**
@@ -213,9 +285,18 @@ public class JwtService {
    */
   private Claims extractClaims(String token) {
     return Jwts.parser()
+        .requireIssuer(issuer)
+        .requireAudience(audience)
         .verifyWith(secretKey)
         .build()
         .parseSignedClaims(token)
         .getPayload();
+  }
+
+  private static String requireText(String value, String property) {
+    if (value == null || value.isBlank()) {
+      throw new IllegalStateException(property + " es obligatorio");
+    }
+    return value;
   }
 }

@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.security.domain.model.Password;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
 /**
  * Puerto de dominio para la persistencia de credenciales almacenadas.
@@ -32,12 +34,18 @@ import org.adultofuncional.main.security.domain.model.Password;
 public interface PasswordRepository {
 
   /**
-   * Lista todas las credenciales asociadas a una cuenta específica.
+   * Lista todas las credenciales para el recifrado transaccional de Master Key.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return lista de credenciales de la cuenta (vacía si no hay registros).
+   * @return bóveda completa; no debe usarse desde endpoints de listado.
    */
   List<Password> findAllByAccountId(UUID accountId);
+
+  /** Página pública acotada; la lectura completa se reserva para recifrado. */
+  PageResult<Password> findPageByAccountId(
+      UUID accountId,
+      String searchTerm,
+      PageQuery pageQuery);
 
   /**
    * Persiste una credencial nueva o actualiza una existente.

@@ -10,7 +10,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -28,6 +31,10 @@ import org.junit.jupiter.api.Test;
 
 class FixedExpenseOwnershipUseCaseTest {
 
+  private static final Clock CLOCK = Clock.fixed(
+      Instant.parse("2026-08-03T12:00:00Z"),
+      ZoneOffset.UTC);
+
   @Test
   void doesNotReturnFixedExpenseOwnedByAnotherAccount() {
     FixedExpenseRepository fixedExpenseRepository = mock(FixedExpenseRepository.class);
@@ -38,15 +45,13 @@ class FixedExpenseOwnershipUseCaseTest {
 
     UUID authenticatedAccountId = UUID.randomUUID();
     UUID expenseId = UUID.randomUUID();
-    UUID categoryId = UUID.randomUUID();
-
     when(fixedExpenseRepository.findByIdAndAccountId(expenseId, authenticatedAccountId))
         .thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> useCase.execute(authenticatedAccountId, expenseId))
         .isInstanceOf(NotFoundException.class);
 
-    verify(categoryRepository, never()).findById(categoryId);
+    verify(categoryRepository, never()).findAccessibleByIdAndType(any(), any(), any());
   }
 
   @Test
@@ -72,7 +77,8 @@ class FixedExpenseOwnershipUseCaseTest {
     CategoryRepository categoryRepository = mock(CategoryRepository.class);
     UpdateFixedExpenseUseCase useCase = new UpdateFixedExpenseUseCase(
         fixedExpenseRepository,
-        categoryRepository);
+        categoryRepository,
+        CLOCK);
 
     UUID authenticatedAccountId = UUID.randomUUID();
     UUID expenseId = UUID.randomUUID();
@@ -105,7 +111,10 @@ class FixedExpenseOwnershipUseCaseTest {
 
     when(fixedExpenseRepository.findByIdAndAccountId(expenseId, accountId))
         .thenReturn(Optional.of(expense));
-    when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+    when(categoryRepository.findAccessibleByIdAndType(
+        accountId,
+        categoryId,
+        CategoryType.FINANCES)).thenReturn(Optional.of(category));
 
     FixedExpenseResponse response = useCase.execute(accountId, expenseId);
 
@@ -134,7 +143,8 @@ class FixedExpenseOwnershipUseCaseTest {
     CategoryRepository categoryRepository = mock(CategoryRepository.class);
     UpdateFixedExpenseUseCase useCase = new UpdateFixedExpenseUseCase(
         fixedExpenseRepository,
-        categoryRepository);
+        categoryRepository,
+        CLOCK);
 
     UUID accountId = UUID.randomUUID();
     UUID expenseId = UUID.randomUUID();
@@ -148,7 +158,10 @@ class FixedExpenseOwnershipUseCaseTest {
     when(fixedExpenseRepository.findByIdAndAccountId(expenseId, accountId))
         .thenReturn(Optional.of(expense));
     when(fixedExpenseRepository.save(expense)).thenReturn(expense);
-    when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+    when(categoryRepository.findAccessibleByIdAndType(
+        accountId,
+        categoryId,
+        CategoryType.FINANCES)).thenReturn(Optional.of(category));
 
     FixedExpenseResponse response = useCase.execute(accountId, expenseId, request);
 

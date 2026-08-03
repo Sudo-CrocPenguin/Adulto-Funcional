@@ -1,12 +1,14 @@
 package org.adultofuncional.main.config.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
 import org.adultofuncional.main.shared.observability.TraceIdProvider;
+import org.adultofuncional.main.auth.domain.service.AccessTokenRevocationService;
 import org.adultofuncional.main.shared.response.ApiErrorFactory;
 import org.adultofuncional.main.shared.response.ApiErrorResponseWriter;
 import org.junit.jupiter.api.AfterEach;
@@ -124,7 +126,10 @@ class JwtAuthenticationFilterTest {
     TraceIdProvider traceIdProvider = new TraceIdProvider();
     ApiErrorFactory errorFactory = new ApiErrorFactory(traceIdProvider);
     ApiErrorResponseWriter writer = new ApiErrorResponseWriter(new ObjectMapper(), errorFactory);
-    return new JwtAuthenticationFilter(jwtService, writer);
+    return new JwtAuthenticationFilter(
+        jwtService,
+        writer,
+        mock(AccessTokenRevocationService.class));
   }
 
   private JwtService jwtService() {

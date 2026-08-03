@@ -1,10 +1,14 @@
 package org.adultofuncional.main.finances.application.usecase.movement;
 
+import java.time.Clock;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.finances.application.dto.movement.CreateMovementRequest;
 import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
+import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
+import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
@@ -48,6 +52,9 @@ public class CreateMovementUseCase {
   /** Puerto de dominio para la validación de la categoría. */
   private final CategoryRepository categoryRepository;
 
+  /** Reloj UTC usado para la fecha técnica de registro. */
+  private final Clock clock;
+
   /**
    * Ejecuta la creación de un nuevo movimiento.
    *
@@ -65,7 +72,10 @@ public class CreateMovementUseCase {
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
     UUID finalCategoryId = request.getCategoryId();
-    categoryRepository.findById(finalCategoryId)
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            finalCategoryId,
+            CategoryType.FINANCES)
         .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + finalCategoryId));
 
     Movement movement = Movement.create(
@@ -74,7 +84,8 @@ public class CreateMovementUseCase {
         finalCategoryId,
         accountId,
         request.getDescription(),
-        request.getMovementDate());
+        request.getMovementDate(),
+        clock);
 
     Movement saved = movementRepository.save(movement);
     return MovementResponse.builder()
@@ -84,7 +95,16 @@ public class CreateMovementUseCase {
         .registerDate(saved.getCreatedAt())
         .description(saved.getDescription())
         .movementDate(saved.getDate())
-        .category(null)
+        .category(toCategoryResponse(category))
+        .build();
+  }
+
+  private CategoryResponse toCategoryResponse(Category category) {
+    return CategoryResponse.builder()
+        .id(category.getId())
+        .name(category.getName())
+        .type(category.getType())
+        .scope(category.getScope())
         .build();
   }
 }

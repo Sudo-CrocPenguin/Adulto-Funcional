@@ -1,5 +1,6 @@
 package org.adultofuncional.main.security.application.usecase;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -9,8 +10,9 @@ import org.adultofuncional.main.security.application.dto.PasswordResponse;
 import org.adultofuncional.main.security.domain.model.Password;
 import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.domain.service.EncryptionService;
+import org.adultofuncional.main.security.domain.service.EncryptionService.EncryptionContext;
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
-import org.adultofuncional.main.shared.exception.BusinessException;
+import org.adultofuncional.main.shared.exception.ConflictException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.adultofuncional.main.shared.response.ApiErrorCode;
@@ -56,6 +58,7 @@ public class CreatePasswordUseCase {
   private final AccountRepository accountRepository;
   private final EncryptionService encryptionService;
   private final MasterKeySessionService masterKeySessionService;
+  private final Clock clock;
 
   /**
    * Ejecuta la creación de una nueva credencial.
@@ -67,42 +70,46 @@ public class CreatePasswordUseCase {
    *         credencial creada.
    * @throws NotFoundException  si la cuenta no existe.
    * @throws ForbiddenException si la Master Key no ha sido verificada.
-   * @throws BusinessException  si ya existe una credencial con el mismo
+   * @throws ConflictException  si ya existe una credencial con el mismo
    *                            nombre de aplicación.
    */
   @Transactional
-  public PasswordResponse execute(UUID accountId, PasswordRequest request) {
+  public PasswordResponse execute(UUID accountId, UUID sessionId, PasswordRequest request) {
     // 1. Verificar cuenta
-    accountRepository.findById(accountId)
+    accountRepository.findByIdForUpdate(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
     // 2. Verificar Master Key en sesión
-    if (!masterKeySessionService.isVerified(accountId)) {
-      throw new ForbiddenException(
-          "Master Key no verificada",
-          ApiErrorCode.MASTER_KEY_REQUIRED);
-    }
+    String masterKey = masterKeySessionService.find(accountId, sessionId)
+        .map(MasterKeySessionService.UnlockedMasterKey::value)
+        .orElseThrow(() -> new ForbiddenException(
+            "Master Key no verificada",
+            ApiErrorCode.MASTER_KEY_REQUIRED));
 
     // 3. Verificar unicidad del nombre de aplicación por cuenta
     if (passwordRepository.existsByAccountIdAndApplicationName(accountId, request.getApplicationName())) {
-      throw new BusinessException(
+      throw new ConflictException(
           "Ya existe una contraseña para la aplicación: " + request.getApplicationName());
     }
 
-    // 4. Cifrar contraseña con AES‑256
-    String masterKey = masterKeySessionService.getMasterKey(accountId);
+    // 4. Generar identidad y cifrar vinculando cuenta + credencial como AAD
+    UUID passwordId = Password.nextId();
     EncryptionService.EncryptedData encryptedData = encryptionService.encrypt(
-        request.getPassword(), masterKey);
+        request.getPassword(),
+        masterKey,
+        new EncryptionContext(accountId, passwordId));
 
     // 5. Fecha de último cambio
     LocalDate lastChangeDate = request.getLastChangeDate() != null
         ? request.getLastChangeDate()
-        : LocalDate.now();
+        : LocalDate.now(clock);
 
     // 6. Crear modelo de dominio
     Password password = Password.create(
+        passwordId,
         request.getApplicationName(),
         encryptedData.salt(),
+        encryptedData.cryptoVersion(),
         encryptedData.iv(),
         encryptedData.ciphertext(),
         lastChangeDate,

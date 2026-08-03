@@ -34,10 +34,8 @@ public class LoginRequest {
 
   /**
    * Correo electrónico del usuario (usado como username).
-   * Obligatorio, formato de email válido y máximo 255 caracteres.
-   *
-   * // TODO: Validar dominios permitidos según políticas de negocio (ej. solo
-   * correos corporativos).
+   * Obligatorio, formato de email válido y máximo 255 caracteres. La misma
+   * política abierta de dominios usada en registro se conserva aquí.
    */
   @NotBlank(message = "El email es obligatorio")
   @Email(message = "El formato del email no es válido")
@@ -47,11 +45,12 @@ public class LoginRequest {
 
   /**
    * Contraseña en texto plano.
-   * Obligatoria, entre 8 y 24 caracteres.
+   * Obligatoria y máximo 128 caracteres. No se eleva el mínimo durante login
+   * para que cuentas creadas con la política histórica sigan autenticando.
    * Será verificada contra el hash Argon2 almacenado.
    *
    */
   @NotBlank(message = "La contraseña es obligatoria")
-  @Size(min = 8, max = 24, message = "La contraseña debe tener entre 8 y 24 caracteres")
+  @Size(max = 128, message = "La contraseña no puede exceder 128 caracteres")
   private String password;
 }

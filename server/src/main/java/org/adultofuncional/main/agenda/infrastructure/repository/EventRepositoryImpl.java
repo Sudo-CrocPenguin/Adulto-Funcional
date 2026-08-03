@@ -1,6 +1,7 @@
 package org.adultofuncional.main.agenda.infrastructure.repository;
 
-import java.util.List;
+import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -9,6 +10,11 @@ import org.adultofuncional.main.agenda.domain.repository.EventRepository;
 import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEntity;
 import org.adultofuncional.main.agenda.infrastructure.persistence.mapper.EventMapper;
 import org.adultofuncional.main.agenda.infrastructure.persistence.repository.SpringEventJpaRepository;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -28,8 +34,7 @@ import lombok.RequiredArgsConstructor;
  * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca un evento por ID y
  * cuenta,
  * garantizando propiedad.</li>
- * <li>{@link #findAllByAccountId(UUID)} — lista todos los eventos de una
- * cuenta.</li>
+ * <li>Consulta páginas filtradas y ordenadas dentro de una cuenta.</li>
  * <li>{@link #save(Event)} — persiste un evento nuevo o actualizado,
  * devolviendo el
  * modelo de dominio resultante.</li>
@@ -46,6 +51,14 @@ import lombok.RequiredArgsConstructor;
 @Repository
 @RequiredArgsConstructor
 public class EventRepositoryImpl implements EventRepository {
+
+  private static final Map<String, String> SORT_FIELDS = Map.of(
+      "eventDate", "eventDate",
+      "startHour", "eventStartHour",
+      "priority", "eventPriority",
+      "status", "eventStatus",
+      "title", "eventTitle",
+      "id", "eventId");
 
   private final SpringEventJpaRepository jpaRepository;
   private final EventMapper mapper;
@@ -69,22 +82,47 @@ public class EventRepositoryImpl implements EventRepository {
   }
 
   /**
-   * Lista todos los eventos asociados a una cuenta específica.
+   * Consulta una página acotada de eventos.
    *
    * <p>
-   * Utiliza el método {@code findByAccount_AccountId} de Spring Data JPA
-   * para recuperar las entidades y luego las convierte una a una al modelo
-   * de dominio {@link Event} mediante el mapper.
+   * Traduce el campo lógico a la propiedad JPA, añade el UUID como desempate
+   * y ejecuta filtros y límites directamente en MariaDB.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
    * @return lista de eventos de la cuenta (vacía si no hay registros).
    */
   @Override
-  public List<Event> findAllByAccountId(UUID accountId) {
-    return jpaRepository.findByAccount_AccountId(accountId)
-        .stream()
-        .map(mapper::toDomain)
-        .toList();
+  public PageResult<Event> findPageByAccountId(
+      UUID accountId,
+      String status,
+      String priority,
+      UUID categoryId,
+      LocalDate startDate,
+      LocalDate endDate,
+      PageQuery pageQuery) {
+    String entitySortField = SORT_FIELDS.get(pageQuery.sortBy());
+    Sort.Direction direction = pageQuery.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort sort = Sort.by(direction, entitySortField);
+    if (!entitySortField.equals("eventId")) {
+      sort = sort.and(Sort.by(direction, "eventId"));
+    }
+    PageRequest pageable = PageRequest.of(pageQuery.number(), pageQuery.size(), sort);
+    Page<EventEntity> page = jpaRepository.findPageByAccountId(
+        accountId,
+        status,
+        priority,
+        categoryId,
+        startDate,
+        endDate,
+        pageable);
+    return new PageResult<>(
+        page.getContent().stream().map(mapper::toDomain).toList(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.hasNext(),
+        page.hasPrevious());
   }
 
   /**
@@ -102,6 +140,8 @@ public class EventRepositoryImpl implements EventRepository {
   @Override
   public Event save(Event event) {
     EventEntity entity = mapper.toEntity(event);
+    jpaRepository.findById(event.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     EventEntity savedEntity = jpaRepository.save(entity);
     return mapper.toDomain(savedEntity);
   }

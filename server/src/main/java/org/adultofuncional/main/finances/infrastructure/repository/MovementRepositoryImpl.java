@@ -1,14 +1,21 @@
 package org.adultofuncional.main.finances.infrastructure.repository;
 
-import java.util.List;
+import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.adultofuncional.main.finances.domain.enums.MovementType;
 import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.MovementEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.mapper.MovementMapper;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringMovementJpaRepository;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -27,8 +34,7 @@ import lombok.RequiredArgsConstructor;
  * <ul>
  * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca un movimiento por ID y
  * cuenta y lo convierte a dominio.</li>
- * <li>{@link #findAllByAccountId(UUID)} — lista todos los movimientos
- * asociados a una cuenta.</li>
+ * <li>Consulta páginas filtradas y ordenadas dentro de una cuenta.</li>
  * <li>{@link #save(Movement)} — persiste un movimiento nuevo o actualizado,
  * devolviendo el modelo de dominio resultante.</li>
  * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina un movimiento por
@@ -45,6 +51,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MovementRepositoryImpl implements MovementRepository {
 
+  private static final Map<String, String> SORT_FIELDS = Map.of(
+      "movementDate", "movementDate",
+      "amount", "movementAmount",
+      "movementType", "movementType",
+      "registerDate", "movementRegisterDate",
+      "id", "movementId");
+
   private final SpringMovementJpaRepository jpaRepository;
   private final MovementMapper mapper;
 
@@ -58,20 +71,48 @@ public class MovementRepositoryImpl implements MovementRepository {
   }
 
   /**
-   * Lista todos los movimientos asociados a una cuenta específica.
+   * Consulta una página acotada de movimientos en persistencia.
    *
    * <p>
-   * Utiliza el método {@code findByAccount_AccountId} de Spring Data JPA
-   * para recuperar las entidades y luego las convierte una a una al modelo
-   * de dominio {@link Movement} mediante el mapper.
+   * Traduce el campo lógico de orden a una propiedad JPA y añade el UUID como
+   * desempate determinista. Los filtros y el {@code LIMIT/OFFSET} se ejecutan
+   * en MariaDB.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
    * @return lista de movimientos de la cuenta (vacía si no hay registros).
    */
   @Override
-  public List<Movement> findAllByAccountId(UUID accountId) {
-    return jpaRepository.findByAccount_AccountId(accountId)
-        .stream().map(mapper::toDomain).toList();
+  public PageResult<Movement> findPageByAccountId(
+      UUID accountId,
+      LocalDate startDate,
+      LocalDate endDate,
+      MovementType movementType,
+      UUID categoryId,
+      String searchTerm,
+      PageQuery pageQuery) {
+    String entitySortField = SORT_FIELDS.get(pageQuery.sortBy());
+    Sort.Direction direction = pageQuery.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort sort = Sort.by(direction, entitySortField);
+    if (!entitySortField.equals("movementId")) {
+      sort = sort.and(Sort.by(direction, "movementId"));
+    }
+    PageRequest pageable = PageRequest.of(pageQuery.number(), pageQuery.size(), sort);
+    Page<MovementEntity> page = jpaRepository.findPageByAccountId(
+        accountId,
+        startDate,
+        endDate,
+        movementType == null ? null : movementType.name(),
+        categoryId,
+        searchTerm,
+        pageable);
+    return new PageResult<>(
+        page.getContent().stream().map(mapper::toDomain).toList(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.hasNext(),
+        page.hasPrevious());
   }
 
   /**
@@ -89,6 +130,8 @@ public class MovementRepositoryImpl implements MovementRepository {
   @Override
   public Movement save(Movement movement) {
     MovementEntity entity = mapper.toEntity(movement);
+    jpaRepository.findById(movement.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     MovementEntity saved = jpaRepository.save(entity);
     return mapper.toDomain(saved);
   }

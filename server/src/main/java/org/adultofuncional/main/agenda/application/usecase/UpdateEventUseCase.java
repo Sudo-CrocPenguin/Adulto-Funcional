@@ -3,12 +3,13 @@ package org.adultofuncional.main.agenda.application.usecase;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.agenda.application.dto.EventResponse;
 import org.adultofuncional.main.agenda.application.dto.EventUpdateRequest;
+import org.adultofuncional.main.agenda.application.service.AgendaTimePolicy;
 import org.adultofuncional.main.agenda.domain.model.Event;
 import org.adultofuncional.main.agenda.domain.repository.EventRepository;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
-import org.adultofuncional.main.shared.exception.BusinessException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +17,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 /**
@@ -51,6 +53,7 @@ public class UpdateEventUseCase {
 
   private final EventRepository eventRepository;
   private final CategoryRepository categoryRepository;
+  private final AgendaTimePolicy timePolicy;
 
   /**
    * Ejecuta la actualización parcial del evento.
@@ -63,7 +66,8 @@ public class UpdateEventUseCase {
    *         categoría asociada.
    * @throws NotFoundException si el evento no existe o la nueva categoría no
    *                           existe.
-   * @throws BusinessException si la hora de inicio es posterior a la de fin.
+   * @throws IllegalArgumentException si el estado final incumple una
+   *                                  invariante del evento.
    */
   @Transactional
   public EventResponse execute(UUID accountId, UUID eventId, EventUpdateRequest request) {
@@ -81,6 +85,7 @@ public class UpdateEventUseCase {
     LocalDateTime endHour = event.getEndHour();
     String status = event.getStatus();
     UUID categoryId = event.getCategoryId();
+    ZoneId zoneId = event.getZoneId();
 
     // Aplicar cambios solo si el campo fue proporcionado
     if (StringUtils.hasText(request.getTitle())) {
@@ -91,6 +96,9 @@ public class UpdateEventUseCase {
     }
     if (request.getEventDate() != null) {
       date = request.getEventDate();
+    }
+    if (request.getZoneId() != null && !request.getZoneId().isBlank()) {
+      zoneId = timePolicy.resolve(request.getZoneId());
     }
     if (request.getFrequency() != null) {
       frequency = request.getFrequency();
@@ -105,10 +113,14 @@ public class UpdateEventUseCase {
       status = request.getStatus();
     }
     if (request.getCategoryId() != null) {
-      categoryRepository.findById(request.getCategoryId())
-          .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
       categoryId = request.getCategoryId();
     }
+
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            categoryId,
+            CategoryType.AGENDA)
+        .orElseThrow(() -> new NotFoundException("Categoría no encontrada"));
 
     // Validar coherencia de horas si ambas se enviaron, o usar combinaciones
     // parciales
@@ -118,40 +130,36 @@ public class UpdateEventUseCase {
     if (request.getEndHour() != null) {
       endHour = request.getEndHour();
     }
-    // Validación final de horas (se delega al dominio, pero también la hacemos aquí
-    // para garantizar el mensaje de negocio)
-    if (startHour != null && endHour != null && startHour.isAfter(endHour)) {
-      throw new BusinessException("La hora de inicio no puede ser posterior a la hora de fin");
+    // Actualizar el estado final; el dominio valida las combinaciones parciales.
+    if (request.getEventDate() != null) {
+      timePolicy.requirePresentOrFuture(date, zoneId);
     }
-
-    // Actualizar todo el evento con los valores finales
     event.update(title, description, priority, date, frequency,
-        reminder, startHour, endHour, status, categoryId);
+        reminder, startHour, endHour, zoneId, status, categoryId);
 
     Event updated = eventRepository.save(event);
 
     // Construir categoría anidada si existe
-    CategoryResponse categoryResponse = null;
-    if (updated.getCategoryId() != null) {
-      Category cat = categoryRepository.findById(updated.getCategoryId()).orElse(null);
-      if (cat != null) {
-        categoryResponse = CategoryResponse.builder()
-            .id(cat.getId())
-            .name(cat.getName())
-            .type(cat.getType())
-            .build();
-      }
-    }
+    CategoryResponse categoryResponse = CategoryResponse.builder()
+        .id(category.getId())
+        .name(category.getName())
+        .type(category.getType())
+        .scope(category.getScope())
+        .build();
 
     return EventResponse.builder()
         .id(updated.getId())
         .title(updated.getTitle())
         .priority(updated.getPriority())
         .eventDate(updated.getDate())
+        .zoneId(updated.getZoneId().getId())
         .frequency(updated.getFrequency())
         .reminder(updated.getReminder())
+        .reminderInstant(updated.getReminderInstant())
         .startHour(updated.getStartHour())
+        .startInstant(updated.getStartInstant())
         .endHour(updated.getEndHour())
+        .endInstant(updated.getEndInstant())
         .description(updated.getDescription())
         .status(updated.getStatus())
         .category(categoryResponse)

@@ -1,5 +1,7 @@
 package org.adultofuncional.main.finances.application.usecase.category;
 
+import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
 import org.adultofuncional.main.finances.application.dto.category.CreateCategoryRequest;
@@ -49,13 +51,14 @@ public class CreateCategoryUseCase {
    *         incluyendo el identificador UUID asignado.
    */
   @Transactional
-  public CategoryResponse execute(CreateCategoryRequest request) {
-    Category category = Category.create(request.getName(), request.getType());
+  public CategoryResponse execute(UUID accountId, CreateCategoryRequest request) {
+    Category category = Category.createPersonal(request.getName(), request.getType(), accountId);
     Category saved = categoryRepository.save(category);
     return CategoryResponse.builder()
         .id(saved.getId())
         .name(saved.getName())
         .type(saved.getType())
+        .scope(saved.getScope())
         .build();
   }
 }

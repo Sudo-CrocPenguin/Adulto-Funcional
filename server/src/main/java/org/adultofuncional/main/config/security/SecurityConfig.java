@@ -14,7 +14,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -124,9 +126,22 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(
       HttpSecurity http,
-      ApiCorsProcessor corsProcessor) throws Exception {
+      ApiCorsProcessor corsProcessor,
+      CookieAuthenticatedCsrfMatcher csrfMatcher,
+      CookieUtils cookieUtils) throws Exception {
+    CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+    csrfTokenRepository.setCookiePath("/");
+    csrfTokenRepository.setCookieCustomizer(cookie -> cookie
+        .secure(cookieUtils.isSecure())
+        .sameSite(cookieUtils.sameSite()));
+    CsrfTokenRequestAttributeHandler csrfRequestHandler = new CsrfTokenRequestAttributeHandler();
+    csrfRequestHandler.setCsrfRequestAttributeName(null);
+
     http
-        .csrf(csrf -> csrf.disable())
+        .csrf(csrf -> csrf
+            .csrfTokenRepository(csrfTokenRepository)
+            .csrfTokenRequestHandler(csrfRequestHandler)
+            .requireCsrfProtectionMatcher(csrfMatcher))
         .cors(cors -> cors.disable())
         .headers(headers -> headers
             .contentSecurityPolicy(csp -> csp
@@ -145,7 +160,12 @@ public class SecurityConfig {
                 .includeSubDomains(true)
                 .maxAgeInSeconds(31536000)))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
+            .requestMatchers(
+                "/api/auth/login",
+                "/api/auth/register",
+                "/api/auth/refresh",
+                "/api/auth/csrf").permitAll()
+            .requestMatchers("/actuator/health").permitAll()
             .anyRequest().authenticated())
         .exceptionHandling(exceptions -> exceptions
             .authenticationEntryPoint(authenticationEntryPoint)
@@ -153,7 +173,7 @@ public class SecurityConfig {
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .addFilterBefore(apiCorsFilter(corsProcessor), LogoutFilter.class)
-        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(jwtAuthFilter, CsrfFilter.class);
 
     return http.build();
   }
@@ -206,6 +226,7 @@ public class SecurityConfig {
         "Content-Type",
         "X-Requested-With",
         "X-Client-Type",
+        "X-XSRF-TOKEN",
         "Authorization"));
     config.setExposedHeaders(List.of("X-Total-Count", "X-Trace-Id"));
     config.setAllowCredentials(true);

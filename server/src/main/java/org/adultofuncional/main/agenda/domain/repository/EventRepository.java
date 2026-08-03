@@ -1,10 +1,12 @@
 package org.adultofuncional.main.agenda.domain.repository;
 
-import java.util.List;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.agenda.domain.model.Event;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
 /**
  * Puerto de dominio para la persistencia de eventos de agenda.
@@ -46,18 +48,23 @@ public interface EventRepository {
   Optional<Event> findByIdAndAccountId(UUID eventId, UUID accountId);
 
   /**
-   * Lista todos los eventos asociados a una cuenta específica.
+   * Consulta una página de eventos de una cuenta específica.
    *
    * <p>
-   * Utilizado por el caso de uso de listado para recuperar el conjunto
-   * completo de eventos de una cuenta, sobre el cual se aplican filtros
-   * adicionales en memoria.
+   * Ownership, rango, filtros, orden y límite se ejecutan en persistencia para
+   * no materializar la agenda completa.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return lista de eventos de la cuenta. Puede ser vacía si no hay
-   *         registros.
+   * @return página de eventos y sus totales.
    */
-  List<Event> findAllByAccountId(UUID accountId);
+  PageResult<Event> findPageByAccountId(
+      UUID accountId,
+      String status,
+      String priority,
+      UUID categoryId,
+      LocalDate startDate,
+      LocalDate endDate,
+      PageQuery pageQuery);
 
   /**
    * Persiste un evento nuevo o actualiza uno existente.

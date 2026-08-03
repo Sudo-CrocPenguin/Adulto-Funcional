@@ -1,21 +1,24 @@
 package org.adultofuncional.main;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.adultofuncional.main.account.infrastructure.persistence.repository.SpringAccountJpaRepository;
 import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEntity;
 import org.adultofuncional.main.agenda.infrastructure.persistence.repository.SpringEventJpaRepository;
-import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.enums.MovementType;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
+import org.adultofuncional.main.finances.infrastructure.persistence.entity.FixedExpensesEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.MovementEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringCategoryJpaRepository;
+import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringFixedExpenseJpaRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringMovementJpaRepository;
 import org.adultofuncional.main.security.infrastructure.persistence.entity.PasswordEntity;
 import org.adultofuncional.main.security.infrastructure.persistence.repository.PasswordJpaRepository;
@@ -25,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 
 /**
  * Verifica en MariaDB que los repositorios con recursos privados incorporen
@@ -45,6 +50,9 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
   SpringMovementJpaRepository movementRepository;
 
   @Autowired
+  SpringFixedExpenseJpaRepository fixedExpenseRepository;
+
+  @Autowired
   SpringEventJpaRepository eventRepository;
 
   @Autowired
@@ -59,8 +67,10 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
   void setUp() {
     accountA = persistAccount("ownership-a@example.com");
     accountB = persistAccount("ownership-b@example.com");
-    financeCategory = persistCategory("Servicios", CategoryType.FINANCES);
-    agendaCategory = persistCategory("Trabajo", CategoryType.AGENDA);
+    financeCategory = categoryRepository.findById(
+        UUID.fromString("01988e6b-0c00-7000-8000-000000000006")).orElseThrow();
+    agendaCategory = categoryRepository.findById(
+        UUID.fromString("01988e6b-0c00-7000-8000-000000000009")).orElseThrow();
   }
 
   @Test
@@ -120,6 +130,67 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
     assertThat(passwordRepository.existsById(passwordId)).isFalse();
   }
 
+  @Test
+  void rejectsInvalidFinancialValuesAtTheDatabaseBoundary() {
+    MovementEntity movement = new MovementEntity();
+    movement.setMovementId(UUID.randomUUID());
+    movement.setMovementType(MovementType.EXPENSE.name());
+    movement.setMovementAmount(new BigDecimal("-0.01"));
+    movement.setMovementDescription("Monto inválido");
+    movement.setMovementDate(LocalDate.now());
+    movement.setAccount(accountA);
+    movement.setCategory(financeCategory);
+
+    assertThatThrownBy(() -> movementRepository.saveAndFlush(movement))
+        .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  @Test
+  void rejectsInvalidEventSchedulesAtTheDatabaseBoundary() {
+    LocalDateTime start = LocalDateTime.now().plusDays(1);
+    EventEntity event = new EventEntity();
+    event.setEventId(UUID.randomUUID());
+    event.setEventTitle("Horario inválido");
+    event.setEventPriority("Media");
+    event.setEventDate(start.toLocalDate());
+    event.setEventFrequency(0);
+    event.setEventReminder(start.plusMinutes(5));
+    event.setEventStartHour(start);
+    event.setEventEndHour(start.plusHours(1));
+    ZoneId zone = ZoneId.of("America/Bogota");
+    event.setEventZoneId(zone.getId());
+    event.setEventReminderInstant(start.plusMinutes(5).atZone(zone).toInstant());
+    event.setEventStartInstant(start.atZone(zone).toInstant());
+    event.setEventEndInstant(start.plusHours(1).atZone(zone).toInstant());
+    event.setEventStatus("Pendiente");
+    event.setAccount(accountA);
+    event.setCategory(agendaCategory);
+
+    assertThatThrownBy(() -> eventRepository.saveAndFlush(event))
+        .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  @Test
+  void locksOnlyActiveFixedExpensesThatAreAlreadyDue() {
+    FixedExpensesEntity due = new FixedExpensesEntity();
+    due.setFixedExpenseId(UUID.randomUUID());
+    due.setFixedExpenseName("Internet");
+    due.setFixedExpenseFrequency("MONTHLY");
+    due.setFixedExpenseAmount(new BigDecimal("100.00"));
+    due.setFixedExpenseStatus("ACTIVE");
+    due.setFixedExpenseStartDate(LocalDate.now().minusMonths(2));
+    due.setFixedExpenseNextDueDate(LocalDate.now());
+    due.setFixedExpenseReminderDays(2);
+    due.setAccount(accountA);
+    due.setCategory(financeCategory);
+    fixedExpenseRepository.saveAndFlush(due);
+
+    assertThat(fixedExpenseRepository.findDueForUpdate(
+        LocalDate.now(), PageRequest.of(0, 10)))
+        .extracting(FixedExpensesEntity::getFixedExpenseId)
+        .containsExactly(due.getFixedExpenseId());
+  }
+
   private AccountEntity persistAccount(String email) {
     AccountEntity account = new AccountEntity();
     account.setAccountId(UUID.randomUUID());
@@ -129,14 +200,6 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
     account.setAccountPhone("3001234567");
     account.setAccountPassword("hash-password");
     return accountRepository.saveAndFlush(account);
-  }
-
-  private CategoryEntity persistCategory(String name, CategoryType type) {
-    CategoryEntity category = new CategoryEntity();
-    category.setCategoryId(UUID.randomUUID());
-    category.setCategoryName(name);
-    category.setCategoryType(type.name());
-    return categoryRepository.saveAndFlush(category);
   }
 
   private MovementEntity persistMovement(AccountEntity owner) {
@@ -162,6 +225,11 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
     event.setEventReminder(start.minusHours(1));
     event.setEventStartHour(start);
     event.setEventEndHour(start.plusHours(1));
+    ZoneId zone = ZoneId.of("America/Bogota");
+    event.setEventZoneId(zone.getId());
+    event.setEventReminderInstant(start.minusHours(1).atZone(zone).toInstant());
+    event.setEventStartInstant(start.atZone(zone).toInstant());
+    event.setEventEndInstant(start.plusHours(1).atZone(zone).toInstant());
     event.setEventDescription("Seguimiento");
     event.setEventStatus("Pendiente");
     event.setAccount(owner);
@@ -176,6 +244,7 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
     credential.setPasswordSalt("c2FsdA==");
     credential.setPasswordIv(new byte[12]);
     credential.setPasswordCiphertext(new byte[] {1, 2, 3, 4});
+    credential.setPasswordCryptoVersion((short) 1);
     credential.setPasswordLastChangeDate(LocalDate.now());
     credential.setAccount(owner);
     return passwordRepository.saveAndFlush(credential);

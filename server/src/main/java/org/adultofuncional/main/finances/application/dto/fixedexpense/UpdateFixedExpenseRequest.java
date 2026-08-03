@@ -7,7 +7,9 @@ import org.adultofuncional.main.finances.domain.enums.Frequency;
 import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.shared.security.NoHtml;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
@@ -102,9 +104,12 @@ public class UpdateFixedExpenseRequest {
    * <ul>
    * <li>{@code @DecimalMin("0.01")}: el monto debe ser mayor a cero,
    * garantizando que no se registren gastos sin valor económico.</li>
+   * <li>{@code @Digits}: admite hasta ocho enteros y dos decimales, en
+   * correspondencia con {@code DECIMAL(10,2)}.</li>
    * </ul>
    */
   @DecimalMin(value = "0.01", message = "El monto debe ser mayor a 0")
+  @Digits(integer = 8, fraction = 2, message = "El monto admite máximo 8 enteros y 2 decimales")
   private BigDecimal amount;
 
   /**
@@ -117,6 +122,14 @@ public class UpdateFixedExpenseRequest {
    * Si es {@code null}, el estado del gasto fijo permanece sin cambios.
    */
   private Status status;
+
+  /** Nueva fecha de inicio del ciclo recurrente. */
+  private LocalDate startDate;
+
+  /** Nueva anticipación del recordatorio, expresada en días. */
+  @Min(value = 0, message = "Los días de recordatorio no pueden ser negativos")
+  @Max(value = 3650, message = "Los días de recordatorio no pueden exceder 3650")
+  private Integer reminderDays;
 
   /**
    * Nueva fecha de cierre o vencimiento que se desea asignar al gasto fijo.
@@ -136,7 +149,6 @@ public class UpdateFixedExpenseRequest {
    * ya expirados.</li>
    * </ul>
    */
-  @Future(message = "La fecha de cierre debe ser futura")
   private LocalDate nextDueDate;
 
   /**

@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.adultofuncional.main.account.infrastructure.persistence.repository.SpringAccountJpaRepository;
-import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.enums.Frequency;
 import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
@@ -53,7 +52,8 @@ class FixedExpenseRepositoryOwnershipIntegrationTest extends MariaDbIntegrationT
         fixedExpenseMapper);
     accountA = persistAccount("cuenta-a@example.com");
     accountB = persistAccount("cuenta-b@example.com");
-    category = persistCategory();
+    category = categoryJpaRepository.findById(
+        UUID.fromString("01988e6b-0c00-7000-8000-000000000006")).orElseThrow();
   }
 
   @Test
@@ -101,14 +101,6 @@ class FixedExpenseRepositoryOwnershipIntegrationTest extends MariaDbIntegrationT
     account.setAccountPhone("3001234567");
     account.setAccountPassword("hash-password");
     return accountJpaRepository.saveAndFlush(account);
-  }
-
-  private CategoryEntity persistCategory() {
-    CategoryEntity entity = new CategoryEntity();
-    entity.setCategoryId(UUID.randomUUID());
-    entity.setCategoryName("Servicios");
-    entity.setCategoryType(CategoryType.FINANCES.name());
-    return categoryJpaRepository.saveAndFlush(entity);
   }
 
   private FixedExpensesEntity persistExpense(AccountEntity owner) {

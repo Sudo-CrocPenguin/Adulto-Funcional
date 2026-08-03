@@ -1,6 +1,7 @@
 package org.adultofuncional.main.account.infrastructure.persistence.entity;
 
-import java.time.LocalDateTime;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -17,6 +18,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -75,6 +77,11 @@ public class AccountEntity {
   @Id
   @Column(name = "account_id", columnDefinition = "CHAR(36)")
   private UUID accountId;
+
+  /** Versión de bloqueo optimista para detectar actualizaciones concurrentes. */
+  @Version
+  @Column(name = "account_version", nullable = false)
+  private long version;
   /**
    * Nombres del titular.
    *
@@ -132,10 +139,11 @@ public class AccountEntity {
    *
    * <p>
    * Columna: {@code account_created_at TIMESTAMP NOT NULL}.
-   * Se establece automáticamente en {@link #onCreate()} y no es modificable.
+   * Procede del dominio y no es modificable. El callback de persistencia solo
+   * completa entidades parciales creadas por herramientas o fixtures antiguos.
    */
   @Column(name = "account_created_at", updatable = false)
-  private LocalDateTime accountCreatedAt;
+  private Instant accountCreatedAt;
   /**
    * Movimientos financieros asociados a esta cuenta.
    *
@@ -173,12 +181,12 @@ public class AccountEntity {
   @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<PasswordEntity> passwords = new ArrayList<>();
 
-  /**
-   * Callback JPA que establece {@code account_created_at} antes del primer
-   * {@code INSERT}.
-   */
+  /** Conserva compatibilidad sin sobrescribir el timestamp creado por el dominio. */
   @PrePersist
-  public void onCreate() {
-    accountCreatedAt = LocalDateTime.now();
+  void ensureCreatedAt() {
+    if (accountCreatedAt == null) {
+      accountCreatedAt = Clock.systemUTC().instant();
+    }
   }
+
 }
