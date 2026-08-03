@@ -2,6 +2,8 @@ package org.adultofuncional.main.shared.response;
 
 import java.util.List;
 
+import org.adultofuncional.main.shared.pagination.PageMetadata;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import lombok.Builder;
@@ -14,7 +16,9 @@ import lombok.Builder;
  * Envuelve cualquier respuesta del sistema en un formato uniforme. Las
  * respuestas exitosas conservan los campos históricos {@code status},
  * {@code message} y {@code data}. Los errores añaden un código estable, una
- * lista ordenada de errores de campo y un identificador de trazabilidad.
+ * lista ordenada de errores de campo y un identificador de trazabilidad. Los
+ * listados conservan {@code data} como arreglo y pueden añadir {@code page}
+ * con metadatos, conforme al ADR 0005.
  * </p>
  *
  * <p>
@@ -55,6 +59,10 @@ public class ApiResponse<T> {
   @JsonInclude(JsonInclude.Include.NON_NULL)
   private final String traceId;
 
+  /** Metadatos presentes únicamente en respuestas de listados paginados. */
+  @JsonInclude(JsonInclude.Include.NON_NULL)
+  private final PageMetadata page;
+
   /**
    * Dato principal de la respuesta. Puede ser null si no hay datos que retornar.
    */
@@ -69,7 +77,7 @@ public class ApiResponse<T> {
    */
 
   public ApiResponse(int status, String message, T data) {
-    this(status, null, message, null, null, data);
+    this(status, null, message, null, null, null, data);
   }
 
   /**
@@ -80,6 +88,7 @@ public class ApiResponse<T> {
    * @param message     mensaje seguro para una persona
    * @param fieldErrors errores de validación, o {@code null} en éxito
    * @param traceId     identificador de trazabilidad, o {@code null} en éxito
+   * @param page        metadatos de paginación, o {@code null} si no aplican
    * @param data        dato de éxito; debe ser {@code null} en errores
    */
   @Builder
@@ -89,12 +98,14 @@ public class ApiResponse<T> {
       String message,
       List<FieldValidationError> fieldErrors,
       String traceId,
+      PageMetadata page,
       T data) {
     this.status = status;
     this.code = code;
     this.message = message;
     this.fieldErrors = fieldErrors == null ? null : List.copyOf(fieldErrors);
     this.traceId = traceId;
+    this.page = page;
     this.data = data;
   }
 
@@ -143,6 +154,15 @@ public class ApiResponse<T> {
    */
   public String getTraceId() {
     return traceId;
+  }
+
+  /**
+   * Retorna los metadatos del listado paginado.
+   *
+   * @return metadatos de página, o {@code null} en respuestas no paginadas
+   */
+  public PageMetadata getPage() {
+    return page;
   }
 
   /**
