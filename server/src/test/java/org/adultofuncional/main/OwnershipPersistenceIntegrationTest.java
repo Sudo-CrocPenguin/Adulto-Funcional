@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
@@ -14,8 +15,10 @@ import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEn
 import org.adultofuncional.main.agenda.infrastructure.persistence.repository.SpringEventJpaRepository;
 import org.adultofuncional.main.finances.domain.enums.MovementType;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
+import org.adultofuncional.main.finances.infrastructure.persistence.entity.FixedExpensesEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.MovementEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringCategoryJpaRepository;
+import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringFixedExpenseJpaRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringMovementJpaRepository;
 import org.adultofuncional.main.security.infrastructure.persistence.entity.PasswordEntity;
 import org.adultofuncional.main.security.infrastructure.persistence.repository.PasswordJpaRepository;
@@ -26,6 +29,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 
 /**
  * Verifica en MariaDB que los repositorios con recursos privados incorporen
@@ -44,6 +48,9 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
 
   @Autowired
   SpringMovementJpaRepository movementRepository;
+
+  @Autowired
+  SpringFixedExpenseJpaRepository fixedExpenseRepository;
 
   @Autowired
   SpringEventJpaRepository eventRepository;
@@ -150,12 +157,38 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
     event.setEventReminder(start.plusMinutes(5));
     event.setEventStartHour(start);
     event.setEventEndHour(start.plusHours(1));
+    ZoneId zone = ZoneId.of("America/Bogota");
+    event.setEventZoneId(zone.getId());
+    event.setEventReminderInstant(start.plusMinutes(5).atZone(zone).toInstant());
+    event.setEventStartInstant(start.atZone(zone).toInstant());
+    event.setEventEndInstant(start.plusHours(1).atZone(zone).toInstant());
     event.setEventStatus("Pendiente");
     event.setAccount(accountA);
     event.setCategory(agendaCategory);
 
     assertThatThrownBy(() -> eventRepository.saveAndFlush(event))
         .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  @Test
+  void locksOnlyActiveFixedExpensesThatAreAlreadyDue() {
+    FixedExpensesEntity due = new FixedExpensesEntity();
+    due.setFixedExpenseId(UUID.randomUUID());
+    due.setFixedExpenseName("Internet");
+    due.setFixedExpenseFrequency("MONTHLY");
+    due.setFixedExpenseAmount(new BigDecimal("100.00"));
+    due.setFixedExpenseStatus("ACTIVE");
+    due.setFixedExpenseStartDate(LocalDate.now().minusMonths(2));
+    due.setFixedExpenseNextDueDate(LocalDate.now());
+    due.setFixedExpenseReminderDays(2);
+    due.setAccount(accountA);
+    due.setCategory(financeCategory);
+    fixedExpenseRepository.saveAndFlush(due);
+
+    assertThat(fixedExpenseRepository.findDueForUpdate(
+        LocalDate.now(), PageRequest.of(0, 10)))
+        .extracting(FixedExpensesEntity::getFixedExpenseId)
+        .containsExactly(due.getFixedExpenseId());
   }
 
   private AccountEntity persistAccount(String email) {
@@ -192,6 +225,11 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
     event.setEventReminder(start.minusHours(1));
     event.setEventStartHour(start);
     event.setEventEndHour(start.plusHours(1));
+    ZoneId zone = ZoneId.of("America/Bogota");
+    event.setEventZoneId(zone.getId());
+    event.setEventReminderInstant(start.minusHours(1).atZone(zone).toInstant());
+    event.setEventStartInstant(start.atZone(zone).toInstant());
+    event.setEventEndInstant(start.plusHours(1).atZone(zone).toInstant());
     event.setEventDescription("Seguimiento");
     event.setEventStatus("Pendiente");
     event.setAccount(owner);

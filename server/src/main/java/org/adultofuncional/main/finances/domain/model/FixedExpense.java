@@ -246,6 +246,35 @@ public class FixedExpense {
     return Status.ACTIVE.equals(this.status);
   }
 
+  /**
+   * Avanza el vencimiento hasta la primera ocurrencia posterior al corte.
+   *
+   * <p>La operación preserva la secuencia desde el vencimiento anterior y no
+   * desde la fecha de ejecución, por lo que un job retrasado no introduce una
+   * deriva adicional en el calendario recurrente.</p>
+   *
+   * @param cutoff día que ya debe considerarse vencido
+   * @return cantidad de ocurrencias avanzadas
+   */
+  public int advanceBeyond(LocalDate cutoff) {
+    if (cutoff == null) {
+      throw new IllegalArgumentException("Cutoff cannot be null");
+    }
+    int advances = 0;
+    while (!nextDueDate.isAfter(cutoff)) {
+      nextDueDate = switch (frequency) {
+        case WEEKLY -> nextDueDate.plusWeeks(1);
+        case BIWEEKLY -> nextDueDate.plusWeeks(2);
+        case MONTHLY -> nextDueDate.plusMonths(1);
+        case QUARTERLY -> nextDueDate.plusMonths(3);
+        case SEMIANNUAL -> nextDueDate.plusMonths(6);
+        case ANNUAL -> nextDueDate.plusYears(1);
+      };
+      advances++;
+    }
+    return advances;
+  }
+
   // ── Invariantes de negocio ────────────────────────────────────────────────
 
   private static void validateId(UUID fixedExpenseId) {

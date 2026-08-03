@@ -1,5 +1,7 @@
 package org.adultofuncional.main.finances.domain.repository;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.adultofuncional.main.finances.domain.enums.Status;
@@ -64,6 +66,9 @@ public interface FixedExpenseRepository {
       UUID categoryId,
       String searchTerm,
       PageQuery pageQuery);
+
+  /** Bloquea un lote acotado de gastos activos vencidos para su avance. */
+  List<FixedExpense> findDueForUpdate(LocalDate cutoff, int batchSize);
 
   /**
    * Persiste un gasto fijo nuevo o actualiza uno existente.

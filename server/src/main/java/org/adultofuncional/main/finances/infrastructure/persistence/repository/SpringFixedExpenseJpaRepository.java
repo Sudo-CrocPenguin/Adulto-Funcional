@@ -1,5 +1,7 @@
 package org.adultofuncional.main.finances.infrastructure.persistence.repository;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -7,10 +9,13 @@ import org.adultofuncional.main.finances.infrastructure.persistence.entity.Fixed
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 /**
  * Repositorio Spring Data JPA para la entidad {@link FixedExpensesEntity}.
@@ -76,5 +81,19 @@ public interface SpringFixedExpenseJpaRepository extends JpaRepository<FixedExpe
       @Param("status") String status,
       @Param("categoryId") UUID categoryId,
       @Param("searchTerm") String searchTerm,
+      Pageable pageable);
+
+  /** Selecciona y bloquea un lote vencido para evitar doble avance concurrente. */
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @EntityGraph(attributePaths = {"account", "category"})
+  @Query("""
+      SELECT expense
+      FROM FixedExpensesEntity expense
+      WHERE expense.fixedExpenseStatus = 'ACTIVE'
+        AND expense.fixedExpenseNextDueDate <= :cutoff
+      ORDER BY expense.fixedExpenseNextDueDate ASC, expense.fixedExpenseId ASC
+      """)
+  List<FixedExpensesEntity> findDueForUpdate(
+      @Param("cutoff") LocalDate cutoff,
       Pageable pageable);
 }

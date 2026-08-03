@@ -1,5 +1,7 @@
 package org.adultofuncional.main.finances.infrastructure.repository;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -114,6 +116,14 @@ public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
         page.getTotalPages(),
         page.hasNext(),
         page.hasPrevious());
+  }
+
+  @Override
+  public List<FixedExpense> findDueForUpdate(LocalDate cutoff, int batchSize) {
+    PageRequest batch = PageRequest.of(0, batchSize);
+    return fixedExpenseJpaRepository.findDueForUpdate(cutoff, batch).stream()
+        .map(fixedExpenseMapper::toDomain)
+        .toList();
   }
 
   /**
