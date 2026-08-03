@@ -131,8 +131,6 @@ public class AuthResponse {
    * Indica si el usuario tiene configurada una Master Key.
    * Si es {@code true}, el usuario puede acceder al gestor de contraseñas.
    * Si es {@code false}, el frontend puede mostrar una opción para configurarla.
-   *
-   * //TODO: Agregar campos adicionales para roles o permisos en el futuro
    */
   private boolean hasMasterKey;
 
