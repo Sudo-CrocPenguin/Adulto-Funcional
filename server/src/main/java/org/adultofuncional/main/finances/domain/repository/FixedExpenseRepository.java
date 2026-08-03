@@ -1,9 +1,11 @@
 package org.adultofuncional.main.finances.domain.repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.finances.domain.model.FixedExpense;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
 /**
  * Puerto de dominio para la persistencia de gastos fijos recurrentes.
@@ -47,19 +49,21 @@ public interface FixedExpenseRepository {
   Optional<FixedExpense> findByIdAndAccountId(UUID id, UUID accountId);
 
   /**
-   * Lista todos los gastos fijos asociados a una cuenta específica.
+   * Consulta una página de gastos fijos de una cuenta específica.
    *
    * <p>
-   * Utilizado por los casos de uso de listado y filtrado de gastos fijos.
-   * Retorna la totalidad de los gastos de la cuenta; el filtrado adicional
-   * (por estado, categoría, término de búsqueda) se aplica en memoria en la
-   * capa de aplicación.
+   * Ownership, filtros, orden y límite forman parte de la consulta de
+   * persistencia para no materializar la colección completa.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return lista de gastos fijos de la cuenta. Puede ser vacía si no hay
-   *         registros.
+   * @return página de gastos fijos y sus totales.
    */
-  List<FixedExpense> findAllByAccountId(UUID accountId);
+  PageResult<FixedExpense> findPageByAccountId(
+      UUID accountId,
+      Status status,
+      UUID categoryId,
+      String searchTerm,
+      PageQuery pageQuery);
 
   /**
    * Persiste un gasto fijo nuevo o actualiza uno existente.

@@ -1,6 +1,5 @@
 package org.adultofuncional.main.finances.application.usecase.fixedexpense;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -16,6 +15,9 @@ import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.FixedExpenseRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
+import org.adultofuncional.main.shared.pagination.PaginationPolicy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -27,12 +29,9 @@ import lombok.RequiredArgsConstructor;
  * opcionales y retornando la categoría asociada a cada uno.
  *
  * <p>
- * Recupera todos los gastos fijos de la cuenta desde
- * {@link FixedExpenseRepository#findAllByAccountId} y aplica en memoria
- * los filtros proporcionados: estado, categoría y término de búsqueda
- * sobre el nombre. Para evitar el problema N+1, las categorías de los
- * gastos filtrados se cargan en un único lote a través de
- * {@link CategoryRepository#findAllById}.
+ * Ejecuta ownership, filtros, orden y límites en SQL. La capa de aplicación
+ * transforma únicamente la página solicitada y carga sus categorías
+ * accesibles en un lote.
  *
  * <p>
  * <strong>Filtros soportados (todos opcionales):</strong>
@@ -54,6 +53,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ListFixedExpensesUseCase {
 
+  private static final Set<String> ALLOWED_SORTS =
+      Set.of("nextDueDate", "amount", "name", "status", "frequency", "id");
+
   /** Puerto de dominio para la consulta de gastos fijos. */
   private final FixedExpenseRepository fixedExpenseRepository;
 
@@ -70,45 +72,40 @@ public class ListFixedExpensesUseCase {
    * @param filter    Filtro opcional con estado, categoría y término de
    *                  búsqueda. Puede ser {@code null} para obtener todos
    *                  los gastos fijos de la cuenta.
-   * @return Lista de {@link FixedExpenseResponse} con la categoría anidada.
+   * @return página de {@link FixedExpenseResponse} con categoría y metadatos.
    * @throws NotFoundException si la cuenta no existe.
    */
   @Transactional(readOnly = true)
-  public List<FixedExpenseResponse> execute(UUID accountId, FixedExpenseFilterRequest filter) {
+  public PageResult<FixedExpenseResponse> execute(UUID accountId, FixedExpenseFilterRequest filter) {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    List<FixedExpense> expenses = fixedExpenseRepository.findAllByAccountId(accountId);
-
-    if (filter != null) {
-      if (filter.getStatus() != null) {
-        expenses = expenses.stream()
-            .filter(e -> e.getStatus() == filter.getStatus())
-            .collect(Collectors.toList());
-      }
-      if (filter.getCategoryId() != null) {
-        expenses = expenses.stream()
-            .filter(e -> e.getCategoryId() != null && e.getCategoryId().equals(filter.getCategoryId()))
-            .collect(Collectors.toList());
-      }
-      if (StringUtils.hasText(filter.getSearchTerm())) {
-        String term = filter.getSearchTerm().toLowerCase();
-        expenses = expenses.stream()
-            .filter(e -> e.getName().toLowerCase().contains(term))
-            .collect(Collectors.toList());
-      }
-    }
+    PageQuery pageQuery = PaginationPolicy.resolve(
+        filter == null ? null : filter.getPage(),
+        filter == null ? null : filter.getSize(),
+        filter == null ? null : filter.getSortBy(),
+        filter == null ? null : filter.getSortDirection(),
+        "nextDueDate",
+        true,
+        ALLOWED_SORTS);
+    PageResult<FixedExpense> expenses = fixedExpenseRepository.findPageByAccountId(
+        accountId,
+        filter == null ? null : filter.getStatus(),
+        filter == null ? null : filter.getCategoryId(),
+        filter != null && StringUtils.hasText(filter.getSearchTerm())
+            ? filter.getSearchTerm().trim()
+            : null,
+        pageQuery);
 
     // Carga en lote de categorías para evitar N+1
-    Set<UUID> categoryIds = expenses.stream()
+    Set<UUID> categoryIds = expenses.content().stream()
         .map(FixedExpense::getCategoryId)
         .collect(Collectors.toSet());
     Map<UUID, Category> categoryMap = categoryRepository
         .findAllAccessibleById(accountId, categoryIds).stream()
         .collect(Collectors.toMap(Category::getId, Function.identity()));
 
-    return expenses.stream()
-        .map(e -> {
+    return expenses.map(e -> {
           Category cat = categoryMap.get(e.getCategoryId());
           CategoryResponse catResp = cat != null ? CategoryResponse.builder()
               .id(cat.getId())
@@ -126,7 +123,6 @@ public class ListFixedExpensesUseCase {
               .nextDueDate(e.getNextDueDate())
               .category(catResp)
               .build();
-        })
-        .collect(Collectors.toList());
+        });
   }
 }

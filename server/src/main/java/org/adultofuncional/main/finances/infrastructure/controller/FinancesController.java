@@ -471,17 +471,19 @@ public class FinancesController {
 
 
     @GetMapping("/fixed-expenses")
-    public ResponseEntity<ApiResponse<List<FixedExpenseResponse>>> listFixedExpenses(FixedExpenseFilterRequest filter,
+    public ResponseEntity<ApiResponse<List<FixedExpenseResponse>>> listFixedExpenses(
+        @Valid FixedExpenseFilterRequest filter,
         @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         UUID accountId = resolveAccountId(authenticatedAccount);
-        List<FixedExpenseResponse> response = listFixedExpensesUseCase.execute(accountId, filter);
+        PageResult<FixedExpenseResponse> response = listFixedExpensesUseCase.execute(accountId, filter);
 
 
         return ResponseEntity.ok(ApiResponse.<List<FixedExpenseResponse>>builder()
             .status(HttpStatus.OK.value())
             .message("Gastos fijos listados exitosamente")
-            .data(response)
+            .data(response.content())
+            .page(PageMetadata.from(response))
             .build());
     }
 
