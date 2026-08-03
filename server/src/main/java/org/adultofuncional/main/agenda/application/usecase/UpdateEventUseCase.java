@@ -9,7 +9,6 @@ import org.adultofuncional.main.finances.application.dto.category.CategoryRespon
 import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
-import org.adultofuncional.main.shared.exception.BusinessException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -64,7 +63,8 @@ public class UpdateEventUseCase {
    *         categoría asociada.
    * @throws NotFoundException si el evento no existe o la nueva categoría no
    *                           existe.
-   * @throws BusinessException si la hora de inicio es posterior a la de fin.
+   * @throws IllegalArgumentException si el estado final incumple una
+   *                                  invariante del evento.
    */
   @Transactional
   public EventResponse execute(UUID accountId, UUID eventId, EventUpdateRequest request) {
@@ -123,13 +123,7 @@ public class UpdateEventUseCase {
     if (request.getEndHour() != null) {
       endHour = request.getEndHour();
     }
-    // Validación final de horas (se delega al dominio, pero también la hacemos aquí
-    // para garantizar el mensaje de negocio)
-    if (startHour != null && endHour != null && startHour.isAfter(endHour)) {
-      throw new BusinessException("La hora de inicio no puede ser posterior a la hora de fin");
-    }
-
-    // Actualizar todo el evento con los valores finales
+    // Actualizar el estado final; el dominio valida las combinaciones parciales.
     event.update(title, description, priority, date, frequency,
         reminder, startHour, endHour, status, categoryId);
 

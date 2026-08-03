@@ -11,7 +11,6 @@ import org.adultofuncional.main.finances.application.dto.category.CategoryRespon
 import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
-import org.adultofuncional.main.shared.exception.BusinessException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,9 +61,6 @@ public class CreateEventUseCase {
   private final AccountRepository accountRepository;
   private final CategoryRepository categoryRepository;
 
-  // TODO: Validar valores de frecuencia permitidos (0,1,7,30,365)
-  // TODO: Validar que el recordatorio sea anterior a la fecha del evento
-
   /**
    * Ejecuta la creación de un nuevo evento.
    *
@@ -75,8 +71,9 @@ public class CreateEventUseCase {
    *         incluyendo la categoría anidada si fue asignada.
    * @throws NotFoundException si la cuenta no existe o si la categoría
    *                           proporcionada no existe.
-   * @throws BusinessException si las horas no son coherentes o si la prioridad
-   *                           o el estado no son valores válidos.
+   * @throws IllegalArgumentException si el horario, la frecuencia, la
+   *                                  prioridad o el estado incumplen las
+   *                                  invariantes del evento.
    */
   @Transactional
   public EventResponse execute(UUID accountId, EventRequest request) {
@@ -84,13 +81,7 @@ public class CreateEventUseCase {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    // 2. Validar horario
-    if (request.getStartHour().isAfter(request.getEndHour()) ||
-        request.getStartHour().isEqual(request.getEndHour())) {
-      throw new BusinessException("La hora de inicio debe ser anterior a la hora de fin");
-    }
-
-    // 3. Buscar categoría obligatoria
+    // 2. Buscar categoría obligatoria
     Category category = categoryRepository.findAccessibleByIdAndType(
             accountId,
             request.getCategoryId(),
@@ -99,18 +90,14 @@ public class CreateEventUseCase {
             + request.getCategoryId()));
     UUID categoryId = category.getId();
 
-    // 4. Valores por defecto y validación
+    // 3. Valores por defecto. El dominio valida el conjunto final.
     String priority = request.getPriority() != null && !request.getPriority().isBlank()
         ? request.getPriority()
         : "Media";
-    validarPrioridad(priority);
-
     String status = request.getStatus() != null && !request.getStatus().isBlank()
         ? request.getStatus()
         : "Pendiente";
-    validarEstado(status);
-
-    // 5. Crear modelo de dominio
+    // 4. Crear modelo de dominio
     Event event = Event.create(
         request.getTitle(),
         request.getDescription(),
@@ -126,34 +113,8 @@ public class CreateEventUseCase {
 
     Event saved = eventRepository.save(event);
 
-    // 6. Mapear respuesta
+    // 5. Mapear respuesta
     return mapToResponse(saved, category);
-  }
-
-  /**
-   * Valida que la prioridad sea uno de los valores permitidos.
-   *
-   * @param priority valor a validar.
-   * @throws BusinessException si no es {@code Baja}, {@code Media} o
-   *                           {@code Alta}.
-   */
-  private void validarPrioridad(String priority) {
-    if (!priority.equals("Baja") && !priority.equals("Media") && !priority.equals("Alta")) {
-      throw new BusinessException("La prioridad debe ser 'Baja', 'Media' o 'Alta'");
-    }
-  }
-
-  /**
-   * Valida que el estado sea uno de los valores permitidos.
-   *
-   * @param status valor a validar.
-   * @throws BusinessException si no es un estado reconocido.
-   */
-  private void validarEstado(String status) {
-    if (!status.equals("Pendiente") && !status.equals("Completado") &&
-        !status.equals("Cancelado") && !status.equals("Pospuesto")) {
-      throw new BusinessException("El estado debe ser 'Pendiente', 'Completado', 'Cancelado' o 'Pospuesto'");
-    }
   }
 
   /**

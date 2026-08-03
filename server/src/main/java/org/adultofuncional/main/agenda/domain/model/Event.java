@@ -2,6 +2,7 @@ package org.adultofuncional.main.agenda.domain.model;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Set;
 import java.util.UUID;
 
 import com.fasterxml.uuid.Generators;
@@ -24,8 +25,8 @@ import lombok.experimental.FieldDefaults;
  * <h2>Responsabilidades</h2>
  * <ul>
  * <li>Validar que el título no esté vacío, las horas de inicio y fin sean
- * coherentes, la frecuencia no sea negativa y la fecha de creación no sea
- * futura.</li>
+ * coherentes, la frecuencia pertenezca al catálogo soportado y el
+ * recordatorio sea anterior al inicio.</li>
  * <li>Generar su propio identificador UUID v7 en {@link #create} para que
  * el dominio sea dueño de su identidad.</li>
  * <li>Permitir la actualización de todos sus campos editables mediante
@@ -49,6 +50,11 @@ import lombok.experimental.FieldDefaults;
 @ToString
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Event {
+
+  private static final Set<String> ALLOWED_PRIORITIES = Set.of("Baja", "Media", "Alta");
+  private static final Set<String> ALLOWED_STATUSES =
+      Set.of("Pendiente", "Completado", "Cancelado", "Pospuesto");
+  private static final Set<Integer> ALLOWED_FREQUENCIES = Set.of(0, 1, 7, 30, 365);
 
   /**
    * Identificador único del evento (UUID v7).
@@ -117,8 +123,7 @@ public class Event {
     validatePriority(priority);
     validateDate(date);
     validateFrequency(frequency);
-    validateReminder(reminder);
-    validateHours(startHour, endHour);
+    validateSchedule(date, reminder, startHour, endHour);
     validateStatus(status);
     validateCategoryId(categoryId);
     validateAccountId(accountId);
@@ -148,11 +153,11 @@ public class Event {
    * @param description descripción opcional.
    * @param priority    prioridad (no nula ni vacía).
    * @param date        fecha calendario del evento (no nula).
-   * @param frequency   días entre repeticiones (0 = único, no negativo).
+   * @param frequency   días entre repeticiones (0, 1, 7, 30 o 365).
    * @param reminder    fecha y hora del recordatorio (no nula).
    * @param startHour   hora de inicio (no nula).
-   * @param endHour     hora de finalización (no nula, no anterior a
-   *                    {@code startHour}).
+   * @param endHour     hora de finalización (no nula y estrictamente posterior
+   *                    a {@code startHour}).
    * @param status      estado inicial (no nulo ni vacío).
    * @param categoryId  identificador de la categoría asociada (no nulo).
    * @param accountId   identificador de la cuenta propietaria (no nulo).
@@ -222,10 +227,10 @@ public class Event {
    * @param description nueva descripción (puede ser nula).
    * @param priority    nueva prioridad (no nula ni vacía).
    * @param date        nueva fecha calendario (no nula).
-   * @param frequency   nueva frecuencia (no negativa).
+   * @param frequency   nueva frecuencia (0, 1, 7, 30 o 365).
    * @param reminder    nuevo recordatorio (no nulo).
    * @param startHour   nueva hora de inicio (no nula).
-   * @param endHour     nueva hora de fin (no nula, no anterior a
+   * @param endHour     nueva hora de fin (no nula y estrictamente posterior a
    *                    {@code startHour}).
    * @param status      nuevo estado (no nulo ni vacío).
    * @param categoryId  nuevo identificador de categoría (no nulo).
@@ -241,8 +246,7 @@ public class Event {
     validatePriority(priority);
     validateDate(date);
     validateFrequency(frequency);
-    validateReminder(reminder);
-    validateHours(startHour, endHour);
+    validateSchedule(date, reminder, startHour, endHour);
     validateStatus(status);
     validateCategoryId(categoryId);
 
@@ -273,8 +277,8 @@ public class Event {
   }
 
   private static void validatePriority(String priority) {
-    if (priority == null || priority.isBlank()) {
-      throw new IllegalArgumentException("Priority cannot be null or empty");
+    if (!ALLOWED_PRIORITIES.contains(priority)) {
+      throw new IllegalArgumentException("Priority is not allowed");
     }
   }
 
@@ -285,32 +289,39 @@ public class Event {
   }
 
   private static void validateFrequency(int frequency) {
-    if (frequency < 0) {
-      throw new IllegalArgumentException("Frequency cannot be negative");
+    if (!ALLOWED_FREQUENCIES.contains(frequency)) {
+      throw new IllegalArgumentException("Frequency is not allowed");
     }
   }
 
-  private static void validateReminder(LocalDateTime reminder) {
+  private static void validateSchedule(
+      LocalDate date,
+      LocalDateTime reminder,
+      LocalDateTime startHour,
+      LocalDateTime endHour) {
     if (reminder == null) {
       throw new IllegalArgumentException("Reminder cannot be null");
     }
-  }
-
-  private static void validateHours(LocalDateTime startHour, LocalDateTime endHour) {
     if (startHour == null) {
       throw new IllegalArgumentException("Start hour cannot be null");
     }
     if (endHour == null) {
       throw new IllegalArgumentException("End hour cannot be null");
     }
-    if (endHour.isBefore(startHour)) {
-      throw new IllegalArgumentException("End hour cannot be before start hour");
+    if (!startHour.toLocalDate().equals(date) || !endHour.toLocalDate().equals(date)) {
+      throw new IllegalArgumentException("Event hours must match event date");
+    }
+    if (!startHour.isBefore(endHour)) {
+      throw new IllegalArgumentException("Start hour must be before end hour");
+    }
+    if (!reminder.isBefore(startHour)) {
+      throw new IllegalArgumentException("Reminder must be before start hour");
     }
   }
 
   private static void validateStatus(String status) {
-    if (status == null || status.isBlank()) {
-      throw new IllegalArgumentException("Status cannot be null or empty");
+    if (!ALLOWED_STATUSES.contains(status)) {
+      throw new IllegalArgumentException("Status is not allowed");
     }
   }
 

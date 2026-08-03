@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.adultofuncional.main.shared.security.NoHtml;
 
 import jakarta.validation.constraints.FutureOrPresent;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
@@ -72,6 +73,8 @@ public class EventUpdateRequest {
    * Valores aceptados: {@code "Baja"}, {@code "Media"}, {@code "Alta"}.
    */
   @Size(max = 15, message = "Prioridad no válida")
+  @Pattern(regexp = "^(Baja|Media|Alta)?$", message = "La prioridad debe ser Baja, Media o Alta")
+  @NoHtml
   private String priority;
 
   /**
@@ -121,6 +124,11 @@ public class EventUpdateRequest {
    * Valores aceptados: {@code "Pendiente"}, {@code "Completado"},
    * {@code "Cancelado"}, {@code "Pospuesto"}.
    */
+  @Size(max = 20, message = "Estado no válido")
+  @Pattern(
+      regexp = "^(Pendiente|Completado|Cancelado|Pospuesto)?$",
+      message = "El estado no es válido")
+  @NoHtml
   private String status;
 
   /**
