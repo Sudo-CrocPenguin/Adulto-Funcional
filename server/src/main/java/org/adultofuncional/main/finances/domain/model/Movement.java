@@ -1,8 +1,10 @@
 package org.adultofuncional.main.finances.domain.model;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.domain.enums.MovementType;
@@ -134,10 +136,11 @@ public class Movement {
    *                                  el monto no es positivo.
    */
   public static Movement create(MovementType type, BigDecimal amount,
-      UUID categoryId, UUID accountId, String description, LocalDate date) {
+      UUID categoryId, UUID accountId, String description, LocalDate date,
+      Clock clock) {
 
     UUID id = Generators.timeBasedEpochGenerator().generate();
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
 
     return new Movement(id, type, amount, categoryId, accountId, description, date, now);
   }
@@ -238,9 +241,6 @@ public class Movement {
   private static void validateCreatedAt(LocalDateTime createdAt) {
     if (createdAt == null) {
       throw new IllegalArgumentException("CreatedAt cannot be null");
-    }
-    if (createdAt.isAfter(LocalDateTime.now())) {
-      throw new IllegalArgumentException("CreatedAt cannot be in the future");
     }
   }
 

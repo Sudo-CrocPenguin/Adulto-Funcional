@@ -1,8 +1,10 @@
 package org.adultofuncional.main.finances.infrastructure.persistence.entity;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
@@ -133,12 +135,12 @@ public class MovementEntity {
   @JoinColumn(name = "movement_fk_category_id", nullable = false)
   private CategoryEntity category;
 
-  /**
-   * Callback JPA que establece {@code movement_register_date} antes del primer
-   * {@code INSERT}.
-   */
+  /** Conserva compatibilidad sin sobrescribir el timestamp creado por el dominio. */
   @PrePersist
-  protected void onCreate() {
-    movementRegisterDate = LocalDateTime.now();
+  void ensureRegisterDate() {
+    if (movementRegisterDate == null) {
+      movementRegisterDate = LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneOffset.UTC);
+    }
   }
+
 }

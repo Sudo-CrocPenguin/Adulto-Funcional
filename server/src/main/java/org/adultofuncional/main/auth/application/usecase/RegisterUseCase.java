@@ -72,7 +72,8 @@ public class RegisterUseCase {
         request.getEmail(),
         request.getPhone(),
         hashedPassword,
-        hashedMasterKey);
+        hashedMasterKey,
+        clock);
 
     // 4. Persistir
     Account savedAccount = accountRepository.save(account);

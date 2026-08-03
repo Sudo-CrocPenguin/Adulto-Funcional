@@ -1,5 +1,6 @@
 package org.adultofuncional.main.finances.application.usecase.movement;
 
+import java.time.Clock;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
@@ -51,6 +52,9 @@ public class CreateMovementUseCase {
   /** Puerto de dominio para la validación de la categoría. */
   private final CategoryRepository categoryRepository;
 
+  /** Reloj UTC usado para la fecha técnica de registro. */
+  private final Clock clock;
+
   /**
    * Ejecuta la creación de un nuevo movimiento.
    *
@@ -80,7 +84,8 @@ public class CreateMovementUseCase {
         finalCategoryId,
         accountId,
         request.getDescription(),
-        request.getMovementDate());
+        request.getMovementDate(),
+        clock);
 
     Movement saved = movementRepository.save(movement);
     return MovementResponse.builder()

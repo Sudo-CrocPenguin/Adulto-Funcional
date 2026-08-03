@@ -1,6 +1,8 @@
 package org.adultofuncional.main.account.domain.model;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import com.fasterxml.uuid.Generators;
@@ -82,9 +84,9 @@ public class Account {
    * @return instancia de Account lista para persistir
    */
   public static Account create(String names, String lastnames,
-      String email, String phone, String passwordHash) {
+      String email, String phone, String passwordHash, Clock clock) {
     UUID id = Generators.timeBasedEpochGenerator().generate(); // UUID v7
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
     return new Account(id, names, lastnames, email, phone, now, passwordHash, null);
   }
 
@@ -109,9 +111,9 @@ public class Account {
    * @return instancia de Account lista para persistir
    */
   public static Account create(String names, String lastnames, String email,
-      String phone, String passwordHash, String masterKeyHash) {
+      String phone, String passwordHash, String masterKeyHash, Clock clock) {
     UUID id = Generators.timeBasedEpochGenerator().generate();
-    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
     return new Account(id, names, lastnames, email, phone, now, passwordHash, masterKeyHash);
   }
 
@@ -186,9 +188,6 @@ public class Account {
   private static void validateCreatedAt(LocalDateTime createdAt) {
     if (createdAt == null) {
       throw new IllegalArgumentException("CreatedAt cannot be null");
-    }
-    if (createdAt.isAfter(LocalDateTime.now())) {
-      throw new IllegalArgumentException("CreatedAt cannot be in the future");
     }
   }
 }
