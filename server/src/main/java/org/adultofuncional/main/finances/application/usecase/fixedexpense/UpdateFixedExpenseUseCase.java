@@ -1,6 +1,7 @@
 package org.adultofuncional.main.finances.application.usecase.fixedexpense;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -55,6 +56,9 @@ public class UpdateFixedExpenseUseCase {
   /** Puerto de dominio para la validación de categorías. */
   private final CategoryRepository categoryRepository;
 
+  /** Reloj que define el día actual de las reglas de negocio. */
+  private final Clock clock;
+
   /**
    * Ejecuta la actualización parcial de un gasto fijo.
    *
@@ -90,7 +94,7 @@ public class UpdateFixedExpenseUseCase {
     if (request.getFrequency() != null)
       frequency = request.getFrequency();
     if (request.getNextDueDate() != null) {
-      if (request.getNextDueDate().isBefore(LocalDate.now())) {
+      if (!request.getNextDueDate().isAfter(LocalDate.now(clock))) {
         throw new BusinessException("La fecha de cierre debe ser futura");
       }
       nextDueDate = request.getNextDueDate();

@@ -10,7 +10,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,6 +30,10 @@ import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.junit.jupiter.api.Test;
 
 class FixedExpenseOwnershipUseCaseTest {
+
+  private static final Clock CLOCK = Clock.fixed(
+      Instant.parse("2026-08-03T12:00:00Z"),
+      ZoneOffset.UTC);
 
   @Test
   void doesNotReturnFixedExpenseOwnedByAnotherAccount() {
@@ -70,7 +77,8 @@ class FixedExpenseOwnershipUseCaseTest {
     CategoryRepository categoryRepository = mock(CategoryRepository.class);
     UpdateFixedExpenseUseCase useCase = new UpdateFixedExpenseUseCase(
         fixedExpenseRepository,
-        categoryRepository);
+        categoryRepository,
+        CLOCK);
 
     UUID authenticatedAccountId = UUID.randomUUID();
     UUID expenseId = UUID.randomUUID();
@@ -135,7 +143,8 @@ class FixedExpenseOwnershipUseCaseTest {
     CategoryRepository categoryRepository = mock(CategoryRepository.class);
     UpdateFixedExpenseUseCase useCase = new UpdateFixedExpenseUseCase(
         fixedExpenseRepository,
-        categoryRepository);
+        categoryRepository,
+        CLOCK);
 
     UUID accountId = UUID.randomUUID();
     UUID expenseId = UUID.randomUUID();

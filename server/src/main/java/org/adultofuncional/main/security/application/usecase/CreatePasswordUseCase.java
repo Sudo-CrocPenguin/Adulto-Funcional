@@ -1,5 +1,6 @@
 package org.adultofuncional.main.security.application.usecase;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -57,6 +58,7 @@ public class CreatePasswordUseCase {
   private final AccountRepository accountRepository;
   private final EncryptionService encryptionService;
   private final MasterKeySessionService masterKeySessionService;
+  private final Clock clock;
 
   /**
    * Ejecuta la creación de una nueva credencial.
@@ -100,7 +102,7 @@ public class CreatePasswordUseCase {
     // 5. Fecha de último cambio
     LocalDate lastChangeDate = request.getLastChangeDate() != null
         ? request.getLastChangeDate()
-        : LocalDate.now();
+        : LocalDate.now(clock);
 
     // 6. Crear modelo de dominio
     Password password = Password.create(

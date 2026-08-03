@@ -1,5 +1,6 @@
 package org.adultofuncional.main.finances.application.usecase.fixedexpense;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,9 @@ public class CreateFixedExpenseUseCase {
   /** Puerto de dominio para la consulta de categorías. */
   private final CategoryRepository categoryRepository;
 
+  /** Reloj que define el día actual de las reglas de negocio. */
+  private final Clock clock;
+
   /**
    * Ejecuta la creación de un nuevo gasto fijo.
    *
@@ -72,7 +76,8 @@ public class CreateFixedExpenseUseCase {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    if (request.getNextDueDate().isBefore(LocalDate.now())) {
+    LocalDate today = LocalDate.now(clock);
+    if (!request.getNextDueDate().isAfter(today)) {
       throw new BusinessException("La fecha de cierre debe ser posterior a la fecha actual");
     }
 
@@ -88,7 +93,7 @@ public class CreateFixedExpenseUseCase {
         request.getCategoryId(),
         accountId,
         request.getFrequency(),
-        LocalDate.now(),
+        today,
         request.getNextDueDate(),
         0);
     applyInitialStatus(expense, request.getStatus());

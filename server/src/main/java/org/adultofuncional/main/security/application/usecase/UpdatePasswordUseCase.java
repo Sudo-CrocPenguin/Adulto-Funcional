@@ -1,5 +1,6 @@
 package org.adultofuncional.main.security.application.usecase;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -55,6 +56,7 @@ public class UpdatePasswordUseCase {
   private final AccountRepository accountRepository;
   private final EncryptionService encryptionService;
   private final MasterKeySessionService masterKeyService;
+  private final Clock clock;
 
   /**
    * Ejecuta la actualización parcial de una credencial.
@@ -105,7 +107,8 @@ public class UpdatePasswordUseCase {
     int newCryptoVersion = password.getCryptoVersion();
 
     // Si se envía nueva contraseña, cifrarla
-    if (StringUtils.hasText(request.getPassword())) {
+    boolean passwordChanged = StringUtils.hasText(request.getPassword());
+    if (passwordChanged) {
       EncryptionService.EncryptedData data = encryptionService.encrypt(
           request.getPassword(),
           masterKey,
@@ -117,7 +120,7 @@ public class UpdatePasswordUseCase {
     }
 
     LocalDate newLastChangeDate = request.getLastChangeDate() != null ? request.getLastChangeDate()
-        : (request.getPassword() != null ? LocalDate.now() : password.getLastChangeDate());
+        : (passwordChanged ? LocalDate.now(clock) : password.getLastChangeDate());
 
     password.update(
         newApplicationName,
