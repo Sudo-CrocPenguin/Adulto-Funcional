@@ -74,7 +74,7 @@ public class UpdatePasswordUseCase {
       UUID sessionId,
       UUID passwordId,
       PasswordUpdateRequest request) {
-    accountRepository.findById(accountId)
+    accountRepository.findByIdForUpdate(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
     String masterKey = masterKeyService.find(accountId, sessionId)
