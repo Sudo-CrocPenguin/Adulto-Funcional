@@ -1,10 +1,13 @@
 package org.adultofuncional.main.finances.infrastructure.persistence.repository;
 
-import java.util.List;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.MovementEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -45,11 +48,29 @@ public interface SpringMovementJpaRepository extends JpaRepository<MovementEntit
       @Param("accountId") UUID accountId);
 
   /**
-   * Busca todos los movimientos financieros asociados a una cuenta específica.
+   * Consulta una página de movimientos con ownership y filtros en SQL.
    *
    * @param accountId el identificador de la cuenta (UUID)
-   * @return lista de entidades {@code MovementEntity} pertenecientes a la cuenta,
-   *         puede estar vacía si no hay movimientos registrados
+   * @return página acotada y total de coincidencias
    */
-  List<MovementEntity> findByAccount_AccountId(UUID accountId);
+  @EntityGraph(attributePaths = {"account", "category"})
+  @Query("""
+      SELECT movement
+      FROM MovementEntity movement
+      WHERE movement.account.accountId = :accountId
+        AND (:startDate IS NULL OR movement.movementDate >= :startDate)
+        AND (:endDate IS NULL OR movement.movementDate <= :endDate)
+        AND (:movementType IS NULL OR movement.movementType = :movementType)
+        AND (:categoryId IS NULL OR movement.category.categoryId = :categoryId)
+        AND (:searchTerm IS NULL OR LOWER(COALESCE(movement.movementDescription, ''))
+             LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+      """)
+  Page<MovementEntity> findPageByAccountId(
+      @Param("accountId") UUID accountId,
+      @Param("startDate") LocalDate startDate,
+      @Param("endDate") LocalDate endDate,
+      @Param("movementType") String movementType,
+      @Param("categoryId") UUID categoryId,
+      @Param("searchTerm") String searchTerm,
+      Pageable pageable);
 }

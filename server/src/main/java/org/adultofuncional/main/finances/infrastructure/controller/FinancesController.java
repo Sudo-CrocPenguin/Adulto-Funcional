@@ -32,6 +32,8 @@ import org.adultofuncional.main.finances.application.usecase.movement.GetMovemen
 import org.adultofuncional.main.finances.application.usecase.movement.ListMovementsUseCase;
 import org.adultofuncional.main.finances.application.usecase.movement.UpdateMovementUseCase;
 import org.adultofuncional.main.shared.exception.NotFoundException;
+import org.adultofuncional.main.shared.pagination.PageMetadata;
+import org.adultofuncional.main.shared.pagination.PageResult;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,6 +49,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 
 
 /**
@@ -210,16 +213,18 @@ public class FinancesController {
      */
 
     @GetMapping("/movements")
-    public ResponseEntity<ApiResponse<List<MovementResponse>>> listMovements(MovementFilterRequest filter,
+    public ResponseEntity<ApiResponse<List<MovementResponse>>> listMovements(
+        @Valid MovementFilterRequest filter,
         @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         UUID accountId = resolveAccountId(authenticatedAccount);
-        List<MovementResponse> response = listMovementUseCase.execute(accountId, filter);
+        PageResult<MovementResponse> response = listMovementUseCase.execute(accountId, filter);
 
         return ResponseEntity.ok(ApiResponse.<List<MovementResponse>>builder()
             .status(HttpStatus.OK.value())
             .message("Movimientos listados exitosamente")
-            .data(response)
+            .data(response.content())
+            .page(PageMetadata.from(response))
             .build());
     }
 

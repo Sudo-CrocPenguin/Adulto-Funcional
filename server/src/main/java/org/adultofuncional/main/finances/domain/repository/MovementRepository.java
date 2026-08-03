@@ -1,9 +1,12 @@
 package org.adultofuncional.main.finances.domain.repository;
 
-import java.util.List;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
+import org.adultofuncional.main.finances.domain.enums.MovementType;
 import org.adultofuncional.main.finances.domain.model.Movement;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
 /**
  * Puerto de dominio para la persistencia de movimientos financieros.
@@ -41,19 +44,23 @@ public interface MovementRepository {
   Optional<Movement> findByIdAndAccountId(UUID id, UUID accountId);
 
   /**
-   * Lista todos los movimientos asociados a una cuenta específica.
+   * Consulta una página de movimientos asociados a una cuenta específica.
    *
    * <p>
-   * Utilizado por los casos de uso de listado y filtrado de movimientos.
-   * Retorna la totalidad de los movimientos de la cuenta; el filtrado
-   * adicional (por tipo, categoría, rango de fechas, término de búsqueda)
-   * se aplica en memoria en la capa de aplicación.
+   * Ownership, filtros, orden y límite deben formar parte de la consulta de
+   * persistencia; nunca se materializa el historial completo.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return lista de movimientos de la cuenta. Puede ser vacía si no hay
-   *         registros.
+   * @return página de movimientos y sus totales.
    */
-  List<Movement> findAllByAccountId(UUID accountId);
+  PageResult<Movement> findPageByAccountId(
+      UUID accountId,
+      LocalDate startDate,
+      LocalDate endDate,
+      MovementType movementType,
+      UUID categoryId,
+      String searchTerm,
+      PageQuery pageQuery);
 
   /**
    * Persiste un movimiento nuevo o actualiza uno existente.

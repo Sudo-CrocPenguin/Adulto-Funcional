@@ -1,6 +1,5 @@
 package org.adultofuncional.main.finances.application.usecase.movement;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -16,6 +15,11 @@ import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
+import org.adultofuncional.main.shared.exception.BusinessException;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
+import org.adultofuncional.main.shared.pagination.PaginationPolicy;
+import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -25,11 +29,9 @@ import org.springframework.util.StringUtils;
  * filtros opcionales.
  *
  * <p>
- * Recupera todos los movimientos de la cuenta desde
- * {@link MovementRepository#findAllByAccountId} y aplica en memoria los filtros
- * proporcionados: tipo de movimiento, categoría, rango de fechas
- * ({@code startDate} / {@code endDate}) y término de búsqueda sobre la
- * descripción.
+ * Delega al puerto una consulta que combina ownership, filtros, orden y
+ * límites en SQL. Solo la página solicitada se transforma a DTO y sus
+ * categorías se resuelven en lote.
  *
  * <p>
  * <strong>Filtros soportados (todos opcionales):</strong>
@@ -52,6 +54,9 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class ListMovementsUseCase {
 
+  private static final Set<String> ALLOWED_SORTS =
+      Set.of("movementDate", "amount", "movementType", "registerDate", "id");
+
   /** Puerto de dominio para la consulta de movimientos. */
   private final MovementRepository movementRepository;
 
@@ -66,55 +71,48 @@ public class ListMovementsUseCase {
    * @param filter    Filtro opcional con tipo, categoría, rango de fechas y
    *                  término de búsqueda. Puede ser {@code null} para obtener
    *                  todos los movimientos de la cuenta.
-   * @return Lista de {@link MovementResponse} con los movimientos que
-   *         cumplen los criterios. La categoría se retorna como
-   *         {@code null} en esta versión.
+   * @return página de {@link MovementResponse} con contenido y metadatos.
    * @throws NotFoundException si la cuenta no existe.
    */
   @Transactional(readOnly = true)
-  public List<MovementResponse> execute(UUID accountId, MovementFilterRequest filter) {
+  public PageResult<MovementResponse> execute(UUID accountId, MovementFilterRequest filter) {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    List<Movement> movements = movementRepository.findAllByAccountId(accountId);
-    if (filter != null) {
-      if (filter.getMovementType() != null) {
-        movements = movements.stream()
-            .filter(m -> m.getType() == filter.getMovementType())
-            .collect(Collectors.toList());
-      }
-      if (filter.getCategoryId() != null) {
-        movements = movements.stream()
-            .filter(m -> m.getCategoryId() != null && m.getCategoryId().equals(filter.getCategoryId()))
-            .collect(Collectors.toList());
-      }
-      if (filter.getStartDate() != null) {
-        movements = movements.stream()
-            .filter(m -> !m.getDate().isBefore(filter.getStartDate()))
-            .collect(Collectors.toList());
-      }
-      if (filter.getEndDate() != null) {
-        movements = movements.stream()
-            .filter(m -> !m.getDate().isAfter(filter.getEndDate()))
-            .collect(Collectors.toList());
-      }
-      if (StringUtils.hasText(filter.getSearchTerm())) {
-        String term = filter.getSearchTerm().toLowerCase();
-        movements = movements.stream()
-            .filter(m -> m.getDescription() != null &&
-                m.getDescription().toLowerCase().contains(term))
-            .collect(Collectors.toList());
-      }
+    if (filter != null && filter.getStartDate() != null && filter.getEndDate() != null
+        && filter.getStartDate().isAfter(filter.getEndDate())) {
+      throw new BusinessException(
+          "La fecha inicial no puede ser posterior a la fecha final",
+          400,
+          ApiErrorCode.PARAMETER_INVALID);
     }
-    Set<UUID> categoryIds = movements.stream()
+
+    PageQuery pageQuery = PaginationPolicy.resolve(
+        filter == null ? null : filter.getPage(),
+        filter == null ? null : filter.getSize(),
+        filter == null ? null : filter.getSortBy(),
+        filter == null ? null : filter.getSortDirection(),
+        "movementDate",
+        false,
+        ALLOWED_SORTS);
+    PageResult<Movement> movements = movementRepository.findPageByAccountId(
+        accountId,
+        filter == null ? null : filter.getStartDate(),
+        filter == null ? null : filter.getEndDate(),
+        filter == null ? null : filter.getMovementType(),
+        filter == null ? null : filter.getCategoryId(),
+        filter != null && StringUtils.hasText(filter.getSearchTerm())
+            ? filter.getSearchTerm().trim()
+            : null,
+        pageQuery);
+    Set<UUID> categoryIds = movements.content().stream()
         .map(Movement::getCategoryId)
         .collect(Collectors.toSet());
     Map<UUID, Category> categories = categoryRepository
         .findAllAccessibleById(accountId, categoryIds).stream()
         .collect(Collectors.toMap(Category::getId, Function.identity()));
 
-    return movements.stream()
-        .map(m -> MovementResponse.builder()
+    return movements.map(m -> MovementResponse.builder()
             .id(m.getId())
             .movementType(m.getType())
             .amount(m.getAmount())
@@ -122,8 +120,7 @@ public class ListMovementsUseCase {
             .description(m.getDescription())
             .movementDate(m.getDate())
             .category(toCategoryResponse(categories.get(m.getCategoryId())))
-            .build())
-        .collect(Collectors.toList());
+            .build());
   }
 
   private CategoryResponse toCategoryResponse(Category category) {
