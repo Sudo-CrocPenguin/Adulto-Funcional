@@ -23,19 +23,22 @@
  * libre de HTML ({@code @NoHtml}), que el monto sea mayor a 0.01
  * ({@code @DecimalMin}), que la frecuencia ({@code @NotNull}) y el estado
  * ({@code @NotNull}) sean valores válidos de los enumerados correspondientes,
- * y que la fecha de cierre sea futura ({@code @Future}).</li>
+ * que el importe quepa en {@code DECIMAL(10,2)} y que el próximo vencimiento
+ * sea coherente con el ciclo.</li>
  * <li>{@link org.adultofuncional.main.finances.application.dto.fixedexpense.UpdateFixedExpenseRequest}
  * —
  * Datos de entrada para la modificación parcial de un gasto fijo. Todos
  * los campos son opcionales para permitir actualizaciones selectivas
  * (comportamiento PATCH). Los campos proporcionados aplican las mismas
- * validaciones que en la creación.</li>
+ * validaciones que en la creación y las invariantes se evalúan sobre el estado
+ * final combinado.</li>
  * <li>{@link org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseFilterRequest}
  * —
  * Filtros opcionales para listar gastos fijos. Permite filtrar por
  * {@link org.adultofuncional.main.finances.domain.enums.Status}, por
  * categoría y por un término de búsqueda libre sobre el nombre
- * (máximo 50 caracteres, sin HTML).</li>
+ * (máximo 50 caracteres, sin HTML). También define página, tamaño y orden
+ * para ejecutar la consulta limitada en SQL.</li>
  * </ul>
  *
  * <h2>Seguridad</h2>

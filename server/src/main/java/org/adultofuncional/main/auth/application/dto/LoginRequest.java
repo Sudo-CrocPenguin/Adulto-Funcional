@@ -19,9 +19,9 @@ import lombok.NoArgsConstructor;
  * mediante Bean Validation (Jakarta).
  *
  * <p>
- * <strong>Protección contra XSS:</strong>
- * Ambos campos están anotados con {@link NoHtml} para rechazar cualquier
- * intento de incluir HTML/scripts en las credenciales.
+ * <strong>Protección contra XSS:</strong> el email está anotado con
+ * {@link NoHtml}. La contraseña no se trata como contenido renderizable y
+ * conserva la libertad de usar caracteres como {@code <} y {@code >}.
  *
  * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
  * @since 0.0.1

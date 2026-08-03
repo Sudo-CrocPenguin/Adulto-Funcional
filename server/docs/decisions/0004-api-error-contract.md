@@ -1,6 +1,7 @@
 # ADR 0004: Contrato uniforme de errores HTTP
 
 - Estado: aceptada
+- Implementación: completa
 - Fecha: 2026-07-31
 - Alcance: toda la API REST
 

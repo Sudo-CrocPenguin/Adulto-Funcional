@@ -132,22 +132,16 @@ public class UpdateFixedExpenseRequest {
   private Integer reminderDays;
 
   /**
-   * Nueva fecha de cierre o vencimiento que se desea asignar al gasto fijo.
+   * Nueva fecha de próximo vencimiento que se desea asignar al gasto fijo.
    *
    * <p>
-   * Campo opcional. Si se proporciona, reemplaza la fecha de cierre actual
+   * Campo opcional. Si se proporciona, reemplaza el próximo vencimiento
    * del gasto recurrente. Se representa como {@link LocalDate} sin información
-   * de hora ni zona horaria, dado que la vigencia opera a nivel de día
+   * de hora ni zona horaria, dado que el ciclo opera a nivel de día
    * calendario.
-   * Si es {@code null}, la fecha de cierre permanece sin cambios.
+   * Si es {@code null}, el vencimiento permanece sin cambios.
    *
-   * <p>
-   * <b>Restricciones aplicadas cuando el valor es proporcionado:</b>
-   * <ul>
-   * <li>{@code @Future}: la fecha debe ser estrictamente posterior a la fecha
-   * actual en el momento de la solicitud, evitando registrar vencimientos
-   * ya expirados.</li>
-   * </ul>
+   * El dominio valida que no sea anterior a la fecha de inicio final.
    */
   private LocalDate nextDueDate;
 

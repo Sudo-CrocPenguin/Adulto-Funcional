@@ -36,16 +36,13 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Decisiones de diseño:</strong>
  * <ul>
- * <li><strong>CSRF deshabilitado</strong>: Esta es una API REST stateless
- * consumida por clientes web y nativos (móvil/desktop). Los clientes web
- * están protegidos por el atributo {@code SameSite} de la cookie HttpOnly.
- * Los clientes nativos se autentican con Bearer token en el header
- * {@code Authorization}, no con cookies. Si en el futuro se incorpora un
- * cliente web que no pueda garantizar {@code SameSite}, se debe reactivar
- * {@code CookieCsrfTokenRepository}.</li>
- * <li><strong>Sesiones stateless</strong>: No se crea ni consulta
- * {@code HttpSession}. El estado de autenticación vive exclusivamente en
- * el JWT firmado.</li>
+ * <li><strong>CSRF selectivo</strong>: las mutaciones autenticadas mediante
+ * cookie deben presentar el token de {@link CookieCsrfTokenRepository}. Un
+ * Bearer ya validado queda exento porque el navegador no lo adjunta
+ * automáticamente.</li>
+ * <li><strong>Sin HttpSession</strong>: la cadena HTTP es stateless respecto de
+ * Servlet, aunque cada JWT pertenece a una familia durable de autenticación y
+ * su {@code jti} puede revocarse temporalmente.</li>
  * <li><strong>CORS con credenciales</strong>: {@code allowCredentials(true)}
  * es necesario para que el navegador envíe la cookie HttpOnly en requests
  * cross-origin. Por ello {@code allowedOrigins} debe ser una lista

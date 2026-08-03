@@ -1,6 +1,7 @@
 # ADR 0001: Contrato canónico de Master Key
 
 - Estado: aceptada
+- Implementación: completa
 - Fecha: 2026-07-31
 - Alcance: módulo `security`
 

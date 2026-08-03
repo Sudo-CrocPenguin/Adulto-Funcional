@@ -135,7 +135,7 @@ public class CreateFixedExpenseRequest {
   @NotNull(message = "El estado es obligatorio")
   private Status status;
 
-  /** Fecha de inicio; si se omite se usa el día actual del reloj inyectado. */
+  /** Fecha de inicio del ciclo; si se omite se usa el día actual del reloj. */
   private LocalDate startDate;
 
   /** Días de anticipación del recordatorio; cero conserva la compatibilidad. */
@@ -144,19 +144,18 @@ public class CreateFixedExpenseRequest {
   private Integer reminderDays;
 
   /**
-   * Fecha de cierre o vencimiento del gasto fijo.
+   * Próxima fecha de vencimiento del gasto fijo.
    *
    * <p>
-   * Campo obligatorio que indica hasta cuándo estará vigente el gasto
-   * recurrente. Debe ser una fecha posterior a la actual, garantizando
-   * que no se registren gastos con vigencia ya vencida.
+   * Campo obligatorio que indica el siguiente vencimiento del ciclo. El caso
+   * de uso exige que sea posterior al día actual y el dominio también exige
+   * coherencia con {@code startDate}.
    *
    * <p>
    * <b>Restricciones aplicadas:</b>
    * <ul>
-   * <li>{@code @NotNull}: la fecha de cierre no puede ser nula.</li>
-   * <li>{@code @Future}: la fecha debe ser estrictamente posterior
-   * a la fecha actual en el momento de la solicitud.</li>
+   * <li>{@code @NotNull}: el próximo vencimiento no puede ser nulo.</li>
+   * <li>La política basada en {@code Clock} exige una fecha futura.</li>
    * </ul>
    */
   @NotNull(message = "La fecha de cierre es obligatoria")

@@ -20,20 +20,19 @@
  * <ul>
  * <li>{@link org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity}
  * —
- * Cuenta de usuario con datos personales, hash de contraseña (Argon2), master
- * key opcional y relaciones {@code @OneToMany} con cascada hacia movimientos,
- * gastos fijos, eventos y contraseñas.</li>
+ * Cuenta de usuario con datos personales, hashes Argon2, versión optimista y
+ * relaciones JPA con movimientos, gastos fijos, eventos y contraseñas.</li>
  * </ul>
  *
  * <h2>Características</h2>
  * <ul>
  * <li><strong>Fecha de creación automática:</strong> El campo
- * {@code account_created_at} se establece mediante {@code @PrePersist} en el
- * momento del primer {@code INSERT}, no por la base de datos.</li>
- * <li><strong>Cascada:</strong> Las relaciones con las entidades dependientes
- * usan {@code CascadeType.ALL} y {@code orphanRemoval = true}, de modo que al
- * eliminar una cuenta se eliminan automáticamente todos sus datos
- * asociados.</li>
+ * {@code account_created_at} procede del dominio; {@code @PrePersist} solo
+ * completa entidades parciales antiguas.</li>
+ * <li><strong>Concurrencia:</strong> {@code account_version} implementa
+ * bloqueo optimista.</li>
+ * <li><strong>Eliminación:</strong> el esquema aplica {@code ON DELETE
+ * CASCADE}; las asociaciones JPA mantienen coherencia dentro del agregado.</li>
  * <li><strong>Seguridad:</strong> Los campos {@code account_password} y
  * {@code account_master_key} almacenan hashes Argon2, nunca texto plano.</li>
  * </ul>

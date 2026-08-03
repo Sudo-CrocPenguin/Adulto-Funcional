@@ -60,10 +60,10 @@ import jakarta.validation.Valid;
  * casos de uso correspondientes y retorna respuestas envueltas en
  * {@link ApiResponse}.</p>
  *
-   * <p>Los endpoints que operan sobre recursos de una cuenta toman el
-   * {@code accountId} estable desde el claim {@code sub} del JWT mediante
-   * {@link AuthenticatedAccount}. Las categorías son globales y
- * no requieren esta resolución.</p>
+ * <p>Todos los endpoints toman el {@code accountId} estable desde el claim
+ * {@code sub} del JWT mediante {@link AuthenticatedAccount}. El catálogo
+ * combina categorías {@code SYSTEM} visibles para todas las cuentas y
+ * categorías {@code PERSONAL} aisladas por propietario.</p>
  *
  * @author Lidys Jaraba
  * @since 0.0.1

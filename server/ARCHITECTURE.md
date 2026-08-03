@@ -1,639 +1,358 @@
-# ARCHITECTURE.md - Documentación Técnica de Arquitectura
+# Arquitectura del backend
 
-## Visión general
+## Propósito
 
-Adulto Funcional Server implementa **Clean Architecture** (Arquitectura Limpia) propuesta por Robert C. Martin, con las siguientes características:
+Este documento explica qué arquitectura usa `server`, por qué existe cada
+capa y cómo fluye una operación desde HTTP hasta MariaDB o Redis. La fuente de
+verdad ejecutable sigue siendo el código y las migraciones.
 
-- **Independencia de frameworks**: El dominio no depende de Spring, JPA o cualquier framework externo
-- **Testabilidad**: Las reglas de negocio pueden probarse sin UI, base de datos o servidor web
-- **Independencia de UI**: La interfaz puede cambiar sin afectar el resto del sistema
-- **Independencia de base de datos**: El dominio no sabe qué base de datos se usa (MariaDB, MySQL, etc.)
-- **Independencia de agentes externos**: Las reglas de negocio no saben nada sobre el mundo exterior
+## Estilo arquitectónico
 
-## Organización de capas
+El backend es un **monolito modular por dominio**, inspirado en Clean
+Architecture, DDD y puertos/adaptadores. Se despliega como un único proceso,
+pero separa las responsabilidades en módulos de negocio.
 
-```
-┌──────────────────────────────────────────────────────────────────────────────────────────────┐
-│                                     INFRASTRUCTURE LAYER                                     │
-│                       (Adaptadores que conectan con el mundo exterior)                       │
-│  ┌────────────────────┐      ┌────────────────┐      ┌───────────────────────────────────┐   │
-│  │ REST Controllers   │      │ JPA Entities   │      │           Spring Repos            │   │
-│  │ (AccountController)│      │ (AccountEntity)│      │   (SpringAccountJpaRepository)    │   │
-│  └────────────────────┘      └────────────────┘      └───────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌──────────────────────────────────────────────────────────────────┐
-│                     APPLICATION LAYER                            │
-│          (Casos de uso que orquestan el dominio)                 │
-│  ┌───────────────────────┐     ┌──────────────────────────────┐  │
-│  │         Use Cases     │     │ DTOs (Request/Response)      │  │
-│  │   (GetAccountUseCase  │     │      (AccountResponse,       │  │
-│  │  UpdateAccountUseCase)│     │    UpdateAccountRequest)     │  │
-│  └───────────────────────┘     └──────────────────────────────┘  │
-└──────────────────────────────────────────────────────────────────┘
-                            │
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                        DOMAIN LAYER                         │
-│  (Reglas de negocio puras, sin dependencias externas)       │
-│  ┌──────────────────┐  ┌──────────────────────────────┐     │
-│  │ Models           │  │ Repository Ports (Interfaces)│     │
-│  │ (Account)        │  │ (AccountRepository)          │     │
-│  └──────────────────┘  └──────────────────────────────┘     │
-└─────────────────────────────────────────────────────────────┘
+No se presenta como Clean Architecture estricta: `agenda` reutiliza el modelo
+de categorías de `finances`, autenticación integra servicios de Spring
+Security y algunos mapeadores viven en infraestructura. Estas dependencias son
+explícitas y no convierten los módulos en microservicios.
 
+Principios aplicados:
+
+- El dominio contiene invariantes y no depende de controladores ni entidades
+  JPA.
+- La aplicación orquesta casos de uso, transacciones y puertos.
+- Infraestructura adapta HTTP, JPA, Redis y criptografía.
+- La identidad de cuenta siempre se obtiene del principal autenticado.
+- Los recursos privados se consultan y mutan dentro del límite de la cuenta.
+- El esquema cambia únicamente mediante migraciones Flyway incrementales.
+
+## Vista de contexto
+
+```text
+┌──────────────────┐       HTTPS/JSON       ┌────────────────────────┐
+│ Web / móvil / CLI├───────────────────────►│ Adulto Funcional Server│
+└──────────────────┘                        └───────────┬────────────┘
+                                                      │
+                               ┌──────────────────────┴───────────────────┐
+                               │                                          │
+                               ▼                                          ▼
+                     ┌──────────────────┐                        ┌─────────────────┐
+                     │ MariaDB 11.8     │                        │ Redis 7.4       │
+                     │ datos durables   │                        │ estado efímero  │
+                     └──────────────────┘                        └─────────────────┘
 ```
 
-```
-org.adultofuncional.main
-├── account/            # Módulo de cuentas de usuario
-│   ├── domain/         # Modelo de dominio y puertos
-│   ├── application/    # Casos de uso y DTOs
-│   └── infrastructure/ # Adaptadores (JPA, REST)
-├── auth/               # Módulo de autenticación
-├── config/             # Configuraciones de Spring
-│   ├── beans/          # Configuración de beans
-│   └── security/       # Configuración de Spring Security
-├── finances/           # Módulo financiero (movimientos, gastos, categorías)
-├── agenda/             # Módulo de agenda (eventos)
-├── security/           # Gestor de contraseñas con Master Key
-└── shared/             # Componentes transversales
-    ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
-    ├── response/       # Formato estándar de respuestas API (ApiResponse)
-    └── security/       # Validación de ownership reutilizable
-```
+MariaDB almacena cuentas, roles, sesiones, recursos y material cifrado. Redis
+mantiene revocaciones de access token, rate limiting y desbloqueos temporales
+de Master Key; no es la fuente durable de los datos de negocio.
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│               SHARED (COMPONENTES COMPARTIDOS)                   │
-│   (Elementos transversales usados por todos los módulos)         │
-│     ┌────────────┐    ┌─────────────────────────┐                │
-│     │ exception/ │    │       response/         │                │
-│     │ (GlobalExc.│    │    (ApiResponse)        │                │
-│     │  Handler)  │    │                         │                │
-│     └────────────┘    └─────────────────────────┘                │
-│                     ┌────────────────────┐                       │
-│                     │ security/          │                       │
-│                     │ (OwnedResource,    │                       │
-│                     │  OwnershipValid.)  │                       │
-│                     └────────────────────┘                       │
-└──────────────────────────────────────────────────────────────────┘
+## Organización del código
+
+```text
+src/main/java
+├── database/migrations/              # Migración Java V6
+└── org/adultofuncional/main
+    ├── account/
+    ├── agenda/
+    ├── auth/
+    ├── config/
+    ├── finances/
+    ├── security/
+    └── shared/
 ```
 
-## Capa de Dominio (`domain`)
+Los módulos de negocio conservan, cuando aplica, esta estructura:
 
-Es el núcleo del sistema. Contiene las entidades y reglas de negocio puras.
-
-### Responsabilidades
-
-- Definir el modelo de negocio (`Account`, futuros: `Movement`, `Event`, `Password`)
-- Declarar puertos de salida (interfaces de repositorio)
-- Encapsular invariantes de negocio
-- Validar reglas de integridad (ej. `id` y `createdAt` no nulos en `Account`)
-
-### Ejemplo: `Account.java`
-
-```java
-public class Account {
-    private final UUID id;
-    private String names;
-    private String lastnames;
-    private String email;
-    private String phone;
-    private final LocalDateTime createdAt;
-
-    // Constructor privado - usar métodos de fábrica
-    private Account(UUID id, String names, ...) { ... }
-
-    // Método de fábrica para reconstituir desde persistencia
-    public static Account reconstitute(UUID id, ...) { ... }
-
-    // Comportamiento de dominio
-    public void updateDetails(String names, String lastnames, String phone) { ... }
-    public void updateEmail(String email) { ... }
-    public String getFullName() { return names + " " + lastnames; }
-}
+```text
+<módulo>/
+├── domain/
+│   ├── model/       # Entidades y reglas
+│   ├── enums/       # Vocabulario cerrado
+│   ├── repository/  # Puertos de persistencia
+│   └── service/     # Puertos de capacidades de dominio
+├── application/
+│   ├── dto/         # Contratos de entrada y salida
+│   ├── service/     # Orquestación reutilizable
+│   └── usecase/     # Casos de uso transaccionales
+└── infrastructure/
+    ├── controller/  # Adaptadores REST
+    ├── persistence/ # Entidades, Spring Data y mapeadores
+    ├── repository/  # Implementación de puertos
+    ├── scheduling/  # Jobs
+    └── service/     # Redis, cifrado u otros adaptadores
 ```
 
-### Puertos de repositorio (Interfaces)
+## Capas y reglas de dependencia
 
-El dominio define contratos que la infraestructura debe implementar:
+### Dominio
 
-```java
-public interface AccountRepository {
-    Account save(Account account);
-    Optional<Account> findById(UUID id);
-    Optional<Account> findByEmail(String email);
-    List<Account> findAll();
-    void deleteById(UUID id);
-}
+Contiene el estado y las invariantes que deben cumplirse sin importar el canal
+de entrada o la tecnología de persistencia.
+
+Ejemplos:
+
+- `Movement` exige importe positivo, categoría y propietario.
+- `FixedExpense` valida frecuencia, estado, fechas y avance recurrente.
+- `Event` valida prioridad, estado, frecuencia, orden temporal, zona e
+  instantes.
+- `Category` modela alcance `SYSTEM` o `PERSONAL` y tipo inmutable.
+- `AuthSession` controla rotación, expiración, replay y revocación.
+- `Password` conserva versión de fila y versión criptográfica.
+
+Los repositorios del dominio son interfaces. No exponen `JpaRepository`,
+`Pageable`, entidades JPA ni detalles SQL.
+
+### Aplicación
+
+Implementa las operaciones del sistema:
+
+- obtiene la cuenta desde un identificador ya autorizado;
+- valida existencia, estado y acceso a categorías;
+- abre transacciones;
+- coordina varios puertos;
+- traduce el resultado a DTO;
+- aplica paginación segura mediante `PageQuery` y `PageResult`.
+
+La capa de aplicación puede depender de Spring para transacciones, inyección y
+seguridad, pero no expone entidades de persistencia en su contrato HTTP.
+
+### Infraestructura
+
+Conecta el núcleo con tecnologías externas:
+
+- controladores y filtros Servlet;
+- repositorios Spring Data JPA;
+- entidades Hibernate;
+- Redis mediante `StringRedisTemplate`;
+- AES/PBKDF2 mediante JCA;
+- scheduler de Spring;
+- MariaDB y Flyway.
+
+Los adaptadores JPA traducen modelos de dominio a entidades. Las consultas de
+recursos privados incorporan `accountId` en la sentencia, en lugar de cargar
+una fila global y autorizar después.
+
+### Shared y config
+
+`shared` contiene conceptos transversales sin pertenencia clara a un solo
+módulo:
+
+- errores y respuestas;
+- ownership;
+- normalización;
+- paginación;
+- rate limiting;
+- validaciones;
+- trazabilidad;
+- política temporal.
+
+`config` construye beans e integra Spring Security. No es un módulo de negocio.
+
+## Responsabilidad por módulo
+
+| Módulo | Agregados o conceptos | Dependencias relevantes |
+|---|---|---|
+| `account` | `Account` | Autenticación para reautenticar y revocar al eliminar |
+| `auth` | `AuthSession`, `AccountRole` | Cuenta, JWT, Redis y Master Key de sesión |
+| `finances` | `Movement`, `FixedExpense`, `Category` | Cuenta y scheduler |
+| `agenda` | `Event` | Categorías accesibles de tipo `AGENDA` |
+| `security` | `Password`, Master Key | Cuenta, sesión autenticada, Redis y criptografía |
+| `shared` | Contratos transversales | Consumido por todos los módulos |
+
+Las categorías viven en `finances` porque nacieron como clasificación
+financiera. `agenda` reutiliza ese catálogo con el tipo `AGENDA`. Esta es una
+dependencia modular consciente; cualquier extracción futura debe introducir un
+puerto de catálogo antes de mover clases.
+
+## Flujo de una petición protegida
+
+```text
+1. RequestBodySizeFilter limita el cuerpo a 1 MiB por defecto.
+2. HttpTraceIdFilter acepta o genera X-Trace-Id y lo coloca en MDC.
+3. ApiCorsProcessor valida origen y preflight.
+4. JwtAuthenticationFilter busca Bearer y luego cookie token.
+5. CookieAuthenticatedCsrfMatcher exige CSRF si una cookie autentica una
+   operación no segura; Bearer válido queda exento.
+6. Spring Security exige autenticación según la ruta.
+7. Controller extrae AuthenticatedAccount y valida el path de cuenta si aplica.
+8. Caso de uso ejecuta reglas y transacción.
+9. Repositorio filtra por accountId y traduce dominio/JPA.
+10. ApiResponse conserva el contrato uniforme.
 ```
 
-## Capa de Aplicación (`application`)
+El orden concreto se verifica en las pruebas de contrato de seguridad.
 
-Orquesta los casos de uso del sistema. Depende del dominio pero no de infraestructura.
+## Autenticación y sesiones
 
-### Casos de uso (`usecase`)
+La cadena HTTP es stateless respecto de `HttpSession`, pero la autenticación
+no es puramente stateless: cada login crea una familia durable en
+`auth_sessions`.
 
-Contienen la lógica de aplicación y coordinan el dominio:
+```text
+Login válido
+   │
+   ├─ crea sessionId
+   ├─ persiste hash del refresh token
+   ├─ emite access JWT con sub, sid, jti, email, roles, iss, aud, iat y exp
+   └─ entrega cookies web o tokens en body nativo
 
-- **GetAccountUseCase**: Consulta una cuenta por ID, validando su existencia
-- **UpdateAccountUseCase**: Actualiza datos de cuenta, verificando unicidad de email
-
-```java
-@Service
-@RequiredArgsConstructor
-public class UpdateAccountUseCase {
-    private final AccountRepository accountRepository;
-    private final AccountMapper accountMapper;
-
-    @Transactional
-    public AccountResponse execute(UUID accountId, UpdateAccountRequest request) {
-        // 1. Buscar cuenta (regla: debe existir)
-        Account account = accountRepository.findById(accountId)
-            .orElseThrow(() -> new NotFoundException(...));
-
-        // 2. Validar unicidad de email (regla de negocio)
-        if (!account.getEmail().equals(request.getEmail())) {
-            accountRepository.findByEmail(request.getEmail())
-                .ifPresent(existing -> throw new ConflictException(...));
-        }
-
-        // 3. Aplicar cambios en el dominio
-        account.updateDetails(request.getNames(), ...);
-        account.updateEmail(request.getEmail());
-
-        // 4. Persistir y retornar DTO
-        return accountMapper.toResponse(accountRepository.save(account));
-    }
-}
+Refresh
+   │
+   ├─ bloquea la fila de sesión
+   ├─ compara el hash actual
+   ├─ revoca el jti anterior hasta su exp
+   ├─ rota refresh y access
+   └─ detecta concurrencia o replay del token anterior
 ```
 
-### DTOs (`dto`)
+Los roles se cargan desde `account_roles` al emitir cada access token. El
+registro crea `USER`; `ADMIN` solo puede asignarse mediante un proceso
+administrativo fuera de la API pública actual.
 
-Objetos de transferencia de datos para la capa de aplicación:
+## Master Key y criptografía
 
-- **Request DTOs**: Entrada validada con Jakarta Validation (`@NotBlank`, `@Email`, `@Size`, `@NoHtml`). La anotación `@NoHtml` protege contra Stored XSS usando Jsoup.
-- **Response DTOs**: Salida que nunca expone datos sensibles (password, masterKey)
+La bóveda tiene dos niveles:
 
-## Capa de Infraestructura (`infrastructure`)
+1. MariaDB conserva el hash Argon2 de la Master Key, nunca su texto plano.
+2. Después de verificarla, el adaptador de sesión guarda temporalmente una
+   copia cifrada, indexada por cuenta y sesión autenticada.
 
-Implementa los adaptadores que conectan el sistema con tecnologías externas.
+En producción el valor temporal usa Redis con TTL. Su payload se cifra con
+AES-GCM y una clave derivada de `MASTER_KEY_SESSION_SECRET`.
 
-### Controladores REST (`controller`)
+Las credenciales usan un formato versionado:
 
-Exponen los endpoints HTTP y validan la entrada:
+| Versión | KDF | Cifrado | Contexto |
+|---|---|---|---|
+| v1 histórica | PBKDF2-SHA256, 100.000 | AES-256-GCM | Sin AAD |
+| v2 actual | PBKDF2-SHA256, 600.000 | AES-256-GCM | AAD con versión, cuenta y credencial |
 
-```java
-@RestController
-@RequestMapping("/api/account")
-public class AccountController {
-    private final GetAccountUseCase getAccountUseCase;
-    private final UpdateAccountUseCase updateAccountUseCase;
-    private final OwnershipValidator ownershipValidator;
+Cada fila tiene salt de 16 bytes, IV de 12 bytes, tag GCM de 128 bits y
+ciphertext de máximo 2048 bytes. La rotación de Master Key descifra y recifra
+toda la bóveda en una transacción; un fallo revierte todos los cambios.
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<AccountResponse>> getAccount(
-        @PathVariable UUID id,
-        @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
-        AccountResponse account = getAccountUseCase.execute(id);
-        ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
-        return ResponseEntity.ok(
-            ApiResponse.<AccountResponse>builder()
-                .status(HttpStatus.OK.value())
-                .message("Cuenta encontrada")
-                .data(account)
-                .build());
-    }
+## Ownership
 
-    @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<AccountResponse>> updateAccount(
-        @PathVariable UUID id,
-        @Valid @RequestBody UpdateAccountRequest request,
-        @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
-        AccountResponse account = getAccountUseCase.execute(id);
-        ownershipValidator.validate(account.getId(), authenticatedAccount.accountId());
-        AccountResponse updated = updateAccountUseCase.execute(id, request);
-        return ResponseEntity.ok(
-            ApiResponse.<AccountResponse>builder()
-                .status(HttpStatus.OK.value())
-                .message("Cuenta actualizada exitosamente")
-                .data(updated)
-                .build());
-    }
-}
+El patrón obligatorio para recursos privados es:
+
+```text
+principal.accountId
+        │
+        └── repository.findByIdAndAccountId(resourceId, accountId)
 ```
 
-### Entidades JPA (`persistence/entity`)
+Las eliminaciones usan sentencias acotadas por ambos IDs. Un recurso ajeno y
+uno inexistente responden igual: `404/RESOURCE_NOT_FOUND`.
 
-Mapean las tablas de base de datos a objetos Java:
+Las categorías son la excepción deliberada al modelo privado simple:
 
-```java
-@Entity
-@Table(name = "accounts")
-public class AccountEntity {
-    @Id
-    @GeneratedValue
-    @UuidGenerator(style = UuidGenerator.Style.TIME)
-    @Column(name = "account_id", columnDefinition = "CHAR(36)")
-    private UUID accountId;
-
-    @Column(name = "account_password", length = 60, nullable = false)
-    private String accountPassword; // Hash Argon2
-
-    @OneToMany(mappedBy = "account", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MovementEntity> movements = new ArrayList<>();
-    // ...
-}
+```text
+accesible = scope == SYSTEM OR ownerAccountId == principal.accountId
 ```
 
-### Mapeadores (`persistence/mapper`)
-
-Convierten entre el modelo de dominio y las entidades JPA:
+Además se exige el tipo correcto: `FINANCES` para movimientos y gastos;
+`AGENDA` para eventos.
 
-```java
-@Component
-public class AccountMapper {
-    public Account toDomain(AccountEntity entity) {
-        return Account.reconstitute(entity.getAccountId(), ...);
-    }
+Consulta [docs/RESOURCE_OWNERSHIP.md](./docs/RESOURCE_OWNERSHIP.md).
 
-    public AccountEntity toEntity(Account account) { ... }
-    public AccountResponse toResponse(Account account) { ... }
-}
-```
+## Consistencia y concurrencia
 
-### Implementación de repositorios (`repository`)
+- Siete entidades usan `@Version`: cuenta, sesión, categoría, movimiento,
+  gasto fijo, evento y credencial.
+- Una versión obsoleta produce `409/CONCURRENT_MODIFICATION`.
+- Email, nombre normalizado de categoría y aplicación por cuenta tienen
+  restricciones únicas en MariaDB.
+- La rotación de refresh y el avance de gastos fijos usan bloqueo pesimista.
+- Las operaciones criptográficas de rotación son transaccionales.
+- Las FK con `ON DELETE CASCADE` garantizan limpieza al borrar una cuenta sin
+  materializar colecciones completas.
 
-Implementa los puertos del dominio usando Spring Data JPA:
+## Paginación y consultas
 
-```java
-@Repository
-public class AccountRepositoryImpl implements AccountRepository {
-    private final SpringAccountJpaRepository jpaRepository;
-    private final AccountMapper mapper;
+Los listados construyen un `PageQuery` independiente de Spring Data. La capa de
+aplicación valida página, tamaño, dirección y campo permitido; infraestructura
+lo traduce a `Pageable` y añade el UUID como desempate.
 
-    @Override
-    public Account save(Account account) {
-        AccountEntity entity = mapper.toEntity(account);
-        AccountEntity saved = jpaRepository.save(entity);
-        return mapper.toDomain(saved);
-    }
-    // ...
-}
-```
+Las categorías de una página se cargan en lote para evitar N+1. Los filtros se
+aplican en SQL, no sobre colecciones completas en memoria.
 
-## Módulos implementados y pendientes
+## Política temporal
 
-### `finances/` — Módulo financiero (COMPLETADO)
+- `Clock.systemUTC()` se registra como bean y puede sustituirse en pruebas.
+- Timestamps técnicos usan `Instant` y Hibernate opera en UTC.
+- Fechas de movimientos y vencimientos usan `LocalDate`.
+- Eventos conservan `LocalDateTime` civil, zona IANA e `Instant` normalizado.
+- Datos históricos de eventos sin zona se interpretaron como
+  `America/Bogota` durante V12.
+- El cron de gastos fijos se evalúa en UTC.
 
-Implementa la funcionalidad de movimientos, gastos fijos y categorías.  
-Incluye:
+## Scheduler de gastos fijos
 
-- Modelos de dominio `Category`, `FixedExpense`, `Movement`.
-- Puertos de repositorio `CategoryRepository`, `FixedExpenseRepository`, `MovementRepository`.
-- Casos de uso (`CreateCategoryUseCase`, `GetCategoryUseCase`, `UpdateCategoryUseCase`, `DeleteCategoryUseCase`, `ListCategoriesUseCase`, y los correspondientes para movimientos y gastos fijos).
-- DTOs de entrada y salida (con `@NoHtml` en campos de texto).
-- Controlador REST `FinancesController` bajo `/api/finances`.
-- Entidades JPA, mappers y adaptadores de repositorio.
+`FixedExpenseSchedule` ejecuta `AdvanceFixedExpenseDueDatesUseCase` según
+`APP_FIXED_EXPENSE_CRON`.
 
-### `agenda/` — Módulo de agenda (COMPLETADO)
+El caso de uso:
 
-Implementa la gestión de eventos con recurrencia, prioridad y estado.  
-Incluye:
+1. toma la fecha actual desde `Clock`;
+2. selecciona un lote de gastos `ACTIVE` vencidos;
+3. bloquea las filas;
+4. avanza cada `nextDueDate` hasta quedar posterior al corte;
+5. repite hasta `max-batches`.
 
-- Modelo de dominio `Event`.
-- Puerto de repositorio `EventRepository`.
-- Casos de uso (`CreateEventUseCase`, `GetEventUseCase`, `UpdateEventUseCase`, `DeleteEventUseCase`, `ListEventsUseCase`).
-- DTOs de entrada y salida (con `@NoHtml` en campos de texto).
-- Controlador REST bajo `/api/agenda` (pendiente de definir ruta exacta).
-- Entidades JPA, mappers y adaptadores de repositorio.
+El job no genera movimientos ni envía notificaciones.
 
-### `security/` — Gestor de contraseñas (COMPLETADO)
+## Errores y observabilidad
 
-Implementa el almacenamiento seguro de credenciales de servicios externos con cifrado AES‑256.  
-Incluye:
+`GlobalExceptionHandler`, Spring Security y CORS usan el mismo constructor de
+errores. Cada fallo público incluye código estable y `traceId`. El filtro de
+trazabilidad coloca el valor en MDC y el patrón de logging lo imprime.
 
-- Modelo de dominio `Password`.
-- Puerto de repositorio `PasswordRepository` y puertos de servicio `EncryptionService`, `MasterKeySessionService`.
-- Implementaciones `AesEncryptionService` (AES‑256‑GCM), `InMemoryMasterKeyService` (sesión en memoria para desarrollo) y `RedisMasterKeyService` (sesión efímera distribuida con Redis para producción, cifrada con `MASTER_KEY_SESSION_SECRET` y TTL).
-- Casos de uso (`CreatePasswordUseCase`, `GetPasswordUseCase`, `ListPasswordsUseCase`, `UpdatePasswordUseCase`, `DeletePasswordUseCase`).
-- DTOs de entrada y salida (`PasswordRequest`, `PasswordUpdateRequest`, `PasswordResponse`) con protección `@NoHtml`.
-- Controlador REST `SecurityController` bajo `/api/security/passwords`.
-- Entidad JPA `PasswordEntity`, mapper y adaptador de repositorio.
-
-## Configuración de seguridad (`config/security/`)
+Los logs no deben incluir contraseñas, Master Keys, access/refresh tokens ni
+cuerpos de la bóveda.
 
-Módulo responsable de toda la infraestructura de autenticación y autorización:
+## Configuración y perfiles
 
-- **`SecurityConfig`**: Cadena de filtros de Spring Security. Configura CSRF (deshabilitado para API stateless), sesiones stateless, CORS con credenciales y headers de seguridad (CSP, X-Frame-Options, X-XSS-Protection, X-Content-Type-Options, HSTS).
-- **`JwtProperties`**: Clase `@ConfigurationProperties(prefix = "jwt")` que vincula automáticamente `jwt.secret` y `jwt.expiration` desde cualquier fuente de configuración de Spring (YAML, variables de entorno, etc.). La vinculación relajada permite que tanto `JWT_SECRET` (formato env) como `jwt.secret` (formato YAML) se mapeen correctamente.
-- **`JwtService`**: Generación, validación y extracción de claims de tokens JWT. Recibe `JwtProperties` por constructor en lugar de anotaciones `@Value`, centralizando la configuración JWT.
-- **`JwtAuthenticationFilter`**: Filtro que intercepta cada request, extrae el token de la cookie HttpOnly o del header `Authorization`, lo valida y establece el contexto de seguridad de Spring. Si una ruta pública (`/api/auth/**` o `/actuator/health`) recibe una cookie JWT inválida o expirada, el request continúa sin principal para no bloquear login, registro, logout ni health checks.
-- **`DatabaseUserDetailsService`**: Implementación de `UserDetailsService` que carga las credenciales desde `accounts` en la base de datos, integrando Spring Security con el repositorio de cuentas.
-- **`CookieUtils`**: Gestión segura de la cookie `token` (crear/eliminar) con atributos HttpOnly, Secure (configurable) y SameSite.
-- **`ClientTypeResolver`**: Detecta si un request proviene de una app nativa (móvil/desktop) o de un navegador web mediante señales pasivas (User-Agent, ausencia de Origin) y un header declarativo (`X-Client-Type`). Determina si el token JWT se incluye en el body de la respuesta además de la cookie.
-
-### Perfiles de entorno
+| Perfil | Estado efímero | Uso |
+|---|---|---|
+| `dev` | Memoria con TTL | Desarrollo local |
+| `test` | Memoria con TTL | Pruebas automatizadas |
+| `prod` | Redis | Despliegue multiinstancia |
 
-La configuración sensible se segrega por perfiles de Spring Boot:
+La configuración común desactiva Open Session in View, multipart y
+`baseline-on-migrate`; limita headers y cuerpos; fija Jackson/Hibernate en UTC.
 
-| Perfil  | Archivo                          | Propósito                                        |
-| ------- | -------------------------------- | ------------------------------------------------ |
-| `dev`   | `application-dev.yml`            | Desarrollo local con valores fijos en YAML       |
-| `prod`  | `application-prod.yml`           | Producción/Docker con placeholders `${...}`      |
-| default | `application.yml`                | Configuración base (JPA, Flyway, server)         |
+## Pruebas arquitectónicas
 
-- **`application.yml`**: Configuración base compartida (JPA, Flyway, server port). Se aplica siempre, independientemente del perfil activo.
-- **`application-dev.yml`**: Define `spring.datasource`, `jwt.secret`, `APP_COOKIE_SECURE`, etc. con valores para el entorno local. No se incluye en el repositorio.
-- **`application-prod.yml`**: Usa placeholders de variables de entorno (`${JWT_SECRET}`, `${MASTER_KEY_SESSION_SECRET}`, `${SPRING_DATASOURCE_URL}`). Se activa automáticamente en Docker mediante `SPRING_PROFILES_ACTIVE=prod`.
+La suite cubre:
 
-## Componentes compartidos (`shared/`)
+- dominio y casos de uso sin infraestructura;
+- contratos HTTP de JWT, CORS, CSRF, errores y rate limiting;
+- ownership por cuenta;
+- paginación SQL;
+- control optimista;
+- migraciones y restricciones reales en MariaDB 11.8;
+- Redis para Master Key y revocación;
+- manipulación de ciphertext, Unicode y rotación transaccional.
 
-Elementos transversales que no pertenecen a un módulo de negocio específico y son utilizados por todos los módulos.
+Testcontainers comparte una instancia MariaDB por suite para validar el mismo
+motor usado en despliegue.
 
-### `constants/` (Pendiente)
+## Reglas para extender el sistema
 
-Paquete planificado para constantes globales del sistema:
+1. Añadir invariantes al dominio antes de duplicarlas en controladores.
+2. Declarar puertos en dominio y adaptadores en infraestructura.
+3. Obtener `accountId` del principal, nunca del body o query string.
+4. Consultar recursos privados por ID y propietario en una sola sentencia.
+5. Paginar en SQL y permitir únicamente campos de orden explícitos.
+6. Usar `Clock`, `Instant`, `LocalDate` y zona IANA según la semántica.
+7. Añadir una migración nueva; no editar migraciones aplicadas.
+8. Traducir fallos a códigos del catálogo público.
+9. Cubrir camino feliz, ownership, validación y concurrencia.
+10. Actualizar README, referencia API, base de datos y ADR afectados.
 
-- Códigos de estado HTTP
-- Mensajes de error estandarizados
-- Configuraciones de tiempo (JWT expiration, formatos de fecha)
-- Nombres de roles y permisos
-
-### `exception/`
-
-Jerarquía centralizada de excepciones:
-
-- **`BusinessException`**: Base para errores de negocio (HTTP 400)
-- **`NotFoundException`**: Recurso no encontrado (HTTP 404)
-- **`UnauthorizedException`**: Credenciales incorrectas (HTTP 401)
-- **`ConflictException`**: Conflicto de datos, ej. email duplicado (HTTP 409)
-- **`ForbiddenException`**: Acceso denegado, ej. Master Key no verificada (HTTP 403)
-- **`GlobalExceptionHandler`**: `@RestControllerAdvice` que intercepta todas las excepciones y retorna `ApiResponse` estandarizado
-
-### `response/`
-
-Formato estándar de respuesta para toda la API:
-
-```java
-public class ApiResponse<T> {
-    private final int status;      // Código HTTP
-    private final String message;   // Mensaje descriptivo
-    private final T data;          // Datos de respuesta
-}
-```
-
-### `util/` (Pendiente)
-
-Paquete planificado para clases de utilidad general:
-
-- Validación de formatos (email, teléfono)
-- Generación de UUID v7
-- Encriptación/desencriptación AES-256
-- Manejo de fechas y zonas horarias
-
-### `security/`
-
-Componentes reutilizables para validación de acceso por ownership y protección anti‑XSS:
-
-- **`OwnedResource`**: Interfaz que deben implementar los DTOs de respuesta cuyos recursos pertenecen a un usuario específico. Expone el email del propietario mediante `getEmail()`, permitiendo que `OwnershipValidator` valide acceso sin acoplarse a ningún módulo concreto.
-- **`OwnershipValidator`**: Componente Spring que centraliza la lógica de validación de ownership. Compara el email del recurso (vía `OwnedResource`) con el email del usuario autenticado (extraído del JWT). Si no coinciden, lanza `UnauthorizedException` (HTTP 401) antes de que el caso de uso sea invocado.
-- **`NoHtml`**: Anotación Jakarta Validation que restringe campos de texto para que no contengan HTML.
-- **`NoHtmlValidator`**: Validador que usa Jsoup con `Safelist.none()` para rechazar cualquier tag o atributo HTML. Si el texto limpio difiere del original, la validación falla. Aplica `strip()` antes de la limpieza para permitir espacios al inicio/fin del texto.
-
-## Flujo de datos típico
-
-```
-HTTP Request → AccountController → UpdateAccountUseCase → AccountRepository (puerto)
-                                                        ↓
-AccountRepositoryImpl → SpringAccountJpaRepository → MariaDB
-                                                        ↓
-                              AccountMapper ← AccountEntity
-                                    ↓
-                          Account (dominio)
-                                    ↓
-                Account.updateDetails() / updateEmail()
-                                    ↓
-            AccountRepositoryImpl.save() → SpringAccountJpaRepository
-                                    ↓
-                          AccountMapper.toResponse()
-                                    ↓
-                  AccountResponse → ResponseEntity → HTTP Response
-```
-
-## Seguridad
-
-### Autenticación
-
-- **JWT (JSON Web Tokens)**: Autenticación stateless
-- **Token siempre establecido en HttpOnly Cookie**. Los clientes nativos identificados por `ClientTypeResolver` lo reciben adicionalmente en el body de la respuesta. Nunca en localStorage ni sessionStorage.
-- **Argon2**: Hash de contraseñas de login en `account_password`
-- **Master Key**: Hash Argon2 opcional en `account_master_key` para proteger el gestor de contraseñas
-- **No enumeración de usuarios**: El login no distingue entre email inexistente y contraseña incorrecta; ambos casos devuelven un error 401 genérico.
-- **Protección XSS en entrada**: Todos los DTOs de request anotan los campos de texto con `@NoHtml`, que utiliza Jsoup para rechazar cualquier HTML/script antes de que llegue al dominio.
-- **Errores uniformes del filtro JWT**: `JwtAuthenticationFilter` escribe errores 401 con `ApiResponse` para mantener la consistencia con el resto de la API.
-
-### Gestor de contraseñas
-
-- Las contraseñas de servicios se encriptan con **AES-256**
-- La clave de encriptación se deriva de la Master Key del usuario
-- Acceso protegido: Si no se ha verificado la Master Key, se lanza `ForbiddenException` (HTTP 403)
-
-## Base de datos
-
-### Esquema (Flyway V1\_\_20260408_init_schema.sql)
-
-```
-accounts (ENTIDAD CENTRAL)
-├── account_id CHAR(36) PRIMARY KEY
-├── account_names VARCHAR(50) NOT NULL
-├── account_lastnames VARCHAR(50) NOT NULL
-├── account_email VARCHAR(255) NOT NULL UNIQUE
-├── account_phone VARCHAR(20) NOT NULL
-├── account_password VARCHAR(255) NOT NULL (Argon2 hash)
-├── account_master_key VARCHAR(255) NULL (Argon2 hash)
-└── account_created_at TIMESTAMP NOT NULL
-
-categories
-├── category_id CHAR(36) PRIMARY KEY
-├── category_name VARCHAR(50) NOT NULL
-└── category_type VARCHAR(20) NOT NULL ("Finanzas" | "Agenda")
-
-movements
-├── movement_id CHAR(36) PRIMARY KEY
-├── movement_type VARCHAR(20) NOT NULL ("Ingreso" | "Egreso")
-├── movement_amount DECIMAL(10,2) NOT NULL
-├── movement_register_date TIMESTAMP NOT NULL
-├── movement_description TEXT NULL
-├── movement_date DATE NOT NULL
-├── movement_fk_account_id CHAR(36) FK → accounts(account_id)
-└── movement_fk_category_id CHAR(36) NOT NULL FK → categories(category_id)
-
-fixed_expenses
-├── fixed_expense_id CHAR(36) PRIMARY KEY
-├── fixed_expense_name VARCHAR(50) NOT NULL
-├── fixed_expense_frequency VARCHAR(15) NOT NULL
-├── fixed_expense_amount DECIMAL(10,2) NOT NULL
-├── fixed_expense_status VARCHAR(15) NOT NULL ("Activo" | "Inactivo")
-├── fixed_expense_start_date DATE NOT NULL
-├── fixed_expense_next_due_date DATE NOT NULL
-├── fixed_expense_reminder_days INT NOT NULL
-├── fixed_expense_fk_category_id CHAR(36) NOT NULL FK → categories(category_id)
-└── fixed_expense_fk_account_id CHAR(36) FK → accounts(account_id)
-
-events
-├── event_id CHAR(36) PRIMARY KEY
-├── event_title VARCHAR(35) NOT NULL
-├── event_priority VARCHAR(15) NULL DEFAULT 'Media'
-├── event_date DATE NOT NULL
-├── event_frequency INT NOT NULL (0=único, 1=diario, 7=semanal, etc.)
-├── event_reminder DATETIME NOT NULL
-├── event_start_hour DATETIME NOT NULL
-├── event_end_hour DATETIME NOT NULL
-├── event_description TEXT NULL
-├── event_status VARCHAR(20) DEFAULT 'Pendiente'
-├── event_fk_category_id CHAR(36) NOT NULL FK → categories(category_id)
-└── event_fk_account_id CHAR(36) FK → accounts(account_id)
-
-passwords
-├── password_id CHAR(36) PRIMARY KEY
-├── password_application_name VARCHAR(35) NOT NULL
-├── password_salt VARCHAR(255) NOT NULL (salt para derivar clave AES)
-├── password_iv BINARY(12) NOT NULL (IV de 12 bytes recomendado para AES-GCM)
-├── password_ciphertext VARBINARY(2048) NOT NULL (ciphertext + tag AES-GCM)
-├── password_last_change_date DATE NULL
-└── passwords_fk_account_id CHAR(36) FK → accounts(account_id)
-```
-
-### Características del esquema
-
-- **UUID v7**: Identificadores ordenables temporalmente, generados por la aplicación (no por la base de datos).
-- **Eliminación en cascada**: Al eliminar una cuenta, se eliminan todos sus datos relacionados. La cascada se implementa a nivel de JPA, **no** en las restricciones SQL.
-- **Categorías obligatorias**: `movements.movement_fk_category_id` y `events.event_fk_category_id` son `NOT NULL`; todos los movimientos y eventos deben tener una categoría asignada.
-- **Relaciones**: Todas las entidades referencian a `accounts` como propietario.
-- **Índices**: Se crean índices sobre las claves foráneas (`movement_fk_account_id`, `fixed_expense_fk_account_id`, etc.) y sobre las columnas de fecha (`movement_date`, `event_date`) para optimizar las consultas más frecuentes.
-
-## Configuración de Docker
-
-### Multi-stage Dockerfile
-
-```
-Etapa 1 (builder): maven:3.9-eclipse-temurin-21-alpine
-  └── Descarga dependencias y construye el JAR
-
-Etapa 2 (runtime): eclipse-temurin:21-jre-alpine
-  └── Ejecuta el JAR con usuario no root (UID 1000)
-  └── Healthcheck en /actuator/health
-```
-
-### Docker Compose
-
-- **Servicio mariadb**: Imagen oficial 11.8 con healthcheck nativo
-- **Servicio redis**: Imagen oficial 7-alpine con `requirepass`, healthcheck autenticado y persistencia AOF/RDB deshabilitada. Redis guarda sesiones de Master Key con TTL; no debe persistirlas en disco.
-- **Servicio app**: Construido desde Dockerfile, depende de `mariadb` y `redis` (ambos con `condition: service_healthy`)
-- **Redes**: `internal` (bridge) para comunicación entre contenedores y `coolify` externa para el proxy/Traefik.
-- **Volúmenes**: `mariadb_data` para datos de negocio. Redis no define volumen porque sus sesiones son efímeras.
-
-### Variables de entorno requeridas (.env)
-
-Las variables definidas en `.env` son utilizadas por `docker-compose.yml` y por el perfil `prod`:
-
-| Variable                | Descripción                                             | Ejemplo                        |
-| ----------------------- | ------------------------------------------------------- | ------------------------------ |
-| `MARIADB_ROOT_PASSWORD` | Password de root de MariaDB                             | mysecret                       |
-| `MARIADB_DATABASE`      | Nombre de la base de datos                              | adulto_funcional               |
-| `MARIADB_USER`          | Usuario de la aplicación                                | afs_user                       |
-| `MARIADB_PASSWORD`      | Password del usuario                                    | userpass                       |
-| `REDIS_HOST`            | Host del servidor Redis                                 | redis                          |
-| `REDIS_PORT`            | Puerto del servidor Redis                               | 6379                           |
-| `REDIS_PASSWORD`        | Password obligatorio de conexión a Redis                | redis-secret                   |
-| `JWT_SECRET`            | Clave secreta para firmar JWT (mín. 32 caracteres)      | my-jwt-secret                  |
-| `JWT_EXPIRATION`        | Tiempo de expiración JWT en milisegundos                | 86400000                       |
-| `MASTER_KEY_SESSION_SECRET` | Clave dedicada para cifrar sesiones de Master Key en Redis (mín. 32 caracteres) | master-key-session-secret |
-| `CORS_ALLOWED_ORIGINS`  | Orígenes permitidos para CORS                           | http://localhost:5173          |
-| `APP_COOKIE_SECURE`     | Atributo Secure de la cookie (true en producción HTTPS) | true                           |
-| `APP_COOKIE_SAME_SITE`  | Atributo SameSite de la cookie (Lax, Strict o None)     | Lax                            |
-
-Las configuraciones de JPA, Flyway y server residen en `application.yml` y no requieren variables de entorno explícitas. El perfil `prod` resuelve `spring.datasource.*` desde las variables de entorno mediante placeholders en `application-prod.yml`.
-
-## Manejo de excepciones
-
-El `GlobalExceptionHandler` centraliza todas las excepciones:
-
-```
-Exception
-  └── RuntimeException
-        └── BusinessException (base, HTTP 400)
-              ├── NotFoundException (HTTP 404)
-              ├── UnauthorizedException (HTTP 401)
-              ├── ConflictException (HTTP 409)
-              └── ForbiddenException (HTTP 403)
-```
-
-Todas las excepciones devuelven `ApiResponse<Void>` o `ApiResponse<Map<String, String>>` con el formato estándar.
-
-## Testing
-
-- **Spring Boot Test**: Pruebas unitarias y de integración
-- **Testcontainers**: Contenedores efímeros de MariaDB 11.8 para pruebas de integración
-- **Spring Security Test**: Soporte para probar endpoints protegidos (usado en @WebMvcTest)
-
-## Dependencias clave en pom.xml
-
-```xml
-<!-- Spring Boot Starters -->
-<artifactId>spring-boot-starter-data-jpa</artifactId>
-<artifactId>spring-boot-starter-security</artifactId>
-<artifactId>spring-boot-starter-web</artifactId>
-<artifactId>spring-boot-starter-validation</artifactId>
-<artifactId>spring-boot-starter-actuator</artifactId>
-
-<!-- Base de datos -->
-<artifactId>flyway-core</artifactId>
-<artifactId>flyway-mysql</artifactId>
-<artifactId>mariadb-java-client</artifactId>
-
-<!-- Almacenamiento distribuido -->
-<artifactId>spring-boot-starter-data-redis</artifactId>  <!-- Sesiones de Master Key -->
-
-<!-- Utilidades -->
-<artifactId>lombok</artifactId>
-<artifactId>java-uuid-generator</artifactId>  <!-- UUID v7 -->
-
-<!-- Testing -->
-<artifactId>spring-boot-starter-test</artifactId>
-<artifactId>testcontainers-junit-jupiter</artifactId>
-<artifactId>testcontainers-mariadb</artifactId>
-<artifactId>h2</artifactId>
-
-<!-- Validación anti‑XSS -->
-<artifactId>jsoup</artifactId>
-```
-
-## Convenciones de código
-
-- **Lombok**: Se usa extensivamente para reducir boilerplate (`@Getter`, `@Builder`, `@RequiredArgsConstructor`)
-- **Javadoc**: Todos los archivos tienen documentación siguiendo estándares, con `@author` y `@since`
-- **Validación**: Jakarta Validation en DTOs de request (`@Valid`, `@NotBlank`, `@Email`)
-- **Paquetes**: `package-info.java` documentan el propósito de cada paquete
-- **Nombres de tablas**: Snake_case (`account_names`, `movement_type`)
-- **Nombres de columnas**: Prefijo con nombre de tabla (`account_`, `movement_`, `event_`)
-
-## Roadmap técnico
-
-- [x] Completar módulo de autenticación (LoginUseCase, RegisterUseCase)
-- [x] Autenticación con HttpOnly Cookie (SameSite configurable vía `APP_COOKIE_SAME_SITE`)
-- [x] Validación de ownership con OwnershipValidator reutilizable (shared/security/)
-- [x] Tests de integración con Testcontainers
-- [x] Protección anti‑XSS con `@NoHtml` en todos los DTOs de entrada
-- [x] Errores consistentes del `JwtAuthenticationFilter` con `ApiResponse`
-- [x] Implementar DeleteAccountUseCase y conectar en AccountController
-- [x] Módulo financiero: todos los casos de uso, DTOs y controladores
-- [x] Módulo agenda: todos los casos de uso, DTOs y controladores
-- [x] Gestor de contraseñas: PasswordUseCase con encriptación AES-256
-- [x] Implementación distribuida de MasterKeySessionService con Redis para producción (`RedisMasterKeyService`) cifrada con secreto dedicado y sin persistencia en disco
-- [x] Perfiles de Spring Boot: `dev` y `prod` con configuración segregada
-- [x] `JwtProperties` como `@ConfigurationProperties` centralizada para JWT
-- [x] Fix en `NoHtmlValidator`: `strip()` para permitir espacios en campos de registro
+## Decisiones
+
+Las decisiones aceptadas y su estado de implementación están en
+[docs/decisions/README.md](./docs/decisions/README.md). Los ADR explican el
+porqué; este documento describe la arquitectura resultante.

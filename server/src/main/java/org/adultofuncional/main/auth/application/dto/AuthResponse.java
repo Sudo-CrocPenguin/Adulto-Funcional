@@ -23,12 +23,10 @@ import lombok.NoArgsConstructor;
  * <p>
  * <strong>Estrategia de entrega del token:</strong>
  * <ul>
- * <li>El token <b>siempre</b> se establece en una cookie HttpOnly
- * mediante {@link CookieUtils}.</li>
- * <li>Adicionalmente, los clientes nativos (móvil/escritorio)
- * reciben el token en este DTO para su almacenamiento local.
- * Los clientes web reciben una copia sin token mediante
- * {@link #withoutToken()}.</li>
+ * <li>Los navegadores reciben access y refresh en cookies HttpOnly y una copia
+ * de este DTO sin tokens mediante {@link #withoutToken()}.</li>
+ * <li>Los clientes nativos reciben access y refresh en el DTO y los almacenan
+ * mediante las capacidades seguras de su plataforma.</li>
  * </ul>
  *
  * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
@@ -43,7 +41,7 @@ import lombok.NoArgsConstructor;
 public class AuthResponse {
 
   /**
-   * Token JWT para autenticación stateless.
+   * Access JWT perteneciente a una familia de sesión revocable.
    *
    * <p>
    * Se incluye en esta respuesta <b>solo para clientes nativos</b>
@@ -55,8 +53,11 @@ public class AuthResponse {
    * <strong>Claims del token:</strong>
    * <ul>
    * <li>{@code sub} — ID de la cuenta</li>
+   * <li>{@code sid} — ID de sesión</li>
+   * <li>{@code jti} — ID del access token</li>
    * <li>{@code email} — correo electrónico</li>
    * <li>{@code roles} — roles del usuario</li>
+   * <li>{@code iss}/{@code aud} — emisor y audiencia</li>
    * <li>{@code iat} — timestamp de emisión</li>
    * <li>{@code exp} — timestamp de expiración</li>
    * </ul>
@@ -67,8 +68,8 @@ public class AuthResponse {
   private String refreshToken;
 
   /**
-   * Tipo de token. Siempre {@code "Bearer"} para autenticación JWT estándar.
-   * Indica al cliente cómo debe enviar el token en las peticiones.
+   * Tipo de token ({@code "Bearer"}) cuando el DTO transporta credenciales.
+   * En respuestas web se omite junto con los tokens.
    */
   @Builder.Default
   private String tokenType = "Bearer";

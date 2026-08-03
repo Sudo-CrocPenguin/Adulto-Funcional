@@ -32,10 +32,9 @@ import lombok.Setter;
  * </ul>
  *
  * <p>
- * <strong>Validación de seguridad:</strong> la longitud mínima del secreto
- * (32 caracteres para HS256) se verifica en {@link JwtService} al construir
- * la clave de firma. Esta clase solo transporta los valores sin aplicar
- * reglas de negocio.
+ * <strong>Validación de seguridad:</strong> {@link JwtService} verifica el
+ * mínimo criptográfico. En producción, la configuración además exige Base64
+ * con al menos 32 bytes aleatorios y rechaza placeholders.
  *
  * @author Juan Sebastian Rios
  * @since 0.0.1
@@ -49,7 +48,8 @@ import lombok.Setter;
 public class JwtProperties {
   /**
    * Clave secreta para firmar los tokens JWT con HMAC-SHA256 (HS256).
-   * Debe tener al menos 32 caracteres para garantizar una clave de 256 bits.
+   * Debe aportar al menos 32 bytes de material; producción exige Base64
+   * aleatorio y valida el contenido decodificado.
    * <p>
    * En desarrollo se toma de {@code application-dev.yml}; en producción
    * se inyecta mediante la variable de entorno {@code JWT_SECRET}.
@@ -59,7 +59,7 @@ public class JwtProperties {
   /**
    * Tiempo de vida del token JWT en milisegundos.
    * <p>
-   * Valor típico: {@code 86400000} (24 horas). Configurable por entorno
+   * Valor predeterminado: {@code 900000} (15 minutos). Configurable por entorno
    * mediante {@code jwt.expiration} (YAML) o {@code JWT_EXPIRATION} (env).
    */
   private long expiration = 900_000;

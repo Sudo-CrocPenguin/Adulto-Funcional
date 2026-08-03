@@ -26,16 +26,16 @@ import java.util.UUID;
  * <p>
  * Aplica cambios parciales sobre un evento de la agenda. Solo los campos
  * proporcionados en el DTO son modificados; los demás conservan su valor
- * actual. Se valida que el evento pertenezca a la cuenta indicada y que,
- * si se actualizan las horas, la hora de inicio sea anterior a la de fin.
+ * actual. La aplicación construye el estado final y el dominio valida todas
+ * las combinaciones, incluso cuando el request modifica una sola hora.
  *
  * <p>
  * <strong>Reglas de negocio aplicadas:</strong>
  * <ul>
  * <li>El evento debe existir y pertenecer a la cuenta.</li>
- * <li>Si se proporciona una nueva categoría, debe existir en el módulo de
- * finanzas.</li>
- * <li>Si se proporcionan ambas horas, se exige coherencia cronológica.</li>
+ * <li>La categoría final debe ser accesible y de tipo {@code AGENDA}.</li>
+ * <li>Inicio, fin, fecha, zona, recordatorio, frecuencia, prioridad y estado
+ * se validan sobre el resultado completo.</li>
  * <li>Los campos de texto vacíos o nulos se ignoran (validación con
  * {@link StringUtils#hasText}).</li>
  * </ul>

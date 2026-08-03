@@ -1,6 +1,7 @@
 # ADR 0006: Semántica HTTP de los errores de Master Key
 
 - Estado: aceptada
+- Implementación: completa
 - Fecha: 2026-08-01
 - Alcance: módulos `security` y `shared`
 - Reemplaza: clasificación de Master Key incorrecta del ADR 0004

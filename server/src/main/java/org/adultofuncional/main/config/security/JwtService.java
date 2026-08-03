@@ -30,26 +30,27 @@ import lombok.extern.slf4j.Slf4j;
  * entorno {@code JWT_SECRET}) y el tiempo de expiración de
  * {@code jwt.expiration} (o {@code JWT_EXPIRATION}), ambas mapeadas
  * automáticamente por {@link JwtProperties} mediante vinculación relajada
- * de Spring Boot. Si el secreto no cumple el mínimo de 32 caracteres,
- * la aplicación falla al arrancar con {@link IllegalStateException},
- * evitando operar con una clave insegura.
+ * de Spring Boot. El servicio exige material suficiente para HS256 y el
+ * perfil de producción añade validación Base64, entropía y rechazo de
+ * placeholders conocidos.
  *
  * <p>
  * <strong>Claims incluidos en cada token:</strong>
  * <ul>
  * <li>{@code sub} — UUID de la cuenta ({@code accountId})</li>
+ * <li>{@code sid} — UUID de la familia de sesión durable</li>
+ * <li>{@code jti} — UUID del access token individual</li>
  * <li>{@code email} — correo electrónico del usuario</li>
  * <li>{@code roles} — lista de roles (ej. {@code ["ROLE_USER"]})</li>
+ * <li>{@code iss}/{@code aud} — emisor y audiencia validados</li>
  * <li>{@code iat} — timestamp de emisión</li>
  * <li>{@code exp} — timestamp de expiración</li>
  * </ul>
  *
  * <p>
- * <strong>Estrategia de entrega del token:</strong> el token siempre se
- * establece en una cookie {@code HttpOnly} gestionada por {@link CookieUtils}.
- * Adicionalmente, los clientes nativos (móvil/desktop) identificados por
- * {@link ClientTypeResolver} reciben el token también en el body de la
- * respuesta para facilitar su almacenamiento seguro fuera del navegador.
+ * <strong>Estrategia de entrega:</strong> este servicio solo emite el token.
+ * El controlador lo coloca en cookie {@code HttpOnly} para navegador o en el
+ * body para clientes nativos reconocidos por {@link ClientTypeResolver}.
  *
  * @author Juan Sebastian Rios
  * @since 0.0.1
@@ -71,7 +72,8 @@ public class JwtService {
 
   /**
    * Tiempo de vida del token en milisegundos.
-   * Configurado vía {@code jwt.expiration} (ej. {@code 86400000} = 24 horas).
+   * Configurado vía {@code jwt.expiration}; el valor predeterminado es
+   * {@code 900000}, equivalente a 15 minutos.
    * Proviene de {@link JwtProperties#getExpiration()}.
    */
   private final long expiration;
