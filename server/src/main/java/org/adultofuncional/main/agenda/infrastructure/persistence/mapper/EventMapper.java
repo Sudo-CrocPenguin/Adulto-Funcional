@@ -1,5 +1,7 @@
 package org.adultofuncional.main.agenda.infrastructure.persistence.mapper;
 
+import java.time.ZoneId;
+
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.adultofuncional.main.agenda.domain.model.Event;
 import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEntity;
@@ -56,6 +58,10 @@ public class EventMapper {
                 entity.getEventReminder(),
                 entity.getEventStartHour(),
                 entity.getEventEndHour(),
+                ZoneId.of(entity.getEventZoneId()),
+                entity.getEventReminderInstant(),
+                entity.getEventStartInstant(),
+                entity.getEventEndInstant(),
                 entity.getEventStatus(),
                 entity.getCategory() != null ? entity.getCategory().getCategoryId() : null,
                 entity.getAccount().getAccountId()
@@ -88,8 +94,12 @@ public class EventMapper {
         entity.setEventDate(domain.getDate());
         entity.setEventFrequency(domain.getFrequency());
         entity.setEventReminder(domain.getReminder());
+        entity.setEventReminderInstant(domain.getReminderInstant());
         entity.setEventStartHour(domain.getStartHour());
+        entity.setEventStartInstant(domain.getStartInstant());
         entity.setEventEndHour(domain.getEndHour());
+        entity.setEventEndInstant(domain.getEndInstant());
+        entity.setEventZoneId(domain.getZoneId().getId());
         entity.setEventStatus(domain.getStatus());
 
         AccountEntity account = new AccountEntity();

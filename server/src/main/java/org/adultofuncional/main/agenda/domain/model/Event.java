@@ -1,7 +1,11 @@
 package org.adultofuncional.main.agenda.domain.model;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -51,6 +55,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Event {
 
+  public static final ZoneId LEGACY_DEFAULT_ZONE = ZoneId.of("America/Bogota");
+
   private static final Set<String> ALLOWED_PRIORITIES = Set.of("Baja", "Media", "Alta");
   private static final Set<String> ALLOWED_STATUSES =
       Set.of("Pendiente", "Completado", "Cancelado", "Pospuesto");
@@ -89,11 +95,23 @@ public class Event {
   /** Fecha y hora del recordatorio programado. */
   LocalDateTime reminder;
 
+  /** Instante UTC normalizado del recordatorio. */
+  Instant reminderInstant;
+
   /** Hora de inicio del evento. */
   LocalDateTime startHour;
 
+  /** Instante UTC normalizado del inicio. */
+  Instant startInstant;
+
   /** Hora de finalización del evento. */
   LocalDateTime endHour;
+
+  /** Instante UTC normalizado del fin. */
+  Instant endInstant;
+
+  /** Zona IANA usada para interpretar y reconstruir las horas civiles. */
+  ZoneId zoneId;
 
   /**
    * Estado del evento.
@@ -115,7 +133,9 @@ public class Event {
   private Event(UUID id, String title, String description,
       String priority, LocalDate date, int frequency,
       LocalDateTime reminder, LocalDateTime startHour,
-      LocalDateTime endHour, String status,
+      LocalDateTime endHour, ZoneId zoneId,
+      Instant reminderInstant, Instant startInstant, Instant endInstant,
+      String status,
       UUID categoryId, UUID accountId) {
 
     validateId(id);
@@ -123,7 +143,9 @@ public class Event {
     validatePriority(priority);
     validateDate(date);
     validateFrequency(frequency);
-    validateSchedule(date, reminder, startHour, endHour);
+    validateZoneId(zoneId);
+    ScheduleInstants schedule = normalizeSchedule(date, reminder, startHour, endHour, zoneId);
+    validatePersistedInstants(schedule, reminderInstant, startInstant, endInstant);
     validateStatus(status);
     validateCategoryId(categoryId);
     validateAccountId(accountId);
@@ -135,8 +157,12 @@ public class Event {
     this.date = date;
     this.frequency = frequency;
     this.reminder = reminder;
+    this.reminderInstant = reminderInstant == null ? schedule.reminder() : reminderInstant;
     this.startHour = startHour;
+    this.startInstant = startInstant == null ? schedule.start() : startInstant;
     this.endHour = endHour;
+    this.endInstant = endInstant == null ? schedule.end() : endInstant;
+    this.zoneId = zoneId;
     this.status = status;
     this.categoryId = categoryId;
     this.accountId = accountId;
@@ -171,6 +197,18 @@ public class Event {
       LocalDateTime endHour, String status,
       UUID categoryId, UUID accountId) {
 
+    return create(title, description, priority, date, frequency,
+        reminder, startHour, endHour, LEGACY_DEFAULT_ZONE, status,
+        categoryId, accountId);
+  }
+
+  /** Crea un evento interpretando sus horas civiles en una zona IANA. */
+  public static Event create(String title, String description,
+      String priority, LocalDate date, int frequency,
+      LocalDateTime reminder, LocalDateTime startHour,
+      LocalDateTime endHour, ZoneId zoneId, String status,
+      UUID categoryId, UUID accountId) {
+
     UUID id = Generators.timeBasedEpochGenerator().generate();
 
     return new Event(
@@ -183,6 +221,10 @@ public class Event {
         reminder,
         startHour,
         endHour,
+        zoneId,
+        null,
+        null,
+        null,
         status,
         categoryId,
         accountId);
@@ -212,8 +254,22 @@ public class Event {
       LocalDateTime startHour, LocalDateTime endHour,
       String status, UUID categoryId, UUID accountId) {
 
+    return reconstitute(id, title, description, priority, date, frequency,
+        reminder, startHour, endHour, LEGACY_DEFAULT_ZONE,
+        null, null, null, status, categoryId, accountId);
+  }
+
+  /** Reconstruye un evento con sus horas civiles, zona e instantes persistidos. */
+  public static Event reconstitute(UUID id, String title,
+      String description, String priority, LocalDate date,
+      int frequency, LocalDateTime reminder,
+      LocalDateTime startHour, LocalDateTime endHour,
+      ZoneId zoneId, Instant reminderInstant, Instant startInstant, Instant endInstant,
+      String status, UUID categoryId, UUID accountId) {
+
     return new Event(id, title, description, priority, date,
-        frequency, reminder, startHour, endHour, status,
+        frequency, reminder, startHour, endHour, zoneId,
+        reminderInstant, startInstant, endInstant, status,
         categoryId, accountId);
   }
 
@@ -242,11 +298,23 @@ public class Event {
       LocalDateTime endHour, String status,
       UUID categoryId) {
 
+    update(title, description, priority, date, frequency,
+        reminder, startHour, endHour, zoneId, status, categoryId);
+  }
+
+  /** Actualiza el evento y recalcula sus instantes al cambiar horario o zona. */
+  public void update(String title, String description,
+      String priority, LocalDate date, int frequency,
+      LocalDateTime reminder, LocalDateTime startHour,
+      LocalDateTime endHour, ZoneId zoneId, String status,
+      UUID categoryId) {
+
     validateTitle(title);
     validatePriority(priority);
     validateDate(date);
     validateFrequency(frequency);
-    validateSchedule(date, reminder, startHour, endHour);
+    validateZoneId(zoneId);
+    ScheduleInstants schedule = normalizeSchedule(date, reminder, startHour, endHour, zoneId);
     validateStatus(status);
     validateCategoryId(categoryId);
 
@@ -256,8 +324,12 @@ public class Event {
     this.date = date;
     this.frequency = frequency;
     this.reminder = reminder;
+    this.reminderInstant = schedule.reminder();
     this.startHour = startHour;
+    this.startInstant = schedule.start();
     this.endHour = endHour;
+    this.endInstant = schedule.end();
+    this.zoneId = zoneId;
     this.status = status;
     this.categoryId = categoryId;
   }
@@ -294,11 +366,12 @@ public class Event {
     }
   }
 
-  private static void validateSchedule(
+  private static ScheduleInstants normalizeSchedule(
       LocalDate date,
       LocalDateTime reminder,
       LocalDateTime startHour,
-      LocalDateTime endHour) {
+      LocalDateTime endHour,
+      ZoneId zoneId) {
     if (reminder == null) {
       throw new IllegalArgumentException("Reminder cannot be null");
     }
@@ -308,14 +381,53 @@ public class Event {
     if (endHour == null) {
       throw new IllegalArgumentException("End hour cannot be null");
     }
+    if (reminder.getNano() % 1_000 != 0
+        || startHour.getNano() % 1_000 != 0
+        || endHour.getNano() % 1_000 != 0) {
+      throw new IllegalArgumentException("Event times support at most microsecond precision");
+    }
     if (!startHour.toLocalDate().equals(date) || !endHour.toLocalDate().equals(date)) {
       throw new IllegalArgumentException("Event hours must match event date");
     }
-    if (!startHour.isBefore(endHour)) {
+    Instant reminderInstant = toInstant(reminder, zoneId);
+    Instant startInstant = toInstant(startHour, zoneId);
+    Instant endInstant = toInstant(endHour, zoneId);
+    if (!startInstant.isBefore(endInstant)) {
       throw new IllegalArgumentException("Start hour must be before end hour");
     }
-    if (!reminder.isBefore(startHour)) {
+    if (!reminderInstant.isBefore(startInstant)) {
       throw new IllegalArgumentException("Reminder must be before start hour");
+    }
+    return new ScheduleInstants(reminderInstant, startInstant, endInstant);
+  }
+
+  private static Instant toInstant(LocalDateTime localDateTime, ZoneId zoneId) {
+    List<ZoneOffset> validOffsets = zoneId.getRules().getValidOffsets(localDateTime);
+    if (validOffsets.isEmpty()) {
+      throw new IllegalArgumentException("Event time does not exist in the selected time zone");
+    }
+    return localDateTime.toInstant(validOffsets.getFirst());
+  }
+
+  private static void validatePersistedInstants(
+      ScheduleInstants normalized,
+      Instant reminderInstant,
+      Instant startInstant,
+      Instant endInstant) {
+    if (reminderInstant != null && !reminderInstant.equals(normalized.reminder())) {
+      throw new IllegalArgumentException("Reminder instant does not match local schedule");
+    }
+    if (startInstant != null && !startInstant.equals(normalized.start())) {
+      throw new IllegalArgumentException("Start instant does not match local schedule");
+    }
+    if (endInstant != null && !endInstant.equals(normalized.end())) {
+      throw new IllegalArgumentException("End instant does not match local schedule");
+    }
+  }
+
+  private static void validateZoneId(ZoneId zoneId) {
+    if (zoneId == null) {
+      throw new IllegalArgumentException("ZoneId cannot be null");
     }
   }
 
@@ -335,5 +447,8 @@ public class Event {
     if (accountId == null) {
       throw new IllegalArgumentException("AccountId cannot be null");
     }
+  }
+
+  private record ScheduleInstants(Instant reminder, Instant start, Instant end) {
   }
 }

@@ -1,9 +1,12 @@
 package org.adultofuncional.main.agenda.domain.model;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -62,6 +65,28 @@ class EventTest {
         "Reunión", null, "Media", EVENT_DATE, 365,
         START.minusHours(1), START, START, "Pendiente", CATEGORY_ID))
         .isInstanceOf(IllegalArgumentException.class);
+  }
+
+  @Test
+  void normalizesCivilHoursUsingTheSelectedIanaZone() {
+    Event event = Event.create(
+        "Reunión",
+        null,
+        "Media",
+        EVENT_DATE,
+        0,
+        START.minusHours(1),
+        START,
+        END,
+        ZoneId.of("America/Bogota"),
+        "Pendiente",
+        CATEGORY_ID,
+        ACCOUNT_ID);
+
+    assertThat(event.getZoneId()).isEqualTo(ZoneId.of("America/Bogota"));
+    assertThat(event.getStartInstant()).isEqualTo(Instant.parse("2030-06-15T15:00:00Z"));
+    assertThat(event.getEndInstant()).isEqualTo(Instant.parse("2030-06-15T16:00:00Z"));
+    assertThat(event.getReminderInstant()).isEqualTo(Instant.parse("2030-06-15T14:00:00Z"));
   }
 
   private Event create(

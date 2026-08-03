@@ -1,5 +1,6 @@
 package org.adultofuncional.main.agenda.infrastructure.persistence.entity;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -128,6 +129,10 @@ public class EventEntity {
   @Column(name = "event_reminder", nullable = false)
   private LocalDateTime eventReminder;
 
+  /** Instante UTC equivalente al recordatorio civil. */
+  @Column(name = "event_reminder_instant", nullable = false)
+  private Instant eventReminderInstant;
+
   /**
    * Hora de inicio del evento.
    *
@@ -137,6 +142,10 @@ public class EventEntity {
   @Column(name = "event_start_hour", nullable = false)
   private LocalDateTime eventStartHour;
 
+  /** Instante UTC equivalente al inicio civil. */
+  @Column(name = "event_start_instant", nullable = false)
+  private Instant eventStartInstant;
+
   /**
    * Hora de finalización del evento.
    *
@@ -145,6 +154,14 @@ public class EventEntity {
    */
   @Column(name = "event_end_hour", nullable = false)
   private LocalDateTime eventEndHour;
+
+  /** Instante UTC equivalente al fin civil. */
+  @Column(name = "event_end_instant", nullable = false)
+  private Instant eventEndInstant;
+
+  /** Identificador IANA usado para interpretar las horas civiles. */
+  @Column(name = "event_zone_id", length = 63, nullable = false)
+  private String eventZoneId;
 
   /**
    * Descripción detallada del evento.
