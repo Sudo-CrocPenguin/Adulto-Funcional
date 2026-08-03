@@ -42,6 +42,8 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Password {
 
+  public static final int LEGACY_CRYPTO_VERSION = 1;
+
   private static final int IV_LENGTH_BYTES = 12;
 
   /**
@@ -62,6 +64,9 @@ public class Password {
    */
   String salt;
 
+  /** Versión de algoritmo y parámetros usada por este cifrado. */
+  int cryptoVersion;
+
   /** Vector de inicialización (12 bytes) para el cifrado AES-GCM. */
   byte[] iv;
 
@@ -80,13 +85,14 @@ public class Password {
   /**
    * Constructor privado. Usar {@link #create} o {@link #reconstitute}.
    */
-  private Password(UUID id, String applicationName, String salt,
+  private Password(UUID id, String applicationName, String salt, int cryptoVersion,
       byte[] iv, byte[] ciphertext, LocalDate lastChangeDate,
       UUID accountId) {
 
     validateId(id);
     validateApplicationName(applicationName);
     validateSalt(salt);
+    validateCryptoVersion(cryptoVersion);
     validateIv(iv);
     validateCiphertext(ciphertext);
     validateAccountId(accountId);
@@ -94,6 +100,7 @@ public class Password {
     this.id = id;
     this.applicationName = applicationName;
     this.salt = salt;
+    this.cryptoVersion = cryptoVersion;
     this.iv = iv;
     this.ciphertext = ciphertext;
     this.lastChangeDate = lastChangeDate;
@@ -124,8 +131,21 @@ public class Password {
 
     UUID id = Generators.timeBasedEpochGenerator().generate();
 
-    return new Password(id, applicationName, salt, iv, ciphertext,
+    return new Password(id, applicationName, salt, LEGACY_CRYPTO_VERSION, iv, ciphertext,
         lastChangeDate, accountId);
+  }
+
+  /** Crea una credencial con identidad y versión criptográfica explícitas. */
+  public static Password create(UUID id, String applicationName, String salt,
+      int cryptoVersion, byte[] iv, byte[] ciphertext, LocalDate lastChangeDate,
+      UUID accountId) {
+    return new Password(id, applicationName, salt, cryptoVersion, iv, ciphertext,
+        lastChangeDate, accountId);
+  }
+
+  /** Genera por adelantado el UUID v7 que formará parte del AAD. */
+  public static UUID nextId() {
+    return Generators.timeBasedEpochGenerator().generate();
   }
 
   /**
@@ -144,7 +164,15 @@ public class Password {
       String salt, byte[] iv, byte[] ciphertext,
       LocalDate lastChangeDate, UUID accountId) {
 
-    return new Password(id, applicationName, salt, iv, ciphertext,
+    return new Password(id, applicationName, salt, LEGACY_CRYPTO_VERSION, iv, ciphertext,
+        lastChangeDate, accountId);
+  }
+
+  /** Reconstituye una fila conservando su versión criptográfica persistida. */
+  public static Password reconstitute(UUID id, String applicationName,
+      String salt, int cryptoVersion, byte[] iv, byte[] ciphertext,
+      LocalDate lastChangeDate, UUID accountId) {
+    return new Password(id, applicationName, salt, cryptoVersion, iv, ciphertext,
         lastChangeDate, accountId);
   }
 
@@ -166,13 +194,22 @@ public class Password {
   public void update(String applicationName, String salt,
       byte[] iv, byte[] ciphertext, LocalDate lastChangeDate) {
 
+    update(applicationName, salt, cryptoVersion, iv, ciphertext, lastChangeDate);
+  }
+
+  /** Sustituye el material cifrado y registra los parámetros que lo produjeron. */
+  public void update(String applicationName, String salt, int cryptoVersion,
+      byte[] iv, byte[] ciphertext, LocalDate lastChangeDate) {
+
     validateApplicationName(applicationName);
     validateSalt(salt);
+    validateCryptoVersion(cryptoVersion);
     validateIv(iv);
     validateCiphertext(ciphertext);
 
     this.applicationName = applicationName;
     this.salt = salt;
+    this.cryptoVersion = cryptoVersion;
     this.iv = iv;
     this.ciphertext = ciphertext;
     this.lastChangeDate = lastChangeDate;
@@ -195,6 +232,12 @@ public class Password {
   private static void validateSalt(String salt) {
     if (salt == null || salt.isBlank()) {
       throw new IllegalArgumentException("Salt cannot be null or empty");
+    }
+  }
+
+  private static void validateCryptoVersion(int cryptoVersion) {
+    if (cryptoVersion < LEGACY_CRYPTO_VERSION) {
+      throw new IllegalArgumentException("Crypto version must be positive");
     }
   }
 
