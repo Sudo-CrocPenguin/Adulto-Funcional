@@ -87,15 +87,17 @@ public class CreateFixedExpenseUseCase {
             CategoryType.FINANCES)
         .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + request.getCategoryId()));
 
+    LocalDate startDate = request.getStartDate() == null ? today : request.getStartDate();
+    int reminderDays = request.getReminderDays() == null ? 0 : request.getReminderDays();
     FixedExpense expense = FixedExpense.create(
         request.getName(),
         request.getAmount(),
         request.getCategoryId(),
         accountId,
         request.getFrequency(),
-        today,
+        startDate,
         request.getNextDueDate(),
-        0);
+        reminderDays);
     applyInitialStatus(expense, request.getStatus());
 
     FixedExpense saved = fixedExpenseRepository.save(expense);
@@ -113,6 +115,8 @@ public class CreateFixedExpenseUseCase {
         .frequency(saved.getFrequency())
         .amount(saved.getAmount())
         .status(saved.getStatus())
+        .startDate(saved.getStartDate())
+        .reminderDays(saved.getReminderDays())
         .nextDueDate(saved.getNextDueDate())
         .category(categoryResponse)
         .build();

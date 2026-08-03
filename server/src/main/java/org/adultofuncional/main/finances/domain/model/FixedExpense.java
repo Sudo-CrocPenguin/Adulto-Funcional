@@ -304,8 +304,8 @@ public class FixedExpense {
     if (nextDueDate == null) {
       throw new IllegalArgumentException("Next due date cannot be null");
     }
-    if (nextDueDate.isBefore(startDate)) {
-      throw new IllegalArgumentException("Next due date cannot be before start date");
+    if (!nextDueDate.isAfter(startDate)) {
+      throw new IllegalArgumentException("Next due date must be after start date");
     }
   }
 

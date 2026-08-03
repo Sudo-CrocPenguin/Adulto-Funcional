@@ -72,6 +72,8 @@ class CreateFixedExpenseUseCaseTest {
         .frequency(Frequency.MONTHLY)
         .amount(new BigDecimal("120000"))
         .status(Status.INACTIVE)
+        .startDate(TODAY.minusMonths(1))
+        .reminderDays(3)
         .nextDueDate(TODAY.plusMonths(1))
         .categoryId(categoryId)
         .build();
@@ -79,6 +81,8 @@ class CreateFixedExpenseUseCaseTest {
     FixedExpenseResponse response = useCase.execute(accountId, request);
 
     assertThat(response.getStatus()).isEqualTo(Status.INACTIVE);
+    assertThat(response.getStartDate()).isEqualTo(TODAY.minusMonths(1));
+    assertThat(response.getReminderDays()).isEqualTo(3);
     assertThat(response.getCategory().getName()).isEqualTo("Servicios");
   }
 

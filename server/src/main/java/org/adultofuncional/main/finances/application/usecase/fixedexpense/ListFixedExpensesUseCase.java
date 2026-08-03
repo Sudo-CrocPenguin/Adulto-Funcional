@@ -120,6 +120,8 @@ public class ListFixedExpensesUseCase {
               .frequency(e.getFrequency())
               .amount(e.getAmount())
               .status(e.getStatus())
+              .startDate(e.getStartDate())
+              .reminderDays(e.getReminderDays())
               .nextDueDate(e.getNextDueDate())
               .category(catResp)
               .build();

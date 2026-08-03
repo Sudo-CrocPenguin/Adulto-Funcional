@@ -8,7 +8,8 @@ import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.shared.security.NoHtml;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -134,6 +135,14 @@ public class CreateFixedExpenseRequest {
   @NotNull(message = "El estado es obligatorio")
   private Status status;
 
+  /** Fecha de inicio; si se omite se usa el día actual del reloj inyectado. */
+  private LocalDate startDate;
+
+  /** Días de anticipación del recordatorio; cero conserva la compatibilidad. */
+  @Min(value = 0, message = "Los días de recordatorio no pueden ser negativos")
+  @Max(value = 3650, message = "Los días de recordatorio no pueden exceder 3650")
+  private Integer reminderDays;
+
   /**
    * Fecha de cierre o vencimiento del gasto fijo.
    *
@@ -151,7 +160,6 @@ public class CreateFixedExpenseRequest {
    * </ul>
    */
   @NotNull(message = "La fecha de cierre es obligatoria")
-  @Future(message = "La fecha de cierre debe ser futura")
   private LocalDate nextDueDate;
 
   /**

@@ -8,7 +8,8 @@ import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.shared.security.NoHtml;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
-import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
@@ -122,6 +123,14 @@ public class UpdateFixedExpenseRequest {
    */
   private Status status;
 
+  /** Nueva fecha de inicio del ciclo recurrente. */
+  private LocalDate startDate;
+
+  /** Nueva anticipación del recordatorio, expresada en días. */
+  @Min(value = 0, message = "Los días de recordatorio no pueden ser negativos")
+  @Max(value = 3650, message = "Los días de recordatorio no pueden exceder 3650")
+  private Integer reminderDays;
+
   /**
    * Nueva fecha de cierre o vencimiento que se desea asignar al gasto fijo.
    *
@@ -140,7 +149,6 @@ public class UpdateFixedExpenseRequest {
    * ya expirados.</li>
    * </ul>
    */
-  @Future(message = "La fecha de cierre debe ser futura")
   private LocalDate nextDueDate;
 
   /**

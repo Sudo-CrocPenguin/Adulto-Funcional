@@ -74,6 +74,8 @@ public class GetFixedExpenseUseCase {
         .frequency(expense.getFrequency())
         .amount(expense.getAmount())
         .status(expense.getStatus())
+        .startDate(expense.getStartDate())
+        .reminderDays(expense.getReminderDays())
         .nextDueDate(expense.getNextDueDate())
         .category(categoryResponse)
         .build();

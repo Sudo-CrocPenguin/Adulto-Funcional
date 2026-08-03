@@ -93,6 +93,10 @@ public class UpdateFixedExpenseUseCase {
       amount = request.getAmount();
     if (request.getFrequency() != null)
       frequency = request.getFrequency();
+    if (request.getStartDate() != null)
+      startDate = request.getStartDate();
+    if (request.getReminderDays() != null)
+      reminderDays = request.getReminderDays();
     if (request.getNextDueDate() != null) {
       if (!request.getNextDueDate().isAfter(LocalDate.now(clock))) {
         throw new BusinessException("La fecha de cierre debe ser futura");
@@ -132,6 +136,8 @@ public class UpdateFixedExpenseUseCase {
         .frequency(saved.getFrequency())
         .amount(saved.getAmount())
         .status(saved.getStatus())
+        .startDate(saved.getStartDate())
+        .reminderDays(saved.getReminderDays())
         .nextDueDate(saved.getNextDueDate())
         .category(categoryResponse)
         .build();
