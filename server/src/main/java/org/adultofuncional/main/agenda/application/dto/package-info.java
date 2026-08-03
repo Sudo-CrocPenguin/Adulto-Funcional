@@ -13,16 +13,16 @@
  * <li>{@link org.adultofuncional.main.agenda.application.dto.EventRequest} —
  * Datos de entrada para la creación de un nuevo evento. Valida que el título
  * sea obligatorio ({@code @NotBlank}), no exceda 35 caracteres ({@code @Size})
- * y esté libre de HTML ({@code @NoHtml}). La fecha debe ser presente o futura
- * ({@code @FutureOrPresent}), y las horas de inicio y fin son
- * obligatorias.</li>
+ * y esté libre de HTML ({@code @NoHtml}). La política temporal de aplicación
+ * exige una fecha presente o futura en la zona IANA del evento; las horas de
+ * inicio y fin son obligatorias y el dominio valida su orden.</li>
  * <li>{@link org.adultofuncional.main.agenda.application.dto.EventUpdateRequest}
  * —
  * Datos de entrada para la modificación parcial de un evento. Todos los campos
  * son opcionales para permitir actualizaciones selectivas (comportamiento
- * PATCH).
- * Los campos de texto mantienen las validaciones {@code @Size} y
- * {@code @NoHtml}.</li>
+ * PATCH). Los campos de texto mantienen las validaciones {@code @Size},
+ * enumerados cerrados mediante {@code @Pattern} y protección
+ * {@code @NoHtml}; el caso de uso valida el estado temporal final.</li>
  * <li>{@link org.adultofuncional.main.agenda.application.dto.EventResponse} —
  * Proyección de los datos de un evento retornados al cliente. Incluye la
  * categoría

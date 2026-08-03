@@ -22,9 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
  * o no pertenece a la cuenta, se lanza {@link NotFoundException} para
  * proteger la privacidad de los datos de otras cuentas.
  *
- * <p>
- * La categoría no se retorna en la respuesta actualmente (pendiente de
- * incluir en una versión futura).
+ * La respuesta incorpora la categoría financiera accesible para la cuenta.
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1

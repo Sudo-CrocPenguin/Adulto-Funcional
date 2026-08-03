@@ -26,11 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
  * Reglas de negocio:
  * <ul>
  * <li>La cuenta debe existir en el módulo de cuentas.</li>
- * <li>La categoría asociada debe existir.</li>
+ * <li>La categoría debe ser accesible para la cuenta y de tipo
+ * {@code FINANCES}.</li>
  * <li>El estado inicial solicitado se aplica al modelo de dominio.</li>
- * <li>La fecha de cierre debe ser posterior a la fecha actual.</li>
- * <li>La fecha de inicio se establece como la fecha actual y los días de
- * recordatorio se inicializan en 0 automáticamente.</li>
+ * <li>El próximo vencimiento debe ser posterior a la fecha actual.</li>
+ * <li>Si se omiten, la fecha de inicio usa el día actual y los días de
+ * recordatorio usan cero.</li>
  * </ul>
  *
  * <p>
@@ -69,7 +70,7 @@ public class CreateFixedExpenseUseCase {
    * @return {@link FixedExpenseResponse} con los datos del gasto creado,
    *         incluyendo la categoría asociada.
    * @throws NotFoundException si la cuenta o la categoría no existen.
-   * @throws BusinessException si la fecha de cierre no es futura.
+   * @throws BusinessException si el próximo vencimiento no es futuro.
    */
   @Transactional
   public FixedExpenseResponse execute(UUID accountId, CreateFixedExpenseRequest request) {

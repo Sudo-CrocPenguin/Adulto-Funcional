@@ -24,13 +24,13 @@ import org.springframework.transaction.annotation.Transactional;
  * Reglas de negocio:
  * <ul>
  * <li>La cuenta debe existir.</li>
-   * <li>La categoría debe existir.</li>
+ * <li>La categoría debe ser {@code SYSTEM} o pertenecer a la cuenta y tener
+ * tipo {@code FINANCES}.</li>
  * </ul>
  *
  * <p>
  * La creación del modelo {@link Movement} se delega al método de fábrica
- * del dominio. La categoría no se retorna en la respuesta actualmente
- * (pendiente de incluir en una versión futura).
+ * del dominio. La respuesta incluye la categoría accesible que fue validada.
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
@@ -62,8 +62,7 @@ public class CreateMovementUseCase {
    *                  movimiento.
    * @param request   DTO con los datos validados del movimiento (tipo,
    *                  monto, fecha, descripción y categoría obligatoria).
-   * @return {@link MovementResponse} con los datos del movimiento creado.
-   *         La categoría se retorna como {@code null} en esta versión.
+   * @return {@link MovementResponse} con el movimiento y su categoría.
    * @throws NotFoundException si la cuenta o la categoría no existen.
    */
   @Transactional

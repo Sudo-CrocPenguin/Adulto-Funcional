@@ -23,17 +23,16 @@ import lombok.RequiredArgsConstructor;
  * Caso de uso: Crear un nuevo evento en la agenda personal.
  *
  * <p>
-   * Registra un evento (compromiso) asociado a una cuenta y a una categoría.
-   * Antes de persistir, verifica que la cuenta y la categoría
- * existan, que la hora de inicio sea estrictamente anterior a la de fin, y
- * asigna valores por defecto para prioridad y estado si no fueron
- * especificados.
+ * Registra un evento asociado a una cuenta y a una categoría de agenda
+ * accesible. Antes de persistir, aplica la política temporal en la zona IANA
+ * elegida y delega las invariantes combinadas al dominio.
  *
  * <p>
  * <strong>Reglas de negocio aplicadas:</strong>
  * <ul>
  * <li>La cuenta debe existir en el módulo de cuentas.</li>
-   * <li>{@code categoryId} es obligatorio y la categoría debe existir.</li>
+ * <li>{@code categoryId} es obligatorio; debe ser accesible para la cuenta y
+ * de tipo {@code AGENDA}.</li>
  * <li>{@code startHour} debe ser anterior a {@code endHour} (no se permiten
  * horas iguales).</li>
  * <li>La prioridad, si no se envía o está en blanco, se asigna como
@@ -44,6 +43,8 @@ import lombok.RequiredArgsConstructor;
  * ({@code Baja}, {@code Media}, {@code Alta}) y estado
  * ({@code Pendiente}, {@code Completado}, {@code Cancelado},
  * {@code Pospuesto}).</li>
+ * <li>La frecuencia debe estar soportada, el recordatorio debe preceder el
+ * inicio y las horas civiles deben corresponder a {@code eventDate}.</li>
  * </ul>
  *
  * @author Miguel Angel Blandon Montes, Juan Sebastian Rios

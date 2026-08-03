@@ -4,11 +4,11 @@
  * <p>
  * Expone los endpoints HTTP para la gestión de movimientos, categorías y
  * gastos fijos bajo la ruta base {@code /api/finances}. Todos los endpoints
- * que operan sobre recursos de una cuenta resuelven el {@code accountId}
- * del usuario autenticado a partir de su correo electrónico mediante
- * {@link org.adultofuncional.main.finances.infrastructure.controller.FinancesController},
- * evitando que el cliente manipule identificadores de cuenta en la URL.
- * Las categorías son globales y no requieren esta resolución.
+ * que operan sobre recursos resuelven el {@code accountId} desde
+ * {@code AuthenticatedAccount}, evitando confiar en identificadores de cuenta
+ * enviados por el cliente. Los listados se paginan en SQL. Las categorías
+ * visibles combinan el catálogo {@code SYSTEM} con las {@code PERSONAL} de la
+ * cuenta; solo estas últimas son mutables por su propietario.
  *
  * <p>
  * Todas las respuestas se envuelven en

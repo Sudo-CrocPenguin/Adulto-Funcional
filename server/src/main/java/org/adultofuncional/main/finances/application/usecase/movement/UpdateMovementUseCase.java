@@ -24,7 +24,8 @@ import org.springframework.util.StringUtils;
  * <li>El movimiento debe existir y pertenecer a la cuenta indicada.</li>
  * <li>Solo se modifican los campos proporcionados en el DTO (actualización
  * parcial).</li>
- * <li>Si cambia la categoría, la nueva categoría debe existir.</li>
+ * <li>La categoría final debe ser accesible para la cuenta y de tipo
+ * {@code FINANCES}.</li>
  * </ul>
  *
  * <p>
@@ -32,9 +33,7 @@ import org.springframework.util.StringUtils;
  * modificado. Esto permite aplicar cambios de forma selectiva aunque implica
  * múltiples reasignaciones internas sobre la misma entidad.
  *
- * <p>
- * La categoría no se retorna en la respuesta actualmente (pendiente de
- * incluir en una versión futura).
+ * La respuesta incorpora la categoría final validada.
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
@@ -59,8 +58,7 @@ public class UpdateMovementUseCase {
    * @param movementId Identificador del movimiento a modificar.
    * @param request    DTO con los nuevos valores. Los campos nulos o vacíos
    *                   se ignoran.
-   * @return {@link MovementResponse} con los datos actualizados. La categoría
-   *         se retorna como {@code null} en esta versión.
+   * @return {@link MovementResponse} con los datos y la categoría actualizados.
    * @throws NotFoundException si el movimiento no existe, no pertenece a la
    *                           cuenta, o la nueva categoría no existe.
    */

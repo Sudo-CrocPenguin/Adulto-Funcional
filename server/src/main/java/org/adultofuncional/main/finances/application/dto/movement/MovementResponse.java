@@ -69,9 +69,9 @@ public class MovementResponse {
    *
    * <p>
    * Marca temporal generada automáticamente por el sistema al momento
-   * de persistir el movimiento. Se representa como {@link LocalDateTime},
-   * incluyendo hora, minuto y segundo del registro, sin información
-   * de zona horaria. Se diferencia de {@code movementDate} en que esta
+   * de persistir el movimiento. Se representa como {@link Instant} en UTC,
+   * por lo que identifica un punto inequívoco en el tiempo. Se diferencia de
+   * {@code movementDate} en que esta
    * refleja cuándo el sistema procesó el registro, no cuándo ocurrió
    * el movimiento real.
    * </p>
@@ -110,8 +110,8 @@ public class MovementResponse {
    *
    * <p>
    * Contiene la información completa de la categoría a la que pertenece
-   * el movimiento, representada como un objeto {@link CategoryResponse} anidado.
-   * Si el movimiento no tiene categoría asociada, este campo será {@code null}.
+   * el movimiento, representada como un objeto {@link CategoryResponse}
+   * anidado. Los movimientos válidos siempre tienen categoría financiera.
    * </p>
    */
   private CategoryResponse category;
