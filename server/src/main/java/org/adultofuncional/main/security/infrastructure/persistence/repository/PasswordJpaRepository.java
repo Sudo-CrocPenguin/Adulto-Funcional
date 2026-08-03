@@ -5,6 +5,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.security.infrastructure.persistence.entity.PasswordEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -29,13 +32,27 @@ import org.springframework.data.repository.query.Param;
 public interface PasswordJpaRepository extends JpaRepository<PasswordEntity, UUID> {
 
   /**
-   * Busca todas las credenciales asociadas a una cuenta específica.
+   * Busca la bóveda completa exclusivamente para operaciones de recifrado.
    *
    * @param accountId UUID de la cuenta propietaria.
    * @return lista de entidades {@code PasswordEntity} de esa cuenta;
    *         puede estar vacía si no hay contraseñas registradas.
    */
   List<PasswordEntity> findByAccount_AccountId(UUID accountId);
+
+  /** Consulta el listado público con ownership, búsqueda y límites en SQL. */
+  @EntityGraph(attributePaths = "account")
+  @Query("""
+      SELECT credential
+      FROM PasswordEntity credential
+      WHERE credential.account.accountId = :accountId
+        AND (:searchTerm IS NULL OR LOWER(credential.passwordApplicationName)
+             LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+      """)
+  Page<PasswordEntity> findPageByAccountId(
+      @Param("accountId") UUID accountId,
+      @Param("searchTerm") String searchTerm,
+      Pageable pageable);
 
     /**
      * Busca una credencial por su identificador y la cuenta propietaria.

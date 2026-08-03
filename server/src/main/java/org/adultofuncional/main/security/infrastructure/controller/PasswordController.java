@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.adultofuncional.main.config.security.AuthenticatedAccount;
+import org.adultofuncional.main.security.application.dto.PasswordFilterRequest;
 import org.adultofuncional.main.security.application.dto.PasswordRequest;
 import org.adultofuncional.main.security.application.dto.PasswordResponse;
 import org.adultofuncional.main.security.application.dto.PasswordUpdateRequest;
@@ -16,6 +17,8 @@ import org.adultofuncional.main.security.application.usecase.UpdatePasswordUseCa
 import org.adultofuncional.main.security.application.usecase.VerifyMasterKeyUseCase;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
+import org.adultofuncional.main.shared.pagination.PageMetadata;
+import org.adultofuncional.main.shared.pagination.PageResult;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.adultofuncional.main.shared.ratelimit.RateLimitGuard;
 import org.adultofuncional.main.shared.ratelimit.RateLimitPolicy;
@@ -139,24 +142,30 @@ public class PasswordController {
   }
 
   /**
-   * Lista todas las credenciales almacenadas del usuario autenticado.
+   * Lista una página de credenciales del usuario autenticado.
    *
+   * @param filter búsqueda, orden y paginación opcionales.
    * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} con la lista de credenciales.
    * @throws NotFoundException si la cuenta no existe.
    */
   @GetMapping
   public ResponseEntity<ApiResponse<List<PasswordResponse>>> listPasswords(
+      @Valid PasswordFilterRequest filter,
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
-    List<PasswordResponse> response = listPasswordsUseCase.execute(
+    PageResult<PasswordResponse> response = listPasswordsUseCase.execute(
         accountId,
-        authenticatedAccount.sessionId());
+        authenticatedAccount.sessionId(),
+        filter);
 
-    return ResponseEntity.ok(
-        new ApiResponse<>(HttpStatus.OK.value(),
-            "Contraseñas listadas exitosamente", response));
+    return ResponseEntity.ok(ApiResponse.<List<PasswordResponse>>builder()
+        .status(HttpStatus.OK.value())
+        .message("Contraseñas listadas exitosamente")
+        .data(response.content())
+        .page(PageMetadata.from(response))
+        .build());
   }
 
   /**

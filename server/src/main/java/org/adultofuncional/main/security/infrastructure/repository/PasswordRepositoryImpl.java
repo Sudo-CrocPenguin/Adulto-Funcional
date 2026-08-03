@@ -1,6 +1,7 @@
 package org.adultofuncional.main.security.infrastructure.repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -9,7 +10,12 @@ import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.infrastructure.persistence.entity.PasswordEntity;
 import org.adultofuncional.main.security.infrastructure.persistence.mapper.PasswordMapper;
 import org.adultofuncional.main.security.infrastructure.persistence.repository.PasswordJpaRepository;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -28,8 +34,8 @@ import lombok.RequiredArgsConstructor;
  * <ul>
  * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca una credencial por ID y
  * cuenta y la convierte a dominio.</li>
- * <li>{@link #findAllByAccountId(UUID)} — lista todas las credenciales de
- * una cuenta.</li>
+ * <li>{@link #findAllByAccountId(UUID)} — lectura interna para recifrado.</li>
+ * <li>Listado público paginado, filtrado y ordenado en SQL.</li>
  * <li>{@link #save(Password)} — persiste una credencial nueva o actualizada,
  * devolviendo el modelo de dominio resultante.</li>
  * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina una credencial por
@@ -46,11 +52,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PasswordRepositoryImpl implements PasswordRepository {
 
+  private static final Map<String, String> SORT_FIELDS = Map.of(
+      "applicationName", "passwordApplicationName",
+      "lastChangeDate", "passwordLastChangeDate",
+      "id", "passwordId");
+
   private final PasswordJpaRepository jpaRepository;
   private final PasswordMapper mapper;
 
   /**
-   * Lista todas las credenciales asociadas a una cuenta específica.
+   * Recupera la bóveda completa para el cambio transaccional de Master Key.
    *
    * <p>
    * Utiliza el método {@code findByAccount_AccountId} de Spring Data JPA
@@ -66,6 +77,29 @@ public class PasswordRepositoryImpl implements PasswordRepository {
         .stream()
         .map(mapper::toDomain)
         .toList();
+  }
+
+  @Override
+  public PageResult<Password> findPageByAccountId(
+      UUID accountId,
+      String searchTerm,
+      PageQuery pageQuery) {
+    String entitySortField = SORT_FIELDS.get(pageQuery.sortBy());
+    Sort.Direction direction = pageQuery.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort sort = Sort.by(direction, entitySortField);
+    if (!entitySortField.equals("passwordId")) {
+      sort = sort.and(Sort.by(direction, "passwordId"));
+    }
+    PageRequest pageable = PageRequest.of(pageQuery.number(), pageQuery.size(), sort);
+    Page<PasswordEntity> page = jpaRepository.findPageByAccountId(accountId, searchTerm, pageable);
+    return new PageResult<>(
+        page.getContent().stream().map(mapper::toDomain).toList(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.hasNext(),
+        page.hasPrevious());
   }
 
   /**
