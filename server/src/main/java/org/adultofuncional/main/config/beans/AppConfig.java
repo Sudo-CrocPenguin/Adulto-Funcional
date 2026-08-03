@@ -1,5 +1,7 @@
 package org.adultofuncional.main.config.beans;
 
+import java.time.Clock;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder;
@@ -18,6 +20,17 @@ import org.springframework.security.crypto.password.PasswordEncoder;
  */
 @Configuration
 public class AppConfig {
+
+  /**
+   * Reloj UTC compartido por reglas de expiración, auditoría y dominio.
+   *
+   * <p>Inyectar {@link Clock} evita llamadas dispersas a {@code now()} y
+   * permite que las pruebas controlen de forma determinista el tiempo.</p>
+   */
+  @Bean
+  public Clock applicationClock() {
+    return Clock.systemUTC();
+  }
 
   /**
    * Provee un encoder de contraseñas basado en Argon2.

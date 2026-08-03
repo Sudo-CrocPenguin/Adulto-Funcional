@@ -6,7 +6,15 @@ spring:
 
 jwt:
   secret: 
-  expiration: 86400000
+  expiration: 900000
+  issuer: adulto-funcional-server
+  audience: adulto-funcional-clients
+
+auth:
+  session:
+    refresh-expiration: 2592000000
+    replay-window-seconds: 5
+    refresh-token-bytes: 32
 
 APP_COOKIE_SECURE: false
 APP_COOKIE_SAME_SITE: Lax
