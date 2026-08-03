@@ -1,6 +1,7 @@
 package org.adultofuncional.main.finances.domain.repository;
 
 import org.adultofuncional.main.finances.domain.model.Category;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +32,27 @@ import java.util.UUID;
  * @see org.adultofuncional.main.finances.infrastructure.repository.CategoryRepositoryImpl
  */
 public interface CategoryRepository {
+
+  /** Busca una categoría SYSTEM o una PERSONAL de la cuenta indicada. */
+  Optional<Category> findAccessibleById(UUID accountId, UUID categoryId);
+
+  /** Valida ownership y tipo de módulo dentro de una única consulta. */
+  Optional<Category> findAccessibleByIdAndType(
+      UUID accountId,
+      UUID categoryId,
+      CategoryType type);
+
+  /** Busca exclusivamente una categoría PERSONAL de su propietario. */
+  Optional<Category> findPersonalByIdAndOwner(UUID accountId, UUID categoryId);
+
+  /** Lista el catálogo SYSTEM y las categorías PERSONAL de la cuenta. */
+  List<Category> findAllAccessible(UUID accountId, CategoryType type);
+
+  /** Recupera por lote únicamente categorías visibles para la cuenta. */
+  List<Category> findAllAccessibleById(UUID accountId, Iterable<UUID> ids);
+
+  /** Elimina atómicamente una categoría PERSONAL de la cuenta. */
+  boolean deletePersonalByIdAndOwner(UUID accountId, UUID categoryId);
 
   /**
    * Busca una categoría por su identificador único.

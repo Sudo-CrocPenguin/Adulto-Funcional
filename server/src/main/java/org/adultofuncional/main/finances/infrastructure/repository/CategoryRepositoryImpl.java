@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.domain.model.Category;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.mapper.CategoryMapper;
@@ -48,6 +49,47 @@ public class CategoryRepositoryImpl implements CategoryRepository {
 
   private final SpringCategoryJpaRepository categoryJpaRepository;
   private final CategoryMapper categoryMapper;
+
+  @Override
+  public Optional<Category> findAccessibleById(UUID accountId, UUID categoryId) {
+    return categoryJpaRepository.findAccessibleById(accountId, categoryId)
+        .map(categoryMapper::toDomain);
+  }
+
+  @Override
+  public Optional<Category> findAccessibleByIdAndType(
+      UUID accountId,
+      UUID categoryId,
+      CategoryType type) {
+    return categoryJpaRepository.findAccessibleByIdAndType(accountId, categoryId, type.name())
+        .map(categoryMapper::toDomain);
+  }
+
+  @Override
+  public Optional<Category> findPersonalByIdAndOwner(UUID accountId, UUID categoryId) {
+    return categoryJpaRepository.findPersonalByIdAndOwner(accountId, categoryId)
+        .map(categoryMapper::toDomain);
+  }
+
+  @Override
+  public List<Category> findAllAccessible(UUID accountId, CategoryType type) {
+    String persistedType = type == null ? null : type.name();
+    return categoryJpaRepository.findAllAccessible(accountId, persistedType).stream()
+        .map(categoryMapper::toDomain)
+        .toList();
+  }
+
+  @Override
+  public List<Category> findAllAccessibleById(UUID accountId, Iterable<UUID> ids) {
+    return categoryJpaRepository.findAllAccessibleById(accountId, ids).stream()
+        .map(categoryMapper::toDomain)
+        .toList();
+  }
+
+  @Override
+  public boolean deletePersonalByIdAndOwner(UUID accountId, UUID categoryId) {
+    return categoryJpaRepository.deletePersonalByIdAndOwner(accountId, categoryId) > 0;
+  }
 
   /**
    * Busca una categoría por su identificador único.
