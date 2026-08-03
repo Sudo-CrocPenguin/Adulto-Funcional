@@ -1,13 +1,19 @@
 package org.adultofuncional.main.finances.application.usecase.movement;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.finances.application.dto.movement.MovementFilterRequest;
 import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
+import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.Movement;
+import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
@@ -51,6 +57,7 @@ public class ListMovementsUseCase {
 
   /** Puerto de dominio para la validación de la cuenta (módulo account). */
   private final AccountRepository accountRepository;
+  private final CategoryRepository categoryRepository;
 
   /**
    * Ejecuta el listado filtrado de movimientos.
@@ -99,6 +106,13 @@ public class ListMovementsUseCase {
             .collect(Collectors.toList());
       }
     }
+    Set<UUID> categoryIds = movements.stream()
+        .map(Movement::getCategoryId)
+        .collect(Collectors.toSet());
+    Map<UUID, Category> categories = categoryRepository
+        .findAllAccessibleById(accountId, categoryIds).stream()
+        .collect(Collectors.toMap(Category::getId, Function.identity()));
+
     return movements.stream()
         .map(m -> MovementResponse.builder()
             .id(m.getId())
@@ -107,8 +121,20 @@ public class ListMovementsUseCase {
             .registerDate(m.getCreatedAt())
             .description(m.getDescription())
             .movementDate(m.getDate())
-            .category(null)
+            .category(toCategoryResponse(categories.get(m.getCategoryId())))
             .build())
         .collect(Collectors.toList());
+  }
+
+  private CategoryResponse toCategoryResponse(Category category) {
+    if (category == null) {
+      return null;
+    }
+    return CategoryResponse.builder()
+        .id(category.getId())
+        .name(category.getName())
+        .type(category.getType())
+        .scope(category.getScope())
+        .build();
   }
 }

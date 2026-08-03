@@ -4,6 +4,9 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
 import org.adultofuncional.main.finances.application.dto.movement.UpdateMovementRequest;
+import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
+import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
@@ -66,6 +69,16 @@ public class UpdateMovementUseCase {
     Movement movement = movementRepository.findByIdAndAccountId(movementId, accountId)
         .orElseThrow(() -> new NotFoundException("Movimiento no encontrado con id: " + movementId));
 
+    UUID targetCategoryId = request.getCategoryId() == null
+        ? movement.getCategoryId()
+        : request.getCategoryId();
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            targetCategoryId,
+            CategoryType.FINANCES)
+        .orElseThrow(() -> new NotFoundException(
+            "Categoría no encontrada con id: " + targetCategoryId));
+
     if (request.getMovementType() != null) {
       movement.update(
           request.getMovementType(),
@@ -99,9 +112,6 @@ public class UpdateMovementUseCase {
           request.getMovementDate());
     }
     if (request.getCategoryId() != null) {
-      categoryRepository.findById(request.getCategoryId())
-          .orElseThrow(() -> new NotFoundException(
-              "Categoría no encontrada con id: " + request.getCategoryId()));
       movement.update(
           movement.getType(),
           movement.getAmount(),
@@ -118,7 +128,12 @@ public class UpdateMovementUseCase {
         .registerDate(saved.getCreatedAt())
         .description(saved.getDescription())
         .movementDate(saved.getDate())
-        .category(null)
+        .category(CategoryResponse.builder()
+            .id(category.getId())
+            .name(category.getName())
+            .type(category.getType())
+            .scope(category.getScope())
+            .build())
         .build();
   }
 }
