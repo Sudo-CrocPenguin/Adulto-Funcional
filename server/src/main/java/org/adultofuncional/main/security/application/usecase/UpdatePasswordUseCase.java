@@ -12,7 +12,7 @@ import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.domain.service.EncryptionService;
 import org.adultofuncional.main.security.domain.service.EncryptionService.EncryptionContext;
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
-import org.adultofuncional.main.shared.exception.BusinessException;
+import org.adultofuncional.main.shared.exception.ConflictException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.adultofuncional.main.shared.response.ApiErrorCode;
@@ -68,7 +68,7 @@ public class UpdatePasswordUseCase {
    * @return {@link PasswordResponse} con los datos actualizados.
    * @throws NotFoundException  si la cuenta o la credencial no existen.
    * @throws ForbiddenException si la Master Key no está verificada.
-   * @throws BusinessException  si el nuevo nombre de aplicación ya existe.
+   * @throws ConflictException  si el nuevo nombre de aplicación ya existe.
    */
   @Transactional
   public PasswordResponse execute(
@@ -92,7 +92,7 @@ public class UpdatePasswordUseCase {
     if (StringUtils.hasText(request.getApplicationName()) &&
         !request.getApplicationName().equals(password.getApplicationName())) {
       if (passwordRepository.existsByAccountIdAndApplicationName(accountId, request.getApplicationName())) {
-        throw new BusinessException(
+        throw new ConflictException(
             "Ya existe una contraseña para la aplicación: " + request.getApplicationName());
       }
     }

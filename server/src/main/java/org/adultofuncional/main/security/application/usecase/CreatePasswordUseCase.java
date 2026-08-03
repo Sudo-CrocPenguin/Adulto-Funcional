@@ -12,7 +12,7 @@ import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.domain.service.EncryptionService;
 import org.adultofuncional.main.security.domain.service.EncryptionService.EncryptionContext;
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
-import org.adultofuncional.main.shared.exception.BusinessException;
+import org.adultofuncional.main.shared.exception.ConflictException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.adultofuncional.main.shared.response.ApiErrorCode;
@@ -70,7 +70,7 @@ public class CreatePasswordUseCase {
    *         credencial creada.
    * @throws NotFoundException  si la cuenta no existe.
    * @throws ForbiddenException si la Master Key no ha sido verificada.
-   * @throws BusinessException  si ya existe una credencial con el mismo
+   * @throws ConflictException  si ya existe una credencial con el mismo
    *                            nombre de aplicación.
    */
   @Transactional
@@ -88,7 +88,7 @@ public class CreatePasswordUseCase {
 
     // 3. Verificar unicidad del nombre de aplicación por cuenta
     if (passwordRepository.existsByAccountIdAndApplicationName(accountId, request.getApplicationName())) {
-      throw new BusinessException(
+      throw new ConflictException(
           "Ya existe una contraseña para la aplicación: " + request.getApplicationName());
     }
 

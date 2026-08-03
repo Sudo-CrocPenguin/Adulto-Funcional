@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -65,6 +66,11 @@ public class PasswordEntity {
   @Id
   @Column(name = "password_id", columnDefinition = "CHAR(36)")
   private UUID passwordId;
+
+  /** Versión de bloqueo optimista para detectar actualizaciones concurrentes. */
+  @Version
+  @Column(name = "password_version", nullable = false)
+  private long version;
 
   /**
    * Nombre del servicio o aplicación.

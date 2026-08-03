@@ -117,6 +117,8 @@ public class PasswordRepositoryImpl implements PasswordRepository {
   @Override
   public Password save(Password password) {
     PasswordEntity entity = mapper.toEntity(password);
+    jpaRepository.findById(password.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     PasswordEntity savedEntity = jpaRepository.save(entity);
     return mapper.toDomain(savedEntity);
   }
