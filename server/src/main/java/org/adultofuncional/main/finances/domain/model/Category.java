@@ -194,12 +194,6 @@ public class Category {
     this.normalizedName = CategoryNameNormalizer.normalize(name);
   }
 
-  /** Actualiza el tipo mientras se completa la migración del contrato PATCH. */
-  public void updateType(CategoryType type) {
-    validateType(type);
-    this.type = type;
-  }
-
   // ── Invariantes de negocio ────────────────────────────────────────────────
 
   private static void validateId(UUID id) {
