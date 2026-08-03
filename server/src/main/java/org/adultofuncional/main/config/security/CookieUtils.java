@@ -47,11 +47,8 @@ public class CookieUtils {
    * <li>{@code true} — producción (solo HTTPS); obligatorio si
    * {@code APP_COOKIE_SAME_SITE=None}</li>
    * </ul>
-   *
-   * TODO: Verificar que {@code APP_COOKIE_SECURE=true} en producción.
    */
-  @Value("${APP_COOKIE_SECURE}")
-  private boolean appCookieSecure;
+  private final boolean appCookieSecure;
 
   /**
    * Valor del atributo {@code SameSite} de la cookie. Configurable via
@@ -62,8 +59,25 @@ public class CookieUtils {
    * Se aplica tanto al establecer como al eliminar la cookie para garantizar
    * que el navegador procese correctamente el {@code Set-Cookie} en ambos casos.
    */
-  @Value("${APP_COOKIE_SAME_SITE}")
-  private String appCookieSameSite;
+  private final String appCookieSameSite;
+
+  /**
+   * Valida la política antes de aceptar tráfico HTTP.
+   *
+   * <p>{@code SameSite=None} sin {@code Secure} se rechaza porque los
+   * navegadores modernos no aceptan esa cookie. Un valor desconocido también
+   * detiene el arranque para evitar degradar silenciosamente la protección.</p>
+   */
+  public CookieUtils(
+      @Value("${APP_COOKIE_SECURE}") boolean appCookieSecure,
+      @Value("${APP_COOKIE_SAME_SITE}") String appCookieSameSite) {
+    this.appCookieSecure = appCookieSecure;
+    this.appCookieSameSite = normalizeSameSite(appCookieSameSite);
+    if ("None".equals(this.appCookieSameSite) && !appCookieSecure) {
+      throw new IllegalStateException(
+          "APP_COOKIE_SAME_SITE=None requiere APP_COOKIE_SECURE=true");
+    }
+  }
 
   /** Expone la política Secure para configurar también la cookie CSRF. */
   public boolean isSecure() {
@@ -173,5 +187,18 @@ public class CookieUtils {
             appCookieSecure ? "Secure; " : "",
             path,
             appCookieSameSite));
+  }
+
+  private String normalizeSameSite(String value) {
+    if (value == null) {
+      throw new IllegalStateException("APP_COOKIE_SAME_SITE es obligatorio");
+    }
+    return switch (value.strip().toLowerCase(java.util.Locale.ROOT)) {
+      case "strict" -> "Strict";
+      case "lax" -> "Lax";
+      case "none" -> "None";
+      default -> throw new IllegalStateException(
+          "APP_COOKIE_SAME_SITE debe ser Strict, Lax o None");
+    };
   }
 }
