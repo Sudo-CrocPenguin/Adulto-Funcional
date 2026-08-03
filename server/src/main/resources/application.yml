@@ -46,3 +46,10 @@ app:
     max-request-body-size: ${APP_HTTP_MAX_REQUEST_BODY_SIZE:1MB}
   time:
     default-zone: ${APP_DEFAULT_TIME_ZONE:America/Bogota}
+  jobs:
+    enabled: ${APP_JOBS_ENABLED:true}
+    fixed-expenses:
+      cron: ${APP_FIXED_EXPENSE_CRON:0 5 * * * *}
+      zone: UTC
+      batch-size: ${APP_FIXED_EXPENSE_BATCH_SIZE:100}
+      max-batches: ${APP_FIXED_EXPENSE_MAX_BATCHES:10}
