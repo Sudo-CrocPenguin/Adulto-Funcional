@@ -1,6 +1,7 @@
 package org.adultofuncional.main.auth.infrastructure.controller;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 import org.adultofuncional.main.auth.application.dto.AuthResponse;
 import org.adultofuncional.main.auth.application.dto.CsrfResponse;
@@ -18,6 +19,8 @@ import org.adultofuncional.main.config.security.CookieUtils;
 import org.adultofuncional.main.shared.exception.UnauthorizedException;
 import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.adultofuncional.main.shared.response.ApiResponse;
+import org.adultofuncional.main.shared.ratelimit.RateLimitGuard;
+import org.adultofuncional.main.shared.ratelimit.RateLimitPolicy;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -87,6 +90,7 @@ public class AuthController {
   private final RevokeAllSessionsUseCase revokeAllSessionsUseCase;
   private final CookieUtils cookieUtils;
   private final ClientTypeResolver clientTypeResolver;
+  private final RateLimitGuard rateLimitGuard;
 
   /** Materializa el token CSRF y su cookie para clientes web. */
   @GetMapping("/csrf")
@@ -123,7 +127,22 @@ public class AuthController {
       HttpServletRequest httpRequest,
       HttpServletResponse response) {
 
-    AuthResponse auth = loginUseCase.execute(request);
+    String address = clientAddress(httpRequest);
+    String normalizedEmail = request.getEmail().strip().toLowerCase(Locale.ROOT);
+    rateLimitGuard.check(RateLimitPolicy.LOGIN_IP, address);
+    rateLimitGuard.check(RateLimitPolicy.LOGIN_ACCOUNT, normalizedEmail);
+
+    AuthResponse auth;
+    try {
+      auth = loginUseCase.execute(request);
+    } catch (UnauthorizedException exception) {
+      rateLimitGuard.recordFailure(RateLimitPolicy.LOGIN_ACCOUNT, normalizedEmail);
+      rateLimitGuard.recordFailure(RateLimitPolicy.LOGIN_IP, address);
+      rateLimitGuard.check(RateLimitPolicy.LOGIN_ACCOUNT, normalizedEmail);
+      rateLimitGuard.check(RateLimitPolicy.LOGIN_IP, address);
+      throw exception;
+    }
+    rateLimitGuard.reset(RateLimitPolicy.LOGIN_ACCOUNT, normalizedEmail);
     writeNoStoreHeaders(response);
     boolean nativeClient = clientTypeResolver.isNativeClient(httpRequest);
     if (!nativeClient) {
@@ -162,6 +181,7 @@ public class AuthController {
       HttpServletRequest httpRequest,
       HttpServletResponse response) {
 
+    rateLimitGuard.consume(RateLimitPolicy.REGISTER_IP, clientAddress(httpRequest));
     AuthResponse auth = registerUseCase.execute(request);
     writeNoStoreHeaders(response);
     boolean nativeClient = clientTypeResolver.isNativeClient(httpRequest);
@@ -214,6 +234,7 @@ public class AuthController {
       @Valid @RequestBody(required = false) RefreshRequest request,
       HttpServletRequest httpRequest,
       HttpServletResponse response) {
+    rateLimitGuard.consume(RateLimitPolicy.REFRESH_IP, clientAddress(httpRequest));
     String refreshToken = request != null && request.getRefreshToken() != null
         ? request.getRefreshToken()
         : extractCookie(httpRequest, CookieUtils.REFRESH_TOKEN_COOKIE);
@@ -291,5 +312,10 @@ public class AuthController {
         .map(Cookie::getValue)
         .findFirst()
         .orElse(null);
+  }
+
+  private String clientAddress(HttpServletRequest request) {
+    String address = request.getRemoteAddr();
+    return address == null || address.isBlank() ? "unknown" : address;
   }
 }
