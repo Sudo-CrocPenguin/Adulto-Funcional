@@ -140,6 +140,8 @@ public class EventRepositoryImpl implements EventRepository {
   @Override
   public Event save(Event event) {
     EventEntity entity = mapper.toEntity(event);
+    jpaRepository.findById(event.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     EventEntity savedEntity = jpaRepository.save(entity);
     return mapper.toDomain(savedEntity);
   }

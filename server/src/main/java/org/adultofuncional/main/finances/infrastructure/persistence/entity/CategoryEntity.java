@@ -15,6 +15,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -59,6 +60,11 @@ public class CategoryEntity {
   @Id
   @Column(name = "category_id", columnDefinition = "CHAR(36)")
   private UUID categoryId;
+
+  /** Versión de bloqueo optimista para detectar actualizaciones concurrentes. */
+  @Version
+  @Column(name = "category_version", nullable = false)
+  private long version;
 
   /**
    * Nombre de la categoría.

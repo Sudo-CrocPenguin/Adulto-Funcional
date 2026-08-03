@@ -128,6 +128,8 @@ public class CategoryRepositoryImpl implements CategoryRepository {
   @Override
   public Category save(Category category) {
     CategoryEntity entity = categoryMapper.toEntity(category);
+    categoryJpaRepository.findById(category.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     CategoryEntity saved = categoryJpaRepository.saveAndFlush(entity);
     return categoryMapper.toDomain(saved);
   }

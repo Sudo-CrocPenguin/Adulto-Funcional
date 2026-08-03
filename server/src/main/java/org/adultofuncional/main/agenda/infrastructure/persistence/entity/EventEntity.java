@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -74,6 +75,11 @@ public class EventEntity {
   @Id
   @Column(name = "event_id", columnDefinition = "CHAR(36)")
   private UUID eventId;
+
+  /** Versión de bloqueo optimista para detectar actualizaciones concurrentes. */
+  @Version
+  @Column(name = "event_version", nullable = false)
+  private long version;
 
   /**
    * Título del evento.
