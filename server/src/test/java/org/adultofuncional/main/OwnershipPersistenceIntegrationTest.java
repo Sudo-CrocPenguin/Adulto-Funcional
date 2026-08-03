@@ -1,6 +1,7 @@
 package org.adultofuncional.main;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.dao.DataIntegrityViolationException;
 
 /**
  * Verifica en MariaDB que los repositorios con recursos privados incorporen
@@ -119,6 +121,41 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
     assertThat(passwordRepository.deleteByPasswordIdAndAccountId(
         passwordId, accountA.getAccountId())).isEqualTo(1);
     assertThat(passwordRepository.existsById(passwordId)).isFalse();
+  }
+
+  @Test
+  void rejectsInvalidFinancialValuesAtTheDatabaseBoundary() {
+    MovementEntity movement = new MovementEntity();
+    movement.setMovementId(UUID.randomUUID());
+    movement.setMovementType(MovementType.EXPENSE.name());
+    movement.setMovementAmount(new BigDecimal("-0.01"));
+    movement.setMovementDescription("Monto inválido");
+    movement.setMovementDate(LocalDate.now());
+    movement.setAccount(accountA);
+    movement.setCategory(financeCategory);
+
+    assertThatThrownBy(() -> movementRepository.saveAndFlush(movement))
+        .isInstanceOf(DataIntegrityViolationException.class);
+  }
+
+  @Test
+  void rejectsInvalidEventSchedulesAtTheDatabaseBoundary() {
+    LocalDateTime start = LocalDateTime.now().plusDays(1);
+    EventEntity event = new EventEntity();
+    event.setEventId(UUID.randomUUID());
+    event.setEventTitle("Horario inválido");
+    event.setEventPriority("Media");
+    event.setEventDate(start.toLocalDate());
+    event.setEventFrequency(0);
+    event.setEventReminder(start.plusMinutes(5));
+    event.setEventStartHour(start);
+    event.setEventEndHour(start.plusHours(1));
+    event.setEventStatus("Pendiente");
+    event.setAccount(accountA);
+    event.setCategory(agendaCategory);
+
+    assertThatThrownBy(() -> eventRepository.saveAndFlush(event))
+        .isInstanceOf(DataIntegrityViolationException.class);
   }
 
   private AccountEntity persistAccount(String email) {
