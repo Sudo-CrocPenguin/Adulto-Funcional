@@ -29,7 +29,7 @@ import lombok.experimental.FieldDefaults;
  */
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = "passwordHash")
+@ToString(exclude = {"passwordHash", "masterKeyHash"})
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Account {
 
@@ -156,6 +156,14 @@ public class Account {
    */
   public void updateEmail(String email) {
     this.email = email;
+  }
+
+  /** Sustituye o configura el hash Argon2 de la Master Key. */
+  public void updateMasterKeyHash(String masterKeyHash) {
+    if (masterKeyHash == null || masterKeyHash.isBlank()) {
+      throw new IllegalArgumentException("Master Key hash cannot be blank");
+    }
+    this.masterKeyHash = masterKeyHash;
   }
 
   /**
