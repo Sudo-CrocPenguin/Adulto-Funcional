@@ -3,6 +3,7 @@ package org.adultofuncional.main.auth.infrastructure.controller;
 import java.util.Arrays;
 
 import org.adultofuncional.main.auth.application.dto.AuthResponse;
+import org.adultofuncional.main.auth.application.dto.CsrfResponse;
 import org.adultofuncional.main.auth.application.dto.LoginRequest;
 import org.adultofuncional.main.auth.application.dto.RefreshRequest;
 import org.adultofuncional.main.auth.application.dto.RegisterRequest;
@@ -21,7 +22,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -84,6 +87,19 @@ public class AuthController {
   private final RevokeAllSessionsUseCase revokeAllSessionsUseCase;
   private final CookieUtils cookieUtils;
   private final ClientTypeResolver clientTypeResolver;
+
+  /** Materializa el token CSRF y su cookie para clientes web. */
+  @GetMapping("/csrf")
+  public ResponseEntity<ApiResponse<CsrfResponse>> csrf(CsrfToken csrfToken) {
+    return ResponseEntity.ok(ApiResponse.<CsrfResponse>builder()
+        .status(HttpStatus.OK.value())
+        .message("Token CSRF generado")
+        .data(new CsrfResponse(
+            csrfToken.getToken(),
+            csrfToken.getHeaderName(),
+            csrfToken.getParameterName()))
+        .build());
+  }
 
   /**
    * Inicia sesión con las credenciales del usuario.

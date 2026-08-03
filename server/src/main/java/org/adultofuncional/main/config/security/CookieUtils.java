@@ -65,6 +65,16 @@ public class CookieUtils {
   @Value("${APP_COOKIE_SAME_SITE}")
   private String appCookieSameSite;
 
+  /** Expone la política Secure para configurar también la cookie CSRF. */
+  public boolean isSecure() {
+    return appCookieSecure;
+  }
+
+  /** Expone la política SameSite validada para la cookie CSRF. */
+  public String sameSite() {
+    return appCookieSameSite;
+  }
+
   /**
    * Agrega la cookie {@code token} a la respuesta HTTP con el JWT del usuario.
    *
