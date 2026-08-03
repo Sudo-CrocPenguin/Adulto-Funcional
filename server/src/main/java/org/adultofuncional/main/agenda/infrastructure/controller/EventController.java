@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.adultofuncional.main.agenda.application.dto.EventRequest;
+import org.adultofuncional.main.agenda.application.dto.EventFilterRequest;
 import org.adultofuncional.main.agenda.application.dto.EventResponse;
 import org.adultofuncional.main.agenda.application.dto.EventUpdateRequest;
 import org.adultofuncional.main.agenda.application.usecase.CreateEventUseCase;
@@ -13,6 +14,8 @@ import org.adultofuncional.main.agenda.application.usecase.ListEventsUseCase;
 import org.adultofuncional.main.agenda.application.usecase.UpdateEventUseCase;
 import org.adultofuncional.main.config.security.AuthenticatedAccount;
 import org.adultofuncional.main.shared.exception.NotFoundException;
+import org.adultofuncional.main.shared.pagination.PageMetadata;
+import org.adultofuncional.main.shared.pagination.PageResult;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +27,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -134,9 +136,7 @@ public class EventController {
    * Lista los eventos de la agenda del usuario autenticado con filtros
    * opcionales.
    *
-   * @param status      estado a filtrar (ej. {@code "Pendiente"}); opcional.
-   * @param priority    prioridad a filtrar (ej. {@code "Alta"}); opcional.
-   * @param categoryId  categoría a filtrar; opcional.
+   * @param filter filtros, rango, orden y paginación opcionales.
    * @param authenticatedAccount cuenta autenticada.
    * @return {@code 200 OK} con la lista de {@link EventResponse} que
    *         cumplen los criterios. Puede ser una lista vacía.
@@ -144,18 +144,17 @@ public class EventController {
    */
   @GetMapping
   public ResponseEntity<ApiResponse<List<EventResponse>>> list(
-      @RequestParam(required = false) String status,
-      @RequestParam(required = false) String priority,
-      @RequestParam(required = false) UUID categoryId,
+      @Valid EventFilterRequest filter,
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
-    List<EventResponse> response = listEventsUseCase.execute(accountId, status, priority, categoryId);
+    PageResult<EventResponse> response = listEventsUseCase.execute(accountId, filter);
 
     return ResponseEntity.ok(ApiResponse.<List<EventResponse>>builder()
         .status(HttpStatus.OK.value())
         .message("Eventos listados exitosamente")
-        .data(response)
+        .data(response.content())
+        .page(PageMetadata.from(response))
         .build());
   }
 
