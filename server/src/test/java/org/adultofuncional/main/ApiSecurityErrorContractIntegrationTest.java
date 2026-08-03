@@ -1,7 +1,6 @@
 package org.adultofuncional.main;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -12,6 +11,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.UUID;
 
+import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
+import org.adultofuncional.main.account.infrastructure.persistence.repository.SpringAccountJpaRepository;
 import org.adultofuncional.main.config.security.JwtService;
 import org.adultofuncional.main.shared.observability.TraceIdProvider;
 import org.adultofuncional.main.testsupport.MariaDbIntegrationTestSupport;
@@ -50,6 +51,9 @@ class ApiSecurityErrorContractIntegrationTest extends MariaDbIntegrationTestSupp
 
   @Autowired
   ObjectMapper objectMapper;
+
+  @Autowired
+  SpringAccountJpaRepository accountRepository;
 
   @Test
   void returnsUniformContractWhenAuthenticationIsMissing() throws Exception {
@@ -103,13 +107,11 @@ class ApiSecurityErrorContractIntegrationTest extends MariaDbIntegrationTestSupp
   }
 
   @Test
-  void returnsUniformForbiddenContractForInsufficientRole() throws Exception {
-    UUID categoryId = UUID.fromString("01988e6b-0c00-7000-8000-000000000001");
-
-    MvcResult result = mockMvc.perform(delete("/api/finances/categories/{id}", categoryId)
-            .header(HttpHeaders.AUTHORIZATION, "Bearer " + userToken()))
+  void returnsUniformForbiddenContractForLockedVault() throws Exception {
+    MvcResult result = mockMvc.perform(get("/api/security/passwords")
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + persistedUserToken()))
         .andExpect(status().isForbidden())
-        .andExpect(jsonPath("$.code").value("ACCESS_DENIED"))
+        .andExpect(jsonPath("$.code").value("MASTER_KEY_REQUIRED"))
         .andExpect(jsonPath("$.data").doesNotExist())
         .andReturn();
 
@@ -192,6 +194,21 @@ class ApiSecurityErrorContractIntegrationTest extends MariaDbIntegrationTestSupp
     return jwtService.generateToken(
         UUID.randomUUID().toString(),
         "contrato-errores@example.com",
+        List.of(new SimpleGrantedAuthority("ROLE_USER")));
+  }
+
+  private String persistedUserToken() {
+    AccountEntity account = new AccountEntity();
+    account.setAccountId(UUID.randomUUID());
+    account.setAccountNames("Contrato");
+    account.setAccountLastNames("Errores");
+    account.setAccountEmail("contrato-" + UUID.randomUUID() + "@example.com");
+    account.setAccountPhone("3001234567");
+    account.setAccountPassword("hash-no-utilizado");
+    account = accountRepository.saveAndFlush(account);
+    return jwtService.generateToken(
+        account.getAccountId().toString(),
+        account.getAccountEmail(),
         List.of(new SimpleGrantedAuthority("ROLE_USER")));
   }
 

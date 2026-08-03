@@ -11,7 +11,6 @@ import org.adultofuncional.main.account.infrastructure.persistence.entity.Accoun
 import org.adultofuncional.main.account.infrastructure.persistence.repository.SpringAccountJpaRepository;
 import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEntity;
 import org.adultofuncional.main.agenda.infrastructure.persistence.repository.SpringEventJpaRepository;
-import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.enums.MovementType;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.MovementEntity;
@@ -59,8 +58,10 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
   void setUp() {
     accountA = persistAccount("ownership-a@example.com");
     accountB = persistAccount("ownership-b@example.com");
-    financeCategory = persistCategory("Servicios", CategoryType.FINANCES);
-    agendaCategory = persistCategory("Trabajo", CategoryType.AGENDA);
+    financeCategory = categoryRepository.findById(
+        UUID.fromString("01988e6b-0c00-7000-8000-000000000006")).orElseThrow();
+    agendaCategory = categoryRepository.findById(
+        UUID.fromString("01988e6b-0c00-7000-8000-000000000009")).orElseThrow();
   }
 
   @Test
@@ -131,14 +132,6 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
     return accountRepository.saveAndFlush(account);
   }
 
-  private CategoryEntity persistCategory(String name, CategoryType type) {
-    CategoryEntity category = new CategoryEntity();
-    category.setCategoryId(UUID.randomUUID());
-    category.setCategoryName(name);
-    category.setCategoryType(type.name());
-    return categoryRepository.saveAndFlush(category);
-  }
-
   private MovementEntity persistMovement(AccountEntity owner) {
     MovementEntity movement = new MovementEntity();
     movement.setMovementId(UUID.randomUUID());
@@ -176,6 +169,7 @@ class OwnershipPersistenceIntegrationTest extends MariaDbIntegrationTestSupport 
     credential.setPasswordSalt("c2FsdA==");
     credential.setPasswordIv(new byte[12]);
     credential.setPasswordCiphertext(new byte[] {1, 2, 3, 4});
+    credential.setPasswordCryptoVersion((short) 1);
     credential.setPasswordLastChangeDate(LocalDate.now());
     credential.setAccount(owner);
     return passwordRepository.saveAndFlush(credential);
