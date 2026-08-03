@@ -35,7 +35,7 @@ class DeletePasswordOwnershipUseCaseTest {
     UUID sessionId = UUID.randomUUID();
     UUID passwordId = UUID.randomUUID();
 
-    when(accountRepository.findById(accountId)).thenReturn(Optional.of(account(accountId)));
+    when(accountRepository.findByIdForUpdate(accountId)).thenReturn(Optional.of(account(accountId)));
     when(masterKeyService.find(accountId, sessionId)).thenReturn(unlocked());
     when(passwordRepository.deleteByIdAndAccountId(passwordId, accountId)).thenReturn(false);
 
@@ -58,7 +58,7 @@ class DeletePasswordOwnershipUseCaseTest {
     UUID sessionId = UUID.randomUUID();
     UUID passwordId = UUID.randomUUID();
 
-    when(accountRepository.findById(accountId)).thenReturn(Optional.of(account(accountId)));
+    when(accountRepository.findByIdForUpdate(accountId)).thenReturn(Optional.of(account(accountId)));
     when(masterKeyService.find(accountId, sessionId)).thenReturn(unlocked());
     when(passwordRepository.deleteByIdAndAccountId(passwordId, accountId)).thenReturn(true);
 
@@ -80,7 +80,7 @@ class DeletePasswordOwnershipUseCaseTest {
     UUID sessionId = UUID.randomUUID();
     UUID passwordId = UUID.randomUUID();
 
-    when(accountRepository.findById(accountId)).thenReturn(Optional.of(account(accountId)));
+    when(accountRepository.findByIdForUpdate(accountId)).thenReturn(Optional.of(account(accountId)));
     when(masterKeyService.find(accountId, sessionId)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> useCase.execute(accountId, sessionId, passwordId))
