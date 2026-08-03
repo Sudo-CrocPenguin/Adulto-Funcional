@@ -9,6 +9,7 @@ import org.adultofuncional.main.security.application.dto.PasswordUpdateRequest;
 import org.adultofuncional.main.security.domain.model.Password;
 import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.domain.service.EncryptionService;
+import org.adultofuncional.main.security.domain.service.EncryptionService.EncryptionContext;
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
 import org.adultofuncional.main.shared.exception.BusinessException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
@@ -101,19 +102,30 @@ public class UpdatePasswordUseCase {
     String newSalt = password.getSalt();
     byte[] newIv = password.getIv();
     byte[] newCiphertext = password.getCiphertext();
+    int newCryptoVersion = password.getCryptoVersion();
 
     // Si se envía nueva contraseña, cifrarla
     if (StringUtils.hasText(request.getPassword())) {
-      EncryptionService.EncryptedData data = encryptionService.encrypt(request.getPassword(), masterKey);
+      EncryptionService.EncryptedData data = encryptionService.encrypt(
+          request.getPassword(),
+          masterKey,
+          new EncryptionContext(accountId, password.getId()));
       newSalt = data.salt();
       newIv = data.iv();
       newCiphertext = data.ciphertext();
+      newCryptoVersion = data.cryptoVersion();
     }
 
     LocalDate newLastChangeDate = request.getLastChangeDate() != null ? request.getLastChangeDate()
         : (request.getPassword() != null ? LocalDate.now() : password.getLastChangeDate());
 
-    password.update(newApplicationName, newSalt, newIv, newCiphertext, newLastChangeDate);
+    password.update(
+        newApplicationName,
+        newSalt,
+        newCryptoVersion,
+        newIv,
+        newCiphertext,
+        newLastChangeDate);
 
     Password saved = passwordRepository.save(password);
 
