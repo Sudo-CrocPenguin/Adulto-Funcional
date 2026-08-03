@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import org.adultofuncional.main.shared.security.NoHtml;
 
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -83,8 +82,12 @@ public class EventRequest {
    * Obligatorio, debe ser la fecha actual o una fecha futura.
    */
   @NotNull(message = "La fecha del evento es obligatoria")
-  @FutureOrPresent(message = "La fecha no puede ser pasada")
   private LocalDate eventDate;
+
+  /** Zona IANA de las horas civiles. Si se omite, usa la zona configurada. */
+  @Size(max = 63, message = "La zona horaria no puede exceder 63 caracteres")
+  @NoHtml
+  private String zoneId;
 
   /**
    * Frecuencia de repetición en días.

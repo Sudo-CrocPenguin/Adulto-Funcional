@@ -1,5 +1,6 @@
 package org.adultofuncional.main.agenda.application.dto;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -81,6 +82,9 @@ public class EventResponse {
    */
   private LocalDate eventDate;
 
+  /** Zona IANA usada para interpretar las horas civiles. */
+  private String zoneId;
+
   /**
    * Frecuencia de repetición del evento en días.
    * {@code 0} indica evento único; valores positivos indican repetición
@@ -93,17 +97,26 @@ public class EventResponse {
    */
   private LocalDateTime reminder;
 
+  /** Instante UTC normalizado del recordatorio. */
+  private Instant reminderInstant;
+
   /**
    * Hora de inicio del evento.
    * Incluye fecha y hora para eventos que pueden extenderse por varios días.
    */
   private LocalDateTime startHour;
 
+  /** Instante UTC normalizado del inicio. */
+  private Instant startInstant;
+
   /**
    * Hora de finalización del evento.
    * Siempre es posterior a {@link #startHour}.
    */
   private LocalDateTime endHour;
+
+  /** Instante UTC normalizado del fin. */
+  private Instant endInstant;
 
   /**
    * Descripción detallada del evento.

@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -95,6 +96,33 @@ class EventInvariantHttpIntegrationTest extends MariaDbIntegrationTestSupport {
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.data.frequency").value(7))
         .andExpect(jsonPath("$.data.priority").value("Alta"));
+  }
+
+  @Test
+  void persistsTheIanaZoneAndExposesNormalizedUtcInstants() throws Exception {
+    Map<String, Object> request = validRequest();
+    ZoneId zone = ZoneId.of("Europe/Madrid");
+    request.put("zoneId", zone.getId());
+
+    mockMvc.perform(authorized(post("/api/agenda/events"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(json(request)))
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.data.zoneId").value(zone.getId()))
+        .andExpect(jsonPath("$.data.reminderInstant")
+            .value(start.minusHours(1).atZone(zone).toInstant().toString()))
+        .andExpect(jsonPath("$.data.startInstant")
+            .value(start.atZone(zone).toInstant().toString()))
+        .andExpect(jsonPath("$.data.endInstant")
+            .value(start.plusHours(1).atZone(zone).toInstant().toString()));
+
+    Map<String, Object> invalidZone = validRequest();
+    invalidZone.put("zoneId", "Zona/Desconocida");
+    mockMvc.perform(authorized(post("/api/agenda/events"))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(json(invalidZone)))
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.code").value("PARAMETER_INVALID"));
   }
 
   @Test

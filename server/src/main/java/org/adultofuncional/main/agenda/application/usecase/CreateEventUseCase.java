@@ -1,10 +1,12 @@
 package org.adultofuncional.main.agenda.application.usecase;
 
+import java.time.ZoneId;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.agenda.application.dto.EventRequest;
 import org.adultofuncional.main.agenda.application.dto.EventResponse;
+import org.adultofuncional.main.agenda.application.service.AgendaTimePolicy;
 import org.adultofuncional.main.agenda.domain.model.Event;
 import org.adultofuncional.main.agenda.domain.repository.EventRepository;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
@@ -60,6 +62,7 @@ public class CreateEventUseCase {
   private final EventRepository eventRepository;
   private final AccountRepository accountRepository;
   private final CategoryRepository categoryRepository;
+  private final AgendaTimePolicy timePolicy;
 
   /**
    * Ejecuta la creación de un nuevo evento.
@@ -97,6 +100,9 @@ public class CreateEventUseCase {
     String status = request.getStatus() != null && !request.getStatus().isBlank()
         ? request.getStatus()
         : "Pendiente";
+    ZoneId zoneId = timePolicy.resolve(request.getZoneId());
+    timePolicy.requirePresentOrFuture(request.getEventDate(), zoneId);
+
     // 4. Crear modelo de dominio
     Event event = Event.create(
         request.getTitle(),
@@ -107,6 +113,7 @@ public class CreateEventUseCase {
         request.getReminder(),
         request.getStartHour(),
         request.getEndHour(),
+        zoneId,
         status,
         categoryId,
         accountId);
@@ -141,10 +148,14 @@ public class CreateEventUseCase {
         .title(event.getTitle())
         .priority(event.getPriority())
         .eventDate(event.getDate())
+        .zoneId(event.getZoneId().getId())
         .frequency(event.getFrequency())
         .reminder(event.getReminder())
+        .reminderInstant(event.getReminderInstant())
         .startHour(event.getStartHour())
+        .startInstant(event.getStartInstant())
         .endHour(event.getEndHour())
+        .endInstant(event.getEndInstant())
         .description(event.getDescription())
         .status(event.getStatus())
         .category(categoryResponse)

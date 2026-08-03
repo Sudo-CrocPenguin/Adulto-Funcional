@@ -6,7 +6,6 @@ import java.util.UUID;
 
 import org.adultofuncional.main.shared.security.NoHtml;
 
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
@@ -81,8 +80,12 @@ public class EventUpdateRequest {
    * Nueva fecha calendario del evento.
    * Opcional, debe ser presente o futura si se proporciona.
    */
-  @FutureOrPresent(message = "La fecha no puede ser pasada")
   private LocalDate eventDate;
+
+  /** Nueva zona IANA; al cambiarla se recalculan los instantes UTC. */
+  @Size(max = 63, message = "La zona horaria no puede exceder 63 caracteres")
+  @NoHtml
+  private String zoneId;
 
   /**
    * Nueva frecuencia de repetición en días.

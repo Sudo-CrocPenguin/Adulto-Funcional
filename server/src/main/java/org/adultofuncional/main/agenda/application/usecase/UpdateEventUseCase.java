@@ -3,6 +3,7 @@ package org.adultofuncional.main.agenda.application.usecase;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.agenda.application.dto.EventResponse;
 import org.adultofuncional.main.agenda.application.dto.EventUpdateRequest;
+import org.adultofuncional.main.agenda.application.service.AgendaTimePolicy;
 import org.adultofuncional.main.agenda.domain.model.Event;
 import org.adultofuncional.main.agenda.domain.repository.EventRepository;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
@@ -16,6 +17,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.UUID;
 
 /**
@@ -51,6 +53,7 @@ public class UpdateEventUseCase {
 
   private final EventRepository eventRepository;
   private final CategoryRepository categoryRepository;
+  private final AgendaTimePolicy timePolicy;
 
   /**
    * Ejecuta la actualización parcial del evento.
@@ -82,6 +85,7 @@ public class UpdateEventUseCase {
     LocalDateTime endHour = event.getEndHour();
     String status = event.getStatus();
     UUID categoryId = event.getCategoryId();
+    ZoneId zoneId = event.getZoneId();
 
     // Aplicar cambios solo si el campo fue proporcionado
     if (StringUtils.hasText(request.getTitle())) {
@@ -92,6 +96,9 @@ public class UpdateEventUseCase {
     }
     if (request.getEventDate() != null) {
       date = request.getEventDate();
+    }
+    if (request.getZoneId() != null && !request.getZoneId().isBlank()) {
+      zoneId = timePolicy.resolve(request.getZoneId());
     }
     if (request.getFrequency() != null) {
       frequency = request.getFrequency();
@@ -124,8 +131,11 @@ public class UpdateEventUseCase {
       endHour = request.getEndHour();
     }
     // Actualizar el estado final; el dominio valida las combinaciones parciales.
+    if (request.getEventDate() != null) {
+      timePolicy.requirePresentOrFuture(date, zoneId);
+    }
     event.update(title, description, priority, date, frequency,
-        reminder, startHour, endHour, status, categoryId);
+        reminder, startHour, endHour, zoneId, status, categoryId);
 
     Event updated = eventRepository.save(event);
 
@@ -142,10 +152,14 @@ public class UpdateEventUseCase {
         .title(updated.getTitle())
         .priority(updated.getPriority())
         .eventDate(updated.getDate())
+        .zoneId(updated.getZoneId().getId())
         .frequency(updated.getFrequency())
         .reminder(updated.getReminder())
+        .reminderInstant(updated.getReminderInstant())
         .startHour(updated.getStartHour())
+        .startInstant(updated.getStartInstant())
         .endHour(updated.getEndHour())
+        .endInstant(updated.getEndInstant())
         .description(updated.getDescription())
         .status(updated.getStatus())
         .category(categoryResponse)
