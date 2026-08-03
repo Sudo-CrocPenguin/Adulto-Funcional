@@ -50,7 +50,10 @@ class CreateFixedExpenseUseCaseTest {
     Category category = Category.reconstitute(categoryId, "Servicios", CategoryType.FINANCES);
 
     when(accountRepository.findById(accountId)).thenReturn(Optional.of(account));
-    when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+    when(categoryRepository.findAccessibleByIdAndType(
+        accountId,
+        categoryId,
+        CategoryType.FINANCES)).thenReturn(Optional.of(category));
     when(fixedExpenseRepository.save(any(FixedExpense.class)))
         .thenAnswer(invocation -> invocation.getArgument(0));
 

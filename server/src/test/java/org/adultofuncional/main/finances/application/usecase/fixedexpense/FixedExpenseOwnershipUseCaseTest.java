@@ -105,7 +105,10 @@ class FixedExpenseOwnershipUseCaseTest {
 
     when(fixedExpenseRepository.findByIdAndAccountId(expenseId, accountId))
         .thenReturn(Optional.of(expense));
-    when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+    when(categoryRepository.findAccessibleByIdAndType(
+        accountId,
+        categoryId,
+        CategoryType.FINANCES)).thenReturn(Optional.of(category));
 
     FixedExpenseResponse response = useCase.execute(accountId, expenseId);
 
@@ -148,7 +151,10 @@ class FixedExpenseOwnershipUseCaseTest {
     when(fixedExpenseRepository.findByIdAndAccountId(expenseId, accountId))
         .thenReturn(Optional.of(expense));
     when(fixedExpenseRepository.save(expense)).thenReturn(expense);
-    when(categoryRepository.findById(categoryId)).thenReturn(Optional.of(category));
+    when(categoryRepository.findAccessibleByIdAndType(
+        accountId,
+        categoryId,
+        CategoryType.FINANCES)).thenReturn(Optional.of(category));
 
     FixedExpenseResponse response = useCase.execute(accountId, expenseId, request);
 
