@@ -120,7 +120,7 @@ public class AccountRepositoryImpl implements AccountRepository {
    */
   @Override
   public void deleteById(UUID id) {
-    jpaRepository.deleteById(id);
+    jpaRepository.deleteAccountById(id);
   }
 
   @Override

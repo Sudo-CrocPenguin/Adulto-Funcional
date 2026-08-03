@@ -3,6 +3,7 @@ package org.adultofuncional.main.account.infrastructure.persistence.repository;
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -51,4 +52,9 @@ public interface SpringAccountJpaRepository extends JpaRepository<AccountEntity,
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("SELECT account FROM AccountEntity account WHERE account.accountId = :accountId")
   Optional<AccountEntity> findByIdForUpdate(@Param("accountId") UUID accountId);
+
+  /** Elimina la raíz sin materializar sus colecciones; las FK aplican cascade. */
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = "DELETE FROM accounts WHERE account_id = :accountId", nativeQuery = true)
+  int deleteAccountById(@Param("accountId") UUID accountId);
 }

@@ -22,6 +22,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +49,9 @@ class AccountOwnershipHttpIntegrationTest extends MariaDbIntegrationTestSupport 
 
   @Autowired
   SpringAccountJpaRepository accountRepository;
+
+  @Autowired
+  PasswordEncoder passwordEncoder;
 
   AccountEntity owner;
   AccountEntity foreignAccount;
@@ -87,7 +91,9 @@ class AccountOwnershipHttpIntegrationTest extends MariaDbIntegrationTestSupport 
         .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
 
     mockMvc.perform(delete("/api/account/{id}", foreignAccount.getAccountId())
-            .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken))
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"currentPassword\":\"correct-password-for-tests\"}"))
         .andExpect(status().isNotFound())
         .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
 
@@ -103,6 +109,26 @@ class AccountOwnershipHttpIntegrationTest extends MariaDbIntegrationTestSupport 
         .andExpect(jsonPath("$.data.id").value(owner.getAccountId().toString()));
   }
 
+  @Test
+  void requiresTheCurrentPasswordBeforeDeletingTheOwnerAccount() throws Exception {
+    mockMvc.perform(delete("/api/account/{id}", owner.getAccountId())
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"currentPassword\":\"incorrect-password\"}"))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("REAUTHENTICATION_FAILED"));
+
+    assertThat(accountRepository.existsById(owner.getAccountId())).isTrue();
+
+    mockMvc.perform(delete("/api/account/{id}", owner.getAccountId())
+            .header(HttpHeaders.AUTHORIZATION, "Bearer " + ownerToken)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content("{\"currentPassword\":\"correct-password-for-tests\"}"))
+        .andExpect(status().isOk());
+
+    assertThat(accountRepository.existsById(owner.getAccountId())).isFalse();
+  }
+
   private AccountEntity persistAccount(String names) {
     AccountEntity account = new AccountEntity();
     account.setAccountId(UUID.randomUUID());
@@ -110,7 +136,7 @@ class AccountOwnershipHttpIntegrationTest extends MariaDbIntegrationTestSupport 
     account.setAccountLastNames("Prueba ownership");
     account.setAccountEmail("ownership-" + UUID.randomUUID() + "@example.com");
     account.setAccountPhone("3001234567");
-    account.setAccountPassword("hash-login-no-utilizado");
+    account.setAccountPassword(passwordEncoder.encode("correct-password-for-tests"));
     return accountRepository.saveAndFlush(account);
   }
 
