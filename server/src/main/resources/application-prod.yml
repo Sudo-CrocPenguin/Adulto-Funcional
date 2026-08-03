@@ -26,3 +26,4 @@ auth:
 master-key:
   session:
     secret: ${MASTER_KEY_SESSION_SECRET}
+    ttl: ${MASTER_KEY_SESSION_TTL:3600000}

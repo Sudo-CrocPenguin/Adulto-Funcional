@@ -16,6 +16,10 @@ auth:
     replay-window-seconds: 5
     refresh-token-bytes: 32
 
+master-key:
+  session:
+    ttl: 3600000
+
 APP_COOKIE_SECURE: false
 APP_COOKIE_SAME_SITE: Lax
 CORS_ALLOWED_ORIGINS: http://localhost:5173
