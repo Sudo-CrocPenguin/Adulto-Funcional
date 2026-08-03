@@ -10,8 +10,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -147,7 +147,7 @@ class MovementOwnershipUseCaseTest {
         accountId,
         "Compra",
         LocalDate.now(),
-        LocalDateTime.now().minusMinutes(1));
+        Instant.now().minusSeconds(60));
   }
 
   private Category category(UUID categoryId) {

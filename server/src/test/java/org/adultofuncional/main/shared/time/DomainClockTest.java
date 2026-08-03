@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
@@ -22,7 +21,6 @@ class DomainClockTest {
   void createsAccountsAndMovementsAtTheInjectedInstant() {
     Instant instant = Instant.parse("2026-08-03T17:30:45Z");
     Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
-    LocalDateTime expectedMovement = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
 
     Account account = Account.create(
         "Ada",
@@ -42,6 +40,6 @@ class DomainClockTest {
         clock);
 
     assertThat(account.getCreatedAt()).isEqualTo(instant);
-    assertThat(movement.getCreatedAt()).isEqualTo(expectedMovement);
+    assertThat(movement.getCreatedAt()).isEqualTo(instant);
   }
 }

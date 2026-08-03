@@ -2,9 +2,8 @@ package org.adultofuncional.main.finances.domain.model;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.domain.enums.MovementType;
@@ -89,14 +88,14 @@ public class Movement {
    * Fecha y hora exacta en que el movimiento fue registrado en el sistema.
    * Se genera automáticamente en {@link #create} y es inmutable.
    */
-  final LocalDateTime createdAt;
+  final Instant createdAt;
 
   /**
    * Constructor privado. Usar {@link #create} o {@link #reconstitute}.
    */
   private Movement(UUID id, MovementType type, BigDecimal amount,
       UUID categoryId, UUID accountId, String description, LocalDate date,
-      LocalDateTime createdAt) {
+      Instant createdAt) {
 
     validateId(id);
     validateType(type);
@@ -140,9 +139,8 @@ public class Movement {
       Clock clock) {
 
     UUID id = Generators.timeBasedEpochGenerator().generate();
-    LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
-
-    return new Movement(id, type, amount, categoryId, accountId, description, date, now);
+    return new Movement(
+        id, type, amount, categoryId, accountId, description, date, clock.instant());
   }
 
   /**
@@ -162,7 +160,7 @@ public class Movement {
   public static Movement reconstitute(UUID id, MovementType type,
       BigDecimal amount, UUID categoryId,
       UUID accountId, String description,
-      LocalDate date, LocalDateTime createdAt) {
+      LocalDate date, Instant createdAt) {
 
     return new Movement(id, type, amount, categoryId, accountId,
         description, date, createdAt);
@@ -238,7 +236,7 @@ public class Movement {
     }
   }
 
-  private static void validateCreatedAt(LocalDateTime createdAt) {
+  private static void validateCreatedAt(Instant createdAt) {
     if (createdAt == null) {
       throw new IllegalArgumentException("CreatedAt cannot be null");
     }

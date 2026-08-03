@@ -2,9 +2,8 @@ package org.adultofuncional.main.finances.infrastructure.persistence.entity;
 
 import java.math.BigDecimal;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
@@ -99,7 +98,7 @@ public class MovementEntity {
    * Se establece automáticamente en {@link #onCreate()} y no es modificable.
    */
   @Column(name = "movement_register_date", nullable = false, updatable = false)
-  private LocalDateTime movementRegisterDate;
+  private Instant movementRegisterDate;
 
   /**
    * Descripción opcional del movimiento.
@@ -145,7 +144,7 @@ public class MovementEntity {
   @PrePersist
   void ensureRegisterDate() {
     if (movementRegisterDate == null) {
-      movementRegisterDate = LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneOffset.UTC);
+      movementRegisterDate = Clock.systemUTC().instant();
     }
   }
 
