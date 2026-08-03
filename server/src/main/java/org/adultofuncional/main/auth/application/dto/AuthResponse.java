@@ -1,6 +1,5 @@
 package org.adultofuncional.main.auth.application.dto;
 
-import java.time.LocalDateTime;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -125,7 +124,7 @@ public class AuthResponse {
    * Fecha y hora de creación de la cuenta.
    * Corresponde a {@code account_created_at}.
    */
-  private LocalDateTime createdAt;
+  private Instant createdAt;
 
   /**
    * Indica si el usuario tiene configurada una Master Key.

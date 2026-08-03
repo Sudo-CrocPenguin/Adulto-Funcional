@@ -22,7 +22,7 @@ class DomainClockTest {
   void createsAccountsAndMovementsAtTheInjectedInstant() {
     Instant instant = Instant.parse("2026-08-03T17:30:45Z");
     Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
-    LocalDateTime expected = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+    LocalDateTime expectedMovement = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
 
     Account account = Account.create(
         "Ada",
@@ -41,7 +41,7 @@ class DomainClockTest {
         LocalDate.of(2026, 8, 3),
         clock);
 
-    assertThat(account.getCreatedAt()).isEqualTo(expected);
-    assertThat(movement.getCreatedAt()).isEqualTo(expected);
+    assertThat(account.getCreatedAt()).isEqualTo(instant);
+    assertThat(movement.getCreatedAt()).isEqualTo(expectedMovement);
   }
 }

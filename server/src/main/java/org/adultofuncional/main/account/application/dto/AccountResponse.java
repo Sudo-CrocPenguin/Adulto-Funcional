@@ -4,7 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.adultofuncional.main.shared.security.OwnedResource;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -49,5 +49,5 @@ public class AccountResponse implements OwnedResource {
   private final String phone;
 
   /** Fecha de creación de la cuenta. Corresponde a {@code account_created_at}. */
-  private final LocalDateTime createdAt;
+  private final Instant createdAt;
 }

@@ -54,7 +54,7 @@ class CreateFixedExpenseUseCaseTest {
         "Prueba",
         "usuario@example.com",
         "3001234567",
-        LocalDateTime.of(2026, 8, 2, 12, 0),
+        Instant.parse("2026-08-02T12:00:00Z"),
         "hash-password",
         null);
     Category category = Category.reconstitute(categoryId, "Servicios", CategoryType.FINANCES);
@@ -99,7 +99,7 @@ class CreateFixedExpenseUseCaseTest {
         "Prueba",
         "usuario@example.com",
         "+573001234567",
-        LocalDateTime.of(2026, 8, 2, 12, 0),
+        Instant.parse("2026-08-02T12:00:00Z"),
         "hash-password",
         null)));
 

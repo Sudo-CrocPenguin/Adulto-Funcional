@@ -96,7 +96,7 @@ class DeletePasswordOwnershipUseCaseTest {
         "Prueba",
         "usuario@example.com",
         "3001234567",
-        LocalDateTime.now().minusDays(1),
+        Instant.now().minusSeconds(86_400),
         "hash-password",
         "hash-master-key");
   }

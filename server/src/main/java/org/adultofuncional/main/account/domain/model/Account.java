@@ -1,8 +1,7 @@
 package org.adultofuncional.main.account.domain.model;
 
 import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.UUID;
 
 import com.fasterxml.uuid.Generators;
@@ -45,13 +44,13 @@ public class Account {
   String passwordHash;
   String masterKeyHash;
 
-  final LocalDateTime createdAt;
+  final Instant createdAt;
 
   /**
    * Constructor privado. Usar los métodos de fábrica.
    */
   private Account(UUID id, String names, String lastnames, String email,
-      String phone, LocalDateTime createdAt, String passwordHash, String masterKeyHash) {
+      String phone, Instant createdAt, String passwordHash, String masterKeyHash) {
 
     if (id != null) {
       validateId(id);
@@ -86,8 +85,7 @@ public class Account {
   public static Account create(String names, String lastnames,
       String email, String phone, String passwordHash, Clock clock) {
     UUID id = Generators.timeBasedEpochGenerator().generate(); // UUID v7
-    LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
-    return new Account(id, names, lastnames, email, phone, now, passwordHash, null);
+    return new Account(id, names, lastnames, email, phone, clock.instant(), passwordHash, null);
   }
 
   /**
@@ -113,8 +111,8 @@ public class Account {
   public static Account create(String names, String lastnames, String email,
       String phone, String passwordHash, String masterKeyHash, Clock clock) {
     UUID id = Generators.timeBasedEpochGenerator().generate();
-    LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
-    return new Account(id, names, lastnames, email, phone, now, passwordHash, masterKeyHash);
+    return new Account(
+        id, names, lastnames, email, phone, clock.instant(), passwordHash, masterKeyHash);
   }
 
   /**
@@ -130,7 +128,7 @@ public class Account {
    * @return instancia de Account reconstituida
    */
   public static Account reconstitute(UUID id, String names, String lastnames,
-      String email, String phone, LocalDateTime createdAt, String passwordHash, String masterKeyHash) {
+      String email, String phone, Instant createdAt, String passwordHash, String masterKeyHash) {
     return new Account(id, names, lastnames, email, phone, createdAt, passwordHash, masterKeyHash);
   }
 
@@ -185,7 +183,7 @@ public class Account {
     }
   }
 
-  private static void validateCreatedAt(LocalDateTime createdAt) {
+  private static void validateCreatedAt(Instant createdAt) {
     if (createdAt == null) {
       throw new IllegalArgumentException("CreatedAt cannot be null");
     }

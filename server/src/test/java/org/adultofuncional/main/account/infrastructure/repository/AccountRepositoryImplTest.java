@@ -6,7 +6,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.UUID;
 
@@ -25,7 +25,7 @@ class AccountRepositoryImplTest {
     AccountRepositoryImpl repository = new AccountRepositoryImpl(jpaRepository, new AccountMapper());
 
     UUID accountId = UUID.randomUUID();
-    LocalDateTime createdAt = LocalDateTime.now().minusDays(1);
+    Instant createdAt = Instant.now().minusSeconds(86_400);
     Account account = Account.reconstitute(
         accountId,
         "Nuevo",

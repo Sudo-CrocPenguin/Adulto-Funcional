@@ -1,8 +1,7 @@
 package org.adultofuncional.main.account.infrastructure.persistence.entity;
 
 import java.time.Clock;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -144,7 +143,7 @@ public class AccountEntity {
    * completa entidades parciales creadas por herramientas o fixtures antiguos.
    */
   @Column(name = "account_created_at", updatable = false)
-  private LocalDateTime accountCreatedAt;
+  private Instant accountCreatedAt;
   /**
    * Movimientos financieros asociados a esta cuenta.
    *
@@ -186,7 +185,7 @@ public class AccountEntity {
   @PrePersist
   void ensureCreatedAt() {
     if (accountCreatedAt == null) {
-      accountCreatedAt = LocalDateTime.ofInstant(Clock.systemUTC().instant(), ZoneOffset.UTC);
+      accountCreatedAt = Clock.systemUTC().instant();
     }
   }
 
