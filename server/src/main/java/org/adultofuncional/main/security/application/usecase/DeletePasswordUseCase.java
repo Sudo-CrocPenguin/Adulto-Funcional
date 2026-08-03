@@ -51,7 +51,7 @@ public class DeletePasswordUseCase {
    */
   @Transactional
   public void execute(UUID accountId, UUID sessionId, UUID passwordId) {
-    accountRepository.findById(accountId)
+    accountRepository.findByIdForUpdate(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
     if (masterKeyService.find(accountId, sessionId).isEmpty()) {
