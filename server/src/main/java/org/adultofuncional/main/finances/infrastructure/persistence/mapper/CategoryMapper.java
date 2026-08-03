@@ -1,6 +1,8 @@
 package org.adultofuncional.main.finances.infrastructure.persistence.mapper;
 
 import org.adultofuncional.main.finances.domain.enums.CategoryType;
+import org.adultofuncional.main.finances.domain.enums.CategoryScope;
+import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
 import org.springframework.stereotype.Component;
@@ -48,7 +50,10 @@ public class CategoryMapper {
     return Category.reconstitute(
         entity.getCategoryId(),
         entity.getCategoryName(),
-        CategoryType.valueOf(entity.getCategoryType()));
+        entity.getNormalizedName(),
+        CategoryType.valueOf(entity.getCategoryType()),
+        CategoryScope.valueOf(entity.getCategoryScope()),
+        entity.getOwnerAccount() == null ? null : entity.getOwnerAccount().getAccountId());
   }
 
   /**
@@ -69,7 +74,14 @@ public class CategoryMapper {
     CategoryEntity entity = new CategoryEntity();
     entity.setCategoryId(category.getId());
     entity.setCategoryName(category.getName());
+    entity.setNormalizedName(category.getNormalizedName());
     entity.setCategoryType(category.getType().name());
+    entity.setCategoryScope(category.getScope().name());
+    if (category.getOwnerAccountId() != null) {
+      AccountEntity owner = new AccountEntity();
+      owner.setAccountId(category.getOwnerAccountId());
+      entity.setOwnerAccount(owner);
+    }
 
     return entity;
   }
