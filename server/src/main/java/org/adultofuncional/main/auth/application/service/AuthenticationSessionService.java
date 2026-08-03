@@ -19,6 +19,7 @@ import org.adultofuncional.main.auth.domain.service.AccessTokenRevocationService
 import org.adultofuncional.main.config.security.AuthSessionProperties;
 import org.adultofuncional.main.config.security.IssuedAccessToken;
 import org.adultofuncional.main.config.security.JwtService;
+import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
 import org.adultofuncional.main.shared.exception.ConflictException;
 import org.adultofuncional.main.shared.exception.UnauthorizedException;
 import org.adultofuncional.main.shared.response.ApiErrorCode;
@@ -47,6 +48,7 @@ public class AuthenticationSessionService {
   private final JwtService jwtService;
   private final AuthSessionProperties properties;
   private final Clock clock;
+  private final MasterKeySessionService masterKeySessionService;
 
   /** Crea una nueva familia después de autenticar o registrar una cuenta. */
   @Transactional
@@ -100,12 +102,14 @@ public class AuthenticationSessionService {
     sessionRepository.findById(sessionId)
         .filter(session -> session.getAccountId().equals(accountId))
         .ifPresent(this::revoke);
+    masterKeySessionService.clear(accountId, sessionId);
   }
 
   /** Revoca todas las familias activas de una cuenta. */
   @Transactional
   public void revokeAll(UUID accountId) {
     sessionRepository.findActiveByAccountId(accountId).forEach(this::revoke);
+    masterKeySessionService.clearAll(accountId);
   }
 
   private SessionTokens rotateCurrent(AuthSession session) {
@@ -196,6 +200,7 @@ public class AuthenticationSessionService {
     session.revoke(clock.instant());
     sessionRepository.save(session);
     revocationService.revoke(session.getAccessTokenId(), session.getAccessExpiresAt());
+    masterKeySessionService.clear(session.getAccountId(), session.getId());
   }
 
   private UnauthorizedException invalidRefresh() {

@@ -71,17 +71,17 @@ public class CreatePasswordUseCase {
    *                            nombre de aplicación.
    */
   @Transactional
-  public PasswordResponse execute(UUID accountId, PasswordRequest request) {
+  public PasswordResponse execute(UUID accountId, UUID sessionId, PasswordRequest request) {
     // 1. Verificar cuenta
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
     // 2. Verificar Master Key en sesión
-    if (!masterKeySessionService.isVerified(accountId)) {
-      throw new ForbiddenException(
-          "Master Key no verificada",
-          ApiErrorCode.MASTER_KEY_REQUIRED);
-    }
+    String masterKey = masterKeySessionService.find(accountId, sessionId)
+        .map(MasterKeySessionService.UnlockedMasterKey::value)
+        .orElseThrow(() -> new ForbiddenException(
+            "Master Key no verificada",
+            ApiErrorCode.MASTER_KEY_REQUIRED));
 
     // 3. Verificar unicidad del nombre de aplicación por cuenta
     if (passwordRepository.existsByAccountIdAndApplicationName(accountId, request.getApplicationName())) {
@@ -90,7 +90,6 @@ public class CreatePasswordUseCase {
     }
 
     // 4. Cifrar contraseña con AES‑256
-    String masterKey = masterKeySessionService.getMasterKey(accountId);
     EncryptionService.EncryptedData encryptedData = encryptionService.encrypt(
         request.getPassword(), masterKey);
 

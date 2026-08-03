@@ -68,15 +68,19 @@ public class UpdatePasswordUseCase {
    * @throws BusinessException  si el nuevo nombre de aplicación ya existe.
    */
   @Transactional
-  public PasswordResponse execute(UUID accountId, UUID passwordId, PasswordUpdateRequest request) {
+  public PasswordResponse execute(
+      UUID accountId,
+      UUID sessionId,
+      UUID passwordId,
+      PasswordUpdateRequest request) {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    if (!masterKeyService.isVerified(accountId)) {
-      throw new ForbiddenException(
-          "Master Key no verificada",
-          ApiErrorCode.MASTER_KEY_REQUIRED);
-    }
+    String masterKey = masterKeyService.find(accountId, sessionId)
+        .map(MasterKeySessionService.UnlockedMasterKey::value)
+        .orElseThrow(() -> new ForbiddenException(
+            "Master Key no verificada",
+            ApiErrorCode.MASTER_KEY_REQUIRED));
 
     Password password = passwordRepository.findByIdAndAccountId(passwordId, accountId)
         .orElseThrow(() -> new NotFoundException("Contraseña no encontrada con id: " + passwordId));
@@ -100,7 +104,6 @@ public class UpdatePasswordUseCase {
 
     // Si se envía nueva contraseña, cifrarla
     if (StringUtils.hasText(request.getPassword())) {
-      String masterKey = masterKeyService.getMasterKey(accountId);
       EncryptionService.EncryptedData data = encryptionService.encrypt(request.getPassword(), masterKey);
       newSalt = data.salt();
       newIv = data.iv();

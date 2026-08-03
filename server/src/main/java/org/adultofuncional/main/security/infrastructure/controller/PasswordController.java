@@ -130,7 +130,10 @@ public class PasswordController {
           ApiErrorCode.MASTER_KEY_INVALID);
     }
 
-    masterKeySessionService.verify(accountId, providedMasterKey);
+    masterKeySessionService.unlock(
+        accountId,
+        authenticatedAccount.sessionId(),
+        providedMasterKey);
 
     return ResponseEntity.ok(
         ApiResponse.<Void>builder()
@@ -153,7 +156,10 @@ public class PasswordController {
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
-    PasswordResponse response = createPasswordUseCase.execute(accountId, request);
+    PasswordResponse response = createPasswordUseCase.execute(
+        accountId,
+        authenticatedAccount.sessionId(),
+        request);
 
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(new ApiResponse<>(HttpStatus.CREATED.value(),
@@ -172,7 +178,9 @@ public class PasswordController {
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
-    List<PasswordResponse> response = listPasswordsUseCase.execute(accountId);
+    List<PasswordResponse> response = listPasswordsUseCase.execute(
+        accountId,
+        authenticatedAccount.sessionId());
 
     return ResponseEntity.ok(
         new ApiResponse<>(HttpStatus.OK.value(),
@@ -194,7 +202,10 @@ public class PasswordController {
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
-    PasswordResponse response = getPasswordUseCase.execute(accountId, id);
+    PasswordResponse response = getPasswordUseCase.execute(
+        accountId,
+        authenticatedAccount.sessionId(),
+        id);
 
     return ResponseEntity.ok(
         new ApiResponse<>(HttpStatus.OK.value(),
@@ -222,7 +233,11 @@ public class PasswordController {
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
-    PasswordResponse response = updatePasswordUseCase.execute(accountId, id, request);
+    PasswordResponse response = updatePasswordUseCase.execute(
+        accountId,
+        authenticatedAccount.sessionId(),
+        id,
+        request);
 
     return ResponseEntity.ok(
         new ApiResponse<>(HttpStatus.OK.value(),
@@ -244,7 +259,10 @@ public class PasswordController {
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
     UUID accountId = resolveAccountId(authenticatedAccount);
-    deletePasswordUseCase.execute(accountId, id);
+    deletePasswordUseCase.execute(
+        accountId,
+        authenticatedAccount.sessionId(),
+        id);
 
     return ResponseEntity.ok(
         new ApiResponse<>(HttpStatus.OK.value(),

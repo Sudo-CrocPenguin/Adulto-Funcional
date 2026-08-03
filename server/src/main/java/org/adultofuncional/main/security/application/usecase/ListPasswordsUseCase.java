@@ -57,11 +57,11 @@ public class ListPasswordsUseCase {
    * @throws ForbiddenException si la Master Key no está verificada.
    */
   @Transactional(readOnly = true)
-  public List<PasswordResponse> execute(UUID accountId) {
+  public List<PasswordResponse> execute(UUID accountId, UUID sessionId) {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    if (!masterKeyService.isVerified(accountId)) {
+    if (masterKeyService.find(accountId, sessionId).isEmpty()) {
       throw new ForbiddenException(
           "Master Key no verificada",
           ApiErrorCode.MASTER_KEY_REQUIRED);

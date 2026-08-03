@@ -60,20 +60,19 @@ public class GetPasswordUseCase {
    * @throws ForbiddenException si la Master Key no está verificada.
    */
   @Transactional(readOnly = true)
-  public PasswordResponse execute(UUID accountId, UUID passwordId) {
+  public PasswordResponse execute(UUID accountId, UUID sessionId, UUID passwordId) {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    if (!masterKeyService.isVerified(accountId)) {
-      throw new ForbiddenException(
-          "Master Key no verificada",
-          ApiErrorCode.MASTER_KEY_REQUIRED);
-    }
+    String masterKey = masterKeyService.find(accountId, sessionId)
+        .map(MasterKeySessionService.UnlockedMasterKey::value)
+        .orElseThrow(() -> new ForbiddenException(
+            "Master Key no verificada",
+            ApiErrorCode.MASTER_KEY_REQUIRED));
 
     Password password = passwordRepository.findByIdAndAccountId(passwordId, accountId)
         .orElseThrow(() -> new NotFoundException("Contraseña no encontrada con id: " + passwordId));
 
-    String masterKey = masterKeyService.getMasterKey(accountId);
     String plainPassword = encryptionService.decrypt(
         password.getSalt(),
         password.getIv(),
