@@ -1,10 +1,12 @@
 package org.adultofuncional.main.agenda.domain.repository;
 
-import java.util.List;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.agenda.domain.model.Event;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
 /**
  * Puerto de dominio para la persistencia de eventos de agenda.
@@ -18,12 +20,10 @@ import org.adultofuncional.main.agenda.domain.model.Event;
  * <p>
  * <strong>Operaciones expuestas:</strong>
  * <ul>
- * <li>Búsqueda individual por ID.</li>
  * <li>Búsqueda por ID y cuenta propietaria (validación de propiedad).</li>
- * <li>Verificación de existencia por ID y cuenta.</li>
  * <li>Listado de todos los eventos de una cuenta.</li>
  * <li>Persistencia de nuevos eventos o actualización de existentes.</li>
- * <li>Eliminación por ID.</li>
+ * <li>Eliminación limitada por ID y cuenta propietaria.</li>
  * </ul>
  *
  * @author Daniel Salazar
@@ -32,15 +32,6 @@ import org.adultofuncional.main.agenda.domain.model.Event;
  * @see org.adultofuncional.main.agenda.infrastructure.repository.EventRepositoryImpl
  */
 public interface EventRepository {
-
-  /**
-   * Busca un evento por su identificador único.
-   *
-   * @param id UUID del evento. No debe ser {@code null}.
-   * @return {@link Optional} con el evento si existe;
-   *         {@code Optional.empty()} en caso contrario.
-   */
-  Optional<Event> findById(UUID id);
 
   /**
    * Busca un evento por su identificador y la cuenta propietaria.
@@ -57,28 +48,23 @@ public interface EventRepository {
   Optional<Event> findByIdAndAccountId(UUID eventId, UUID accountId);
 
   /**
-   * Verifica si existe un evento con el ID dado y que pertenezca a la cuenta
-   * indicada.
-   *
-   * @param eventId   UUID del evento. No debe ser {@code null}.
-   * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return {@code true} si el evento existe y pertenece a la cuenta.
-   */
-  boolean existsByIdAndAccountId(UUID eventId, UUID accountId);
-
-  /**
-   * Lista todos los eventos asociados a una cuenta específica.
+   * Consulta una página de eventos de una cuenta específica.
    *
    * <p>
-   * Utilizado por el caso de uso de listado para recuperar el conjunto
-   * completo de eventos de una cuenta, sobre el cual se aplican filtros
-   * adicionales en memoria.
+   * Ownership, rango, filtros, orden y límite se ejecutan en persistencia para
+   * no materializar la agenda completa.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return lista de eventos de la cuenta. Puede ser vacía si no hay
-   *         registros.
+   * @return página de eventos y sus totales.
    */
-  List<Event> findAllByAccountId(UUID accountId);
+  PageResult<Event> findPageByAccountId(
+      UUID accountId,
+      String status,
+      String priority,
+      UUID categoryId,
+      LocalDate startDate,
+      LocalDate endDate,
+      PageQuery pageQuery);
 
   /**
    * Persiste un evento nuevo o actualiza uno existente.
@@ -94,14 +80,11 @@ public interface EventRepository {
   Event save(Event event);
 
   /**
-   * Elimina un evento por su identificador único.
+   * Elimina un evento únicamente cuando pertenece a la cuenta indicada.
    *
-   * <p>
-   * Si no existe un evento con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso). La validación de existencia previa se
-   * realiza en la capa de aplicación.
-   *
-   * @param id UUID del evento a eliminar. No debe ser {@code null}.
+   * @param eventId   UUID del evento
+   * @param accountId UUID de la cuenta propietaria
+   * @return {@code true} cuando se eliminó una fila
    */
-  void deleteById(UUID id);
+  boolean deleteByIdAndAccountId(UUID eventId, UUID accountId);
 }

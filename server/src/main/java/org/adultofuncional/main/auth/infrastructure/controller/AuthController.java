@@ -1,16 +1,33 @@
 package org.adultofuncional.main.auth.infrastructure.controller;
 
+import java.util.Arrays;
+import java.util.Locale;
+
 import org.adultofuncional.main.auth.application.dto.AuthResponse;
+import org.adultofuncional.main.auth.application.dto.CsrfResponse;
 import org.adultofuncional.main.auth.application.dto.LoginRequest;
+import org.adultofuncional.main.auth.application.dto.RefreshRequest;
 import org.adultofuncional.main.auth.application.dto.RegisterRequest;
 import org.adultofuncional.main.auth.application.usecase.LoginUseCase;
+import org.adultofuncional.main.auth.application.usecase.RefreshSessionUseCase;
 import org.adultofuncional.main.auth.application.usecase.RegisterUseCase;
+import org.adultofuncional.main.auth.application.usecase.RevokeAllSessionsUseCase;
+import org.adultofuncional.main.auth.application.usecase.RevokeCurrentSessionUseCase;
+import org.adultofuncional.main.config.security.AuthenticatedAccount;
 import org.adultofuncional.main.config.security.ClientTypeResolver;
 import org.adultofuncional.main.config.security.CookieUtils;
-import org.adultofuncional.main.config.security.JwtService;
+import org.adultofuncional.main.shared.exception.UnauthorizedException;
+import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.adultofuncional.main.shared.response.ApiResponse;
+import org.adultofuncional.main.shared.ratelimit.RateLimitGuard;
+import org.adultofuncional.main.shared.ratelimit.RateLimitPolicy;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.web.csrf.CsrfToken;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +43,7 @@ import lombok.RequiredArgsConstructor;
  * Controlador REST del módulo de autenticación.
  *
  * <p>
- * Expone los endpoints públicos para login, registro y logout de usuarios.
+ * Expone login, registro, refresh, logout y revocación de sesiones.
  * Delega la lógica de negocio a los casos de uso correspondientes y
  * coordina la entrega del JWT según el tipo de cliente detectado por
  * {@link ClientTypeResolver}.
@@ -33,13 +51,11 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Estrategia de entrega del JWT:</strong>
  * <ul>
- * <li>El token siempre se establece en una cookie {@code HttpOnly} mediante
- * {@link CookieUtils}, independientemente del tipo de cliente.</li>
- * <li>Los clientes nativos (móvil/desktop) identificados por
- * {@link ClientTypeResolver#isNativeClient} reciben además el token
- * en el body de la respuesta para facilitar su almacenamiento fuera
- * del navegador.</li>
- * <li>Los clientes web reciben el body sin token — deben usar la cookie.</li>
+ * <li>Los clientes web reciben access y refresh en cookies {@code HttpOnly};
+ * el body omite ambos valores.</li>
+ * <li>Los clientes nativos identificados por
+ * {@link ClientTypeResolver#isNativeClient} reciben ambos tokens en el body y
+ * no reciben cookies de autenticación.</li>
  * </ul>
  *
  * <p>
@@ -49,9 +65,8 @@ import lombok.RequiredArgsConstructor;
  * scripts maliciosos.
  *
  * <p>
- * Todas las rutas están bajo el prefijo {@code /api/auth} y son públicas
- * (no requieren autenticación previa). Ver
- * {@link org.adultofuncional.main.config.security.SecurityConfig}.
+ * Las rutas están bajo {@code /api/auth}. CSRF, login, registro y refresh son
+ * públicas; logout y revocación requieren un access token válido.
  *
  * @author Lydis Esther Jaraba, Juan Sebastian Rios
  * @since 0.0.1
@@ -67,9 +82,25 @@ public class AuthController {
 
   private final LoginUseCase loginUseCase;
   private final RegisterUseCase registerUseCase;
+  private final RefreshSessionUseCase refreshSessionUseCase;
+  private final RevokeCurrentSessionUseCase revokeCurrentSessionUseCase;
+  private final RevokeAllSessionsUseCase revokeAllSessionsUseCase;
   private final CookieUtils cookieUtils;
-  private final JwtService jwtService;
   private final ClientTypeResolver clientTypeResolver;
+  private final RateLimitGuard rateLimitGuard;
+
+  /** Materializa el token CSRF y su cookie para clientes web. */
+  @GetMapping("/csrf")
+  public ResponseEntity<ApiResponse<CsrfResponse>> csrf(CsrfToken csrfToken) {
+    return ResponseEntity.ok(ApiResponse.<CsrfResponse>builder()
+        .status(HttpStatus.OK.value())
+        .message("Token CSRF generado")
+        .data(new CsrfResponse(
+            csrfToken.getToken(),
+            csrfToken.getHeaderName(),
+            csrfToken.getParameterName()))
+        .build());
+  }
 
   /**
    * Inicia sesión con las credenciales del usuario.
@@ -93,12 +124,28 @@ public class AuthController {
       HttpServletRequest httpRequest,
       HttpServletResponse response) {
 
-    AuthResponse auth = loginUseCase.execute(request);
-    cookieUtils.addTokenCookie(response, auth.getToken(), jwtService.getExpiration());
+    String address = clientAddress(httpRequest);
+    String normalizedEmail = request.getEmail().strip().toLowerCase(Locale.ROOT);
+    rateLimitGuard.check(RateLimitPolicy.LOGIN_IP, address);
+    rateLimitGuard.check(RateLimitPolicy.LOGIN_ACCOUNT, normalizedEmail);
 
-    AuthResponse responseData = clientTypeResolver.isNativeClient(httpRequest)
-        ? auth
-        : auth.withoutToken();
+    AuthResponse auth;
+    try {
+      auth = loginUseCase.execute(request);
+    } catch (UnauthorizedException exception) {
+      rateLimitGuard.recordFailure(RateLimitPolicy.LOGIN_ACCOUNT, normalizedEmail);
+      rateLimitGuard.recordFailure(RateLimitPolicy.LOGIN_IP, address);
+      rateLimitGuard.check(RateLimitPolicy.LOGIN_ACCOUNT, normalizedEmail);
+      rateLimitGuard.check(RateLimitPolicy.LOGIN_IP, address);
+      throw exception;
+    }
+    rateLimitGuard.reset(RateLimitPolicy.LOGIN_ACCOUNT, normalizedEmail);
+    writeNoStoreHeaders(response);
+    boolean nativeClient = clientTypeResolver.isNativeClient(httpRequest);
+    if (!nativeClient) {
+      writeAuthenticationCookies(response, auth);
+    }
+    AuthResponse responseData = nativeClient ? auth : auth.withoutToken();
 
     return ResponseEntity.ok(
         ApiResponse.<AuthResponse>builder()
@@ -131,12 +178,14 @@ public class AuthController {
       HttpServletRequest httpRequest,
       HttpServletResponse response) {
 
+    rateLimitGuard.consume(RateLimitPolicy.REGISTER_IP, clientAddress(httpRequest));
     AuthResponse auth = registerUseCase.execute(request);
-    cookieUtils.addTokenCookie(response, auth.getToken(), jwtService.getExpiration());
-
-    AuthResponse responseData = clientTypeResolver.isNativeClient(httpRequest)
-        ? auth
-        : auth.withoutToken();
+    writeNoStoreHeaders(response);
+    boolean nativeClient = clientTypeResolver.isNativeClient(httpRequest);
+    if (!nativeClient) {
+      writeAuthenticationCookies(response, auth);
+    }
+    AuthResponse responseData = nativeClient ? auth : auth.withoutToken();
 
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(ApiResponse.<AuthResponse>builder()
@@ -147,23 +196,123 @@ public class AuthController {
   }
 
   /**
-   * Cierra la sesión del usuario eliminando la cookie de autenticación.
+   * Cierra la sesión del usuario eliminando la cookie de autenticación y la
+   * Master Key verificada en el gestor de contraseñas.
    *
    * <p>
    * Instruye al navegador a invalidar la cookie {@code token} estableciendo
-   * {@code Max-Age=0}. No requiere body ni autenticación activa — es seguro
-   * llamarlo aunque el token ya haya expirado.
+   * {@code Max-Age=0}. Si el request incluye un JWT válido, también elimina la
+   * Master Key efímera asociada a esa cuenta.
    *
+   * @param authenticatedAccount principal autenticado cuando el JWT sigue vigente
    * @param response respuesta HTTP donde se escribe el header de limpieza
    * @return 200 OK con un {@link ApiResponse} de confirmación
    */
   @PostMapping("/logout")
-  public ResponseEntity<ApiResponse<Void>> logout(HttpServletResponse response) {
-    cookieUtils.clearTokenCookie(response);
+  public ResponseEntity<ApiResponse<Void>> logout(
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount,
+      HttpServletResponse response) {
+    if (authenticatedAccount != null) {
+      revokeCurrentSessionUseCase.execute(
+          authenticatedAccount.accountId(),
+          authenticatedAccount.sessionId());
+    }
+    cookieUtils.clearAuthenticationCookies(response);
     return ResponseEntity.ok(
         ApiResponse.<Void>builder()
             .status(HttpStatus.OK.value())
             .message("Sesión cerrada exitosamente")
             .build());
+  }
+
+  /** Rota el refresh token presentado por cookie web o cuerpo nativo. */
+  @PostMapping("/refresh")
+  public ResponseEntity<ApiResponse<AuthResponse>> refresh(
+      @Valid @RequestBody(required = false) RefreshRequest request,
+      HttpServletRequest httpRequest,
+      HttpServletResponse response) {
+    rateLimitGuard.consume(RateLimitPolicy.REFRESH_IP, clientAddress(httpRequest));
+    String refreshToken = request != null && request.getRefreshToken() != null
+        ? request.getRefreshToken()
+        : extractCookie(httpRequest, CookieUtils.REFRESH_TOKEN_COOKIE);
+    if (refreshToken == null || refreshToken.isBlank()) {
+      throw new UnauthorizedException(
+          "Refresh token inválido",
+          ApiErrorCode.REFRESH_TOKEN_INVALID);
+    }
+
+    AuthResponse auth = refreshSessionUseCase.execute(refreshToken);
+    writeNoStoreHeaders(response);
+    boolean nativeClient = clientTypeResolver.isNativeClient(httpRequest);
+    if (!nativeClient) {
+      writeAuthenticationCookies(response, auth);
+    }
+    AuthResponse responseData = nativeClient ? auth : auth.withoutToken();
+    return ResponseEntity.ok(
+        ApiResponse.<AuthResponse>builder()
+            .status(HttpStatus.OK.value())
+            .message("Sesión renovada exitosamente")
+            .data(responseData)
+            .build());
+  }
+
+  /** Revoca la sesión representada por el access token actual. */
+  @DeleteMapping("/sessions/current")
+  public ResponseEntity<ApiResponse<Void>> revokeCurrent(
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount,
+      HttpServletResponse response) {
+    revokeCurrentSessionUseCase.execute(
+        authenticatedAccount.accountId(),
+        authenticatedAccount.sessionId());
+    cookieUtils.clearAuthenticationCookies(response);
+    return ResponseEntity.ok(ApiResponse.<Void>builder()
+        .status(HttpStatus.OK.value())
+        .message("Sesión actual revocada")
+        .build());
+  }
+
+  /** Revoca todas las sesiones activas pertenecientes a la cuenta. */
+  @DeleteMapping("/sessions")
+  public ResponseEntity<ApiResponse<Void>> revokeAll(
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount,
+      HttpServletResponse response) {
+    revokeAllSessionsUseCase.execute(authenticatedAccount.accountId());
+    cookieUtils.clearAuthenticationCookies(response);
+    return ResponseEntity.ok(ApiResponse.<Void>builder()
+        .status(HttpStatus.OK.value())
+        .message("Todas las sesiones fueron revocadas")
+        .build());
+  }
+
+  private void writeAuthenticationCookies(HttpServletResponse response, AuthResponse auth) {
+    cookieUtils.addAuthenticationCookies(
+        response,
+        auth.getToken(),
+        auth.getExpiresIn(),
+        auth.getRefreshToken(),
+        auth.getRefreshExpiresIn());
+  }
+
+  private void writeNoStoreHeaders(HttpServletResponse response) {
+    response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, max-age=0, must-revalidate");
+    response.setHeader(HttpHeaders.PRAGMA, "no-cache");
+    response.setDateHeader(HttpHeaders.EXPIRES, 0L);
+  }
+
+  private String extractCookie(HttpServletRequest request, String name) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies == null) {
+      return null;
+    }
+    return Arrays.stream(cookies)
+        .filter(cookie -> name.equals(cookie.getName()))
+        .map(Cookie::getValue)
+        .findFirst()
+        .orElse(null);
+  }
+
+  private String clientAddress(HttpServletRequest request) {
+    String address = request.getRemoteAddr();
+    return address == null || address.isBlank() ? "unknown" : address;
   }
 }

@@ -1,5 +1,6 @@
 package org.adultofuncional.main.finances.application.usecase.fixedexpense;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -7,6 +8,8 @@ import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.CreateFixedExpenseRequest;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse;
+import org.adultofuncional.main.finances.domain.enums.Status;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
@@ -23,10 +26,12 @@ import org.springframework.transaction.annotation.Transactional;
  * Reglas de negocio:
  * <ul>
  * <li>La cuenta debe existir en el módulo de cuentas.</li>
- * <li>La categoría asociada debe existir.</li>
- * <li>La fecha de cierre debe ser posterior a la fecha actual.</li>
- * <li>La fecha de inicio se establece como la fecha actual y los días de
- * recordatorio se inicializan en 0 automáticamente.</li>
+ * <li>La categoría debe ser accesible para la cuenta y de tipo
+ * {@code FINANCES}.</li>
+ * <li>El estado inicial solicitado se aplica al modelo de dominio.</li>
+ * <li>El próximo vencimiento debe ser posterior a la fecha actual.</li>
+ * <li>Si se omiten, la fecha de inicio usa el día actual y los días de
+ * recordatorio usan cero.</li>
  * </ul>
  *
  * <p>
@@ -54,6 +59,9 @@ public class CreateFixedExpenseUseCase {
   /** Puerto de dominio para la consulta de categorías. */
   private final CategoryRepository categoryRepository;
 
+  /** Reloj que define el día actual de las reglas de negocio. */
+  private final Clock clock;
+
   /**
    * Ejecuta la creación de un nuevo gasto fijo.
    *
@@ -62,36 +70,44 @@ public class CreateFixedExpenseUseCase {
    * @return {@link FixedExpenseResponse} con los datos del gasto creado,
    *         incluyendo la categoría asociada.
    * @throws NotFoundException si la cuenta o la categoría no existen.
-   * @throws BusinessException si la fecha de cierre no es futura.
+   * @throws BusinessException si el próximo vencimiento no es futuro.
    */
   @Transactional
   public FixedExpenseResponse execute(UUID accountId, CreateFixedExpenseRequest request) {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    if (request.getNextDueDate().isBefore(LocalDate.now())) {
+    LocalDate today = LocalDate.now(clock);
+    if (!request.getNextDueDate().isAfter(today)) {
       throw new BusinessException("La fecha de cierre debe ser posterior a la fecha actual");
     }
 
-    Category category = categoryRepository.findById(request.getCategoryId())
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            request.getCategoryId(),
+            CategoryType.FINANCES)
         .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + request.getCategoryId()));
 
+    LocalDate startDate = request.getStartDate() == null ? today : request.getStartDate();
+    int reminderDays = request.getReminderDays() == null ? 0 : request.getReminderDays();
     FixedExpense expense = FixedExpense.create(
         request.getName(),
         request.getAmount(),
         request.getCategoryId(),
         accountId,
         request.getFrequency(),
-        LocalDate.now(),
+        startDate,
         request.getNextDueDate(),
-        0);
+        reminderDays);
+    applyInitialStatus(expense, request.getStatus());
 
     FixedExpense saved = fixedExpenseRepository.save(expense);
 
     CategoryResponse categoryResponse = CategoryResponse.builder()
         .id(category.getId())
-        .name(saved.getName())
+        .name(category.getName())
         .type(category.getType())
+        .scope(category.getScope())
         .build();
 
     return FixedExpenseResponse.builder()
@@ -100,8 +116,19 @@ public class CreateFixedExpenseUseCase {
         .frequency(saved.getFrequency())
         .amount(saved.getAmount())
         .status(saved.getStatus())
+        .startDate(saved.getStartDate())
+        .reminderDays(saved.getReminderDays())
         .nextDueDate(saved.getNextDueDate())
         .category(categoryResponse)
         .build();
+  }
+
+  private void applyInitialStatus(FixedExpense expense, Status status) {
+    if (Status.INACTIVE.equals(status)) {
+      expense.deactivate();
+      return;
+    }
+
+    expense.activate();
   }
 }

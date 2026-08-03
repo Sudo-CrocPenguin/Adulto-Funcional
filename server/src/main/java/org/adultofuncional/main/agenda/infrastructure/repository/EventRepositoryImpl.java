@@ -1,6 +1,7 @@
 package org.adultofuncional.main.agenda.infrastructure.repository;
 
-import java.util.List;
+import java.time.LocalDate;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -9,6 +10,11 @@ import org.adultofuncional.main.agenda.domain.repository.EventRepository;
 import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEntity;
 import org.adultofuncional.main.agenda.infrastructure.persistence.mapper.EventMapper;
 import org.adultofuncional.main.agenda.infrastructure.persistence.repository.SpringEventJpaRepository;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -25,19 +31,15 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Métodos implementados:</strong>
  * <ul>
- * <li>{@link #findById(UUID)} — busca un evento por ID y lo convierte a
- * dominio.</li>
  * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca un evento por ID y
  * cuenta,
  * garantizando propiedad.</li>
- * <li>{@link #existsByIdAndAccountId(UUID, UUID)} — verifica existencia por ID
- * y cuenta.</li>
- * <li>{@link #findAllByAccountId(UUID)} — lista todos los eventos de una
- * cuenta.</li>
+ * <li>Consulta páginas filtradas y ordenadas dentro de una cuenta.</li>
  * <li>{@link #save(Event)} — persiste un evento nuevo o actualizado,
  * devolviendo el
  * modelo de dominio resultante.</li>
- * <li>{@link #deleteById(UUID)} — elimina un evento por su ID.</li>
+ * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina un evento por ID y
+ * cuenta.</li>
  * </ul>
  *
  * @author Jeronimo Ospina Zapata
@@ -50,24 +52,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class EventRepositoryImpl implements EventRepository {
 
+  private static final Map<String, String> SORT_FIELDS = Map.of(
+      "eventDate", "eventDate",
+      "startHour", "eventStartHour",
+      "priority", "eventPriority",
+      "status", "eventStatus",
+      "title", "eventTitle",
+      "id", "eventId");
+
   private final SpringEventJpaRepository jpaRepository;
   private final EventMapper mapper;
-
-  /**
-   * Busca un evento por su identificador único.
-   *
-   * <p>
-   * Consulta el repositorio Spring Data JPA y convierte la entidad resultante
-   * al modelo de dominio mediante {@link EventMapper#toDomain(EventEntity)}.
-   *
-   * @param id UUID del evento. No debe ser {@code null}.
-   * @return {@link Optional} con el evento si existe;
-   *         {@code Optional.empty()} en caso contrario.
-   */
-  @Override
-  public Optional<Event> findById(UUID id) {
-    return jpaRepository.findById(id).map(mapper::toDomain);
-  }
 
   /**
    * Busca un evento por su ID y el ID de la cuenta propietaria.
@@ -88,34 +82,47 @@ public class EventRepositoryImpl implements EventRepository {
   }
 
   /**
-   * Verifica si existe un evento con el ID dado y que pertenezca a la cuenta.
-   *
-   * @param eventId   UUID del evento. No debe ser {@code null}.
-   * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return {@code true} si el evento existe y pertenece a la cuenta.
-   */
-  @Override
-  public boolean existsByIdAndAccountId(UUID eventId, UUID accountId) {
-    return jpaRepository.existsByEventIdAndAccount_AccountId(eventId, accountId);
-  }
-
-  /**
-   * Lista todos los eventos asociados a una cuenta específica.
+   * Consulta una página acotada de eventos.
    *
    * <p>
-   * Utiliza el método {@code findByAccount_AccountId} de Spring Data JPA
-   * para recuperar las entidades y luego las convierte una a una al modelo
-   * de dominio {@link Event} mediante el mapper.
+   * Traduce el campo lógico a la propiedad JPA, añade el UUID como desempate
+   * y ejecuta filtros y límites directamente en MariaDB.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
    * @return lista de eventos de la cuenta (vacía si no hay registros).
    */
   @Override
-  public List<Event> findAllByAccountId(UUID accountId) {
-    return jpaRepository.findByAccount_AccountId(accountId)
-        .stream()
-        .map(mapper::toDomain)
-        .toList();
+  public PageResult<Event> findPageByAccountId(
+      UUID accountId,
+      String status,
+      String priority,
+      UUID categoryId,
+      LocalDate startDate,
+      LocalDate endDate,
+      PageQuery pageQuery) {
+    String entitySortField = SORT_FIELDS.get(pageQuery.sortBy());
+    Sort.Direction direction = pageQuery.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort sort = Sort.by(direction, entitySortField);
+    if (!entitySortField.equals("eventId")) {
+      sort = sort.and(Sort.by(direction, "eventId"));
+    }
+    PageRequest pageable = PageRequest.of(pageQuery.number(), pageQuery.size(), sort);
+    Page<EventEntity> page = jpaRepository.findPageByAccountId(
+        accountId,
+        status,
+        priority,
+        categoryId,
+        startDate,
+        endDate,
+        pageable);
+    return new PageResult<>(
+        page.getContent().stream().map(mapper::toDomain).toList(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.hasNext(),
+        page.hasPrevious());
   }
 
   /**
@@ -133,22 +140,17 @@ public class EventRepositoryImpl implements EventRepository {
   @Override
   public Event save(Event event) {
     EventEntity entity = mapper.toEntity(event);
+    jpaRepository.findById(event.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     EventEntity savedEntity = jpaRepository.save(entity);
     return mapper.toDomain(savedEntity);
   }
 
   /**
-   * Elimina un evento por su identificador único.
-   *
-   * <p>
-   * Si no existe ningún evento con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso de Spring Data JPA). La validación de existencia
-   * previa se realiza en la capa de aplicación.
-   *
-   * @param id UUID del evento a eliminar. No debe ser {@code null}.
+   * Elimina un evento por identificador y cuenta en una sola sentencia.
    */
   @Override
-  public void deleteById(UUID id) {
-    jpaRepository.deleteById(id);
+  public boolean deleteByIdAndAccountId(UUID eventId, UUID accountId) {
+    return jpaRepository.deleteByEventIdAndAccountId(eventId, accountId) > 0;
   }
 }

@@ -154,8 +154,7 @@ public class MovementFilterRequest {
    * Campo opcional que indica qué página de resultados se desea obtener,
    * siendo {@code 0} la primera página. Se utiliza en conjunto con
    * {@code size} para construir la consulta paginada.
-   * Si es {@code null}, la capa de aplicación aplica el número de página
-   * por defecto.
+   * Si es {@code null}, se usa 0. No admite valores negativos.
    */
   private Integer page;
 
@@ -166,8 +165,7 @@ public class MovementFilterRequest {
    * Campo opcional que indica cuántos movimientos deben retornarse
    * por página. Se utiliza en conjunto con {@code page} para construir
    * la consulta paginada.
-   * Si es {@code null}, la capa de aplicación aplica el tamaño de página
-   * por defecto.
+   * Si es {@code null}, se usa 20; el máximo permitido es 100.
    */
   private Integer size;
 }

@@ -40,6 +40,9 @@ public interface AccountRepository {
    */
   Optional<Account> findById(UUID id);
 
+  /** Obtiene la cuenta con bloqueo exclusivo para mutaciones sensibles. */
+  Optional<Account> findByIdForUpdate(UUID id);
+
   /**
    * Busca una cuenta por su correo electrónico.
    *

@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.security.domain.model.Password;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
 /**
  * Puerto de dominio para la persistencia de credenciales almacenadas.
@@ -18,10 +20,10 @@ import org.adultofuncional.main.security.domain.model.Password;
  * <p>
  * <strong>Operaciones expuestas:</strong>
  * <ul>
- * <li>Búsqueda individual por ID.</li>
+ * <li>Búsqueda individual limitada por ID y cuenta propietaria.</li>
  * <li>Listado de todas las credenciales de una cuenta.</li>
  * <li>Persistencia de nuevas credenciales o actualización de existentes.</li>
- * <li>Eliminación por ID.</li>
+ * <li>Eliminación limitada por ID y cuenta propietaria.</li>
  * </ul>
  *
  * @author Daniel Salazar, Juan Sebastian Rios
@@ -32,21 +34,18 @@ import org.adultofuncional.main.security.domain.model.Password;
 public interface PasswordRepository {
 
   /**
-   * Busca una credencial por su identificador único.
-   *
-   * @param id UUID de la credencial. No debe ser {@code null}.
-   * @return {@link Optional} con la credencial si existe;
-   *         {@code Optional.empty()} en caso contrario.
-   */
-  Optional<Password> findById(UUID id);
-
-  /**
-   * Lista todas las credenciales asociadas a una cuenta específica.
+   * Lista todas las credenciales para el recifrado transaccional de Master Key.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return lista de credenciales de la cuenta (vacía si no hay registros).
+   * @return bóveda completa; no debe usarse desde endpoints de listado.
    */
   List<Password> findAllByAccountId(UUID accountId);
+
+  /** Página pública acotada; la lectura completa se reserva para recifrado. */
+  PageResult<Password> findPageByAccountId(
+      UUID accountId,
+      String searchTerm,
+      PageQuery pageQuery);
 
   /**
    * Persiste una credencial nueva o actualiza una existente.
@@ -61,19 +60,6 @@ public interface PasswordRepository {
   Password save(Password password);
 
   /**
-   * Elimina una credencial por su identificador único.
-   *
-   * <p>
-   * Si no existe una credencial con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso). La validación de existencia previa se
-   * realiza en la capa de aplicación.
-   *
-   * @param id UUID de la credencial a eliminar. No debe ser {@code null}.
-   */
-  void deleteById(UUID id);
-
-
-    /**
    * Busca una credencial por su identificador y la cuenta propietaria.
    *
    * @param passwordId UUID de la credencial. No debe ser {@code null}.
@@ -84,13 +70,13 @@ public interface PasswordRepository {
   Optional<Password> findByIdAndAccountId(UUID passwordId, UUID accountId);
 
   /**
-   * Verifica si existe una credencial con el ID dado que pertenezca a la cuenta.
+   * Elimina una credencial únicamente cuando pertenece a la cuenta indicada.
    *
-   * @param passwordId UUID de la credencial. No debe ser {@code null}.
-   * @param accountId  UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return {@code true} si la credencial existe y pertenece a la cuenta.
+   * @param passwordId UUID de la credencial
+   * @param accountId  UUID de la cuenta propietaria
+   * @return {@code true} cuando se eliminó una fila
    */
-  boolean existsByIdAndAccountId(UUID passwordId, UUID accountId);
+  boolean deleteByIdAndAccountId(UUID passwordId, UUID accountId);
 
   /**
    * Verifica si existe una credencial para una cuenta y aplicación específicas.

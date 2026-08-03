@@ -1,16 +1,18 @@
 package org.adultofuncional.main.agenda.application.usecase;
 
+import java.time.ZoneId;
 import java.util.UUID;
 
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.agenda.application.dto.EventRequest;
 import org.adultofuncional.main.agenda.application.dto.EventResponse;
+import org.adultofuncional.main.agenda.application.service.AgendaTimePolicy;
 import org.adultofuncional.main.agenda.domain.model.Event;
 import org.adultofuncional.main.agenda.domain.repository.EventRepository;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
-import org.adultofuncional.main.shared.exception.BusinessException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,17 +23,16 @@ import lombok.RequiredArgsConstructor;
  * Caso de uso: Crear un nuevo evento en la agenda personal.
  *
  * <p>
- * Registra un evento (compromiso) asociado a una cuenta y, opcionalmente, a
- * una categoría. Antes de persistir, verifica que la cuenta y la categoría
- * existan, que la hora de inicio sea estrictamente anterior a la de fin, y
- * asigna valores por defecto para prioridad y estado si no fueron
- * especificados.
+ * Registra un evento asociado a una cuenta y a una categoría de agenda
+ * accesible. Antes de persistir, aplica la política temporal en la zona IANA
+ * elegida y delega las invariantes combinadas al dominio.
  *
  * <p>
  * <strong>Reglas de negocio aplicadas:</strong>
  * <ul>
  * <li>La cuenta debe existir en el módulo de cuentas.</li>
- * <li>Si se proporciona {@code categoryId}, la categoría debe existir.</li>
+ * <li>{@code categoryId} es obligatorio; debe ser accesible para la cuenta y
+ * de tipo {@code AGENDA}.</li>
  * <li>{@code startHour} debe ser anterior a {@code endHour} (no se permiten
  * horas iguales).</li>
  * <li>La prioridad, si no se envía o está en blanco, se asigna como
@@ -42,6 +43,8 @@ import lombok.RequiredArgsConstructor;
  * ({@code Baja}, {@code Media}, {@code Alta}) y estado
  * ({@code Pendiente}, {@code Completado}, {@code Cancelado},
  * {@code Pospuesto}).</li>
+ * <li>La frecuencia debe estar soportada, el recordatorio debe preceder el
+ * inicio y las horas civiles deben corresponder a {@code eventDate}.</li>
  * </ul>
  *
  * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
@@ -60,9 +63,7 @@ public class CreateEventUseCase {
   private final EventRepository eventRepository;
   private final AccountRepository accountRepository;
   private final CategoryRepository categoryRepository;
-
-  // TODO: Validar valores de frecuencia permitidos (0,1,7,30,365)
-  // TODO: Validar que el recordatorio sea anterior a la fecha del evento
+  private final AgendaTimePolicy timePolicy;
 
   /**
    * Ejecuta la creación de un nuevo evento.
@@ -74,8 +75,9 @@ public class CreateEventUseCase {
    *         incluyendo la categoría anidada si fue asignada.
    * @throws NotFoundException si la cuenta no existe o si la categoría
    *                           proporcionada no existe.
-   * @throws BusinessException si las horas no son coherentes o si la prioridad
-   *                           o el estado no son valores válidos.
+   * @throws IllegalArgumentException si el horario, la frecuencia, la
+   *                                  prioridad o el estado incumplen las
+   *                                  invariantes del evento.
    */
   @Transactional
   public EventResponse execute(UUID accountId, EventRequest request) {
@@ -83,34 +85,26 @@ public class CreateEventUseCase {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    // 2. Validar horario
-    if (request.getStartHour().isAfter(request.getEndHour()) ||
-        request.getStartHour().isEqual(request.getEndHour())) {
-      throw new BusinessException("La hora de inicio debe ser anterior a la hora de fin");
-    }
+    // 2. Buscar categoría obligatoria
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            request.getCategoryId(),
+            CategoryType.AGENDA)
+        .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: "
+            + request.getCategoryId()));
+    UUID categoryId = category.getId();
 
-    // 3. Buscar categoría (opcional)
-    Category category = null;
-    UUID categoryId = null;
-    if (request.getCategoryId() != null) {
-      category = categoryRepository.findById(request.getCategoryId())
-          .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: "
-              + request.getCategoryId()));
-      categoryId = category.getId();
-    }
-
-    // 4. Valores por defecto y validación
+    // 3. Valores por defecto. El dominio valida el conjunto final.
     String priority = request.getPriority() != null && !request.getPriority().isBlank()
         ? request.getPriority()
         : "Media";
-    validarPrioridad(priority);
-
     String status = request.getStatus() != null && !request.getStatus().isBlank()
         ? request.getStatus()
         : "Pendiente";
-    validarEstado(status);
+    ZoneId zoneId = timePolicy.resolve(request.getZoneId());
+    timePolicy.requirePresentOrFuture(request.getEventDate(), zoneId);
 
-    // 5. Crear modelo de dominio
+    // 4. Crear modelo de dominio
     Event event = Event.create(
         request.getTitle(),
         request.getDescription(),
@@ -120,40 +114,15 @@ public class CreateEventUseCase {
         request.getReminder(),
         request.getStartHour(),
         request.getEndHour(),
+        zoneId,
         status,
         categoryId,
         accountId);
 
     Event saved = eventRepository.save(event);
 
-    // 6. Mapear respuesta
+    // 5. Mapear respuesta
     return mapToResponse(saved, category);
-  }
-
-  /**
-   * Valida que la prioridad sea uno de los valores permitidos.
-   *
-   * @param priority valor a validar.
-   * @throws BusinessException si no es {@code Baja}, {@code Media} o
-   *                           {@code Alta}.
-   */
-  private void validarPrioridad(String priority) {
-    if (!priority.equals("Baja") && !priority.equals("Media") && !priority.equals("Alta")) {
-      throw new BusinessException("La prioridad debe ser 'Baja', 'Media' o 'Alta'");
-    }
-  }
-
-  /**
-   * Valida que el estado sea uno de los valores permitidos.
-   *
-   * @param status valor a validar.
-   * @throws BusinessException si no es un estado reconocido.
-   */
-  private void validarEstado(String status) {
-    if (!status.equals("Pendiente") && !status.equals("Completado") &&
-        !status.equals("Cancelado") && !status.equals("Pospuesto")) {
-      throw new BusinessException("El estado debe ser 'Pendiente', 'Completado', 'Cancelado' o 'Pospuesto'");
-    }
   }
 
   /**
@@ -171,6 +140,7 @@ public class CreateEventUseCase {
           .id(category.getId())
           .name(category.getName())
           .type(category.getType())
+          .scope(category.getScope())
           .build();
     }
 
@@ -179,10 +149,14 @@ public class CreateEventUseCase {
         .title(event.getTitle())
         .priority(event.getPriority())
         .eventDate(event.getDate())
+        .zoneId(event.getZoneId().getId())
         .frequency(event.getFrequency())
         .reminder(event.getReminder())
+        .reminderInstant(event.getReminderInstant())
         .startHour(event.getStartHour())
+        .startInstant(event.getStartInstant())
         .endHour(event.getEndHour())
+        .endInstant(event.getEndInstant())
         .description(event.getDescription())
         .status(event.getStatus())
         .category(categoryResponse)

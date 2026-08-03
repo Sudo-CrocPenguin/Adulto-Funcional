@@ -7,13 +7,13 @@ import lombok.Builder;
 import lombok.Getter;
 
 /**
- * DTO de respuesta que expone los datos no sensibles de una credencial
- * almacenada.
+ * DTO de respuesta de una credencial almacenada.
  *
  * <p>
- * Nunca expone material criptográfico ({@code salt}, {@code iv},
- * {@code ciphertext}) ni la contraseña en texto plano. Solo muestra
- * información identificativa y la fecha del último cambio.
+ * Nunca expone material criptográfico ({@code salt}, {@code iv} o
+ * {@code ciphertext}). El listado deja {@link #password} en {@code null}; la
+ * consulta individual sí contiene el secreto descifrado y por ello requiere
+ * una Master Key desbloqueada y usa cabeceras anti-cache.
  *
  * @author Miguel Angel Blandon Montes, Juan Sebastian Riios
  * @since 0.0.1

@@ -1,5 +1,6 @@
 package org.adultofuncional.main.security.application.usecase;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -9,10 +10,12 @@ import org.adultofuncional.main.security.application.dto.PasswordUpdateRequest;
 import org.adultofuncional.main.security.domain.model.Password;
 import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.domain.service.EncryptionService;
+import org.adultofuncional.main.security.domain.service.EncryptionService.EncryptionContext;
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
-import org.adultofuncional.main.shared.exception.BusinessException;
+import org.adultofuncional.main.shared.exception.ConflictException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
+import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -53,6 +56,7 @@ public class UpdatePasswordUseCase {
   private final AccountRepository accountRepository;
   private final EncryptionService encryptionService;
   private final MasterKeySessionService masterKeyService;
+  private final Clock clock;
 
   /**
    * Ejecuta la actualización parcial de una credencial.
@@ -64,16 +68,22 @@ public class UpdatePasswordUseCase {
    * @return {@link PasswordResponse} con los datos actualizados.
    * @throws NotFoundException  si la cuenta o la credencial no existen.
    * @throws ForbiddenException si la Master Key no está verificada.
-   * @throws BusinessException  si el nuevo nombre de aplicación ya existe.
+   * @throws ConflictException  si el nuevo nombre de aplicación ya existe.
    */
   @Transactional
-  public PasswordResponse execute(UUID accountId, UUID passwordId, PasswordUpdateRequest request) {
-    accountRepository.findById(accountId)
+  public PasswordResponse execute(
+      UUID accountId,
+      UUID sessionId,
+      UUID passwordId,
+      PasswordUpdateRequest request) {
+    accountRepository.findByIdForUpdate(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    if (!masterKeyService.isVerified(accountId)) {
-      throw new ForbiddenException("Master Key no verificada");
-    }
+    String masterKey = masterKeyService.find(accountId, sessionId)
+        .map(MasterKeySessionService.UnlockedMasterKey::value)
+        .orElseThrow(() -> new ForbiddenException(
+            "Master Key no verificada",
+            ApiErrorCode.MASTER_KEY_REQUIRED));
 
     Password password = passwordRepository.findByIdAndAccountId(passwordId, accountId)
         .orElseThrow(() -> new NotFoundException("Contraseña no encontrada con id: " + passwordId));
@@ -82,7 +92,7 @@ public class UpdatePasswordUseCase {
     if (StringUtils.hasText(request.getApplicationName()) &&
         !request.getApplicationName().equals(password.getApplicationName())) {
       if (passwordRepository.existsByAccountIdAndApplicationName(accountId, request.getApplicationName())) {
-        throw new BusinessException(
+        throw new ConflictException(
             "Ya existe una contraseña para la aplicación: " + request.getApplicationName());
       }
     }
@@ -94,20 +104,31 @@ public class UpdatePasswordUseCase {
     String newSalt = password.getSalt();
     byte[] newIv = password.getIv();
     byte[] newCiphertext = password.getCiphertext();
+    int newCryptoVersion = password.getCryptoVersion();
 
     // Si se envía nueva contraseña, cifrarla
-    if (StringUtils.hasText(request.getPassword())) {
-      String masterKey = masterKeyService.getMasterKey(accountId);
-      EncryptionService.EncryptedData data = encryptionService.encrypt(request.getPassword(), masterKey);
+    boolean passwordChanged = StringUtils.hasText(request.getPassword());
+    if (passwordChanged) {
+      EncryptionService.EncryptedData data = encryptionService.encrypt(
+          request.getPassword(),
+          masterKey,
+          new EncryptionContext(accountId, password.getId()));
       newSalt = data.salt();
       newIv = data.iv();
       newCiphertext = data.ciphertext();
+      newCryptoVersion = data.cryptoVersion();
     }
 
     LocalDate newLastChangeDate = request.getLastChangeDate() != null ? request.getLastChangeDate()
-        : (request.getPassword() != null ? LocalDate.now() : password.getLastChangeDate());
+        : (passwordChanged ? LocalDate.now(clock) : password.getLastChangeDate());
 
-    password.update(newApplicationName, newSalt, newIv, newCiphertext, newLastChangeDate);
+    password.update(
+        newApplicationName,
+        newSalt,
+        newCryptoVersion,
+        newIv,
+        newCiphertext,
+        newLastChangeDate);
 
     Password saved = passwordRepository.save(password);
 

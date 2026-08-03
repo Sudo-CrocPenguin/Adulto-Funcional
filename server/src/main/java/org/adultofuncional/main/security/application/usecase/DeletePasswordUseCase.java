@@ -7,6 +7,7 @@ import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
+import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,18 +50,18 @@ public class DeletePasswordUseCase {
    * @throws ForbiddenException si la Master Key no está verificada.
    */
   @Transactional
-  public void execute(UUID accountId, UUID passwordId) {
-    accountRepository.findById(accountId)
+  public void execute(UUID accountId, UUID sessionId, UUID passwordId) {
+    accountRepository.findByIdForUpdate(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    if (!masterKeyService.isVerified(accountId)) {
-      throw new ForbiddenException("Master Key no verificada");
+    if (masterKeyService.find(accountId, sessionId).isEmpty()) {
+      throw new ForbiddenException(
+          "Master Key no verificada",
+          ApiErrorCode.MASTER_KEY_REQUIRED);
     }
 
-    if (!passwordRepository.existsByIdAndAccountId(passwordId, accountId)) {
+    if (!passwordRepository.deleteByIdAndAccountId(passwordId, accountId)) {
       throw new NotFoundException("Contraseña no encontrada con id: " + passwordId);
     }
-
-    passwordRepository.deleteById(passwordId);
   }
 }

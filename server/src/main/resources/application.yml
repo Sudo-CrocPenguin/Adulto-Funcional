@@ -1,21 +1,55 @@
 spring:
   application:
-    name: harmony-home
+    name: adulto-funcional-server
+
+  jackson:
+    time-zone: UTC
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate
-    show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MariaDBDialect
-
+        jdbc:
+          time_zone: UTC
+    show-sql: false
   flyway:
     enabled: true
     locations: classpath:database/migrations
-    baseline-on-migrate: true
+    baseline-on-migrate: false
     validate-on-migrate: true
+
+  data:
+    redis:
+      repositories:
+        enabled: false
+
+  servlet:
+    multipart:
+      enabled: false
+
+logging:
+  pattern:
+    level: "%5p [traceId=%X{traceId:-none}]"
 
 server:
   port: ${SERVER_PORT:8080}
   address: ${SERVER_ADDRESS:127.0.0.1}
+  max-http-request-header-size: 16KB
+  tomcat:
+    max-http-form-post-size: 1MB
+    max-swallow-size: 1MB
+
+app:
+  http:
+    max-request-body-size: ${APP_HTTP_MAX_REQUEST_BODY_SIZE:1MB}
+  time:
+    default-zone: ${APP_DEFAULT_TIME_ZONE:America/Bogota}
+  jobs:
+    enabled: ${APP_JOBS_ENABLED:true}
+    fixed-expenses:
+      cron: ${APP_FIXED_EXPENSE_CRON:0 5 * * * *}
+      zone: UTC
+      batch-size: ${APP_FIXED_EXPENSE_BATCH_SIZE:100}
+      max-batches: ${APP_FIXED_EXPENSE_MAX_BATCHES:10}

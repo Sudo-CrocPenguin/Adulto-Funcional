@@ -1,9 +1,13 @@
 package org.adultofuncional.main.finances.domain.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.finances.domain.model.FixedExpense;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
 /**
  * Puerto de dominio para la persistencia de gastos fijos recurrentes.
@@ -18,10 +22,10 @@ import org.adultofuncional.main.finances.domain.model.FixedExpense;
  * <p>
  * <strong>Operaciones expuestas:</strong>
  * <ul>
- * <li>Búsqueda individual por ID.</li>
+ * <li>Búsqueda individual limitada por ID y cuenta propietaria.</li>
  * <li>Listado de todos los gastos fijos asociados a una cuenta.</li>
  * <li>Persistencia de nuevos gastos fijos o actualización de existentes.</li>
- * <li>Eliminación por ID.</li>
+ * <li>Eliminación limitada por ID y cuenta propietaria.</li>
  * </ul>
  *
  * @author Daniel Salazar
@@ -32,28 +36,39 @@ import org.adultofuncional.main.finances.domain.model.FixedExpense;
 public interface FixedExpenseRepository {
 
   /**
-   * Busca un gasto fijo por su identificador único.
-   *
-   * @param id UUID del gasto fijo. No debe ser {@code null}.
-   * @return {@link Optional} con el gasto fijo si existe;
-   *         {@code Optional.empty()} en caso contrario.
-   */
-  Optional<FixedExpense> findById(UUID id);
-
-  /**
-   * Lista todos los gastos fijos asociados a una cuenta específica.
+   * Busca un gasto fijo dentro de la cuenta propietaria indicada.
    *
    * <p>
-   * Utilizado por los casos de uso de listado y filtrado de gastos fijos.
-   * Retorna la totalidad de los gastos de la cuenta; el filtrado adicional
-   * (por estado, categoría, término de búsqueda) se aplica en memoria en la
-   * capa de aplicación.
+   * El filtro de cuenta forma parte de la consulta de persistencia. De este
+   * modo un identificador ajeno produce el mismo resultado que uno inexistente
+   * y el modelo de otra cuenta no llega a la capa de aplicación.
+   *
+   * @param id        UUID del gasto fijo. No debe ser {@code null}.
+   * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
+   * @return {@link Optional} con el gasto fijo cuando coincide ID y cuenta;
+   *         {@code Optional.empty()} en caso contrario.
+   */
+  Optional<FixedExpense> findByIdAndAccountId(UUID id, UUID accountId);
+
+  /**
+   * Consulta una página de gastos fijos de una cuenta específica.
+   *
+   * <p>
+   * Ownership, filtros, orden y límite forman parte de la consulta de
+   * persistencia para no materializar la colección completa.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return lista de gastos fijos de la cuenta. Puede ser vacía si no hay
-   *         registros.
+   * @return página de gastos fijos y sus totales.
    */
-  List<FixedExpense> findAllByAccountId(UUID accountId);
+  PageResult<FixedExpense> findPageByAccountId(
+      UUID accountId,
+      Status status,
+      UUID categoryId,
+      String searchTerm,
+      PageQuery pageQuery);
+
+  /** Bloquea un lote acotado de gastos activos vencidos para su avance. */
+  List<FixedExpense> findDueForUpdate(LocalDate cutoff, int batchSize);
 
   /**
    * Persiste un gasto fijo nuevo o actualiza uno existente.
@@ -68,14 +83,12 @@ public interface FixedExpenseRepository {
   FixedExpense save(FixedExpense fixedExpense);
 
   /**
-   * Elimina un gasto fijo por su identificador único.
+   * Elimina un gasto fijo únicamente cuando pertenece a la cuenta indicada.
    *
-   * <p>
-   * Si no existe un gasto fijo con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso). La validación de existencia previa se
-   * realiza en la capa de aplicación.
-   *
-   * @param id UUID del gasto fijo a eliminar. No debe ser {@code null}.
+   * @param id        UUID del gasto fijo a eliminar
+   * @param accountId UUID de la cuenta propietaria
+   * @return {@code true} cuando se eliminó una fila; {@code false} cuando el
+   *         recurso no existe dentro de la cuenta
    */
-  void deleteById(UUID id);
+  boolean deleteByIdAndAccountId(UUID id, UUID accountId);
 }

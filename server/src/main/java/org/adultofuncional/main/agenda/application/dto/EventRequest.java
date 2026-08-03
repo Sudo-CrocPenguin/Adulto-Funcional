@@ -6,9 +6,9 @@ import java.util.UUID;
 
 import org.adultofuncional.main.shared.security.NoHtml;
 
-import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
@@ -34,7 +34,7 @@ import lombok.Getter;
  * {@code TEXT} en base de datos), sin HTML.</li>
  * <li>{@code status} — opcional. Si no se envía o está en blanco, el caso de
  * uso asigna {@code "Pendiente"}.</li>
- * <li>{@code categoryId} — opcional, referencia a una categoría existente.</li>
+   * <li>{@code categoryId} — obligatorio, referencia a una categoría existente.</li>
  * </ul>
  *
  * <p>
@@ -73,6 +73,8 @@ public class EventRequest {
    * {@code "Alta"}. Si no se proporciona, se asigna {@code "Media"}.
    */
   @Size(max = 15, message = "Prioridad no válida (Baja, Media, Alta)")
+  @Pattern(regexp = "^(Baja|Media|Alta)?$", message = "La prioridad debe ser Baja, Media o Alta")
+  @NoHtml
   private String priority;
 
   /**
@@ -80,8 +82,12 @@ public class EventRequest {
    * Obligatorio, debe ser la fecha actual o una fecha futura.
    */
   @NotNull(message = "La fecha del evento es obligatoria")
-  @FutureOrPresent(message = "La fecha no puede ser pasada")
   private LocalDate eventDate;
+
+  /** Zona IANA de las horas civiles. Si se omite, usa la zona configurada. */
+  @Size(max = 63, message = "La zona horaria no puede exceder 63 caracteres")
+  @NoHtml
+  private String zoneId;
 
   /**
    * Frecuencia de repetición en días.
@@ -132,11 +138,17 @@ public class EventRequest {
    * {@code "Completado"}, {@code "Cancelado"}, {@code "Pospuesto"}.
    * Si no se proporciona, se asigna {@code "Pendiente"}.
    */
+  @Size(max = 20, message = "Estado no válido")
+  @Pattern(
+      regexp = "^(Pendiente|Completado|Cancelado|Pospuesto)?$",
+      message = "El estado no es válido")
+  @NoHtml
   private String status;
 
-  /**
-   * Identificador de la categoría asociada al evento.
-   * Opcional. Si es {@code null}, el evento se registra sin categoría.
+   /**
+    * Identificador de la categoría asociada al evento.
+   * Obligatorio para mantener consistencia con el dominio y la base de datos.
    */
+  @NotNull(message = "La categoría es obligatoria")
   private UUID categoryId;
 }

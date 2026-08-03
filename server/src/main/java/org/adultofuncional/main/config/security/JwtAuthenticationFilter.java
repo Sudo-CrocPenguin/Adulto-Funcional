@@ -3,18 +3,18 @@ package org.adultofuncional.main.config.security;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
-import org.adultofuncional.main.shared.response.ApiResponse;
+import org.adultofuncional.main.auth.domain.service.AccessTokenRevocationService;
+import org.adultofuncional.main.shared.response.ApiErrorCode;
+import org.adultofuncional.main.shared.response.ApiErrorResponseWriter;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -55,11 +55,13 @@ import lombok.extern.slf4j.Slf4j;
  * <p>
  * <strong>Manejo de errores:</strong> los errores de validación no se
  * propagan como excepciones — se interceptan aquí y se convierten en
- * respuestas {@code 401 Unauthorized} con formato {@link ApiResponse},
+ * respuestas {@code 401 Unauthorized} con el contrato uniforme de la API,
  * manteniendo la consistencia con el resto de la API y evitando que el
  * {@code GlobalExceptionHandler} deba conocer detalles de JWT.
  * Los tokens expirados se loguean en {@code DEBUG}; las firmas inválidas
  * en {@code WARN}, ya que pueden indicar un intento de manipulación.
+ * En endpoints públicos, una cookie expirada o corrupta no bloquea el request:
+ * el filtro limpia el contexto y delega al controlador sin autenticar.
  *
  * @author Juan Sebastian Rios
  * @since 0.0.1
@@ -72,6 +74,15 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+  /** Atributo de request usado por la política CSRF para reconocer Bearer válido. */
+  public static final String AUTH_SOURCE_ATTRIBUTE = JwtAuthenticationFilter.class.getName() + ".source";
+
+  /** Valor del atributo cuando la autenticación provino del header Bearer. */
+  public static final String AUTH_SOURCE_BEARER = "BEARER";
+
+  /** Valor del atributo cuando la autenticación provino de la cookie. */
+  public static final String AUTH_SOURCE_COOKIE = "COOKIE";
 
   /**
    * Nombre de la cookie HttpOnly que transporta el JWT en clientes web.
@@ -88,8 +99,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   /** Servicio que parsea, firma y valida tokens JWT. */
   private final JwtService jwtService;
 
-  /** Serializador JSON para escribir respuestas de error uniformes. */
-  private final ObjectMapper objectMapper;
+  /** Writer compartido para errores generados antes de Spring MVC. */
+  private final ApiErrorResponseWriter errorResponseWriter;
+
+  /** Lista temporal de tokens cerrados antes de su expiración natural. */
+  private final AccessTokenRevocationService revocationService;
 
   /**
    * Ejecuta la lógica de autenticación JWT para cada request entrante.
@@ -104,11 +118,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
    * autenticación.</li>
    * <li>Si hay token, lo valida con {@link JwtService#parseAndValidate}.</li>
    * <li>Si es válido y no hay autenticación previa en el contexto, construye
-   * un {@link UsernamePasswordAuthenticationToken} con el email como
-   * principal y los roles como autoridades, y lo registra en el
+   * un {@link UsernamePasswordAuthenticationToken} con el {@code accountId}
+   * del claim {@code sub} como principal estable y los roles como autoridades,
+   * y lo registra en el
    * {@link SecurityContextHolder}.</li>
-   * <li>Si el token es inválido, responde {@code 401 Unauthorized} con
-   * un {@link ApiResponse} consistente, sin continuar la cadena de filtros.</li>
+   * <li>Si el token es inválido en una ruta protegida, responde
+   * {@code 401 Unauthorized} con un contrato consistente, sin
+   * continuar la cadena de filtros. En rutas públicas, el request continúa sin
+   * autenticar para no bloquear login, registro, logout ni health checks.</li>
    * </ol>
    *
    * <p>
@@ -130,8 +147,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     String jwt = extractFromHeader(request);
+    String authSource = AUTH_SOURCE_BEARER;
     if (jwt == null) {
       jwt = extractFromCookie(request);
+      authSource = AUTH_SOURCE_COOKIE;
     }
 
     if (jwt == null) {
@@ -141,63 +160,139 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     try {
       Claims claims = jwtService.parseAndValidate(jwt);
+      UUID accountId = UUID.fromString(claims.getSubject());
+      UUID sessionId = UUID.fromString(claims.get("sid", String.class));
+      UUID tokenId = UUID.fromString(claims.getId());
       String userEmail = claims.get("email", String.class);
 
-      if (userEmail != null &&
-          SecurityContextHolder.getContext().getAuthentication() == null) {
+      if (revocationService.isRevoked(tokenId)) {
+        if (shouldContinueWithoutAuthentication(request)) {
+          continueWithoutAuthentication(request, response, filterChain);
+          return;
+        }
+        writeUnauthorizedResponse(
+            request,
+            response,
+            ApiErrorCode.AUTH_SESSION_REVOKED,
+            "La sesión fue revocada");
+        return;
+      }
+
+      if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
         List<String> roles = claims.get("roles", List.class);
         List<SimpleGrantedAuthority> authorities = roles == null
             ? List.of(new SimpleGrantedAuthority("ROLE_USER"))
             : roles.stream().map(SimpleGrantedAuthority::new).toList();
 
-        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userEmail, null,
+        AuthenticatedAccount principal = new AuthenticatedAccount(
+            accountId,
+            userEmail,
+            sessionId,
+            tokenId,
+            claims.getExpiration().toInstant());
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(principal, null,
             authorities);
         authToken.setDetails(
             new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authToken);
+        request.setAttribute(AUTH_SOURCE_ATTRIBUTE, authSource);
       }
 
     } catch (ExpiredJwtException e) {
       log.debug("Token JWT expirado para request {}: {}",
           request.getRequestURI(), e.getMessage());
-      writeUnauthorizedResponse(response, "Token JWT expirado");
+      if (shouldContinueWithoutAuthentication(request)) {
+        continueWithoutAuthentication(request, response, filterChain);
+        return;
+      }
+      writeUnauthorizedResponse(
+          request,
+          response,
+          ApiErrorCode.JWT_EXPIRED,
+          "Token JWT expirado");
       return;
     } catch (SignatureException e) {
       log.warn("Firma JWT inválida en request {} — posible intento de manipulación: {}",
           request.getRequestURI(), e.getMessage());
-      writeUnauthorizedResponse(response, "Firma JWT inválida");
+      if (shouldContinueWithoutAuthentication(request)) {
+        continueWithoutAuthentication(request, response, filterChain);
+        return;
+      }
+      writeUnauthorizedResponse(
+          request,
+          response,
+          ApiErrorCode.JWT_INVALID,
+          "Token JWT inválido");
       return;
     } catch (JwtException | IllegalArgumentException e) {
       log.warn("Token JWT malformado o inválido en request {}: {}",
           request.getRequestURI(), e.getMessage());
-      writeUnauthorizedResponse(response, "Token JWT inválido");
+      if (shouldContinueWithoutAuthentication(request)) {
+        continueWithoutAuthentication(request, response, filterChain);
+        return;
+      }
+      writeUnauthorizedResponse(
+          request,
+          response,
+          ApiErrorCode.JWT_INVALID,
+          "Token JWT inválido");
       return;
     }
 
     filterChain.doFilter(request, response);
   }
 
+  private boolean shouldContinueWithoutAuthentication(HttpServletRequest request) {
+    String path = resolveRequestPath(request);
+    return path.startsWith("/api/auth/") || path.equals("/actuator/health");
+  }
+
+  private String resolveRequestPath(HttpServletRequest request) {
+    String requestUri = request.getRequestURI();
+    String contextPath = request.getContextPath();
+
+    if (contextPath != null && !contextPath.isBlank() && requestUri.startsWith(contextPath)) {
+      return requestUri.substring(contextPath.length());
+    }
+
+    return requestUri;
+  }
+
+  private void continueWithoutAuthentication(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      FilterChain filterChain)
+      throws IOException, ServletException {
+    SecurityContextHolder.clearContext();
+    filterChain.doFilter(request, response);
+  }
+
   /**
-   * Escribe una respuesta 401 Unauthorized con formato {@link ApiResponse}.
+   * Escribe una respuesta 401 usando el writer compartido por seguridad.
    *
    * <p>
    * Centraliza la creación de la respuesta de error para cualquier token
    * inválido, expirado o con firma incorrecta, garantizando que el cliente
    * reciba la misma estructura JSON que en los errores de capa de aplicación.
    *
+   * @param request  petición que contiene el trace ID
    * @param response respuesta HTTP donde se escribe el error
+   * @param code     código estable del fallo JWT
    * @param message  mensaje descriptivo para el cliente
    * @throws IOException si ocurre un error al escribir el JSON
    */
-  private void writeUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {
-    ApiResponse<Void> apiResponse = ApiResponse.<Void>builder()
-        .status(HttpStatus.UNAUTHORIZED.value())
-        .message(message)
-        .build();
-    response.setStatus(HttpStatus.UNAUTHORIZED.value());
-    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-    objectMapper.writeValue(response.getWriter(), apiResponse);
+  private void writeUnauthorizedResponse(
+      HttpServletRequest request,
+      HttpServletResponse response,
+      ApiErrorCode code,
+      String message) throws IOException {
+    errorResponseWriter.write(
+        request,
+        response,
+        HttpStatus.UNAUTHORIZED.value(),
+        code,
+        message);
   }
 
   /**

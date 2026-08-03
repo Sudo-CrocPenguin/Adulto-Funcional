@@ -6,7 +6,7 @@ import org.adultofuncional.main.account.application.dto.UpdateAccountRequest;
 import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.account.infrastructure.persistence.mapper.AccountMapper;
-import org.adultofuncional.main.shared.exception.BusinessException;
+import org.adultofuncional.main.shared.exception.ConflictException;
 import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +43,7 @@ public class UpdateAccountUseCase {
    *                  conservan su valor actual.
    * @return {@link AccountResponse} con los datos actualizados.
    * @throws NotFoundException Si no existe una cuenta con el ID proporcionado.
-   * @throws BusinessException Si el nuevo email ya está registrado en otra
+   * @throws ConflictException Si el nuevo email ya está registrado en otra
    *                           cuenta.
    */
   @Transactional
@@ -56,7 +56,7 @@ public class UpdateAccountUseCase {
     // 2. Validar unicidad del email solo si se envió uno nuevo y es diferente
     if (request.getEmail() != null && !account.getEmail().equals(request.getEmail())) {
       accountRepository.findByEmail(request.getEmail()).ifPresent(existing -> {
-        throw new BusinessException(
+        throw new ConflictException(
             "El email " + request.getEmail() + " ya está registrado por otra cuenta");
       });
       account.updateEmail(request.getEmail());

@@ -1,442 +1,388 @@
 # Adulto Funcional Server
 
-Backend construido con **Spring Boot 3.5.13** y **Java 21** que implementa una arquitectura limpia (Clean Architecture) para la gestión financiera personal, agenda de eventos y almacenamiento seguro de contraseñas.
+Backend de Adulto Funcional construido con Java 21 y Spring Boot 3.5.13. Es un
+monolito modular orientado a dominio que concentra cuentas, autenticación,
+finanzas personales, agenda y una bóveda de credenciales cifradas.
 
-## Características principales
+## Qué es, para qué sirve y cómo funciona
 
-- **Gestión financiera**: Movimientos (ingresos/egresos), gastos fijos recurrentes y categorías personalizadas
-- **Agenda personal**: Eventos con prioridades, recordatorios, estados y recurrencia configurable
-- **Gestor de contraseñas**: Almacenamiento seguro con encriptación AES-256 protegido por Master Key
-- **Autenticación segura**: JWT + Argon2 para contraseñas y acceso al gestor de contraseñas
-- **Identificadores únicos**: UUID v7 (ordenable temporalmente) para todas las entidades
-- **Migraciones controladas**: Flyway para versionado de base de datos
-- **Seguridad HTTP**: Headers CSP, HSTS, X-Frame-Options, X-XSS-Protection configurados en SecurityConfig
-- **Protección anti‑XSS**: Validación de entrada con `@NoHtml` (Jsoup) en todos los campos de texto
+**Qué es:** una API REST con persistencia en MariaDB, estado efímero de
+seguridad en Redis, migraciones Flyway y contratos JSON uniformes.
 
-## Stack tecnológico
+**Para qué sirve:** permite que cada cuenta administre de forma aislada su
+perfil, movimientos, gastos recurrentes, eventos, categorías personales y
+credenciales protegidas por una Master Key independiente.
 
-| Tecnología           | Versión | Propósito                                          |
-| -------------------- | ------- | -------------------------------------------------- |
-| Java                 | 21      | Lenguaje base                                      |
-| Spring Boot          | 3.5.13  | Framework principal                                |
-| Spring Data JPA      | -       | Persistencia ORM                                   |
-| Spring Security      | -       | Autenticación y autorización                       |
-| MariaDB              | 11.8    | Base de datos relacional                           |
-| Redis                | 7       | Almacén distribuido para sesiones de Master Key    |
-| Flyway               | -       | Migraciones de base de datos                       |
-| Lombok               | -       | Reducción de boilerplate                           |
-| JWT                  | -       | Autenticación stateless                            |
-| Argon2               | -       | Hash de contraseñas                                |
-| AES-256              | -       | Encriptación de contraseñas en gestor de seguridad |
-| Testcontainers       | -       | Pruebas de integración                             |
-| Spring Boot Actuator | -       | Health checks para Docker                          |
-| Maven                | 3.9     | Gestión de dependencias                            |
-| Jsoup                | 1.17.2  | Validación anti‑HTML en entrada                    |
+**Cómo funciona:** cada petición atraviesa CORS, trazabilidad, límite de cuerpo,
+autenticación JWT y CSRF cuando corresponde. Los controladores delegan en casos
+de uso; estos aplican reglas de dominio y acceden a persistencia mediante
+puertos. Los adaptadores JPA limitan los recursos privados por la combinación
+`resourceId + accountId` y Flyway mantiene el esquema reproducible.
 
-## Arquitectura
-
-El proyecto sigue los principios de **Clean Architecture** organizados en las siguientes capas:
-
-```
-org.adultofuncional.main
-├── account/            # Módulo de cuentas de usuario
-│   ├── domain/         # Modelo de dominio y puertos
-│   ├── application/    # Casos de uso y DTOs
-│   └── infrastructure/ # Adaptadores (JPA, REST)
-├── auth/               # Módulo de autenticación (JWT)
-├── config/             # Configuraciones de Spring (beans, security)
-│   ├── beans/          # Configuración de beans de Spring
-│   └── security/       # Spring Security: JwtProperties, JwtService, JwtAuthenticationFilter, CookieUtils, ClientTypeResolver, DatabaseUserDetailsService
-├── finances/           # Módulo financiero (movimientos, gastos, categorías)
-├── agenda/             # Módulo de agenda (eventos)
-├── security/           # Gestor de contraseñas con Master Key
-└── shared/             # Componentes transversales
-    ├── exception/      # Jerarquía de excepciones y GlobalExceptionHandler
-    ├── response/       # Formato estándar de respuestas API (ApiResponse)
-    └── security/       # Validación de ownership reutilizable (OwnedResource, OwnershipValidator)
+```text
+Cliente web o nativo
+        │
+        ▼
+CORS → traceId → límite HTTP → JWT/CSRF → Controller
+                                            │
+                                            ▼
+                                      Caso de uso
+                                            │
+                                            ▼
+                                      Dominio + puerto
+                                            │
+                              ┌─────────────┴─────────────┐
+                              ▼                           ▼
+                       Adaptador JPA                 Redis efímero
+                              │                  (revocación, límites,
+                              ▼                    Master Key de sesión)
+                         MariaDB 11.8
 ```
 
-Para una documentación técnica detallada de la arquitectura, consulta [ARCHITECTURE.md](./ARCHITECTURE.md).
+## Capacidades actuales
 
-## Estructura de la base de datos
+- Cuentas con perfil, actualización parcial, unicidad de email, control
+  optimista y eliminación reautenticada.
+- Login y registro con Argon2, JWT de corta duración, refresh token rotativo,
+  sesiones persistidas, revocación actual o global y detección de replay.
+- Autenticación web mediante cookies `HttpOnly` y autenticación nativa mediante
+  `Authorization: Bearer`.
+- Protección CSRF para operaciones autenticadas por cookie, CORS con orígenes
+  explícitos y respuestas de seguridad uniformes.
+- Movimientos y gastos fijos con importes `DECIMAL(10,2)`, categorías
+  obligatorias, filtros y paginación ejecutados en SQL.
+- Categorías `SYSTEM` compartidas y categorías `PERSONAL` aisladas por cuenta,
+  con nombre normalizado y tipo inmutable.
+- Eventos con invariantes completas, zona IANA, tiempo civil e instantes UTC.
+- Bóveda con Master Key aislada por sesión, AES-256-GCM, PBKDF2-HMAC-SHA256,
+  formato criptográfico versionado y AAD ligado a cuenta y credencial.
+- Rate limiting distribuido en producción para autenticación y operaciones
+  criptográficas.
+- Errores estables con `code`, `fieldErrors` y `traceId`; correlación del mismo
+  identificador en logs.
+- Scheduler transaccional que avanza los vencimientos de gastos fijos activos
+  en lotes bloqueados.
+- IDs UUID v7, timestamps técnicos UTC, `Clock` inyectado y bloqueo optimista
+  con `@Version`.
 
-El esquema se gestiona mediante Flyway (`src/main/resources/database/migrations/`):
+## Estado verificable
 
-- **accounts** - Cuentas de usuario (UUID v7, email único, hash Argon2)
-- **categories** - Categorías para clasificar (sin borrado lógico)
-- **movements** - Movimientos financieros (ingresos/egresos, categoría obligatoria)
-- **fixed_expenses** - Gastos fijos recurrentes con fecha de inicio, próxima fecha y recordatorio
-- **events** - Eventos de agenda con recordatorios y categoria obligatoria
-- **passwords** - Contraseñas encriptadas con AES-256
+La referencia de esta entrega es:
 
-Todas las tablas usan `CHAR(36)` para UUID v7 y relaciones con llaves foráneas con eliminación en cascada desde `accounts`.
+| Indicador | Resultado |
+|---|---:|
+| Fuentes Java | 269 |
+| Clases de prueba | 52 |
+| Endpoints REST propios | 41 |
+| Migraciones Flyway | 14 |
+| Entidades con `@Version` | 7 |
+| Regresión `./mvnw clean verify` | 137 pruebas, 0 fallos |
+| Base de integración | MariaDB 11.8.8 mediante Testcontainers |
 
-Para la documentación detallada del esquema, columnas, índices y notas de seguridad, consulta [DATABASE.md](./DATABASE.md).
+El healthcheck público está en `GET /actuator/health`.
 
-## Requisitos previos
+## Módulos
 
-- Java 21 JDK
-- Maven 3.9+
-- Docker y Docker Compose (para despliegue en contenedores)
-- MariaDB 11.8+ (para ejecución local sin Docker)
+| Módulo | Responsabilidad |
+|---|---|
+| `account` | Perfil, ownership, actualización y eliminación de cuenta |
+| `auth` | Registro, login, roles, sesiones, refresh y revocación |
+| `finances` | Movimientos, categorías y gastos fijos |
+| `agenda` | Eventos, reglas temporales y zonas horarias |
+| `security` | Master Key y bóveda de credenciales |
+| `shared` | Errores, paginación, validación, rate limiting y observabilidad |
+| `config` | Beans, cookies, JWT, CORS, CSRF y cadena de seguridad |
 
-## Ejecución local
+La arquitectura detallada está en [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-### 1. Clonar el repositorio
+## Stack
 
-```bash
-git clone <repository-url>
-cd adulto-funcional-server
-```
+| Tecnología | Uso |
+|---|---|
+| Java 21 | Lenguaje y runtime |
+| Spring Boot 3.5.13 | API, inyección, configuración y Actuator |
+| Spring Security | JWT, autorización, CORS, CSRF y headers |
+| Spring Data JPA / Hibernate | Persistencia y control optimista |
+| MariaDB 11.8.8 | Datos durables |
+| Flyway | Evolución y validación del esquema |
+| Redis 7.4.7 | Estado de seguridad efímero y distribuido |
+| Argon2 | Hash de contraseña de cuenta y Master Key |
+| AES-256-GCM | Cifrado autenticado de credenciales |
+| Testcontainers | Integración contra MariaDB real |
+| Maven Wrapper 3.9 | Build reproducible |
+| Docker Compose | Ejecución local y despliegue |
 
-### 2. Configurar variables de entorno
+Las imágenes de Docker están fijadas por versión y digest.
 
-El proyecto usa **perfiles de Spring Boot** (`dev` y `prod`) para separar la configuración.
+## Requisitos
 
-#### Perfil de desarrollo (`dev`)
+- JDK 21 para ejecución local.
+- Docker con Compose v2 para el stack completo y las pruebas de integración.
+- No es obligatorio instalar Maven: el repositorio incluye `./mvnw`.
+- Puertos libres: `8080` para la API. MariaDB y Redis no se publican al host en
+  el Compose base.
 
-Copia el archivo de configuración de desarrollo:
+## Inicio rápido con Docker
 
-```bash
-cp src/main/resources/application-dev.yml.example src/main/resources/application-dev.yml
-```
-
-Edita `application-dev.yml` con tus valores locales:
-
-```yaml
-spring:
-  datasource:
-    url: jdbc:mariadb://localhost:3306/adulto_funcional
-    username: afs_user
-    password: tu_password
-
-jwt:
-  secret: tu_clave_secreta_jwt_muy_segura
-  expiration: 86400000
-
-APP_COOKIE_SECURE: false
-APP_COOKIE_SAME_SITE: None
-CORS_ALLOWED_ORIGINS: http://localhost:5173/
-```
-
-Ejecuta con el perfil activo:
-
-```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-```
-
-#### Perfil de producción (`prod`) — Docker
-
-Copia la plantilla de variables de entorno:
+El Compose usa el perfil `prod`; por ello valida secretos y cookies al arrancar.
 
 ```bash
 cp .env.example .env
 ```
 
-Edita `.env` con tus valores de producción:
-
-```env
-# MariaDB
-MARIADB_ROOT_PASSWORD=tu_root_password
-MARIADB_DATABASE=adulto_funcional
-MARIADB_USER=afs_user
-MARIADB_PASSWORD=tu_password
-
-# Redis (para sesiones de Master Key en producción)
-REDIS_HOST=redis
-REDIS_PORT=6379
-REDIS_PASSWORD=
-
-# JWT
-JWT_SECRET=tu_clave_secreta_jwt_muy_segura
-JWT_EXPIRATION=86400000
-
-# CORS y cookies
-CORS_ALLOWED_ORIGINS=http://localhost:5173/
-APP_COOKIE_SECURE=true
-APP_COOKIE_SAME_SITE=Lax
-```
-
-El `docker-compose.yml` pasa `SPRING_PROFILES_ACTIVE=prod` al contenedor, y `application-prod.yml` resuelve los valores desde las variables de entorno.
-
-### 3. Ejecutar con Maven
+Completa `.env`. Genera **por separado** `JWT_SECRET`,
+`MASTER_KEY_SESSION_SECRET` y `REDIS_PASSWORD`:
 
 ```bash
-# Compilar el proyecto
-./mvnw clean package -DskipTests
-
-# Ejecutar la aplicación
-java -jar target/adulto-funcional-server-0.0.1-SNAPSHOT.jar
+openssl rand -base64 48
 ```
 
-O directamente con Spring Boot Maven plugin:
+Usa también contraseñas diferentes y fuertes para MariaDB. Después ejecuta:
 
 ```bash
-./mvnw spring-boot:run
-```
-
-## Testing
-
-El proyecto utiliza **JUnit 5**, **Spring Boot Test**, **Mockito** y **Testcontainers** para pruebas automatizadas.
-
-### Tipos de tests
-
-**1. Test de arranque (`AdultoFuncionalServerApplicationTests`)**
-
-- Levanta un contenedor Docker con **MariaDB 11.8** usando Testcontainers
-- Configura dinámicamente las propiedades del DataSource vía `@DynamicPropertySource`
-- Verifica que el contexto de Spring Boot se carga sin errores
-- Flyway se deshabilita para un arranque rápido
-
-**2. Tests de integración web**
-
-- Usa `@WebMvcTest` para cargar solo la capa web (controladores, validación)
-- Simula los casos de uso con Mockito (`@MockitoBean`)
-- Deshabilita la seguridad con `TestSecurityConfig` (`@Import`)
-- Verifica respuestas HTTP, códigos de estado y validación de DTOs
-
-### Comandos de test
-
-```bash
-# Ejecutar todos los tests
-./mvnw test
-
-# Ejecutar tests con reporte detallado
-./mvnw test -Dtest.verbose=true
-
-# Ejecutar un test específico
-./mvnw test -Dtest=AdultoFuncionalServerApplicationTests
-
-# Ejecutar tests de un paquete específico
-./mvnw test -Dtest=org.adultofuncional.main.account.infrastructure.controller.*
-
-# Verificar y ejecutar tests de integración (Testcontainers requiere Docker)
-./mvnw verify
-
-# Ejecutar tests saltando la compilación
-./mvnw surefire:test
-```
-
-**Nota**: Los tests que usan Testcontainers requieren Docker instalado y en ejecución.
-
-## Ejecución con Docker
-
-### 1. Construir y levantar los servicios
-
-Asegúrate de tener el archivo `.env` configurado.
-
-```bash
-# Construir la imagen y levantar los contenedores
-docker-compose up -d --build
-
-# Ver logs de la aplicación
-docker-compose logs -f app
-
-# Ver logs de la base de datos
-docker-compose logs -f mariadb
-```
-
-### 2. Verificar que los servicios estén saludables
-
-```bash
-# Health check de la aplicación
+docker compose up -d --build
+docker compose ps
 curl http://localhost:8080/actuator/health
-
-# Health check de MariaDB
-docker-compose ps
 ```
 
-### 3. Detener los servicios
+Respuesta esperada:
+
+```json
+{"status":"UP"}
+```
+
+El perfil `prod` obliga a `APP_COOKIE_SECURE=true`. Para autenticar un navegador
+se necesita HTTPS —normalmente terminado por un proxy inverso—. El acceso HTTP
+directo a `localhost:8080` es adecuado para el healthcheck; para desarrollo web
+sin TLS usa el perfil `dev`.
+
+Para detener sin borrar datos:
 
 ```bash
-docker-compose down
-
-# Para eliminar también los volúmenes (¡borra los datos!)
-docker-compose down -v
+docker compose down
 ```
 
-## Comandos útiles de Maven
+`docker compose down -v` elimina el volumen de MariaDB y sus datos; no debe
+usarse como comando rutinario.
 
-```bash
-# Limpiar y compilar
-./mvnw clean compile
+## Desarrollo local
 
-# Ejecutar pruebas
-./mvnw test
+1. Crea la configuración local:
 
-# Ejecutar pruebas de integración con Testcontainers
-./mvnw verify
+   ```bash
+   cp src/main/resources/application-dev.yml.example \
+      src/main/resources/application-dev.yml
+   ```
 
-# Empaquetar sin pruebas
-./mvnw clean package -DskipTests
+2. Configura MariaDB y un secreto JWT de al menos 32 bytes. Mantén:
 
-# Ejecutar con perfil específico
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+   ```yaml
+   APP_COOKIE_SECURE: false
+   APP_COOKIE_SAME_SITE: Lax
+   CORS_ALLOWED_ORIGINS: http://localhost:5173
+   ```
 
-# Ver dependencias
-./mvnw dependency:tree
+3. Inicia la aplicación:
 
-# Actualizar versiones de dependencias
-./mvnw versions:display-dependency-updates
+   ```bash
+   ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+   ```
 
-# Ejecutar migraciones de Flyway manualmente
-./mvnw flyway:migrate
+La API queda disponible en http://localhost:8080. El perfil `dev` utiliza
+implementaciones en memoria con TTL para revocación, rate limiting y sesiones
+de Master Key; los datos de negocio continúan en MariaDB.
+
+Ejecutar sin perfil no es un modo soportado porque no define datasource ni
+adaptadores de estado efímero.
+
+## Autenticación de clientes
+
+### Navegador
+
+1. Solicita `GET /api/auth/csrf` y conserva cookies.
+2. Envía el token recibido en el header `X-XSRF-TOKEN` para operaciones no
+   seguras autenticadas por cookie.
+3. `login` y `register` crean las cookies `token` y `refresh_token` como
+   `HttpOnly`; los tokens no aparecen en el body.
+4. `POST /api/auth/refresh` rota el refresh token.
+5. `POST /api/auth/logout` o `DELETE /api/auth/sessions/current` revoca la
+   sesión actual.
+
+### Cliente nativo
+
+El cliente debe enviar `X-Client-Type: mobile` o `desktop` y una señal pasiva
+compatible (por ejemplo, un User-Agent nativo). Login, registro y refresh
+devuelven access y refresh token en el body. Las peticiones protegidas usan:
+
+```http
+Authorization: Bearer <access-token>
 ```
 
-## Comandos útiles de Docker
+Un Bearer válido no requiere CSRF. Los detalles y ejemplos completos están en
+[docs/API_REFERENCE.md](./docs/API_REFERENCE.md).
 
-```bash
-# Construir la imagen manualmente
-docker build -t adulto-funcional-server .
+## Respuestas HTTP
 
-# Ejecutar contenedor de la aplicación (perfil prod) — requiere Redis y MariaDB
-docker run -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=prod \
-  -e SPRING_DATASOURCE_URL=jdbc:mariadb://mariadb:3306/adulto_funcional \
-  -e SPRING_DATASOURCE_USERNAME=afs_user \
-  -e SPRING_DATASOURCE_PASSWORD=password \
-  -e REDIS_HOST=redis \
-  -e REDIS_PORT=6379 \
-  -e REDIS_PASSWORD= \
-  -e JWT_SECRET=secret \
-  -e JWT_EXPIRATION=86400000 \
-  -e CORS_ALLOWED_ORIGINS=http://localhost:5173 \
-  -e APP_COOKIE_SECURE=true \
-  -e APP_COOKIE_SAME_SITE=Lax \
-  adulto-funcional-server
-
-# NOTA: El perfil prod requiere Redis. Usa docker-compose (recomendado)
-# o asegúrate de tener Redis corriendo y accesible desde el contenedor.
-
-# Entrar al contenedor de la aplicación
-docker-compose exec app sh
-
-# Entrar al contenedor de MariaDB
-docker-compose exec mariadb mariadb -u root -p
-
-# Ver logs en tiempo real
-docker-compose logs -f --tail=100
-
-# Reiniciar un servicio específico
-docker-compose restart app
-```
-
-## API Endpoints
-
-### Cuentas (`/api/account`)
-
-- `GET /api/account/{id}` - Obtener datos de una cuenta (requiere autenticación + ownership)
-- `PATCH /api/account/{id}` - Actualizar datos de una cuenta (requiere autenticación + ownership)
-- `DELETE /api/account/{id}` - Eliminar una cuenta (endpoint existe, lógica pendiente — retorna 501 Not Implemented)
-
-### Autenticación (`/api/auth`)
-
-- `POST /api/auth/login` - Iniciar sesión (JWT en HttpOnly cookie; también en body para clientes nativos)
-- `POST /api/auth/register` - Registrar usuario (JWT en HttpOnly cookie; también en body para clientes nativos)
-- `POST /api/auth/logout` - Cerrar sesión (limpia cookie)
-
-### Finanzas (`/api/finances`)
-
-- `GET /api/finances/movements` - Listar movimientos (filtros opcionales)
-- `POST /api/finances/movements` - Registrar un movimiento
-- `GET /api/finances/movements/{id}` - Obtener un movimiento
-- `PATCH /api/finances/movements/{id}` - Actualizar un movimiento
-- `DELETE /api/finances/movements/{id}` - Eliminar un movimiento
-- `GET /api/finances/categories` - Listar categorías (filtro opcional)
-- `POST /api/finances/categories` - Crear categoría
-- `GET /api/finances/categories/{id}` - Obtener categoría
-- `PATCH /api/finances/categories/{id}` - Actualizar categoría
-- `DELETE /api/finances/categories/{id}` - Eliminar categoría
-- `GET /api/finances/fixed-expenses` - Listar gastos fijos (filtros opcionales)
-- `POST /api/finances/fixed-expenses` - Registrar gasto fijo
-- `GET /api/finances/fixed-expenses/{id}` - Obtener gasto fijo
-- `PATCH /api/finances/fixed-expenses/{id}` - Actualizar gasto fijo
-- `DELETE /api/finances/fixed-expenses/{id}` - Eliminar gasto fijo
-
-### Agenda (`/api/agenda`)
-
-- `GET /api/agenda/events` - Listar eventos (filtros opcionales)
-- `POST /api/agenda/events` - Crear evento
-- `GET /api/agenda/events/{id}` - Obtener evento
-- `PATCH /api/agenda/events/{id}` - Actualizar evento
-- `DELETE /api/agenda/events/{id}` - Eliminar evento
-
-### Gestor de contraseñas (`/api/security/passwords`)
-
-- `GET /api/security/passwords` - Listar credenciales
-- `POST /api/security/passwords` - Guardar nueva credencial
-- `GET /api/security/passwords/{id}` - Obtener credencial (descifrada)
-- `PATCH /api/security/passwords/{id}` - Actualizar credencial
-- `DELETE /api/security/passwords/{id}` - Eliminar credencial
-
-### Health Check
-
-- `POST /api/security/passwords/master-key/verify` - Verificar Master Key para acceder al gestor
-
-### Health Check
-
-- `GET /actuator/health` - Estado de la aplicación (público, usado por Docker)
-
-## Formato de respuesta estándar
-
-Todas las respuestas de la API siguen el formato `ApiResponse<T>`:
+Una operación exitosa usa el sobre histórico:
 
 ```json
 {
   "status": 200,
   "message": "Operación exitosa",
-  "data": { ... }
+  "data": {}
 }
 ```
 
-## Manejo de errores
+Los listados añaden `page` sin cambiar `data`:
 
-El sistema usa una jerarquía de excepciones centralizada:
-
-| Excepción               | HTTP Status | Descripción                              |
-| ----------------------- | ----------- | ---------------------------------------- |
-| `BusinessException`     | 400         | Errores de negocio generales             |
-| `NotFoundException`     | 404         | Recurso no encontrado                    |
-| `UnauthorizedException` | 401         | Credenciales incorrectas                 |
-| `ConflictException`     | 409         | Conflicto de datos (ej. email duplicado) |
-| `ForbiddenException`    | 403         | Acceso denegado (Master Key requerida)   |
-
-## Documentación Javadoc
-
-El código fuente está documentado con Javadoc siguiendo las convenciones estándar. Para generar la documentación:
-
-```bash
-./mvnw javadoc:javadoc
-# O con el plugin de JDK
-javadoc -d docs -sourcepath src/main/java -subpackages org.adultofuncional.main
+```json
+{
+  "status": 200,
+  "message": "Movimientos listados exitosamente",
+  "page": {
+    "number": 0,
+    "size": 20,
+    "totalElements": 42,
+    "totalPages": 3,
+    "hasNext": true,
+    "hasPrevious": false
+  },
+  "data": []
+}
 ```
 
-Los archivos `package-info.java` documentan la arquitectura y propósito de cada paquete.
+Un error usa código estable y trazabilidad:
 
-**Nota**: El directorio `doc/apidocs/` está en `.gitignore` y no se incluye en el repositorio. La documentación generada debe considerarse un artefacto temporal.
+```json
+{
+  "status": 400,
+  "code": "VALIDATION_FAILED",
+  "message": "La solicitud contiene datos inválidos",
+  "fieldErrors": [],
+  "traceId": "4c1f5a5e1fc34e0e",
+  "data": null
+}
+```
 
-## Autores
+Consulta [docs/API_ERROR_CONTRACT.md](./docs/API_ERROR_CONTRACT.md) para la
+matriz completa.
 
-- Jeronimo Ospina
-- Miguel Angel Blandon Montes
-- Lydis Jaraba
-- Daniel Salazar
-- Juan Sebastian Rios
+## Paginación, tiempo y dinero
+
+- `page` inicia en cero, `size` vale 20 por defecto y admite máximo 100.
+- `sortDirection` acepta `ASC` o `DESC`; cada endpoint limita `sortBy` a una
+  lista segura.
+- Filtros, orden, conteo y límites se ejecutan en SQL. El UUID actúa como
+  desempate determinista.
+- Fechas de negocio usan `LocalDate`; timestamps técnicos usan `Instant` UTC.
+- Los eventos conservan zona IANA y horas civiles, además de sus instantes UTC.
+- Los importes deben ser positivos y caber sin redondeo en `DECIMAL(10,2)`:
+  máximo ocho enteros y dos decimales.
+
+## Master Key y bóveda
+
+La contraseña de la cuenta autentica a la persona; la Master Key autoriza la
+bóveda. Son secretos diferentes.
+
+1. La cuenta configura o verifica su Master Key.
+2. El servidor almacena solo su hash Argon2 en MariaDB.
+3. Durante el desbloqueo, Redis recibe una copia cifrada con un secreto de
+   sesión y TTL; la clave Redis incluye `accountId + sessionId`.
+4. Cada credencial usa salt e IV propios. El formato actual aplica
+   PBKDF2-HMAC-SHA256 con 600.000 iteraciones, AES-256-GCM y AAD.
+5. Cambiar la Master Key recifra la bóveda dentro de una transacción.
+6. Cerrar o revocar la sesión elimina su desbloqueo.
+
+Los listados nunca incluyen la contraseña descifrada. Solo
+`GET /api/security/passwords/{id}` la devuelve y la respuesta lleva
+`Cache-Control: no-store`.
+
+## Pruebas y calidad
+
+```bash
+# Compilación, unitarias e integración con Testcontainers
+./mvnw clean verify
+
+# Una clase concreta
+./mvnw test -Dtest=EventTest
+
+# Árbol de dependencias
+./mvnw dependency:tree
+
+# SCA; requiere red y descarga inicial de la base de vulnerabilidades
+./mvnw -Psecurity-scan verify
+
+# Javadoc temporal en server/doc/apidocs
+./mvnw javadoc:javadoc
+```
+
+El build de Docker ejecuta las pruebas unitarias. Las pruebas que requieren
+Testcontainers se ejecutan fuera del build porque necesitan acceso al daemon de
+Docker.
+
+## Migraciones
+
+Flyway valida y aplica V1–V14 al iniciar. Hibernate usa `ddl-auto=validate`: no
+crea ni modifica el esquema. Nunca edites una migración ya aplicada; añade una
+nueva versión.
+
+```bash
+SPRING_DATASOURCE_URL=jdbc:mariadb://localhost:3306/adulto_funcional \
+SPRING_DATASOURCE_USERNAME=usuario \
+SPRING_DATASOURCE_PASSWORD=secreto \
+SPRING_FLYWAY_LOCATIONS=filesystem:src/main/resources/database/migrations \
+./mvnw flyway:validate
+```
+
+El esquema, restricciones e índices están descritos en
+[DATABASE.md](./DATABASE.md).
+
+## Despliegue
+
+- `docker-compose.yml` es la base local: publica solo `127.0.0.1:8080` por
+  defecto y mantiene MariaDB/Redis en una red interna.
+- `docker-compose.coolify.yml` añade la red externa y etiquetas necesarias para
+  el proxy de Coolify:
+
+  ```bash
+  docker compose -f docker-compose.yml \
+    -f docker-compose.coolify.yml up -d --build
+  ```
+
+- Producción falla rápido ante secretos de ejemplo, secretos criptográficos que
+  no sean Base64 aleatorio o cookies sin `Secure`.
+- `baseline-on-migrate` está desactivado para no aceptar silenciosamente una
+  base no vacía sin historial.
+
+La guía de operación, backups, rotación y diagnóstico está en
+[docs/OPERATIONS.md](./docs/OPERATIONS.md).
+
+## Alcance operativo conocido
+
+- La recurrencia y el recordatorio de eventos se validan y almacenan, pero el
+  backend no integra todavía un canal externo de notificaciones.
+- El scheduler de gastos fijos avanza `nextDueDate`; no crea movimientos de
+  cobro automáticamente.
+- Redis se ejecuta sin AOF/RDB porque contiene estado de seguridad efímero. Una
+  pérdida de Redis bloquea las bóvedas y reinicia límites; también elimina la
+  lista temporal de JWT revocados, cuyo riesgo queda acotado por los access
+  tokens de 15 minutos. Las sesiones y refresh hashes permanecen en MariaDB.
+- Flyway 11.7.2 valida correctamente las migraciones usadas, pero emite una
+  advertencia porque MariaDB 11.8 es posterior a su matriz probada declarada.
+
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Módulos, capas, flujos y decisiones técnicas |
+| [DATABASE.md](./DATABASE.md) | Tablas, relaciones, restricciones, índices y migraciones |
+| [docs/API_REFERENCE.md](./docs/API_REFERENCE.md) | Los 41 endpoints, DTO, filtros y ejemplos |
+| [docs/API_ERROR_CONTRACT.md](./docs/API_ERROR_CONTRACT.md) | Sobre y catálogo estable de errores |
+| [docs/SECURITY.md](./docs/SECURITY.md) | Modelo de amenazas y controles implementados |
+| [docs/OPERATIONS.md](./docs/OPERATIONS.md) | Configuración, despliegue, backups y troubleshooting |
+| [docs/RESOURCE_OWNERSHIP.md](./docs/RESOURCE_OWNERSHIP.md) | Patrón obligatorio de aislamiento por cuenta |
+| [docs/decisions/README.md](./docs/decisions/README.md) | Índice de ADR y estado de implementación |
 
 ## Licencia
 
-Este proyecto está bajo licencia propietaria. Todos los derechos reservados.
-
-## Estado del proyecto
-
-En desarrollo activo. Estado por módulo:
-
-| Módulo             | Estado     | Detalle                                                                                                                           |
-| ------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Autenticación      | Completado | Login resistente a enumeración, registro con `ConflictException` (409), logout con `ApiResponse` 204, protección anti‑XSS en DTOs |
-| Cuentas            | Parcial    | GET y PATCH funcionales con ownership y unicidad de email; DELETE implementado en use case pero no expuesto en controller (501)   |
-| Financiero         | Completado | CRUD completo de movimientos, gastos fijos y categorías con filtros, `@NoHtml` y controlador REST bajo `/api/finances`            |
-| Agenda             | Completado | CRUD completo de eventos con prioridad, recurrencia, recordatorios y controlador REST bajo `/api/agenda`                          |
-| Gestor contraseñas | Completado | Cifrado AES‑256, verificación de Master Key, CRUD completo bajo `/api/security/passwords`                                         |
-
-**Próximos pasos**: Implementar pruebas de integración para los módulos financiero, agenda y gestor de contraseñas.
+Distribuido bajo la licencia MIT. Consulta [LICENSE](./LICENSE).

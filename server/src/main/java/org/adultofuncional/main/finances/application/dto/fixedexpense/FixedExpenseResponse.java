@@ -119,6 +119,12 @@ public class FixedExpenseResponse {
    */
   private Status status;
 
+  /** Fecha desde la que comenzó el ciclo recurrente. */
+  private LocalDate startDate;
+
+  /** Días de anticipación configurados para el recordatorio. */
+  private Integer reminderDays;
+
   /**
    * Fecha de cierre o vencimiento del gasto fijo.
    *

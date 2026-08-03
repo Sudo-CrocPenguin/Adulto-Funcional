@@ -4,7 +4,7 @@ import org.adultofuncional.main.account.application.usecase.UpdateAccountUseCase
 import org.adultofuncional.main.shared.security.NoHtml;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
@@ -46,46 +46,46 @@ public class UpdateAccountRequest {
 
   /**
    * Nombres del titular.
-   * Obligatorio, máximo 50 caracteres, sin HTML.
-   *
-   * TODO: Añadir validación de formato (solo letras, espacios, guiones)
-   * mediante {@code @Pattern}.
+   * Opcional, máximo 50 caracteres, formato Unicode y sin HTML.
    */
   @Size(max = 50, message = "El nombre no puede exceder 50 caracteres")
+  @Pattern(
+      regexp = org.adultofuncional.main.shared.validation.InputPatterns.PERSON_NAME,
+      message = "El nombre solo admite letras, espacios, apóstrofes y guiones")
   @NoHtml
   private final String names;
 
   /**
    * Apellidos del titular.
-   * Obligatorio, máximo 50 caracteres, sin HTML.
-   *
-   * TODO: Añadir validación de formato (solo letras, espacios, guiones)
-   * mediante {@code @Pattern}.
+   * Opcional, máximo 50 caracteres, formato Unicode y sin HTML.
    */
   @Size(max = 50, message = "Los apellidos no pueden exceder 50 caracteres")
+  @Pattern(
+      regexp = org.adultofuncional.main.shared.validation.InputPatterns.PERSON_NAME,
+      message = "Los apellidos solo admiten letras, espacios, apóstrofes y guiones")
   @NoHtml
   private final String lastnames;
 
   /**
    * Número de teléfono de contacto.
-   * Obligatorio, máximo 20 caracteres, sin HTML.
-   *
-   * TODO: Agregar {@code @Pattern} para validar formato internacional
-   * (ej. +573001234567).
+   * Opcional, formato internacional E.164 y sin HTML.
    */
-  @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
+  @Pattern(
+      regexp = org.adultofuncional.main.shared.validation.InputPatterns.E164_PHONE,
+      message = "El teléfono debe usar formato E.164, por ejemplo +573001234567")
   @NoHtml
   private final String phone;
 
   /**
    * Correo electrónico del usuario (usado también como username).
-   * Obligatorio, debe ser un email válido, máximo 255 caracteres, sin HTML.
-   *
-   * TODO: Agregar validación de dominios permitidos según políticas del sistema
-   * (ej. solo ciertos dominios corporativos).
+   * Opcional; cuando se envía debe ser no vacío, válido y sin HTML. No se
+   * restringen dominios porque no existe esa política de negocio.
    */
   @Email(message = "Debe ser un email válido")
   @Size(max = 255, message = "El email no puede exceder 255 caracteres")
+  @Pattern(
+      regexp = org.adultofuncional.main.shared.validation.InputPatterns.NON_BLANK,
+      message = "El email no puede estar vacío")
   @NoHtml
   private final String email;
 }

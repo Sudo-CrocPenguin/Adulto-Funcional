@@ -1,14 +1,22 @@
 package org.adultofuncional.main.finances.infrastructure.repository;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.FixedExpenseRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.FixedExpensesEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.mapper.FixedExpenseMapper;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringFixedExpenseJpaRepository;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -25,13 +33,13 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Métodos implementados:</strong>
  * <ul>
- * <li>{@link #findById(UUID)} — busca un gasto fijo por ID y lo convierte
- * a dominio.</li>
- * <li>{@link #findAllByAccountId(UUID)} — lista todos los gastos fijos
- * asociados a una cuenta.</li>
+ * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca un gasto fijo por ID y
+ * cuenta y lo convierte a dominio.</li>
+ * <li>Consulta páginas filtradas y ordenadas dentro de una cuenta.</li>
  * <li>{@link #save(FixedExpense)} — persiste un gasto fijo nuevo o actualizado,
  * devolviendo el modelo de dominio resultante.</li>
- * <li>{@link #deleteById(UUID)} — elimina un gasto fijo por su ID.</li>
+ * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina un gasto fijo por
+ * ID y cuenta propietaria.</li>
  * </ul>
  *
  * @author Juan Sebastian Rios
@@ -44,41 +52,78 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
 
+  private static final Map<String, String> SORT_FIELDS = Map.of(
+      "nextDueDate", "fixedExpenseNextDueDate",
+      "amount", "fixedExpenseAmount",
+      "name", "fixedExpenseName",
+      "status", "fixedExpenseStatus",
+      "frequency", "fixedExpenseFrequency",
+      "id", "fixedExpenseId");
+
   private final SpringFixedExpenseJpaRepository fixedExpenseJpaRepository;
   private final FixedExpenseMapper fixedExpenseMapper;
 
   /**
-   * Busca un gasto fijo por su identificador único.
+   * Busca un gasto fijo por identificador y cuenta propietaria en una única
+   * consulta, antes de materializar el modelo de dominio.
    *
-   * <p>
-   * Consulta el repositorio Spring Data JPA y convierte la entidad resultante
-   * al modelo de dominio mediante
-   * {@link FixedExpenseMapper#toDomain(FixedExpensesEntity)}.
-   *
-   * @param id UUID del gasto fijo. No debe ser {@code null}.
-   * @return {@link Optional} con el gasto fijo si existe;
-   *         {@code Optional.empty()} en caso contrario.
+   * @param id        UUID del gasto fijo
+   * @param accountId UUID de la cuenta propietaria
+   * @return gasto fijo cuando ambos identificadores coinciden
    */
   @Override
-  public Optional<FixedExpense> findById(UUID id) {
-    return fixedExpenseJpaRepository.findById(id).map(fixedExpenseMapper::toDomain);
+  public Optional<FixedExpense> findByIdAndAccountId(UUID id, UUID accountId) {
+    return fixedExpenseJpaRepository
+        .findByFixedExpenseIdAndAccount_AccountId(id, accountId)
+        .map(fixedExpenseMapper::toDomain);
   }
 
   /**
-   * Lista todos los gastos fijos asociados a una cuenta específica.
+   * Consulta una página acotada de gastos fijos.
    *
    * <p>
-   * Utiliza el método {@code findByAccount_AccountId} de Spring Data JPA
-   * para recuperar las entidades y luego las convierte una a una al modelo
-   * de dominio {@link FixedExpense} mediante el mapper.
+   * Traduce el campo lógico a la propiedad JPA, añade el UUID como desempate
+   * y aplica filtros y límites directamente en MariaDB.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
    * @return lista de gastos fijos de la cuenta (vacía si no hay registros).
    */
   @Override
-  public List<FixedExpense> findAllByAccountId(UUID accountId) {
-    return fixedExpenseJpaRepository.findByAccount_AccountId(accountId)
-        .stream().map(fixedExpenseMapper::toDomain).toList();
+  public PageResult<FixedExpense> findPageByAccountId(
+      UUID accountId,
+      Status status,
+      UUID categoryId,
+      String searchTerm,
+      PageQuery pageQuery) {
+    String entitySortField = SORT_FIELDS.get(pageQuery.sortBy());
+    Sort.Direction direction = pageQuery.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort sort = Sort.by(direction, entitySortField);
+    if (!entitySortField.equals("fixedExpenseId")) {
+      sort = sort.and(Sort.by(direction, "fixedExpenseId"));
+    }
+    PageRequest pageable = PageRequest.of(pageQuery.number(), pageQuery.size(), sort);
+    Page<FixedExpensesEntity> page = fixedExpenseJpaRepository.findPageByAccountId(
+        accountId,
+        status == null ? null : status.name(),
+        categoryId,
+        searchTerm,
+        pageable);
+    return new PageResult<>(
+        page.getContent().stream().map(fixedExpenseMapper::toDomain).toList(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.hasNext(),
+        page.hasPrevious());
+  }
+
+  @Override
+  public List<FixedExpense> findDueForUpdate(LocalDate cutoff, int batchSize) {
+    PageRequest batch = PageRequest.of(0, batchSize);
+    return fixedExpenseJpaRepository.findDueForUpdate(cutoff, batch).stream()
+        .map(fixedExpenseMapper::toDomain)
+        .toList();
   }
 
   /**
@@ -96,22 +141,22 @@ public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
   @Override
   public FixedExpense save(FixedExpense fixedExpense) {
     FixedExpensesEntity entity = fixedExpenseMapper.toEntity(fixedExpense);
+    fixedExpenseJpaRepository.findById(fixedExpense.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     FixedExpensesEntity saved = fixedExpenseJpaRepository.save(entity);
     return fixedExpenseMapper.toDomain(saved);
   }
 
   /**
-   * Elimina un gasto fijo por su identificador único.
+   * Elimina un gasto fijo por identificador y cuenta en una sola sentencia.
    *
-   * <p>
-   * Si no existe ningún gasto fijo con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso de Spring Data JPA). La validación de existencia
-   * previa se realiza en la capa de aplicación.
-   *
-   * @param id UUID del gasto fijo a eliminar. No debe ser {@code null}.
+   * @param id        UUID del gasto fijo
+   * @param accountId UUID de la cuenta propietaria
+   * @return {@code true} cuando la base de datos eliminó una fila
    */
   @Override
-  public void deleteById(UUID id) {
-    fixedExpenseJpaRepository.deleteById(id);
+  public boolean deleteByIdAndAccountId(UUID id, UUID accountId) {
+    return fixedExpenseJpaRepository
+        .deleteByFixedExpenseIdAndAccountId(id, accountId) > 0;
   }
 }

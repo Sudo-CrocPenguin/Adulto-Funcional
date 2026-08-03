@@ -1,16 +1,19 @@
 package org.adultofuncional.main.auth.application.usecase;
 
-import java.util.List;
+import java.time.Clock;
 
 import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.auth.application.dto.AuthResponse;
 import org.adultofuncional.main.auth.application.dto.RegisterRequest;
-import org.adultofuncional.main.config.security.JwtService;
+import org.adultofuncional.main.auth.application.dto.SessionTokens;
+import org.adultofuncional.main.auth.application.service.AuthenticationSessionService;
+import org.adultofuncional.main.auth.domain.model.AccountRole;
+import org.adultofuncional.main.auth.domain.repository.AccountRoleRepository;
 import org.adultofuncional.main.shared.exception.ConflictException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,8 +38,10 @@ import lombok.RequiredArgsConstructor;
 public class RegisterUseCase {
 
   private final AccountRepository accountRepository;
+  private final AccountRoleRepository roleRepository;
   private final PasswordEncoder passwordEncoder;
-  private final JwtService jwtService;
+  private final AuthenticationSessionService sessionService;
+  private final Clock clock;
 
   /**
    * Ejecuta el registro de un nuevo usuario.
@@ -46,6 +51,7 @@ public class RegisterUseCase {
    * @return {@link AuthResponse} con el token JWT y los datos de la cuenta creada
    * @throws ConflictException si el correo electrónico ya está registrado
    */
+  @Transactional
   public AuthResponse execute(RegisterRequest request) {
     // 1. Verificar unicidad del email
     accountRepository.findByEmail(request.getEmail())
@@ -66,29 +72,14 @@ public class RegisterUseCase {
         request.getEmail(),
         request.getPhone(),
         hashedPassword,
-        hashedMasterKey);
+        hashedMasterKey,
+        clock);
 
     // 4. Persistir
     Account savedAccount = accountRepository.save(account);
+    roleRepository.grant(savedAccount.getId(), AccountRole.USER);
 
-    // 5. Generar token JWT
-    String token = jwtService.generateToken(
-        savedAccount.getId().toString(),
-        savedAccount.getEmail(),
-        List.of(new SimpleGrantedAuthority("ROLE_USER")));
-
-    // 6. Construir respuesta
-    return AuthResponse.builder()
-        .token(token)
-        .tokenType("Bearer")
-        .expiresIn(jwtService.getExpiration())
-        .accountId(savedAccount.getId())
-        .names(savedAccount.getNames())
-        .lastnames(savedAccount.getLastnames())
-        .email(savedAccount.getEmail())
-        .phone(savedAccount.getPhone())
-        .createdAt(savedAccount.getCreatedAt())
-        .hasMasterKey(savedAccount.getMasterKeyHash() != null)
-        .build();
+    SessionTokens tokens = sessionService.create(savedAccount);
+    return AuthResponse.from(savedAccount, tokens, clock.instant());
   }
 }

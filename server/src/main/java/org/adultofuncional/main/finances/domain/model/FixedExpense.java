@@ -65,7 +65,7 @@ public class FixedExpense {
   /** Nombre descriptivo del gasto fijo. No puede ser nulo ni vacío. */
   String name;
 
-  /** Monto monetario del gasto. Debe ser mayor que cero. */
+  /** Monto monetario representable como {@code DECIMAL(10,2)}. */
   BigDecimal amount;
 
   /** Identificador de la categoría asociada. No puede ser nulo. */
@@ -246,6 +246,35 @@ public class FixedExpense {
     return Status.ACTIVE.equals(this.status);
   }
 
+  /**
+   * Avanza el vencimiento hasta la primera ocurrencia posterior al corte.
+   *
+   * <p>La operación preserva la secuencia desde el vencimiento anterior y no
+   * desde la fecha de ejecución, por lo que un job retrasado no introduce una
+   * deriva adicional en el calendario recurrente.</p>
+   *
+   * @param cutoff día que ya debe considerarse vencido
+   * @return cantidad de ocurrencias avanzadas
+   */
+  public int advanceBeyond(LocalDate cutoff) {
+    if (cutoff == null) {
+      throw new IllegalArgumentException("Cutoff cannot be null");
+    }
+    int advances = 0;
+    while (!nextDueDate.isAfter(cutoff)) {
+      nextDueDate = switch (frequency) {
+        case WEEKLY -> nextDueDate.plusWeeks(1);
+        case BIWEEKLY -> nextDueDate.plusWeeks(2);
+        case MONTHLY -> nextDueDate.plusMonths(1);
+        case QUARTERLY -> nextDueDate.plusMonths(3);
+        case SEMIANNUAL -> nextDueDate.plusMonths(6);
+        case ANNUAL -> nextDueDate.plusYears(1);
+      };
+      advances++;
+    }
+    return advances;
+  }
+
   // ── Invariantes de negocio ────────────────────────────────────────────────
 
   private static void validateId(UUID fixedExpenseId) {
@@ -276,8 +305,12 @@ public class FixedExpense {
     if (amount == null) {
       throw new IllegalArgumentException("Amount cannot be null");
     }
-    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-      throw new IllegalArgumentException("Amount must be greater than zero");
+    if (amount.compareTo(new BigDecimal("0.01")) < 0) {
+      throw new IllegalArgumentException("Amount must be at least 0.01");
+    }
+    int integerDigits = amount.precision() - amount.scale();
+    if (integerDigits > 8 || amount.scale() > 2) {
+      throw new IllegalArgumentException("Amount exceeds DECIMAL(10,2) precision");
     }
   }
 
@@ -300,8 +333,8 @@ public class FixedExpense {
     if (nextDueDate == null) {
       throw new IllegalArgumentException("Next due date cannot be null");
     }
-    if (nextDueDate.isBefore(startDate)) {
-      throw new IllegalArgumentException("Next due date cannot be before start date");
+    if (!nextDueDate.isAfter(startDate)) {
+      throw new IllegalArgumentException("Next due date must be after start date");
     }
   }
 

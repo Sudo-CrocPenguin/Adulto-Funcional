@@ -1,14 +1,21 @@
 package org.adultofuncional.main.finances.infrastructure.repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.domain.model.Category;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.mapper.CategoryMapper;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringCategoryJpaRepository;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -22,19 +29,8 @@ import lombok.RequiredArgsConstructor;
  * {@link CategoryMapper} para convertir entre las entidades JPA
  * ({@link CategoryEntity}) y el modelo de dominio ({@link Category}).
  *
- * <p>
- * <strong>Métodos implementados:</strong>
- * <ul>
- * <li>{@link #findById(UUID)} — busca una categoría por ID y la convierte
- * a dominio.</li>
- * <li>{@link #findAll()} — retorna todas las categorías como lista de
- * dominio.</li>
- * <li>{@link #findAllById(Iterable)} — consulta por lote de IDs y convierte
- * a dominio (evita N+1 en listados de otras entidades).</li>
- * <li>{@link #save(Category)} — persiste una categoría nueva o actualizada,
- * devolviendo el modelo de dominio resultante.</li>
- * <li>{@link #deleteById(UUID)} — elimina una categoría por su ID.</li>
- * </ul>
+ * Las consultas aplican siempre alcance y ownership antes de mapear el dato al
+ * dominio; el adaptador no expone accesos globales que puedan omitir esa regla.
  *
  * @author Juan Sebastian Rios
  * @since 1.0
@@ -46,41 +42,75 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CategoryRepositoryImpl implements CategoryRepository {
 
+  private static final Map<String, String> SORT_FIELDS = Map.of(
+      "name", "categoryName",
+      "type", "categoryType",
+      "scope", "categoryScope",
+      "id", "categoryId");
+
   private final SpringCategoryJpaRepository categoryJpaRepository;
   private final CategoryMapper categoryMapper;
 
-  /**
-   * Busca una categoría por su identificador único.
-   *
-   * <p>
-   * Consulta el repositorio Spring Data JPA y convierte la entidad resultante
-   * al modelo de dominio mediante
-   * {@link CategoryMapper#toDomain(CategoryEntity)}.
-   *
-   * @param id UUID de la categoría. No debe ser {@code null}.
-   * @return {@link Optional} con la categoría si existe;
-   *         {@code Optional.empty()} en caso contrario.
-   */
   @Override
-  public Optional<Category> findById(UUID id) {
-    return categoryJpaRepository.findById(id).map(categoryMapper::toDomain);
+  public Optional<Category> findAccessibleById(UUID accountId, UUID categoryId) {
+    return categoryJpaRepository.findAccessibleById(accountId, categoryId)
+        .map(categoryMapper::toDomain);
   }
 
-  /**
-   * Retorna todas las categorías registradas en el sistema.
-   *
-   * <p>
-   * Recupera todas las entidades {@link CategoryEntity} y las convierte una a una
-   * al modelo de dominio {@link Category} usando el mapper.
-   *
-   * @return lista de categorías (vacía si no hay registros).
-   */
   @Override
-  public List<Category> findAll() {
-    return categoryJpaRepository.findAll()
-        .stream()
+  public Optional<Category> findAccessibleByIdAndType(
+      UUID accountId,
+      UUID categoryId,
+      CategoryType type) {
+    return categoryJpaRepository.findAccessibleByIdAndType(accountId, categoryId, type.name())
+        .map(categoryMapper::toDomain);
+  }
+
+  @Override
+  public Optional<Category> findPersonalByIdAndOwner(UUID accountId, UUID categoryId) {
+    return categoryJpaRepository.findPersonalByIdAndOwner(accountId, categoryId)
+        .map(categoryMapper::toDomain);
+  }
+
+  @Override
+  public PageResult<Category> findPageAccessible(
+      UUID accountId,
+      CategoryType type,
+      String searchTerm,
+      PageQuery pageQuery) {
+    String persistedType = type == null ? null : type.name();
+    String entitySortField = SORT_FIELDS.get(pageQuery.sortBy());
+    Sort.Direction direction = pageQuery.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort sort = Sort.by(direction, entitySortField);
+    if (!entitySortField.equals("categoryId")) {
+      sort = sort.and(Sort.by(direction, "categoryId"));
+    }
+    PageRequest pageable = PageRequest.of(pageQuery.number(), pageQuery.size(), sort);
+    Page<CategoryEntity> page = categoryJpaRepository.findPageAccessible(
+        accountId,
+        persistedType,
+        searchTerm,
+        pageable);
+    return new PageResult<>(
+        page.getContent().stream().map(categoryMapper::toDomain).toList(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.hasNext(),
+        page.hasPrevious());
+  }
+
+  @Override
+  public List<Category> findAllAccessibleById(UUID accountId, Iterable<UUID> ids) {
+    return categoryJpaRepository.findAllAccessibleById(accountId, ids).stream()
         .map(categoryMapper::toDomain)
         .toList();
+  }
+
+  @Override
+  public boolean deletePersonalByIdAndOwner(UUID accountId, UUID categoryId) {
+    return categoryJpaRepository.deletePersonalByIdAndOwner(accountId, categoryId) > 0;
   }
 
   /**
@@ -98,43 +128,10 @@ public class CategoryRepositoryImpl implements CategoryRepository {
   @Override
   public Category save(Category category) {
     CategoryEntity entity = categoryMapper.toEntity(category);
-    CategoryEntity saved = categoryJpaRepository.save(entity);
+    categoryJpaRepository.findById(category.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
+    CategoryEntity saved = categoryJpaRepository.saveAndFlush(entity);
     return categoryMapper.toDomain(saved);
   }
 
-  /**
-   * Elimina una categoría por su identificador único.
-   *
-   * <p>
-   * Si no existe ninguna categoría con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso de Spring Data JPA).
-   *
-   * @param id UUID de la categoría a eliminar. No debe ser {@code null}.
-   */
-  @Override
-  public void deleteById(UUID id) {
-    categoryJpaRepository.deleteById(id);
-  }
-
-  /**
-   * Busca múltiples categorías por sus identificadores en un solo lote.
-   *
-   * <p>
-   * Utiliza {@link SpringCategoryJpaRepository#findAllById(Iterable)} para
-   * recuperar las entidades en una única consulta y luego las convierte a
-   * dominio con el mapper. Este método es usado por los casos de uso que
-   * necesitan cargar categorías asociadas a otras entidades (gastos fijos,
-   * movimientos) para evitar el problema N+1.
-   *
-   * @param ids colección de UUIDs de las categorías a buscar.
-   * @return lista de modelos de dominio {@link Category} encontrados.
-   *         Puede ser de menor tamaño que la entrada si algunos IDs no existen.
-   */
-  @Override
-  public List<Category> findAllById(Iterable<UUID> ids) {
-    List<CategoryEntity> entities = categoryJpaRepository.findAllById(ids);
-    return entities.stream()
-        .map(categoryMapper::toDomain)
-        .toList();
-  }
 }

@@ -1,5 +1,7 @@
 package org.adultofuncional.main.shared.exception;
 
+import org.adultofuncional.main.shared.response.ApiErrorCode;
+
 /**
  * Excepción que representa un recurso no encontrado en el sistema (HTTP 404).
  *
@@ -11,14 +13,14 @@ package org.adultofuncional.main.shared.exception;
  */
 
 public class NotFoundException extends  BusinessException {
-    
+
     /**
      * Construye una nueva excepción de recurso no encontrado.
      *
      * @param message mensaje descriptivo que indica qué recurso no fue encontrado
      */
-    
+
     public NotFoundException(String message){
-        super(message, 404);
+        super(message, 404, ApiErrorCode.RESOURCE_NOT_FOUND);
     }
 }

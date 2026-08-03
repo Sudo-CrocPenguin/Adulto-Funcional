@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
 import org.adultofuncional.main.finances.application.dto.fixedexpense.FixedExpenseResponse;
 import org.adultofuncional.main.finances.domain.model.Category;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import org.adultofuncional.main.finances.domain.model.FixedExpense;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.FixedExpenseRepository;
@@ -41,8 +42,8 @@ public class GetFixedExpenseUseCase {
   /**
    * Ejecuta la consulta de un gasto fijo por su ID.
    *
-   * @param accountId Identificador de la cuenta propietaria (contexto de
-   *                  trazabilidad; la consulta se realiza por {@code expenseId}).
+   * @param accountId Identificador de la cuenta propietaria que limita la
+   *                  consulta.
    * @param expenseId Identificador único del gasto fijo.
    * @return {@link FixedExpenseResponse} con los datos del gasto fijo y su
    *         categoría asociada como {@link CategoryResponse}.
@@ -51,16 +52,20 @@ public class GetFixedExpenseUseCase {
    */
   @Transactional(readOnly = true)
   public FixedExpenseResponse execute(UUID accountId, UUID expenseId) {
-    FixedExpense expense = fixedExpenseRepository.findById(expenseId)
+    FixedExpense expense = fixedExpenseRepository.findByIdAndAccountId(expenseId, accountId)
         .orElseThrow(() -> new NotFoundException("Gasto fijo no encontrado con id: " + expenseId));
 
-    Category category = categoryRepository.findById(expense.getCategoryId())
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            expense.getCategoryId(),
+            CategoryType.FINANCES)
         .orElseThrow(() -> new NotFoundException("Categoría asociada no encontrada"));
 
     CategoryResponse categoryResponse = CategoryResponse.builder()
         .id(category.getId())
         .name(category.getName())
         .type(category.getType())
+        .scope(category.getScope())
         .build();
 
     return FixedExpenseResponse.builder()
@@ -69,6 +74,8 @@ public class GetFixedExpenseUseCase {
         .frequency(expense.getFrequency())
         .amount(expense.getAmount())
         .status(expense.getStatus())
+        .startDate(expense.getStartDate())
+        .reminderDays(expense.getReminderDays())
         .nextDueDate(expense.getNextDueDate())
         .category(categoryResponse)
         .build();

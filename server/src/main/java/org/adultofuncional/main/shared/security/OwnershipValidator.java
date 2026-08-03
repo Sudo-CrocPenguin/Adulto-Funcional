@@ -1,6 +1,8 @@
 package org.adultofuncional.main.shared.security;
 
-import org.adultofuncional.main.shared.exception.UnauthorizedException;
+import java.util.UUID;
+
+import org.adultofuncional.main.shared.exception.NotFoundException;
 import org.springframework.stereotype.Component;
 
 /**
@@ -14,13 +16,12 @@ import org.springframework.stereotype.Component;
  * lectura, escritura o eliminación.
  *
  * <p>
- * El recurso a validar debe implementar {@link OwnedResource} para exponer
- * el email del propietario sin acoplar este validador a ningún módulo
- * concreto.
+ * La comparación se hace por UUID de cuenta, que es estable y no reutilizable.
+ * El email no debe usarse para ownership porque el usuario puede modificarlo
+ * y un JWT vigente podría quedar asociado a un correo reutilizado.
  *
  * @author Juan Sebastian Rios
  * @since 0.0.1
- * @see OwnedResource
  */
 @Component
 public class OwnershipValidator {
@@ -29,18 +30,18 @@ public class OwnershipValidator {
    * Verifica que el usuario autenticado sea el propietario del recurso.
    *
    * <p>
-   * Compara el email del recurso con el email extraído del JWT por
+   * Compara el identificador de la cuenta propietaria del recurso con el
+   * {@code accountId} extraído del claim {@code sub} del JWT por
    * {@link org.adultofuncional.main.config.security.JwtAuthenticationFilter}.
-   * Si no coinciden, lanza {@link UnauthorizedException} antes de que
-   * el caso de uso sea invocado.
    *
-   * @param resource    recurso que expone el email de su propietario
-   * @param loggedEmail email del usuario autenticado, extraído del JWT
-   * @throws UnauthorizedException si el usuario autenticado no es el propietario
+   * @param resourceAccountId      identificador de la cuenta dueña del recurso
+   * @param authenticatedAccountId identificador de la cuenta autenticada
+   * @throws NotFoundException si el usuario autenticado no es el propietario;
+   *                           se usa 404 para no confirmar recursos ajenos
    */
-  public void validate(OwnedResource resource, String loggedEmail) {
-    if (!resource.getEmail().equals(loggedEmail)) {
-      throw new UnauthorizedException("No tienes permiso para acceder a este recurso");
+  public void validate(UUID resourceAccountId, UUID authenticatedAccountId) {
+    if (resourceAccountId == null || !resourceAccountId.equals(authenticatedAccountId)) {
+      throw new NotFoundException("Recurso no encontrado");
     }
   }
 }

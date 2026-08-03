@@ -11,10 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
  * Caso de uso: Eliminar una categoría financiera existente.
  *
  * <p>
- * Verifica que la categoría exista en el sistema y, si es así, la elimina
- * a través del puerto {@link CategoryRepository}. La verificación y la
- * eliminación se ejecutan dentro de la misma transacción para garantizar
- * la integridad del dato.
+ * Elimina en una sola sentencia una categoría PERSONAL de la cuenta. Las
+ * categorías SYSTEM y las pertenecientes a terceros se ocultan como 404.
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
@@ -41,10 +39,9 @@ public class DeleteCategoryUseCase {
    *                           proporcionado.
    */
   @Transactional
-  public void execute(UUID categoryId) {
-    if (!categoryRepository.findById(categoryId).isPresent()) {
+  public void execute(UUID accountId, UUID categoryId) {
+    if (!categoryRepository.deletePersonalByIdAndOwner(accountId, categoryId)) {
       throw new NotFoundException("Categoría no encontrada con id: " + categoryId);
     }
-    categoryRepository.deleteById(categoryId);
   }
 }

@@ -1,9 +1,12 @@
 package org.adultofuncional.main.finances.domain.repository;
 
 import org.adultofuncional.main.finances.domain.model.Category;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
 /**
  * Puerto de dominio para la persistencia de categorías.
@@ -15,15 +18,8 @@ import java.util.UUID;
  * manteniendo el dominio desacoplado de los detalles de almacenamiento.
  *
  * <p>
- * <strong>Operaciones expuestas:</strong>
- * <ul>
- * <li>Búsqueda individual por ID.</li>
- * <li>Listado completo.</li>
- * <li>Búsqueda por lote de IDs (para evitar consultas N+1 en listados que
- * requieren categorías asociadas).</li>
- * <li>Persistencia de nuevas categorías o actualización de existentes.</li>
- * <li>Eliminación por ID.</li>
- * </ul>
+ * Todas las lecturas públicas reciben una cuenta para impedir que la capa de
+ * aplicación omita accidentalmente el alcance SYSTEM/PERSONAL.
  *
  * @author Daniel Salazar
  * @since 1.0
@@ -32,35 +28,33 @@ import java.util.UUID;
  */
 public interface CategoryRepository {
 
-  /**
-   * Busca una categoría por su identificador único.
-   *
-   * @param id UUID de la categoría. No debe ser {@code null}.
-   * @return {@link Optional} con la categoría si existe; {@code Optional.empty()}
-   *         en caso contrario.
-   */
-  Optional<Category> findById(UUID id);
+  /** Busca una categoría SYSTEM o una PERSONAL de la cuenta indicada. */
+  Optional<Category> findAccessibleById(UUID accountId, UUID categoryId);
+
+  /** Valida ownership y tipo de módulo dentro de una única consulta. */
+  Optional<Category> findAccessibleByIdAndType(
+      UUID accountId,
+      UUID categoryId,
+      CategoryType type);
+
+  /** Busca exclusivamente una categoría PERSONAL de su propietario. */
+  Optional<Category> findPersonalByIdAndOwner(UUID accountId, UUID categoryId);
 
   /**
-   * Retorna todas las categorías registradas en el sistema.
-   *
-   * @return lista de categorías. Puede ser vacía si no hay registros.
+   * Página el catálogo SYSTEM y las categorías PERSONAL de la cuenta con
+   * filtros y orden aplicados en persistencia.
    */
-  List<Category> findAll();
+  PageResult<Category> findPageAccessible(
+      UUID accountId,
+      CategoryType type,
+      String searchTerm,
+      PageQuery pageQuery);
 
-  /**
-   * Busca múltiples categorías por sus identificadores en un solo lote.
-   *
-   * <p>
-   * Utilizado por los casos de uso de listado de gastos fijos y movimientos
-   * para cargar las categorías asociadas de forma eficiente, evitando
-   * múltiples consultas individuales (problema N+1).
-   *
-   * @param ids colección de UUIDs de las categorías a buscar.
-   * @return lista de categorías encontradas. Puede ser de menor tamaño que
-   *         la entrada si algunos IDs no existen.
-   */
-  List<Category> findAllById(Iterable<UUID> ids);
+  /** Recupera por lote únicamente categorías visibles para la cuenta. */
+  List<Category> findAllAccessibleById(UUID accountId, Iterable<UUID> ids);
+
+  /** Elimina atómicamente una categoría PERSONAL de la cuenta. */
+  boolean deletePersonalByIdAndOwner(UUID accountId, UUID categoryId);
 
   /**
    * Persiste una categoría nueva o actualiza una existente.
@@ -75,15 +69,4 @@ public interface CategoryRepository {
    */
   Category save(Category category);
 
-  /**
-   * Elimina una categoría por su identificador único.
-   *
-   * <p>
-   * Si no existe una categoría con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso). La validación de existencia previa se realiza
-   * en la capa de aplicación.
-   *
-   * @param id UUID de la categoría a eliminar. No debe ser {@code null}.
-   */
-  void deleteById(UUID id);
 }

@@ -1,6 +1,7 @@
 package org.adultofuncional.main.security.infrastructure.repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -9,7 +10,12 @@ import org.adultofuncional.main.security.domain.repository.PasswordRepository;
 import org.adultofuncional.main.security.infrastructure.persistence.entity.PasswordEntity;
 import org.adultofuncional.main.security.infrastructure.persistence.mapper.PasswordMapper;
 import org.adultofuncional.main.security.infrastructure.persistence.repository.PasswordJpaRepository;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -26,13 +32,14 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Métodos implementados:</strong>
  * <ul>
- * <li>{@link #findById(UUID)} — busca una credencial por ID y la convierte
- * a dominio.</li>
- * <li>{@link #findAllByAccountId(UUID)} — lista todas las credenciales de
- * una cuenta.</li>
+ * <li>{@link #findByIdAndAccountId(UUID, UUID)} — busca una credencial por ID y
+ * cuenta y la convierte a dominio.</li>
+ * <li>{@link #findAllByAccountId(UUID)} — lectura interna para recifrado.</li>
+ * <li>Listado público paginado, filtrado y ordenado en SQL.</li>
  * <li>{@link #save(Password)} — persiste una credencial nueva o actualizada,
  * devolviendo el modelo de dominio resultante.</li>
- * <li>{@link #deleteById(UUID)} — elimina una credencial por su ID.</li>
+ * <li>{@link #deleteByIdAndAccountId(UUID, UUID)} — elimina una credencial por
+ * ID y cuenta.</li>
  * </ul>
  *
  * @author Jeronimo Ospina Zapata
@@ -45,28 +52,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PasswordRepositoryImpl implements PasswordRepository {
 
+  private static final Map<String, String> SORT_FIELDS = Map.of(
+      "applicationName", "passwordApplicationName",
+      "lastChangeDate", "passwordLastChangeDate",
+      "id", "passwordId");
+
   private final PasswordJpaRepository jpaRepository;
   private final PasswordMapper mapper;
 
   /**
-   * Busca una credencial por su identificador único.
-   *
-   * <p>
-   * Consulta el repositorio Spring Data JPA y convierte la entidad resultante
-   * al modelo de dominio mediante
-   * {@link PasswordMapper#toDomain(PasswordEntity)}.
-   *
-   * @param id UUID de la credencial. No debe ser {@code null}.
-   * @return {@link Optional} con la credencial si existe;
-   *         {@code Optional.empty()} en caso contrario.
-   */
-  @Override
-  public Optional<Password> findById(UUID id) {
-    return jpaRepository.findById(id).map(mapper::toDomain);
-  }
-
-  /**
-   * Lista todas las credenciales asociadas a una cuenta específica.
+   * Recupera la bóveda completa para el cambio transaccional de Master Key.
    *
    * <p>
    * Utiliza el método {@code findByAccount_AccountId} de Spring Data JPA
@@ -84,6 +79,29 @@ public class PasswordRepositoryImpl implements PasswordRepository {
         .toList();
   }
 
+  @Override
+  public PageResult<Password> findPageByAccountId(
+      UUID accountId,
+      String searchTerm,
+      PageQuery pageQuery) {
+    String entitySortField = SORT_FIELDS.get(pageQuery.sortBy());
+    Sort.Direction direction = pageQuery.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort sort = Sort.by(direction, entitySortField);
+    if (!entitySortField.equals("passwordId")) {
+      sort = sort.and(Sort.by(direction, "passwordId"));
+    }
+    PageRequest pageable = PageRequest.of(pageQuery.number(), pageQuery.size(), sort);
+    Page<PasswordEntity> page = jpaRepository.findPageByAccountId(accountId, searchTerm, pageable);
+    return new PageResult<>(
+        page.getContent().stream().map(mapper::toDomain).toList(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.hasNext(),
+        page.hasPrevious());
+  }
+
   /**
    * Persiste una credencial nueva o actualiza una existente.
    *
@@ -99,23 +117,10 @@ public class PasswordRepositoryImpl implements PasswordRepository {
   @Override
   public Password save(Password password) {
     PasswordEntity entity = mapper.toEntity(password);
+    jpaRepository.findById(password.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     PasswordEntity savedEntity = jpaRepository.save(entity);
     return mapper.toDomain(savedEntity);
-  }
-
-  /**
-   * Elimina una credencial por su identificador único.
-   *
-   * <p>
-   * Si no existe ninguna credencial con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso de Spring Data JPA). La validación de existencia
-   * previa se realiza en la capa de aplicación.
-   *
-   * @param id UUID de la credencial a eliminar. No debe ser {@code null}.
-   */
-  @Override
-  public void deleteById(UUID id) {
-    jpaRepository.deleteById(id);
   }
 
     /**
@@ -133,15 +138,11 @@ public class PasswordRepositoryImpl implements PasswordRepository {
   }
 
   /**
-   * Verifica si existe una credencial con el ID dado que pertenezca a la cuenta.
-   *
-   * @param passwordId UUID de la credencial. No debe ser {@code null}.
-   * @param accountId  UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return {@code true} si la credencial existe y pertenece a la cuenta.
+   * Elimina una credencial por identificador y cuenta en una sola sentencia.
    */
   @Override
-  public boolean existsByIdAndAccountId(UUID passwordId, UUID accountId) {
-      return jpaRepository.existsByPasswordIdAndAccount_AccountId(passwordId, accountId);
+  public boolean deleteByIdAndAccountId(UUID passwordId, UUID accountId) {
+    return jpaRepository.deleteByPasswordIdAndAccountId(passwordId, accountId) > 0;
   }
 
   /**

@@ -15,9 +15,8 @@
  * Validador que implementa la lógica de {@code @NoHtml} usando Jsoup con
  * {@code Safelist.none()}.</li>
  * <li>{@link org.adultofuncional.main.shared.security.OwnedResource} —
- * Interfaz que deben implementar los DTOs de respuesta que pertenecen a un
- * usuario, exponiendo el email del propietario para validación de
- * ownership.</li>
+ * Contrato legado para DTOs de respuesta con propietario. La validación de
+ * ownership actual usa el UUID estable de la cuenta autenticada.</li>
  * <li>{@link org.adultofuncional.main.shared.security.OwnershipValidator} —
  * Componente Spring que centraliza la validación de que el usuario autenticado
  * es el propietario del recurso solicitado.</li>
@@ -32,11 +31,11 @@
  * inyección HTML con un error 400.</li>
  * <li><strong>Validación de ownership:</strong> Los controladores de recursos
  * de usuario obtienen el recurso mediante el caso de uso correspondiente y
- * luego
- * llaman a {@code OwnershipValidator.validate(resource, loggedEmail)} antes de
- * retornarlo o modificarlo. Si el email del recurso no coincide con el del
- * usuario autenticado, se lanza
- * {@link org.adultofuncional.main.shared.exception.UnauthorizedException}.</li>
+ * luego llaman a {@code OwnershipValidator.validate(resourceAccountId, accountId)}
+ * antes de retornarlo o modificarlo. Si el UUID del recurso no coincide con el
+ * UUID autenticado, se responde como recurso inexistente mediante
+ * {@link org.adultofuncional.main.shared.exception.NotFoundException}, evitando
+ * confirmar la existencia de recursos ajenos.</li>
  * </ul>
  *
  * @author Juan Sebastian Rios

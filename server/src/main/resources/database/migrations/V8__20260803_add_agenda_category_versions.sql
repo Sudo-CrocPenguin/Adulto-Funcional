@@ -1,0 +1,5 @@
+ALTER TABLE events
+  ADD COLUMN event_version BIGINT NOT NULL DEFAULT 0;
+
+ALTER TABLE categories
+  ADD COLUMN category_version BIGINT NOT NULL DEFAULT 0;

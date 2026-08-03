@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
  * Caso de uso: Eliminar un gasto fijo existente.
  *
  * <p>
- * Verifica que el gasto fijo exista en el sistema y, si es así, lo elimina
- * a través del puerto {@link FixedExpenseRepository}. La verificación y la
- * eliminación se ejecutan dentro de la misma transacción.
+ * Elimina el gasto fijo mediante una operación atómica limitada por cuenta. La
+ * cantidad de filas afectadas permite representar igual un ID inexistente y un
+ * recurso perteneciente a otra cuenta.
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
@@ -32,18 +32,16 @@ public class DeleteFixedExpenseUseCase {
   /**
    * Ejecuta la eliminación de un gasto fijo por su identificador.
    *
-   * @param accountId Identificador de la cuenta propietaria (contexto de
-   *                  trazabilidad; la eliminación se realiza por
-   *                  {@code expenseId}).
+   * @param accountId Identificador de la cuenta propietaria que limita la
+   *                  eliminación.
    * @param expenseId Identificador único del gasto fijo a eliminar.
    * @throws NotFoundException si no existe un gasto fijo con el ID
    *                           proporcionado.
    */
   @Transactional
   public void execute(UUID accountId, UUID expenseId) {
-    if (!fixedExpenseRepository.findById(expenseId).isPresent()) {
+    if (!fixedExpenseRepository.deleteByIdAndAccountId(expenseId, accountId)) {
       throw new NotFoundException("Gasto fijo no encontrado con id: " + expenseId);
     }
-    fixedExpenseRepository.deleteById(expenseId);
   }
 }

@@ -1,5 +1,7 @@
 package org.adultofuncional.main.shared.exception;
 
+import org.adultofuncional.main.shared.response.ApiErrorCode;
+
 /**
  * Excepción que representa un acceso no autorizado a la aplicación (HTTP 401).
  *
@@ -12,15 +14,24 @@ package org.adultofuncional.main.shared.exception;
  */
 
 public class UnauthorizedException extends BusinessException {
-    
+
     /**
      * Construye una nueva excepción de acceso no autorizado.
      *
      * @param message mensaje descriptivo que explica por qué no se autorizó el acceso
      */
-    
-    public UnauthorizedException(String message) {
 
-        super(message, 401);
+    public UnauthorizedException(String message) {
+        this(message, ApiErrorCode.AUTHENTICATION_FAILED);
+    }
+
+    /**
+     * Construye una excepción 401 con un código de autenticación específico.
+     *
+     * @param message mensaje seguro para el cliente
+     * @param code    código estable del fallo de autenticación
+     */
+    public UnauthorizedException(String message, ApiErrorCode code) {
+        super(message, 401, code);
     }
 }

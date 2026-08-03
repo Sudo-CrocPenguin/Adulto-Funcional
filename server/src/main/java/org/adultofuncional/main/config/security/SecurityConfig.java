@@ -8,15 +8,20 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import org.springframework.security.web.header.writers.XXssProtectionHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,16 +36,13 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * <strong>Decisiones de diseño:</strong>
  * <ul>
- * <li><strong>CSRF deshabilitado</strong>: Esta es una API REST stateless
- * consumida por clientes web y nativos (móvil/desktop). Los clientes web
- * están protegidos por el atributo {@code SameSite} de la cookie HttpOnly.
- * Los clientes nativos se autentican con Bearer token en el header
- * {@code Authorization}, no con cookies. Si en el futuro se incorpora un
- * cliente web que no pueda garantizar {@code SameSite}, se debe reactivar
- * {@code CookieCsrfTokenRepository}.</li>
- * <li><strong>Sesiones stateless</strong>: No se crea ni consulta
- * {@code HttpSession}. El estado de autenticación vive exclusivamente en
- * el JWT firmado.</li>
+ * <li><strong>CSRF selectivo</strong>: las mutaciones autenticadas mediante
+ * cookie deben presentar el token de {@link CookieCsrfTokenRepository}. Un
+ * Bearer ya validado queda exento porque el navegador no lo adjunta
+ * automáticamente.</li>
+ * <li><strong>Sin HttpSession</strong>: la cadena HTTP es stateless respecto de
+ * Servlet, aunque cada JWT pertenece a una familia durable de autenticación y
+ * su {@code jti} puede revocarse temporalmente.</li>
  * <li><strong>CORS con credenciales</strong>: {@code allowCredentials(true)}
  * es necesario para que el navegador envíe la cookie HttpOnly en requests
  * cross-origin. Por ello {@code allowedOrigins} debe ser una lista
@@ -59,6 +61,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -67,6 +70,12 @@ public class SecurityConfig {
    * Se ejecuta antes del filtro de autenticación estándar de Spring Security.
    */
   private final JwtAuthenticationFilter jwtAuthFilter;
+
+  /** Respuesta uniforme para peticiones que requieren autenticación. */
+  private final ApiAuthenticationEntryPoint authenticationEntryPoint;
+
+  /** Respuesta uniforme para principales sin permisos suficientes. */
+  private final ApiAccessDeniedHandler accessDeniedHandler;
 
   /**
    * Lista de orígenes permitidos para CORS, inyectada desde la variable de
@@ -112,10 +121,25 @@ public class SecurityConfig {
    * @throws Exception si ocurre un error durante la configuración
    */
   @Bean
-  public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain filterChain(
+      HttpSecurity http,
+      ApiCorsProcessor corsProcessor,
+      CookieAuthenticatedCsrfMatcher csrfMatcher,
+      CookieUtils cookieUtils) throws Exception {
+    CookieCsrfTokenRepository csrfTokenRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+    csrfTokenRepository.setCookiePath("/");
+    csrfTokenRepository.setCookieCustomizer(cookie -> cookie
+        .secure(cookieUtils.isSecure())
+        .sameSite(cookieUtils.sameSite()));
+    CsrfTokenRequestAttributeHandler csrfRequestHandler = new CsrfTokenRequestAttributeHandler();
+    csrfRequestHandler.setCsrfRequestAttributeName(null);
+
     http
-        .csrf(csrf -> csrf.disable())
-        .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+        .csrf(csrf -> csrf
+            .csrfTokenRepository(csrfTokenRepository)
+            .csrfTokenRequestHandler(csrfRequestHandler)
+            .requireCsrfProtectionMatcher(csrfMatcher))
+        .cors(cors -> cors.disable())
         .headers(headers -> headers
             .contentSecurityPolicy(csp -> csp
                 .policyDirectives(
@@ -133,11 +157,20 @@ public class SecurityConfig {
                 .includeSubDomains(true)
                 .maxAgeInSeconds(31536000)))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
+            .requestMatchers(
+                "/api/auth/login",
+                "/api/auth/register",
+                "/api/auth/refresh",
+                "/api/auth/csrf").permitAll()
+            .requestMatchers("/actuator/health").permitAll()
             .anyRequest().authenticated())
+        .exceptionHandling(exceptions -> exceptions
+            .authenticationEntryPoint(authenticationEntryPoint)
+            .accessDeniedHandler(accessDeniedHandler))
         .sessionManagement(session -> session
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+        .addFilterBefore(apiCorsFilter(corsProcessor), LogoutFilter.class)
+        .addFilterBefore(jwtAuthFilter, CsrfFilter.class);
 
     return http.build();
   }
@@ -184,19 +217,46 @@ public class SecurityConfig {
   @Bean
   public CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration config = new CorsConfiguration();
-    config.setAllowedOrigins(allowedOrigins);
+    config.setAllowedOrigins(normalizedAllowedOrigins());
     config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
     config.setAllowedHeaders(List.of(
         "Content-Type",
         "X-Requested-With",
         "X-Client-Type",
+        "X-XSRF-TOKEN",
         "Authorization"));
-    config.setExposedHeaders(List.of("X-Total-Count"));
+    config.setExposedHeaders(List.of("X-Total-Count", "X-Trace-Id"));
     config.setAllowCredentials(true);
     config.setMaxAge(3600L);
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", config);
     return source;
+  }
+
+  /**
+   * Construye el filtro CORS que participa exclusivamente en la cadena de
+   * Spring Security y utiliza el escritor uniforme ante rechazos.
+   */
+  private CorsFilter apiCorsFilter(ApiCorsProcessor corsProcessor) {
+    CorsFilter corsFilter = new CorsFilter(corsConfigurationSource());
+    corsFilter.setCorsProcessor(corsProcessor);
+    return corsFilter;
+  }
+
+  /**
+   * Normaliza los orígenes configurados desde entorno.
+   *
+   * <p>
+   * El header {@code Origin} enviado por navegadores no incluye slash final
+   * (por ejemplo, {@code http://localhost:5173}). Esta normalización evita
+   * rechazos CORS por variables configuradas como {@code http://localhost:5173/}.
+   */
+  private List<String> normalizedAllowedOrigins() {
+    return allowedOrigins.stream()
+        .map(String::trim)
+        .filter(origin -> !origin.isBlank())
+        .map(origin -> origin.replaceAll("/+$", ""))
+        .toList();
   }
 }

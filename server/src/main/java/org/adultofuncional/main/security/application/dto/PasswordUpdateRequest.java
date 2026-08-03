@@ -3,7 +3,10 @@ package org.adultofuncional.main.security.application.dto;
 import java.time.LocalDate;
 
 import org.adultofuncional.main.shared.security.NoHtml;
+import org.adultofuncional.main.shared.validation.InputPatterns;
+import org.adultofuncional.main.shared.validation.Utf8ByteLength;
 
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
@@ -44,6 +47,7 @@ public class PasswordUpdateRequest {
    * Máximo 35 caracteres, sin HTML.
    */
   @Size(max = 35, message = "El nombre no puede exceder 35 caracteres")
+  @Pattern(regexp = InputPatterns.NON_BLANK, message = "El nombre no puede estar vacío")
   @NoHtml
   private String applicationName;
 
@@ -54,7 +58,11 @@ public class PasswordUpdateRequest {
    * <p>
    * <strong>Importante:</strong> este valor nunca debe loguearse ni
    * almacenarse sin cifrar.
-   */
+  */
+  @Pattern(regexp = InputPatterns.NON_BLANK, message = "La contraseña no puede estar vacía")
+  @Utf8ByteLength(
+      max = 2032,
+      message = "La contraseña no puede exceder 2032 bytes en UTF-8")
   private String password;
 
   /**

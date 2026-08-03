@@ -4,6 +4,9 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
 import org.adultofuncional.main.finances.application.dto.movement.UpdateMovementRequest;
+import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
+import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
@@ -21,7 +24,8 @@ import org.springframework.util.StringUtils;
  * <li>El movimiento debe existir y pertenecer a la cuenta indicada.</li>
  * <li>Solo se modifican los campos proporcionados en el DTO (actualización
  * parcial).</li>
- * <li>Si cambia la categoría, la nueva categoría debe existir.</li>
+ * <li>La categoría final debe ser accesible para la cuenta y de tipo
+ * {@code FINANCES}.</li>
  * </ul>
  *
  * <p>
@@ -29,9 +33,7 @@ import org.springframework.util.StringUtils;
  * modificado. Esto permite aplicar cambios de forma selectiva aunque implica
  * múltiples reasignaciones internas sobre la misma entidad.
  *
- * <p>
- * La categoría no se retorna en la respuesta actualmente (pendiente de
- * incluir en una versión futura).
+ * La respuesta incorpora la categoría final validada.
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
@@ -56,19 +58,24 @@ public class UpdateMovementUseCase {
    * @param movementId Identificador del movimiento a modificar.
    * @param request    DTO con los nuevos valores. Los campos nulos o vacíos
    *                   se ignoran.
-   * @return {@link MovementResponse} con los datos actualizados. La categoría
-   *         se retorna como {@code null} en esta versión.
+   * @return {@link MovementResponse} con los datos y la categoría actualizados.
    * @throws NotFoundException si el movimiento no existe, no pertenece a la
    *                           cuenta, o la nueva categoría no existe.
    */
   @Transactional
   public MovementResponse execute(UUID accountId, UUID movementId, UpdateMovementRequest request) {
-    Movement movement = movementRepository.findById(movementId)
+    Movement movement = movementRepository.findByIdAndAccountId(movementId, accountId)
         .orElseThrow(() -> new NotFoundException("Movimiento no encontrado con id: " + movementId));
 
-    if (!movement.getAccountId().equals(accountId)) {
-      throw new NotFoundException("Movimiento no pertenece a la cuenta");
-    }
+    UUID targetCategoryId = request.getCategoryId() == null
+        ? movement.getCategoryId()
+        : request.getCategoryId();
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            targetCategoryId,
+            CategoryType.FINANCES)
+        .orElseThrow(() -> new NotFoundException(
+            "Categoría no encontrada con id: " + targetCategoryId));
 
     if (request.getMovementType() != null) {
       movement.update(
@@ -103,9 +110,6 @@ public class UpdateMovementUseCase {
           request.getMovementDate());
     }
     if (request.getCategoryId() != null) {
-      categoryRepository.findById(request.getCategoryId())
-          .orElseThrow(() -> new NotFoundException(
-              "Categoría no encontrada con id: " + request.getCategoryId()));
       movement.update(
           movement.getType(),
           movement.getAmount(),
@@ -122,7 +126,12 @@ public class UpdateMovementUseCase {
         .registerDate(saved.getCreatedAt())
         .description(saved.getDescription())
         .movementDate(saved.getDate())
-        .category(null)
+        .category(CategoryResponse.builder()
+            .id(category.getId())
+            .name(category.getName())
+            .type(category.getType())
+            .scope(category.getScope())
+            .build())
         .build();
   }
 }

@@ -18,7 +18,8 @@
  * Gestión en memoria de la Master Key por cuenta (perfil {@code dev}).</li>
  * <li>{@link org.adultofuncional.main.security.infrastructure.service.RedisMasterKeyService}
  * —
- * Gestión distribuida de la Master Key con Redis (perfil {@code prod}).</li>
+ * Gestión distribuida y cifrada de la Master Key con Redis (perfil
+ * {@code prod}).</li>
  * </ul>
  *
  * @author Equipo de desarrollo Adulto Funcional

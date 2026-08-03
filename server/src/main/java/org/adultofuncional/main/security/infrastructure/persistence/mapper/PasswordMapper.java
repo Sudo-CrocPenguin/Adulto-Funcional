@@ -53,6 +53,7 @@ public class PasswordMapper {
                 entity.getPasswordId(),
                 entity.getPasswordApplicationName(),
                 entity.getPasswordSalt(),
+                entity.getPasswordCryptoVersion(),
                 entity.getPasswordIv(),
                 entity.getPasswordCiphertext(),
                 entity.getPasswordLastChangeDate(),
@@ -70,7 +71,7 @@ public class PasswordMapper {
      * @param password modelo de dominio a convertir; si es {@code null} retorna {@code null}
      * @return entidad JPA lista para persistir, o {@code null} si el modelo es {@code null}
      */
-    
+
     public PasswordEntity toEntity(Password password) {
         if (password == null) return null;
 
@@ -78,6 +79,7 @@ public class PasswordMapper {
         entity.setPasswordId(password.getId());
         entity.setPasswordApplicationName(password.getApplicationName());
         entity.setPasswordSalt(password.getSalt());
+        entity.setPasswordCryptoVersion((short) password.getCryptoVersion());
         entity.setPasswordIv(password.getIv());
         entity.setPasswordCiphertext(password.getCiphertext());
         entity.setPasswordLastChangeDate(password.getLastChangeDate());

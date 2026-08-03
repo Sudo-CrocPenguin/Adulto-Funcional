@@ -1,10 +1,14 @@
 package org.adultofuncional.main.finances.application.usecase.movement;
 
+import java.time.Clock;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.finances.application.dto.movement.CreateMovementRequest;
 import org.adultofuncional.main.finances.application.dto.movement.MovementResponse;
+import org.adultofuncional.main.finances.application.dto.category.CategoryResponse;
+import org.adultofuncional.main.finances.domain.enums.CategoryType;
+import org.adultofuncional.main.finances.domain.model.Category;
 import org.adultofuncional.main.finances.domain.model.Movement;
 import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.domain.repository.MovementRepository;
@@ -20,13 +24,13 @@ import org.springframework.transaction.annotation.Transactional;
  * Reglas de negocio:
  * <ul>
  * <li>La cuenta debe existir.</li>
- * <li>Si se especifica una categoría, esta debe existir.</li>
+ * <li>La categoría debe ser {@code SYSTEM} o pertenecer a la cuenta y tener
+ * tipo {@code FINANCES}.</li>
  * </ul>
  *
  * <p>
  * La creación del modelo {@link Movement} se delega al método de fábrica
- * del dominio. La categoría no se retorna en la respuesta actualmente
- * (pendiente de incluir en una versión futura).
+ * del dominio. La respuesta incluye la categoría accesible que fue validada.
  *
  * @author Miguel Angel Blandon Montes
  * @since 0.0.1
@@ -48,30 +52,30 @@ public class CreateMovementUseCase {
   /** Puerto de dominio para la validación de la categoría. */
   private final CategoryRepository categoryRepository;
 
+  /** Reloj UTC usado para la fecha técnica de registro. */
+  private final Clock clock;
+
   /**
    * Ejecuta la creación de un nuevo movimiento.
    *
    * @param accountId Identificador de la cuenta en la que se registra el
    *                  movimiento.
    * @param request   DTO con los datos validados del movimiento (tipo,
-   *                  monto, fecha, descripción y categoría opcional).
-   * @return {@link MovementResponse} con los datos del movimiento creado.
-   *         La categoría se retorna como {@code null} en esta versión.
-   * @throws NotFoundException si la cuenta o la categoría (si se
-   *                           proporcionó) no existen.
+   *                  monto, fecha, descripción y categoría obligatoria).
+   * @return {@link MovementResponse} con el movimiento y su categoría.
+   * @throws NotFoundException si la cuenta o la categoría no existen.
    */
   @Transactional
   public MovementResponse execute(UUID accountId, CreateMovementRequest request) {
     accountRepository.findById(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
-    UUID finalCategoryId = null;
-    if (request.getCategoryId() != null) {
-      finalCategoryId = request.getCategoryId();
-      final UUID categoryIdToCheck = finalCategoryId;
-      categoryRepository.findById(categoryIdToCheck)
-          .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + categoryIdToCheck));
-    }
+    UUID finalCategoryId = request.getCategoryId();
+    Category category = categoryRepository.findAccessibleByIdAndType(
+            accountId,
+            finalCategoryId,
+            CategoryType.FINANCES)
+        .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + finalCategoryId));
 
     Movement movement = Movement.create(
         request.getMovementType(),
@@ -79,7 +83,8 @@ public class CreateMovementUseCase {
         finalCategoryId,
         accountId,
         request.getDescription(),
-        request.getMovementDate());
+        request.getMovementDate(),
+        clock);
 
     Movement saved = movementRepository.save(movement);
     return MovementResponse.builder()
@@ -89,7 +94,16 @@ public class CreateMovementUseCase {
         .registerDate(saved.getCreatedAt())
         .description(saved.getDescription())
         .movementDate(saved.getDate())
-        .category(null)
+        .category(toCategoryResponse(category))
+        .build();
+  }
+
+  private CategoryResponse toCategoryResponse(Category category) {
+    return CategoryResponse.builder()
+        .id(category.getId())
+        .name(category.getName())
+        .type(category.getType())
+        .scope(category.getScope())
         .build();
   }
 }

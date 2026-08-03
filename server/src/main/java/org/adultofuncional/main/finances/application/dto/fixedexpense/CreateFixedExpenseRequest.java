@@ -7,7 +7,9 @@ import org.adultofuncional.main.finances.domain.enums.Frequency;
 import org.adultofuncional.main.finances.domain.enums.Status;
 import org.adultofuncional.main.shared.security.NoHtml;
 import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Future;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -24,7 +26,8 @@ import lombok.Getter;
  * <li>{@code name} — obligatorio, máximo 20 caracteres.</li>
  * <li>{@code frequency} — obligatorio, debe ser un valor válido de
  * {@link Frequency}.</li>
- * <li>{@code amount} — obligatorio, debe ser mayor a 0.01.</li>
+ * <li>{@code amount} — obligatorio, desde 0.01 hasta 99,999,999.99 y con
+ * máximo dos decimales.</li>
  * <li>{@code status} — obligatorio, debe ser un valor válido de
  * {@link Status}.</li>
  * <li>{@code nextDueDate} — obligatorio, debe ser una fecha futura.</li>
@@ -105,10 +108,13 @@ public class CreateFixedExpenseRequest {
    * <li>{@code @NotNull}: el monto no puede ser nulo.</li>
    * <li>{@code @DecimalMin("0.01")}: el monto debe ser mayor a cero,
    * garantizando que no se registren gastos sin valor económico.</li>
+   * <li>{@code @Digits}: limita el valor a la precisión {@code DECIMAL(10,2)}
+   * utilizada por MariaDB.</li>
    * </ul>
    */
   @NotNull(message = "El monto es obligatorio")
   @DecimalMin(value = "0.01", message = "El monto debe ser mayor a 0")
+  @Digits(integer = 8, fraction = 2, message = "El monto admite máximo 8 enteros y 2 decimales")
   private BigDecimal amount;
 
   /**
@@ -129,33 +135,38 @@ public class CreateFixedExpenseRequest {
   @NotNull(message = "El estado es obligatorio")
   private Status status;
 
+  /** Fecha de inicio del ciclo; si se omite se usa el día actual del reloj. */
+  private LocalDate startDate;
+
+  /** Días de anticipación del recordatorio; cero conserva la compatibilidad. */
+  @Min(value = 0, message = "Los días de recordatorio no pueden ser negativos")
+  @Max(value = 3650, message = "Los días de recordatorio no pueden exceder 3650")
+  private Integer reminderDays;
+
   /**
-   * Fecha de cierre o vencimiento del gasto fijo.
+   * Próxima fecha de vencimiento del gasto fijo.
    *
    * <p>
-   * Campo obligatorio que indica hasta cuándo estará vigente el gasto
-   * recurrente. Debe ser una fecha posterior a la actual, garantizando
-   * que no se registren gastos con vigencia ya vencida.
+   * Campo obligatorio que indica el siguiente vencimiento del ciclo. El caso
+   * de uso exige que sea posterior al día actual y el dominio también exige
+   * coherencia con {@code startDate}.
    *
    * <p>
    * <b>Restricciones aplicadas:</b>
    * <ul>
-   * <li>{@code @NotNull}: la fecha de cierre no puede ser nula.</li>
-   * <li>{@code @Future}: la fecha debe ser estrictamente posterior
-   * a la fecha actual en el momento de la solicitud.</li>
+   * <li>{@code @NotNull}: el próximo vencimiento no puede ser nulo.</li>
+   * <li>La política basada en {@code Clock} exige una fecha futura.</li>
    * </ul>
    */
   @NotNull(message = "La fecha de cierre es obligatoria")
-  @Future(message = "La fecha de cierre debe ser futura")
   private LocalDate nextDueDate;
 
   /**
    * Identificador de la categoría financiera asociada al gasto fijo.
    *
    * <p>
-   * Campo opcional que permite vincular el gasto fijo con una categoría
+   * Campo obligatorio que vincula el gasto fijo con una categoría
    * existente en el sistema para facilitar su clasificación y análisis.
-   * Si es {@code null}, el gasto fijo se registra sin categoría asociada.
    */
   @NotNull(message = "La categoria es obligatoria")
   private UUID categoryId;

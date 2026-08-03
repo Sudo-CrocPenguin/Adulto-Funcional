@@ -1,5 +1,8 @@
 package org.adultofuncional.main.security.domain.service;
 
+import java.util.Objects;
+import java.util.UUID;
+
 /**
  * Puerto de dominio para el cifrado y descifrado de contraseñas del gestor.
  *
@@ -43,6 +46,12 @@ public interface EncryptionService {
    */
   EncryptedData encrypt(String plainPassword, String masterKey);
 
+  /** Cifra vinculando el resultado a su cuenta y credencial mediante AAD. */
+  EncryptedData encrypt(
+      String plainPassword,
+      String masterKey,
+      EncryptionContext context);
+
   /**
    * Descifra una contraseña previamente cifrada.
    *
@@ -54,13 +63,31 @@ public interface EncryptionService {
    */
   String decrypt(String salt, byte[] iv, byte[] ciphertext, String masterKey);
 
+  /** Descifra con los parámetros de la versión persistida y su AAD estable. */
+  String decrypt(
+      String salt,
+      byte[] iv,
+      byte[] ciphertext,
+      String masterKey,
+      int cryptoVersion,
+      EncryptionContext context);
+
   /**
    * Contenedor inmutable de los datos generados durante el cifrado.
    *
    * @param salt       salt aleatorio codificado en Base64
    * @param iv         vector de inicialización de 12 bytes
    * @param ciphertext texto cifrado (incluye tag GCM)
+   * @param cryptoVersion versión de algoritmo y parámetros
    */
-  record EncryptedData(String salt, byte[] iv, byte[] ciphertext) {
+  record EncryptedData(String salt, byte[] iv, byte[] ciphertext, int cryptoVersion) {
+  }
+
+  /** Identidad inmutable autenticada junto con el ciphertext. */
+  record EncryptionContext(UUID accountId, UUID credentialId) {
+    public EncryptionContext {
+      Objects.requireNonNull(accountId, "accountId is required");
+      Objects.requireNonNull(credentialId, "credentialId is required");
+    }
   }
 }

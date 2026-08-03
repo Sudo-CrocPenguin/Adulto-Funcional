@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -24,7 +25,7 @@ import lombok.Setter;
  * La contraseña se guarda encriptada con AES-256 utilizando una clave derivada
  * de la Master Key de la cuenta. Cada registro tiene su propio {@code salt}
  * para derivar una clave AES única, un {@code IV} (vector de inicialización)
- * de 16 bytes, y el texto cifrado ({@code ciphertext}) que contiene el par
+   * de 12 bytes, y el texto cifrado ({@code ciphertext}) que contiene el par
  * usuario/contraseña (o cualquier otro secreto).
  *
  * <p>
@@ -38,7 +39,7 @@ import lombok.Setter;
  * password_id               CHAR(36)      NOT NULL PRIMARY KEY
  * password_application_name VARCHAR(35)   NOT NULL
  * password_salt             VARCHAR(255)  NOT NULL   -- salt para derivar clave AES (Base64)
- * password_iv               BINARY(16)    NOT NULL   -- 16 bytes de IV
+   * password_iv               BINARY(12)    NOT NULL   -- 12 bytes de IV AES-GCM
  * password_ciphertext       VARBINARY(2048) NOT NULL -- ciphertext + tag (AES-GCM)
  * password_last_change_date DATE          NULL
  * passwords_fk_account_id   CHAR(36)      NOT NULL   -- FK a accounts(account_id)
@@ -66,6 +67,11 @@ public class PasswordEntity {
   @Column(name = "password_id", columnDefinition = "CHAR(36)")
   private UUID passwordId;
 
+  /** Versión de bloqueo optimista para detectar actualizaciones concurrentes. */
+  @Version
+  @Column(name = "password_version", nullable = false)
+  private long version;
+
   /**
    * Nombre del servicio o aplicación.
    *
@@ -86,14 +92,18 @@ public class PasswordEntity {
   @Column(name = "password_salt", length = 255, nullable = false)
   private String passwordSalt;
 
+  /** Versión de KDF y AAD necesaria para interpretar el ciphertext. */
+  @Column(name = "password_crypto_version", nullable = false)
+  private short passwordCryptoVersion;
+
   /**
-   * Vector de inicialización (IV) de 16 bytes utilizado en el cifrado AES.
+   * Vector de inicialización (IV) de 12 bytes utilizado en el cifrado AES-GCM.
    *
    * <p>
-   * Columna: {@code password_iv BINARY(16) NOT NULL}.
+   * Columna: {@code password_iv BINARY(12) NOT NULL}.
    * Debe ser aleatorio para cada cifrado.
    */
-  @Column(name = "password_iv", columnDefinition = "BINARY(16)", nullable = false)
+  @Column(name = "password_iv", columnDefinition = "BINARY(12)", nullable = false)
   private byte[] passwordIv;
 
   /**

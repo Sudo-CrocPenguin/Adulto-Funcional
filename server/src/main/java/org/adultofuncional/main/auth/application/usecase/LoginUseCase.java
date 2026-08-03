@@ -1,18 +1,17 @@
 package org.adultofuncional.main.auth.application.usecase;
 
-import java.util.List;
+import java.time.Clock;
+import java.util.Optional;
 
 import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.auth.application.dto.AuthResponse;
 import org.adultofuncional.main.auth.application.dto.LoginRequest;
-import org.adultofuncional.main.config.security.JwtService;
+import org.adultofuncional.main.auth.application.dto.SessionTokens;
+import org.adultofuncional.main.auth.application.service.AuthenticationSessionService;
 import org.adultofuncional.main.shared.exception.UnauthorizedException;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import lombok.RequiredArgsConstructor;
 
 /**
  * Caso de uso para la autenticación de usuarios registrados.
@@ -32,12 +31,30 @@ import lombok.RequiredArgsConstructor;
  * @since 0.0.1
  */
 @Service
-@RequiredArgsConstructor
 public class LoginUseCase {
 
   private final AccountRepository accountRepository;
   private final PasswordEncoder passwordEncoder;
-  private final JwtService jwtService;
+  private final AuthenticationSessionService sessionService;
+  private final Clock clock;
+  private final String dummyPasswordHash;
+
+  /**
+   * Calcula una única credencial ficticia para igualar el coste de emails
+   * existentes e inexistentes sin ejecutar Argon2 dos veces por solicitud.
+   */
+  public LoginUseCase(
+      AccountRepository accountRepository,
+      PasswordEncoder passwordEncoder,
+      AuthenticationSessionService sessionService,
+      Clock clock) {
+    this.accountRepository = accountRepository;
+    this.passwordEncoder = passwordEncoder;
+    this.sessionService = sessionService;
+    this.clock = clock;
+    this.dummyPasswordHash = passwordEncoder.encode(
+        "dummy-password-used-only-to-equalize-login-timing");
+  }
 
   /**
    * Ejecuta el proceso de autenticación.
@@ -48,28 +65,15 @@ public class LoginUseCase {
    *                               coincide
    */
   public AuthResponse execute(LoginRequest request) {
-    // 1. Buscar cuenta y verificar contraseña (sin distinguir causa de fallo)
-    Account account = accountRepository.findByEmail(request.getEmail())
-        .filter(acc -> passwordEncoder.matches(request.getPassword(), acc.getPasswordHash()))
-        .orElseThrow(() -> new UnauthorizedException("Email o contraseña incorrectos"));
+    Optional<Account> candidate = accountRepository.findByEmail(request.getEmail());
+    String passwordHash = candidate.map(Account::getPasswordHash).orElse(dummyPasswordHash);
+    boolean passwordMatches = passwordEncoder.matches(request.getPassword(), passwordHash);
+    if (candidate.isEmpty() || !passwordMatches) {
+      throw new UnauthorizedException("Email o contraseña incorrectos");
+    }
 
-    // 2. Generar token JWT
-    String token = jwtService.generateToken(
-        account.getId().toString(),
-        account.getEmail(),
-        List.of(new SimpleGrantedAuthority("ROLE_USER")));
-
-    // 3. Construir respuesta sin datos sensibles
-    return AuthResponse.builder()
-        .token(token)
-        .expiresIn(jwtService.getExpiration())
-        .accountId(account.getId())
-        .email(account.getEmail())
-        .names(account.getNames())
-        .lastnames(account.getLastnames())
-        .phone(account.getPhone())
-        .createdAt(account.getCreatedAt())
-        .hasMasterKey(account.getMasterKeyHash() != null) // TODO: ajustar cuando el módulo de seguridad esté listo
-        .build();
+    Account account = candidate.orElseThrow();
+    SessionTokens tokens = sessionService.create(account);
+    return AuthResponse.from(account, tokens, clock.instant());
   }
 }

@@ -8,9 +8,22 @@ spring:
     redis:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+      password: ${REDIS_PASSWORD}
       timeout: 2000ms
 
 jwt:
   secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION}
+  expiration: ${JWT_ACCESS_EXPIRATION:${JWT_EXPIRATION:900000}}
+  issuer: ${JWT_ISSUER:adulto-funcional-server}
+  audience: ${JWT_AUDIENCE:adulto-funcional-clients}
+
+auth:
+  session:
+    refresh-expiration: ${REFRESH_TOKEN_EXPIRATION:2592000000}
+    replay-window-seconds: ${REFRESH_REPLAY_WINDOW_SECONDS:5}
+    refresh-token-bytes: ${REFRESH_TOKEN_BYTES:32}
+
+master-key:
+  session:
+    secret: ${MASTER_KEY_SESSION_SECRET}
+    ttl: ${MASTER_KEY_SESSION_TTL:3600000}

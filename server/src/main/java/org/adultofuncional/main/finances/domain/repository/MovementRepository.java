@@ -1,9 +1,12 @@
 package org.adultofuncional.main.finances.domain.repository;
 
-import java.util.List;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
+import org.adultofuncional.main.finances.domain.enums.MovementType;
 import org.adultofuncional.main.finances.domain.model.Movement;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
 /**
  * Puerto de dominio para la persistencia de movimientos financieros.
@@ -18,10 +21,10 @@ import org.adultofuncional.main.finances.domain.model.Movement;
  * <p>
  * <strong>Operaciones expuestas:</strong>
  * <ul>
- * <li>Búsqueda individual por ID.</li>
+ * <li>Búsqueda individual limitada por ID y cuenta propietaria.</li>
  * <li>Listado de todos los movimientos asociados a una cuenta.</li>
  * <li>Persistencia de nuevos movimientos o actualización de existentes.</li>
- * <li>Eliminación por ID.</li>
+ * <li>Eliminación limitada por ID y cuenta propietaria.</li>
  * </ul>
  *
  * @author Daniel Salazar
@@ -32,28 +35,32 @@ import org.adultofuncional.main.finances.domain.model.Movement;
 public interface MovementRepository {
 
   /**
-   * Busca un movimiento por su identificador único.
+   * Busca un movimiento dentro de la cuenta propietaria indicada.
    *
-   * @param id UUID del movimiento. No debe ser {@code null}.
-   * @return {@link Optional} con el movimiento si existe;
-   *         {@code Optional.empty()} en caso contrario.
+   * @param id        UUID del movimiento
+   * @param accountId UUID de la cuenta propietaria
+   * @return movimiento cuando coinciden ID y cuenta; vacío en caso contrario
    */
-  Optional<Movement> findById(UUID id);
+  Optional<Movement> findByIdAndAccountId(UUID id, UUID accountId);
 
   /**
-   * Lista todos los movimientos asociados a una cuenta específica.
+   * Consulta una página de movimientos asociados a una cuenta específica.
    *
    * <p>
-   * Utilizado por los casos de uso de listado y filtrado de movimientos.
-   * Retorna la totalidad de los movimientos de la cuenta; el filtrado
-   * adicional (por tipo, categoría, rango de fechas, término de búsqueda)
-   * se aplica en memoria en la capa de aplicación.
+   * Ownership, filtros, orden y límite deben formar parte de la consulta de
+   * persistencia; nunca se materializa el historial completo.
    *
    * @param accountId UUID de la cuenta propietaria. No debe ser {@code null}.
-   * @return lista de movimientos de la cuenta. Puede ser vacía si no hay
-   *         registros.
+   * @return página de movimientos y sus totales.
    */
-  List<Movement> findAllByAccountId(UUID accountId);
+  PageResult<Movement> findPageByAccountId(
+      UUID accountId,
+      LocalDate startDate,
+      LocalDate endDate,
+      MovementType movementType,
+      UUID categoryId,
+      String searchTerm,
+      PageQuery pageQuery);
 
   /**
    * Persiste un movimiento nuevo o actualiza uno existente.
@@ -69,14 +76,11 @@ public interface MovementRepository {
   Movement save(Movement movement);
 
   /**
-   * Elimina un movimiento por su identificador único.
+   * Elimina un movimiento únicamente cuando pertenece a la cuenta indicada.
    *
-   * <p>
-   * Si no existe un movimiento con el ID dado, la operación no tiene efecto
-   * (comportamiento silencioso). La validación de existencia previa se
-   * realiza en la capa de aplicación.
-   *
-   * @param id UUID del movimiento a eliminar. No debe ser {@code null}.
+   * @param id        UUID del movimiento
+   * @param accountId UUID de la cuenta propietaria
+   * @return {@code true} cuando se eliminó una fila
    */
-  void deleteById(UUID id);
+  boolean deleteByIdAndAccountId(UUID id, UUID accountId);
 }

@@ -1,11 +1,17 @@
 package org.adultofuncional.main.agenda.infrastructure.persistence.repository;
 
-import java.util.List;
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Repositorio Spring Data JPA para la entidad {@link EventEntity}.
@@ -26,13 +32,30 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface SpringEventJpaRepository extends JpaRepository<EventEntity, UUID> {
 
   /**
-   * Busca todos los eventos asociados a una cuenta específica.
+   * Consulta una página de eventos con ownership y filtros en SQL.
    *
    * @param accountId UUID de la cuenta propietaria.
-   * @return lista de entidades {@code EventEntity} de esa cuenta;
-   *         puede estar vacía si no hay eventos registrados.
+   * @return página acotada y total de coincidencias
    */
-  List<EventEntity> findByAccount_AccountId(UUID accountId);
+  @EntityGraph(attributePaths = {"account", "category"})
+  @Query("""
+      SELECT event
+      FROM EventEntity event
+      WHERE event.account.accountId = :accountId
+        AND (:status IS NULL OR event.eventStatus = :status)
+        AND (:priority IS NULL OR event.eventPriority = :priority)
+        AND (:categoryId IS NULL OR event.category.categoryId = :categoryId)
+        AND (:startDate IS NULL OR event.eventDate >= :startDate)
+        AND (:endDate IS NULL OR event.eventDate <= :endDate)
+      """)
+  Page<EventEntity> findPageByAccountId(
+      @Param("accountId") UUID accountId,
+      @Param("status") String status,
+      @Param("priority") String priority,
+      @Param("categoryId") UUID categoryId,
+      @Param("startDate") LocalDate startDate,
+      @Param("endDate") LocalDate endDate,
+      Pageable pageable);
 
   /**
    * Busca un evento por su ID y el ID de la cuenta propietaria.
@@ -49,12 +72,15 @@ public interface SpringEventJpaRepository extends JpaRepository<EventEntity, UUI
   Optional<EventEntity> findByEventIdAndAccount_AccountId(UUID eventId, UUID accountId);
 
   /**
-   * Verifica si existe un evento con el ID dado y que pertenezca a
-   * la cuenta indicada.
-   *
-   * @param eventId   UUID del evento.
-   * @param accountId UUID de la cuenta propietaria.
-   * @return {@code true} si el evento existe y pertenece a la cuenta.
+   * Elimina de forma atómica un evento limitado por cuenta propietaria.
    */
-  boolean existsByEventIdAndAccount_AccountId(UUID eventId, UUID accountId);
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = """
+      DELETE FROM events
+      WHERE event_id = :eventId
+        AND event_fk_account_id = :accountId
+      """, nativeQuery = true)
+  int deleteByEventIdAndAccountId(
+      @Param("eventId") UUID eventId,
+      @Param("accountId") UUID accountId);
 }

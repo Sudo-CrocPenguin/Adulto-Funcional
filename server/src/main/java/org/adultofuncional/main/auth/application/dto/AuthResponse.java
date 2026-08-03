@@ -1,8 +1,10 @@
 package org.adultofuncional.main.auth.application.dto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
+import org.adultofuncional.main.account.domain.model.Account;
 import org.adultofuncional.main.config.security.CookieUtils;
 
 import lombok.AllArgsConstructor;
@@ -21,12 +23,10 @@ import lombok.NoArgsConstructor;
  * <p>
  * <strong>Estrategia de entrega del token:</strong>
  * <ul>
- * <li>El token <b>siempre</b> se establece en una cookie HttpOnly
- * mediante {@link CookieUtils}.</li>
- * <li>Adicionalmente, los clientes nativos (móvil/escritorio)
- * reciben el token en este DTO para su almacenamiento local.
- * Los clientes web reciben una copia sin token mediante
- * {@link #withoutToken()}.</li>
+ * <li>Los navegadores reciben access y refresh en cookies HttpOnly y una copia
+ * de este DTO sin tokens mediante {@link #withoutToken()}.</li>
+ * <li>Los clientes nativos reciben access y refresh en el DTO y los almacenan
+ * mediante las capacidades seguras de su plataforma.</li>
  * </ul>
  *
  * @author Miguel Angel Blandon Montes, Juan Sebastian Rios
@@ -41,7 +41,7 @@ import lombok.NoArgsConstructor;
 public class AuthResponse {
 
   /**
-   * Token JWT para autenticación stateless.
+   * Access JWT perteneciente a una familia de sesión revocable.
    *
    * <p>
    * Se incluye en esta respuesta <b>solo para clientes nativos</b>
@@ -53,17 +53,23 @@ public class AuthResponse {
    * <strong>Claims del token:</strong>
    * <ul>
    * <li>{@code sub} — ID de la cuenta</li>
+   * <li>{@code sid} — ID de sesión</li>
+   * <li>{@code jti} — ID del access token</li>
    * <li>{@code email} — correo electrónico</li>
    * <li>{@code roles} — roles del usuario</li>
+   * <li>{@code iss}/{@code aud} — emisor y audiencia</li>
    * <li>{@code iat} — timestamp de emisión</li>
    * <li>{@code exp} — timestamp de expiración</li>
    * </ul>
    */
   private String token;
 
+  /** Refresh token opaco; solo se incluye para clientes nativos. */
+  private String refreshToken;
+
   /**
-   * Tipo de token. Siempre {@code "Bearer"} para autenticación JWT estándar.
-   * Indica al cliente cómo debe enviar el token en las peticiones.
+   * Tipo de token ({@code "Bearer"}) cuando el DTO transporta credenciales.
+   * En respuestas web se omite junto con los tokens.
    */
   @Builder.Default
   private String tokenType = "Bearer";
@@ -74,6 +80,16 @@ public class AuthResponse {
    * (refresh token) o redirigir al login.
    */
   private Long expiresIn;
+
+  /** Tiempo restante del refresh token en milisegundos. */
+  private Long refreshExpiresIn;
+
+  /** Identificador de la familia de autenticación creada. */
+  private UUID sessionId;
+
+  /** Autoridades persistidas que fueron incluidas en el access token. */
+  @Builder.Default
+  private List<String> roles = List.of();
 
   /**
    * Identificador único de la cuenta (UUID v7).
@@ -109,16 +125,34 @@ public class AuthResponse {
    * Fecha y hora de creación de la cuenta.
    * Corresponde a {@code account_created_at}.
    */
-  private LocalDateTime createdAt;
+  private Instant createdAt;
 
   /**
    * Indica si el usuario tiene configurada una Master Key.
    * Si es {@code true}, el usuario puede acceder al gestor de contraseñas.
    * Si es {@code false}, el frontend puede mostrar una opción para configurarla.
-   *
-   * //TODO: Agregar campos adicionales para roles o permisos en el futuro
    */
   private boolean hasMasterKey;
+
+  /** Construye la respuesta canónica a partir de cuenta y par de sesión. */
+  public static AuthResponse from(Account account, SessionTokens tokens, Instant now) {
+    return AuthResponse.builder()
+        .token(tokens.accessToken())
+        .refreshToken(tokens.refreshToken())
+        .tokenType("Bearer")
+        .expiresIn(tokens.accessExpiresInMillis(now))
+        .refreshExpiresIn(tokens.refreshExpiresInMillis(now))
+        .sessionId(tokens.sessionId())
+        .roles(tokens.roles())
+        .accountId(account.getId())
+        .names(account.getNames())
+        .lastnames(account.getLastnames())
+        .email(account.getEmail())
+        .phone(account.getPhone())
+        .createdAt(account.getCreatedAt())
+        .hasMasterKey(account.getMasterKeyHash() != null)
+        .build();
+  }
 
   /**
    * Retorna una copia de este objeto sin el token JWT.
@@ -128,8 +162,12 @@ public class AuthResponse {
   public AuthResponse withoutToken() {
     return AuthResponse.builder()
         .token(null)
+        .refreshToken(null)
         .tokenType(null)
         .expiresIn(this.expiresIn)
+        .refreshExpiresIn(this.refreshExpiresIn)
+        .sessionId(this.sessionId)
+        .roles(this.roles)
         .accountId(this.accountId)
         .names(this.names)
         .lastnames(this.lastnames)

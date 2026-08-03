@@ -1,8 +1,9 @@
 package org.adultofuncional.main.finances.domain.model;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.domain.enums.MovementType;
@@ -66,7 +67,7 @@ public class Movement {
    */
   MovementType type;
 
-  /** Monto monetario del movimiento. Debe ser mayor que cero. */
+  /** Monto monetario representable como {@code DECIMAL(10,2)}. */
   BigDecimal amount;
 
   /**
@@ -87,14 +88,14 @@ public class Movement {
    * Fecha y hora exacta en que el movimiento fue registrado en el sistema.
    * Se genera automáticamente en {@link #create} y es inmutable.
    */
-  final LocalDateTime createdAt;
+  final Instant createdAt;
 
   /**
    * Constructor privado. Usar {@link #create} o {@link #reconstitute}.
    */
   private Movement(UUID id, MovementType type, BigDecimal amount,
       UUID categoryId, UUID accountId, String description, LocalDate date,
-      LocalDateTime createdAt) {
+      Instant createdAt) {
 
     validateId(id);
     validateType(type);
@@ -134,12 +135,12 @@ public class Movement {
    *                                  el monto no es positivo.
    */
   public static Movement create(MovementType type, BigDecimal amount,
-      UUID categoryId, UUID accountId, String description, LocalDate date) {
+      UUID categoryId, UUID accountId, String description, LocalDate date,
+      Clock clock) {
 
     UUID id = Generators.timeBasedEpochGenerator().generate();
-    LocalDateTime now = LocalDateTime.now();
-
-    return new Movement(id, type, amount, categoryId, accountId, description, date, now);
+    return new Movement(
+        id, type, amount, categoryId, accountId, description, date, clock.instant());
   }
 
   /**
@@ -159,7 +160,7 @@ public class Movement {
   public static Movement reconstitute(UUID id, MovementType type,
       BigDecimal amount, UUID categoryId,
       UUID accountId, String description,
-      LocalDate date, LocalDateTime createdAt) {
+      LocalDate date, Instant createdAt) {
 
     return new Movement(id, type, amount, categoryId, accountId,
         description, date, createdAt);
@@ -214,8 +215,12 @@ public class Movement {
     if (amount == null) {
       throw new IllegalArgumentException("Amount cannot be null");
     }
-    if (amount.compareTo(BigDecimal.ZERO) <= 0) {
-      throw new IllegalArgumentException("Amount must be greater than zero");
+    if (amount.compareTo(new BigDecimal("0.01")) < 0) {
+      throw new IllegalArgumentException("Amount must be at least 0.01");
+    }
+    int integerDigits = amount.precision() - amount.scale();
+    if (integerDigits > 8 || amount.scale() > 2) {
+      throw new IllegalArgumentException("Amount exceeds DECIMAL(10,2) precision");
     }
   }
 
@@ -231,12 +236,9 @@ public class Movement {
     }
   }
 
-  private static void validateCreatedAt(LocalDateTime createdAt) {
+  private static void validateCreatedAt(Instant createdAt) {
     if (createdAt == null) {
       throw new IllegalArgumentException("CreatedAt cannot be null");
-    }
-    if (createdAt.isAfter(LocalDateTime.now())) {
-      throw new IllegalArgumentException("CreatedAt cannot be in the future");
     }
   }
 

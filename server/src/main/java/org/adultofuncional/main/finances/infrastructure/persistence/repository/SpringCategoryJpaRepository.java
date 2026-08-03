@@ -4,7 +4,13 @@ import java.util.List;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Repositorio Spring Data JPA para la entidad {@link CategoryEntity}.
@@ -20,11 +26,78 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface SpringCategoryJpaRepository extends JpaRepository<CategoryEntity, UUID> {
 
-  /**
-   * Busca categorías por su tipo (Ingreso o Egreso).
-   *
-   * @param categoryType el tipo de categoría (ej: "Ingreso", "Egreso")
-   * @return lista de categorías que coinciden con el tipo (puede estar vacía)
-   */
-  List<CategoryEntity> findByCategoryType(String categoryType);
+  @Query("""
+      SELECT category
+      FROM CategoryEntity category
+      LEFT JOIN category.ownerAccount owner
+      WHERE category.categoryId = :categoryId
+        AND (category.categoryScope = 'SYSTEM' OR owner.accountId = :accountId)
+      """)
+  java.util.Optional<CategoryEntity> findAccessibleById(
+      @Param("accountId") UUID accountId,
+      @Param("categoryId") UUID categoryId);
+
+  @Query("""
+      SELECT category
+      FROM CategoryEntity category
+      LEFT JOIN category.ownerAccount owner
+      WHERE category.categoryId = :categoryId
+        AND category.categoryType = :categoryType
+        AND (category.categoryScope = 'SYSTEM' OR owner.accountId = :accountId)
+      """)
+  java.util.Optional<CategoryEntity> findAccessibleByIdAndType(
+      @Param("accountId") UUID accountId,
+      @Param("categoryId") UUID categoryId,
+      @Param("categoryType") String categoryType);
+
+  @Query("""
+      SELECT category
+      FROM CategoryEntity category
+      LEFT JOIN category.ownerAccount owner
+      WHERE category.categoryScope = 'PERSONAL'
+        AND category.categoryId = :categoryId
+        AND owner.accountId = :accountId
+      """)
+  java.util.Optional<CategoryEntity> findPersonalByIdAndOwner(
+      @Param("accountId") UUID accountId,
+      @Param("categoryId") UUID categoryId);
+
+  @EntityGraph(attributePaths = "ownerAccount")
+  @Query("""
+      SELECT category
+      FROM CategoryEntity category
+      LEFT JOIN category.ownerAccount owner
+      WHERE (category.categoryScope = 'SYSTEM' OR owner.accountId = :accountId)
+        AND (:categoryType IS NULL OR category.categoryType = :categoryType)
+        AND (:searchTerm IS NULL OR LOWER(category.categoryName)
+             LIKE LOWER(CONCAT('%', :searchTerm, '%')))
+      """)
+  Page<CategoryEntity> findPageAccessible(
+      @Param("accountId") UUID accountId,
+      @Param("categoryType") String categoryType,
+      @Param("searchTerm") String searchTerm,
+      Pageable pageable);
+
+  @Query("""
+      SELECT category
+      FROM CategoryEntity category
+      LEFT JOIN category.ownerAccount owner
+      WHERE category.categoryId IN :categoryIds
+        AND (category.categoryScope = 'SYSTEM' OR owner.accountId = :accountId)
+      """)
+  List<CategoryEntity> findAllAccessibleById(
+      @Param("accountId") UUID accountId,
+      @Param("categoryIds") Iterable<UUID> categoryIds);
+
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query("""
+      DELETE FROM CategoryEntity category
+      WHERE category.categoryScope = 'PERSONAL'
+        AND category.categoryId = :categoryId
+        AND category.ownerAccount.accountId = :accountId
+      """)
+  int deletePersonalByIdAndOwner(
+      @Param("accountId") UUID accountId,
+      @Param("categoryId") UUID categoryId);
+
 }

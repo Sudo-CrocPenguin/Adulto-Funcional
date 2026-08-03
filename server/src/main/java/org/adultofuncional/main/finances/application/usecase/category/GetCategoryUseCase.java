@@ -42,13 +42,14 @@ public class GetCategoryUseCase {
    *                           proporcionado.
    */
   @Transactional(readOnly = true)
-  public CategoryResponse execute(UUID categoryId) {
-    Category category = categoryRepository.findById(categoryId)
+  public CategoryResponse execute(UUID accountId, UUID categoryId) {
+    Category category = categoryRepository.findAccessibleById(accountId, categoryId)
         .orElseThrow(() -> new NotFoundException("Categoría no encontrada con id: " + categoryId));
     return CategoryResponse.builder()
         .id(category.getId())
         .name(category.getName())
         .type(category.getType())
+        .scope(category.getScope())
         .build();
   }
 }
