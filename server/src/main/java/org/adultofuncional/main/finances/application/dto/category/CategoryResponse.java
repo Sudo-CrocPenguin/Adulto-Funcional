@@ -3,6 +3,7 @@ package org.adultofuncional.main.finances.application.dto.category;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.domain.enums.CategoryType;
+import org.adultofuncional.main.finances.domain.enums.CategoryScope;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -11,9 +12,8 @@ import lombok.Getter;
  * DTO de respuesta que expone los datos de una categoría financiera.
  *
  * <p>
- * Las categorías son globales y no pertenecen a una cuenta individual. Los
- * usuarios autenticados pueden leerlas, pero su creación, edición y borrado son
- * operaciones administrativas porque impactan a todo el catálogo compartido.
+ * Distingue categorías inmutables del catálogo global y categorías personales
+ * administradas exclusivamente por su cuenta propietaria.
  *
  * <p>
  * Nunca expone campos de infraestructura como marcas de borrado lógico
@@ -57,5 +57,8 @@ public class CategoryResponse {
    * (por ejemplo: ingreso, gasto, ahorro, entre otros).
    */
   private CategoryType type;
+
+  /** Indica si la categoría pertenece al sistema o a la cuenta autenticada. */
+  private CategoryScope scope;
 
 }
