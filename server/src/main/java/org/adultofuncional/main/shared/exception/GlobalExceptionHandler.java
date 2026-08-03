@@ -69,6 +69,21 @@ public class GlobalExceptionHandler {
 
   private final ApiErrorFactory errorFactory;
 
+  /** Devuelve 429 y comunica cuándo puede reintentarse la operación. */
+  @ExceptionHandler(RateLimitExceededException.class)
+  public ResponseEntity<ApiResponse<Void>> handleRateLimit(
+      RateLimitExceededException exception,
+      HttpServletRequest request) {
+    ApiResponse<Void> body = errorFactory.create(
+        request,
+        exception.getStatus(),
+        exception.getCode(),
+        exception.getMessage());
+    return responseBuilder(exception.getStatus())
+        .header(HttpHeaders.RETRY_AFTER, Long.toString(exception.getRetryAfterSeconds()))
+        .body(body);
+  }
+
   /** Maneja errores de negocio conservando estado, código y mensaje seguros. */
   @ExceptionHandler(BusinessException.class)
   public ResponseEntity<ApiResponse<Void>> handleBusiness(
