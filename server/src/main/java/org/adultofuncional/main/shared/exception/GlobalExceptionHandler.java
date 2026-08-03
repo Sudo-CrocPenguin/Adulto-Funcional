@@ -23,6 +23,7 @@ import org.adultofuncional.main.shared.response.ApiResponse;
 import org.adultofuncional.main.shared.response.FieldValidationError;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -266,6 +267,19 @@ public class GlobalExceptionHandler {
         HttpStatus.NOT_ACCEPTABLE,
         REPRESENTATION_NOT_ACCEPTABLE,
         "No existe un formato de respuesta aceptable");
+  }
+
+  /** Maneja restricciones de integridad sin exponer SQL ni nombres internos. */
+  @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+  public ResponseEntity<ApiResponse<Void>> handleOptimisticLock(
+      ObjectOptimisticLockingFailureException exception,
+      HttpServletRequest request) {
+    log.debug("Actualización concurrente detectada", exception);
+    return buildError(
+        request,
+        HttpStatus.CONFLICT,
+        ApiErrorCode.CONCURRENT_MODIFICATION,
+        "El recurso fue modificado por otra solicitud; vuelve a intentarlo");
   }
 
   /** Maneja restricciones de integridad sin exponer SQL ni nombres internos. */

@@ -131,6 +131,8 @@ public class FixedExpenseRepositoryImpl implements FixedExpenseRepository {
   @Override
   public FixedExpense save(FixedExpense fixedExpense) {
     FixedExpensesEntity entity = fixedExpenseMapper.toEntity(fixedExpense);
+    fixedExpenseJpaRepository.findById(fixedExpense.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     FixedExpensesEntity saved = fixedExpenseJpaRepository.save(entity);
     return fixedExpenseMapper.toDomain(saved);
   }

@@ -130,6 +130,8 @@ public class MovementRepositoryImpl implements MovementRepository {
   @Override
   public Movement save(Movement movement) {
     MovementEntity entity = mapper.toEntity(movement);
+    jpaRepository.findById(movement.getId())
+        .ifPresent(existing -> entity.setVersion(existing.getVersion()));
     MovementEntity saved = jpaRepository.save(entity);
     return mapper.toDomain(saved);
   }
