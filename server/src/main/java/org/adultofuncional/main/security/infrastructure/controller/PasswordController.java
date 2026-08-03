@@ -3,8 +3,6 @@ package org.adultofuncional.main.security.infrastructure.controller;
 import java.util.List;
 import java.util.UUID;
 
-import org.adultofuncional.main.account.domain.model.Account;
-import org.adultofuncional.main.account.domain.repository.AccountRepository;
 import org.adultofuncional.main.config.security.AuthenticatedAccount;
 import org.adultofuncional.main.security.application.dto.PasswordRequest;
 import org.adultofuncional.main.security.application.dto.PasswordResponse;
@@ -15,18 +13,15 @@ import org.adultofuncional.main.security.application.usecase.DeletePasswordUseCa
 import org.adultofuncional.main.security.application.usecase.GetPasswordUseCase;
 import org.adultofuncional.main.security.application.usecase.ListPasswordsUseCase;
 import org.adultofuncional.main.security.application.usecase.UpdatePasswordUseCase;
-import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
+import org.adultofuncional.main.security.application.usecase.VerifyMasterKeyUseCase;
 import org.adultofuncional.main.shared.exception.NotFoundException;
-import org.adultofuncional.main.shared.exception.ConflictException;
 import org.adultofuncional.main.shared.exception.ForbiddenException;
-import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.adultofuncional.main.shared.response.ApiResponse;
 import org.adultofuncional.main.shared.ratelimit.RateLimitGuard;
 import org.adultofuncional.main.shared.ratelimit.RateLimitPolicy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,9 +41,8 @@ import lombok.RequiredArgsConstructor;
  * <p>
  * Expone los endpoints para administrar las credenciales almacenadas:
  * crear, listar, obtener (descifrada), actualizar y eliminar, bajo la ruta
- * base {@code /api/security/passwords}. También incluye el endpoint
- * {@code /master-key/verify} para verificar la Master Key del usuario antes
- * de acceder al gestor.
+ * base {@code /api/security/passwords}. La ruta histórica de verificación se
+ * conserva temporalmente y delega en el mismo caso de uso canónico.
  *
  * <p>
    * El {@code accountId} se toma del claim {@code sub} del JWT mediante
@@ -67,7 +61,6 @@ import lombok.RequiredArgsConstructor;
  * @see GetPasswordUseCase
  * @see UpdatePasswordUseCase
  * @see DeletePasswordUseCase
- * @see MasterKeySessionService
  */
 @RestController
 @RequestMapping("/api/security/passwords")
@@ -79,11 +72,7 @@ public class PasswordController {
   private final GetPasswordUseCase getPasswordUseCase;
   private final UpdatePasswordUseCase updatePasswordUseCase;
   private final DeletePasswordUseCase deletePasswordUseCase;
-  private final PasswordEncoder passwordEncoder;
-  private final MasterKeySessionService masterKeySessionService;
-
-  /** Repositorio de cuentas para validar la Master Key contra el hash persistido. */
-  private final AccountRepository accountRepository;
+  private final VerifyMasterKeyUseCase verifyMasterKeyUseCase;
   private final RateLimitGuard rateLimitGuard;
 
   /**
@@ -98,10 +87,7 @@ public class PasswordController {
    * sesión para las operaciones del gestor.
    *
    * <p>
-   * Compara la clave proporcionada con el hash {@code account_master_key}
-   * usando {@link PasswordEncoder#matches}. Si la verificación es exitosa,
-   * almacena la Master Key en la sesión mediante
-   * {@link MasterKeySessionService#verify}.
+   * Delega en el caso de uso canónico durante la ventana de compatibilidad.
    *
    * @param request     DTO validado con la Master Key en texto plano.
    * @param authenticatedAccount cuenta autenticada.
@@ -115,36 +101,10 @@ public class PasswordController {
       @Valid @RequestBody VerifyMasterKeyRequest request,
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
-    UUID accountId = resolveAccountId(authenticatedAccount);
-    check(
-        RateLimitPolicy.MASTER_KEY_SESSION,
-        authenticatedAccount);
-    String providedMasterKey = request.masterKey();
-
-    Account account = accountRepository.findById(accountId)
-        .orElseThrow(() -> new NotFoundException("Cuenta no encontrada"));
-
-    if (account.getMasterKeyHash() == null) {
-      throw new ConflictException(
-          "La cuenta no tiene una Master Key configurada",
-          ApiErrorCode.MASTER_KEY_NOT_CONFIGURED);
-    }
-
-    if (!passwordEncoder.matches(providedMasterKey, account.getMasterKeyHash())) {
-      recordFailure(
-          RateLimitPolicy.MASTER_KEY_SESSION,
-          authenticatedAccount);
-      check(RateLimitPolicy.MASTER_KEY_SESSION, authenticatedAccount);
-      throw new ForbiddenException(
-          "Master Key incorrecta",
-          ApiErrorCode.MASTER_KEY_INVALID);
-    }
-
-    reset(RateLimitPolicy.MASTER_KEY_SESSION, authenticatedAccount);
-    masterKeySessionService.unlock(
-        accountId,
+    verifyMasterKeyUseCase.execute(
+        resolveAccountId(authenticatedAccount),
         authenticatedAccount.sessionId(),
-        providedMasterKey);
+        request);
 
     return ResponseEntity.ok(
         ApiResponse.<Void>builder()
@@ -283,30 +243,10 @@ public class PasswordController {
             "Contraseña eliminada exitosamente", null));
   }
 
-  private void check(
-      RateLimitPolicy policy,
-      AuthenticatedAccount account) {
-    rateLimitGuard.check(
-        policy,
-        rateLimitSubject(account));
-  }
-
-  private void recordFailure(
-      RateLimitPolicy policy,
-      AuthenticatedAccount account) {
-    rateLimitGuard.recordFailure(policy, rateLimitSubject(account));
-  }
-
   private void consume(
       RateLimitPolicy policy,
       AuthenticatedAccount account) {
     rateLimitGuard.consume(policy, rateLimitSubject(account));
-  }
-
-  private void reset(
-      RateLimitPolicy policy,
-      AuthenticatedAccount account) {
-    rateLimitGuard.reset(policy, rateLimitSubject(account));
   }
 
   private String rateLimitSubject(AuthenticatedAccount account) {
