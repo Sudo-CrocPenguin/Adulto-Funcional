@@ -74,7 +74,7 @@ public class CreatePasswordUseCase {
   @Transactional
   public PasswordResponse execute(UUID accountId, UUID sessionId, PasswordRequest request) {
     // 1. Verificar cuenta
-    accountRepository.findById(accountId)
+    accountRepository.findByIdForUpdate(accountId)
         .orElseThrow(() -> new NotFoundException("Cuenta no encontrada con id: " + accountId));
 
     // 2. Verificar Master Key en sesión
