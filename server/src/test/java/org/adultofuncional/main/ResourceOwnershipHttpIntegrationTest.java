@@ -98,8 +98,8 @@ class ResourceOwnershipHttpIntegrationTest extends MariaDbIntegrationTestSupport
 
   @AfterEach
   void clearMasterKeySessions() {
-    masterKeySessionService.clear(owner.getAccountId());
-    masterKeySessionService.clear(foreignAccount.getAccountId());
+    masterKeySessionService.clearAll(owner.getAccountId());
+    masterKeySessionService.clearAll(foreignAccount.getAccountId());
   }
 
   @Test
@@ -146,7 +146,9 @@ class ResourceOwnershipHttpIntegrationTest extends MariaDbIntegrationTestSupport
   void enforcesMasterKeyAndOwnershipWhenDeletingCredentials() throws Exception {
     verifyMasterKey(ownerToken);
     UUID credentialId = createCredentialAsOwner();
-    masterKeySessionService.clear(owner.getAccountId());
+    masterKeySessionService.clear(
+        owner.getAccountId(),
+        jwtService.extractSessionId(ownerToken));
 
     mockMvc.perform(authorized(delete("/api/security/passwords/{id}", credentialId), ownerToken))
         .andExpect(status().isForbidden());
@@ -166,6 +168,19 @@ class ResourceOwnershipHttpIntegrationTest extends MariaDbIntegrationTestSupport
         .andExpect(status().isOk());
     mockMvc.perform(authorized(get("/api/security/passwords/{id}", credentialId), ownerToken))
         .andExpect(status().isNotFound());
+  }
+
+  @Test
+  void masterKeyUnlockIsRestrictedToTheJwtSessionThatVerifiedIt() throws Exception {
+    String secondDeviceToken = tokenFor(owner);
+
+    verifyMasterKey(ownerToken);
+
+    mockMvc.perform(authorized(get("/api/security/passwords"), ownerToken))
+        .andExpect(status().isOk());
+    mockMvc.perform(authorized(get("/api/security/passwords"), secondDeviceToken))
+        .andExpect(status().isForbidden())
+        .andExpect(jsonPath("$.code").value("MASTER_KEY_REQUIRED"));
   }
 
   private UUID createMovementAsOwner() throws Exception {

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,13 +32,14 @@ class DeletePasswordOwnershipUseCaseTest {
         accountRepository,
         masterKeyService);
     UUID accountId = UUID.randomUUID();
+    UUID sessionId = UUID.randomUUID();
     UUID passwordId = UUID.randomUUID();
 
     when(accountRepository.findById(accountId)).thenReturn(Optional.of(account(accountId)));
-    when(masterKeyService.isVerified(accountId)).thenReturn(true);
+    when(masterKeyService.find(accountId, sessionId)).thenReturn(unlocked());
     when(passwordRepository.deleteByIdAndAccountId(passwordId, accountId)).thenReturn(false);
 
-    assertThatThrownBy(() -> useCase.execute(accountId, passwordId))
+    assertThatThrownBy(() -> useCase.execute(accountId, sessionId, passwordId))
         .isInstanceOf(NotFoundException.class);
 
     verify(passwordRepository).deleteByIdAndAccountId(passwordId, accountId);
@@ -53,13 +55,14 @@ class DeletePasswordOwnershipUseCaseTest {
         accountRepository,
         masterKeyService);
     UUID accountId = UUID.randomUUID();
+    UUID sessionId = UUID.randomUUID();
     UUID passwordId = UUID.randomUUID();
 
     when(accountRepository.findById(accountId)).thenReturn(Optional.of(account(accountId)));
-    when(masterKeyService.isVerified(accountId)).thenReturn(true);
+    when(masterKeyService.find(accountId, sessionId)).thenReturn(unlocked());
     when(passwordRepository.deleteByIdAndAccountId(passwordId, accountId)).thenReturn(true);
 
-    assertThatCode(() -> useCase.execute(accountId, passwordId)).doesNotThrowAnyException();
+    assertThatCode(() -> useCase.execute(accountId, sessionId, passwordId)).doesNotThrowAnyException();
 
     verify(passwordRepository).deleteByIdAndAccountId(passwordId, accountId);
   }
@@ -74,12 +77,13 @@ class DeletePasswordOwnershipUseCaseTest {
         accountRepository,
         masterKeyService);
     UUID accountId = UUID.randomUUID();
+    UUID sessionId = UUID.randomUUID();
     UUID passwordId = UUID.randomUUID();
 
     when(accountRepository.findById(accountId)).thenReturn(Optional.of(account(accountId)));
-    when(masterKeyService.isVerified(accountId)).thenReturn(false);
+    when(masterKeyService.find(accountId, sessionId)).thenReturn(Optional.empty());
 
-    assertThatThrownBy(() -> useCase.execute(accountId, passwordId))
+    assertThatThrownBy(() -> useCase.execute(accountId, sessionId, passwordId))
         .isInstanceOf(ForbiddenException.class);
 
     verify(passwordRepository, never()).deleteByIdAndAccountId(passwordId, accountId);
@@ -95,5 +99,11 @@ class DeletePasswordOwnershipUseCaseTest {
         LocalDateTime.now().minusDays(1),
         "hash-password",
         "hash-master-key");
+  }
+
+  private Optional<MasterKeySessionService.UnlockedMasterKey> unlocked() {
+    return Optional.of(new MasterKeySessionService.UnlockedMasterKey(
+        "master-key",
+        Instant.now().plusSeconds(3_600)));
   }
 }
