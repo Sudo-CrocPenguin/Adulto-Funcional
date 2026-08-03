@@ -2,6 +2,11 @@ package org.adultofuncional.main.account.infrastructure.persistence.repository;
 
 import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import jakarta.persistence.LockModeType;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -41,4 +46,9 @@ public interface SpringAccountJpaRepository extends JpaRepository<AccountEntity,
    * @return {@link Optional} con la entidad si existe, vacío si no
    */
   Optional<AccountEntity> findByAccountEmail(String email);
+
+  /** Serializa cambios de Master Key y mutaciones de la bóveda. */
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT account FROM AccountEntity account WHERE account.accountId = :accountId")
+  Optional<AccountEntity> findByIdForUpdate(@Param("accountId") UUID accountId);
 }
