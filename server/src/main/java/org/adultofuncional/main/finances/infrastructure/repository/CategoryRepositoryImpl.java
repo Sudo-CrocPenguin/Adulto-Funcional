@@ -140,7 +140,7 @@ public class CategoryRepositoryImpl implements CategoryRepository {
   @Override
   public Category save(Category category) {
     CategoryEntity entity = categoryMapper.toEntity(category);
-    CategoryEntity saved = categoryJpaRepository.save(entity);
+    CategoryEntity saved = categoryJpaRepository.saveAndFlush(entity);
     return categoryMapper.toDomain(saved);
   }
 
