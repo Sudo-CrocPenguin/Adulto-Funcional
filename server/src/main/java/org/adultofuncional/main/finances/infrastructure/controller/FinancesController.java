@@ -340,16 +340,18 @@ public class FinancesController {
      */
 
     @GetMapping("/categories")
-    public ResponseEntity<ApiResponse<List<CategoryResponse>>> listCategory(CategoryFilterRequest filter,
+    public ResponseEntity<ApiResponse<List<CategoryResponse>>> listCategory(
+        @Valid CategoryFilterRequest filter,
         @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount) {
 
         UUID accountId = resolveAccountId(authenticatedAccount);
-        List<CategoryResponse> response = listCategoriesUseCase.execute(accountId, filter);
+        PageResult<CategoryResponse> response = listCategoriesUseCase.execute(accountId, filter);
 
         return ResponseEntity.ok(ApiResponse.<List<CategoryResponse>>builder()
             .status(HttpStatus.OK.value())
             .message("Categorías listadas exitosamente")
-            .data(response)
+            .data(response.content())
+            .page(PageMetadata.from(response))
             .build());
     }
 

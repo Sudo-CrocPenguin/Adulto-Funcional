@@ -1,6 +1,7 @@
 package org.adultofuncional.main.finances.infrastructure.repository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -10,6 +11,11 @@ import org.adultofuncional.main.finances.domain.repository.CategoryRepository;
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
 import org.adultofuncional.main.finances.infrastructure.persistence.mapper.CategoryMapper;
 import org.adultofuncional.main.finances.infrastructure.persistence.repository.SpringCategoryJpaRepository;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import lombok.RequiredArgsConstructor;
@@ -36,6 +42,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CategoryRepositoryImpl implements CategoryRepository {
 
+  private static final Map<String, String> SORT_FIELDS = Map.of(
+      "name", "categoryName",
+      "type", "categoryType",
+      "scope", "categoryScope",
+      "id", "categoryId");
+
   private final SpringCategoryJpaRepository categoryJpaRepository;
   private final CategoryMapper categoryMapper;
 
@@ -61,11 +73,32 @@ public class CategoryRepositoryImpl implements CategoryRepository {
   }
 
   @Override
-  public List<Category> findAllAccessible(UUID accountId, CategoryType type) {
+  public PageResult<Category> findPageAccessible(
+      UUID accountId,
+      CategoryType type,
+      String searchTerm,
+      PageQuery pageQuery) {
     String persistedType = type == null ? null : type.name();
-    return categoryJpaRepository.findAllAccessible(accountId, persistedType).stream()
-        .map(categoryMapper::toDomain)
-        .toList();
+    String entitySortField = SORT_FIELDS.get(pageQuery.sortBy());
+    Sort.Direction direction = pageQuery.ascending() ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Sort sort = Sort.by(direction, entitySortField);
+    if (!entitySortField.equals("categoryId")) {
+      sort = sort.and(Sort.by(direction, "categoryId"));
+    }
+    PageRequest pageable = PageRequest.of(pageQuery.number(), pageQuery.size(), sort);
+    Page<CategoryEntity> page = categoryJpaRepository.findPageAccessible(
+        accountId,
+        persistedType,
+        searchTerm,
+        pageable);
+    return new PageResult<>(
+        page.getContent().stream().map(categoryMapper::toDomain).toList(),
+        page.getNumber(),
+        page.getSize(),
+        page.getTotalElements(),
+        page.getTotalPages(),
+        page.hasNext(),
+        page.hasPrevious());
   }
 
   @Override

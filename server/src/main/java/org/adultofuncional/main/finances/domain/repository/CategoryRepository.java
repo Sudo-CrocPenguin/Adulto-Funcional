@@ -5,6 +5,8 @@ import org.adultofuncional.main.finances.domain.enums.CategoryType;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.adultofuncional.main.shared.pagination.PageQuery;
+import org.adultofuncional.main.shared.pagination.PageResult;
 
 /**
  * Puerto de dominio para la persistencia de categorías.
@@ -38,8 +40,15 @@ public interface CategoryRepository {
   /** Busca exclusivamente una categoría PERSONAL de su propietario. */
   Optional<Category> findPersonalByIdAndOwner(UUID accountId, UUID categoryId);
 
-  /** Lista el catálogo SYSTEM y las categorías PERSONAL de la cuenta. */
-  List<Category> findAllAccessible(UUID accountId, CategoryType type);
+  /**
+   * Página el catálogo SYSTEM y las categorías PERSONAL de la cuenta con
+   * filtros y orden aplicados en persistencia.
+   */
+  PageResult<Category> findPageAccessible(
+      UUID accountId,
+      CategoryType type,
+      String searchTerm,
+      PageQuery pageQuery);
 
   /** Recupera por lote únicamente categorías visibles para la cuenta. */
   List<Category> findAllAccessibleById(UUID accountId, Iterable<UUID> ids);

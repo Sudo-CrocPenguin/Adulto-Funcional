@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.UUID;
 
 import org.adultofuncional.main.finances.infrastructure.persistence.entity.CategoryEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -59,17 +62,21 @@ public interface SpringCategoryJpaRepository extends JpaRepository<CategoryEntit
       @Param("accountId") UUID accountId,
       @Param("categoryId") UUID categoryId);
 
+  @EntityGraph(attributePaths = "ownerAccount")
   @Query("""
       SELECT category
       FROM CategoryEntity category
       LEFT JOIN category.ownerAccount owner
       WHERE (category.categoryScope = 'SYSTEM' OR owner.accountId = :accountId)
         AND (:categoryType IS NULL OR category.categoryType = :categoryType)
-      ORDER BY category.categoryName ASC
+        AND (:searchTerm IS NULL OR LOWER(category.categoryName)
+             LIKE LOWER(CONCAT('%', :searchTerm, '%')))
       """)
-  List<CategoryEntity> findAllAccessible(
+  Page<CategoryEntity> findPageAccessible(
       @Param("accountId") UUID accountId,
-      @Param("categoryType") String categoryType);
+      @Param("categoryType") String categoryType,
+      @Param("searchTerm") String searchTerm,
+      Pageable pageable);
 
   @Query("""
       SELECT category
