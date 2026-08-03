@@ -5,11 +5,15 @@ import java.util.List;
 import java.util.UUID;
 
 import org.adultofuncional.main.agenda.infrastructure.persistence.entity.EventEntity;
+import org.adultofuncional.main.account.infrastructure.persistence.entity.AccountEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -66,6 +70,9 @@ public class CategoryEntity {
   @Column(name = "category_name", length = 50, nullable = false)
   private String categoryName;
 
+  @Column(name = "normalized_name", length = 150, nullable = false)
+  private String normalizedName;
+
   /**
    * Tipo de categoría que define el módulo donde se utiliza.
    *
@@ -76,6 +83,17 @@ public class CategoryEntity {
    */
   @Column(name = "category_type", length = 20, nullable = false)
   private String categoryType;
+
+  @Column(name = "category_scope", length = 8, nullable = false)
+  private String categoryScope;
+
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "owner_account_id")
+  private AccountEntity ownerAccount;
+
+  /** Discriminador calculado por MariaDB para la restricción única. */
+  @Column(name = "ownership_discriminator", insertable = false, updatable = false)
+  private String ownershipDiscriminator;
 
   /**
    * Movimientos financieros asociados a esta categoría.
