@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import org.adultofuncional.main.auth.domain.service.AccessTokenRevocationService;
 import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.adultofuncional.main.shared.response.ApiErrorResponseWriter;
 import org.springframework.http.HttpStatus;
@@ -74,6 +75,15 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+  /** Atributo de request usado por la política CSRF para reconocer Bearer válido. */
+  public static final String AUTH_SOURCE_ATTRIBUTE = JwtAuthenticationFilter.class.getName() + ".source";
+
+  /** Valor del atributo cuando la autenticación provino del header Bearer. */
+  public static final String AUTH_SOURCE_BEARER = "BEARER";
+
+  /** Valor del atributo cuando la autenticación provino de la cookie. */
+  public static final String AUTH_SOURCE_COOKIE = "COOKIE";
+
   /**
    * Nombre de la cookie HttpOnly que transporta el JWT en clientes web.
    * Debe coincidir con el nombre usado en {@link CookieUtils}.
@@ -91,6 +101,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   /** Writer compartido para errores generados antes de Spring MVC. */
   private final ApiErrorResponseWriter errorResponseWriter;
+
+  /** Lista temporal de tokens cerrados antes de su expiración natural. */
+  private final AccessTokenRevocationService revocationService;
 
   /**
    * Ejecuta la lógica de autenticación JWT para cada request entrante.
@@ -134,8 +147,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       throws ServletException, IOException {
 
     String jwt = extractFromHeader(request);
+    String authSource = AUTH_SOURCE_BEARER;
     if (jwt == null) {
       jwt = extractFromCookie(request);
+      authSource = AUTH_SOURCE_COOKIE;
     }
 
     if (jwt == null) {
@@ -146,7 +161,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     try {
       Claims claims = jwtService.parseAndValidate(jwt);
       UUID accountId = UUID.fromString(claims.getSubject());
+      UUID sessionId = UUID.fromString(claims.get("sid", String.class));
+      UUID tokenId = UUID.fromString(claims.getId());
       String userEmail = claims.get("email", String.class);
+
+      if (revocationService.isRevoked(tokenId)) {
+        if (shouldContinueWithoutAuthentication(request)) {
+          continueWithoutAuthentication(request, response, filterChain);
+          return;
+        }
+        writeUnauthorizedResponse(
+            request,
+            response,
+            ApiErrorCode.AUTH_SESSION_REVOKED,
+            "La sesión fue revocada");
+        return;
+      }
 
       if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
@@ -155,12 +185,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             ? List.of(new SimpleGrantedAuthority("ROLE_USER"))
             : roles.stream().map(SimpleGrantedAuthority::new).toList();
 
-        AuthenticatedAccount principal = new AuthenticatedAccount(accountId, userEmail);
+        AuthenticatedAccount principal = new AuthenticatedAccount(
+            accountId,
+            userEmail,
+            sessionId,
+            tokenId,
+            claims.getExpiration().toInstant());
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(principal, null,
             authorities);
         authToken.setDetails(
             new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authToken);
+        request.setAttribute(AUTH_SOURCE_ATTRIBUTE, authSource);
       }
 
     } catch (ExpiredJwtException e) {
