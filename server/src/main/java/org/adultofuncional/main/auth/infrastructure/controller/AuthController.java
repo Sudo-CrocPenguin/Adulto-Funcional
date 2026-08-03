@@ -1,19 +1,27 @@
 package org.adultofuncional.main.auth.infrastructure.controller;
 
+import java.util.Arrays;
+
 import org.adultofuncional.main.auth.application.dto.AuthResponse;
 import org.adultofuncional.main.auth.application.dto.LoginRequest;
+import org.adultofuncional.main.auth.application.dto.RefreshRequest;
 import org.adultofuncional.main.auth.application.dto.RegisterRequest;
 import org.adultofuncional.main.auth.application.usecase.LoginUseCase;
+import org.adultofuncional.main.auth.application.usecase.RefreshSessionUseCase;
 import org.adultofuncional.main.auth.application.usecase.RegisterUseCase;
+import org.adultofuncional.main.auth.application.usecase.RevokeAllSessionsUseCase;
+import org.adultofuncional.main.auth.application.usecase.RevokeCurrentSessionUseCase;
 import org.adultofuncional.main.config.security.AuthenticatedAccount;
 import org.adultofuncional.main.config.security.ClientTypeResolver;
 import org.adultofuncional.main.config.security.CookieUtils;
-import org.adultofuncional.main.config.security.JwtService;
-import org.adultofuncional.main.security.domain.service.MasterKeySessionService;
+import org.adultofuncional.main.shared.exception.UnauthorizedException;
+import org.adultofuncional.main.shared.response.ApiErrorCode;
 import org.adultofuncional.main.shared.response.ApiResponse;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +29,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -70,10 +79,11 @@ public class AuthController {
 
   private final LoginUseCase loginUseCase;
   private final RegisterUseCase registerUseCase;
+  private final RefreshSessionUseCase refreshSessionUseCase;
+  private final RevokeCurrentSessionUseCase revokeCurrentSessionUseCase;
+  private final RevokeAllSessionsUseCase revokeAllSessionsUseCase;
   private final CookieUtils cookieUtils;
-  private final JwtService jwtService;
   private final ClientTypeResolver clientTypeResolver;
-  private final MasterKeySessionService masterKeySessionService;
 
   /**
    * Inicia sesión con las credenciales del usuario.
@@ -98,11 +108,12 @@ public class AuthController {
       HttpServletResponse response) {
 
     AuthResponse auth = loginUseCase.execute(request);
-    cookieUtils.addTokenCookie(response, auth.getToken(), jwtService.getExpiration());
-
-    AuthResponse responseData = clientTypeResolver.isNativeClient(httpRequest)
-        ? auth
-        : auth.withoutToken();
+    writeNoStoreHeaders(response);
+    boolean nativeClient = clientTypeResolver.isNativeClient(httpRequest);
+    if (!nativeClient) {
+      writeAuthenticationCookies(response, auth);
+    }
+    AuthResponse responseData = nativeClient ? auth : auth.withoutToken();
 
     return ResponseEntity.ok(
         ApiResponse.<AuthResponse>builder()
@@ -136,11 +147,12 @@ public class AuthController {
       HttpServletResponse response) {
 
     AuthResponse auth = registerUseCase.execute(request);
-    cookieUtils.addTokenCookie(response, auth.getToken(), jwtService.getExpiration());
-
-    AuthResponse responseData = clientTypeResolver.isNativeClient(httpRequest)
-        ? auth
-        : auth.withoutToken();
+    writeNoStoreHeaders(response);
+    boolean nativeClient = clientTypeResolver.isNativeClient(httpRequest);
+    if (!nativeClient) {
+      writeAuthenticationCookies(response, auth);
+    }
+    AuthResponse responseData = nativeClient ? auth : auth.withoutToken();
 
     return ResponseEntity.status(HttpStatus.CREATED)
         .body(ApiResponse.<AuthResponse>builder()
@@ -168,13 +180,100 @@ public class AuthController {
       @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount,
       HttpServletResponse response) {
     if (authenticatedAccount != null) {
-      masterKeySessionService.clear(authenticatedAccount.accountId());
+      revokeCurrentSessionUseCase.execute(
+          authenticatedAccount.accountId(),
+          authenticatedAccount.sessionId());
     }
-    cookieUtils.clearTokenCookie(response);
+    cookieUtils.clearAuthenticationCookies(response);
     return ResponseEntity.ok(
         ApiResponse.<Void>builder()
             .status(HttpStatus.OK.value())
             .message("Sesión cerrada exitosamente")
             .build());
+  }
+
+  /** Rota el refresh token presentado por cookie web o cuerpo nativo. */
+  @PostMapping("/refresh")
+  public ResponseEntity<ApiResponse<AuthResponse>> refresh(
+      @Valid @RequestBody(required = false) RefreshRequest request,
+      HttpServletRequest httpRequest,
+      HttpServletResponse response) {
+    String refreshToken = request != null && request.getRefreshToken() != null
+        ? request.getRefreshToken()
+        : extractCookie(httpRequest, CookieUtils.REFRESH_TOKEN_COOKIE);
+    if (refreshToken == null || refreshToken.isBlank()) {
+      throw new UnauthorizedException(
+          "Refresh token inválido",
+          ApiErrorCode.REFRESH_TOKEN_INVALID);
+    }
+
+    AuthResponse auth = refreshSessionUseCase.execute(refreshToken);
+    writeNoStoreHeaders(response);
+    boolean nativeClient = clientTypeResolver.isNativeClient(httpRequest);
+    if (!nativeClient) {
+      writeAuthenticationCookies(response, auth);
+    }
+    AuthResponse responseData = nativeClient ? auth : auth.withoutToken();
+    return ResponseEntity.ok(
+        ApiResponse.<AuthResponse>builder()
+            .status(HttpStatus.OK.value())
+            .message("Sesión renovada exitosamente")
+            .data(responseData)
+            .build());
+  }
+
+  /** Revoca la sesión representada por el access token actual. */
+  @DeleteMapping("/sessions/current")
+  public ResponseEntity<ApiResponse<Void>> revokeCurrent(
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount,
+      HttpServletResponse response) {
+    revokeCurrentSessionUseCase.execute(
+        authenticatedAccount.accountId(),
+        authenticatedAccount.sessionId());
+    cookieUtils.clearAuthenticationCookies(response);
+    return ResponseEntity.ok(ApiResponse.<Void>builder()
+        .status(HttpStatus.OK.value())
+        .message("Sesión actual revocada")
+        .build());
+  }
+
+  /** Revoca todas las sesiones activas pertenecientes a la cuenta. */
+  @DeleteMapping("/sessions")
+  public ResponseEntity<ApiResponse<Void>> revokeAll(
+      @AuthenticationPrincipal AuthenticatedAccount authenticatedAccount,
+      HttpServletResponse response) {
+    revokeAllSessionsUseCase.execute(authenticatedAccount.accountId());
+    cookieUtils.clearAuthenticationCookies(response);
+    return ResponseEntity.ok(ApiResponse.<Void>builder()
+        .status(HttpStatus.OK.value())
+        .message("Todas las sesiones fueron revocadas")
+        .build());
+  }
+
+  private void writeAuthenticationCookies(HttpServletResponse response, AuthResponse auth) {
+    cookieUtils.addAuthenticationCookies(
+        response,
+        auth.getToken(),
+        auth.getExpiresIn(),
+        auth.getRefreshToken(),
+        auth.getRefreshExpiresIn());
+  }
+
+  private void writeNoStoreHeaders(HttpServletResponse response) {
+    response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache, no-store, max-age=0, must-revalidate");
+    response.setHeader(HttpHeaders.PRAGMA, "no-cache");
+    response.setDateHeader(HttpHeaders.EXPIRES, 0L);
+  }
+
+  private String extractCookie(HttpServletRequest request, String name) {
+    Cookie[] cookies = request.getCookies();
+    if (cookies == null) {
+      return null;
+    }
+    return Arrays.stream(cookies)
+        .filter(cookie -> name.equals(cookie.getName()))
+        .map(Cookie::getValue)
+        .findFirst()
+        .orElse(null);
   }
 }

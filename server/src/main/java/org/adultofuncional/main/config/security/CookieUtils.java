@@ -34,6 +34,10 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class CookieUtils {
 
+  public static final String ACCESS_TOKEN_COOKIE = "token";
+  public static final String REFRESH_TOKEN_COOKIE = "refresh_token";
+  public static final String REFRESH_TOKEN_PATH = "/api/auth/refresh";
+
   /**
    * Activa el atributo {@code Secure} en la cookie, restringiendo su envío
    * a conexiones HTTPS. Configurado via {@code APP_COOKIE_SECURE}.
@@ -87,12 +91,23 @@ public class CookieUtils {
    *                     a segundos para {@code Max-Age}
    */
   public void addTokenCookie(HttpServletResponse response, String token, long expirationMs) {
-    response.addHeader("Set-Cookie",
-        String.format("token=%s; HttpOnly; %sPath=/; Max-Age=%d; SameSite=%s",
-            token,
-            appCookieSecure ? "Secure; " : "",
-            (int) (expirationMs / 1000),
-            appCookieSameSite));
+    addCookie(response, ACCESS_TOKEN_COOKIE, token, "/", expirationMs);
+  }
+
+  /** Agrega el refresh token restringido exclusivamente a su endpoint. */
+  public void addRefreshTokenCookie(HttpServletResponse response, String token, long expirationMs) {
+    addCookie(response, REFRESH_TOKEN_COOKIE, token, REFRESH_TOKEN_PATH, expirationMs);
+  }
+
+  /** Agrega en una sola operación las dos cookies de la familia. */
+  public void addAuthenticationCookies(
+      HttpServletResponse response,
+      String accessToken,
+      long accessExpirationMs,
+      String refreshToken,
+      long refreshExpirationMs) {
+    addTokenCookie(response, accessToken, accessExpirationMs);
+    addRefreshTokenCookie(response, refreshToken, refreshExpirationMs);
   }
 
   /**
@@ -111,9 +126,42 @@ public class CookieUtils {
    *                 de invalidación
    */
   public void clearTokenCookie(HttpServletResponse response) {
+    clearCookie(response, ACCESS_TOKEN_COOKIE, "/");
+  }
+
+  /** Elimina la cookie de refresh conservando exactamente su Path. */
+  public void clearRefreshTokenCookie(HttpServletResponse response) {
+    clearCookie(response, REFRESH_TOKEN_COOKIE, REFRESH_TOKEN_PATH);
+  }
+
+  /** Elimina ambas credenciales del navegador. */
+  public void clearAuthenticationCookies(HttpServletResponse response) {
+    clearTokenCookie(response);
+    clearRefreshTokenCookie(response);
+  }
+
+  private void addCookie(
+      HttpServletResponse response,
+      String name,
+      String value,
+      String path,
+      long expirationMs) {
     response.addHeader("Set-Cookie",
-        String.format("token=; HttpOnly; %sPath=/; Max-Age=0; SameSite=%s",
+        String.format("%s=%s; HttpOnly; %sPath=%s; Max-Age=%d; SameSite=%s",
+            name,
+            value,
             appCookieSecure ? "Secure; " : "",
+            path,
+            Math.max(0L, expirationMs / 1_000L),
+            appCookieSameSite));
+  }
+
+  private void clearCookie(HttpServletResponse response, String name, String path) {
+    response.addHeader("Set-Cookie",
+        String.format("%s=; HttpOnly; %sPath=%s; Max-Age=0; SameSite=%s",
+            name,
+            appCookieSecure ? "Secure; " : "",
+            path,
             appCookieSameSite));
   }
 }

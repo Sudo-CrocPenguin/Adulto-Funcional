@@ -145,7 +145,11 @@ public class SecurityConfig {
                 .includeSubDomains(true)
                 .maxAgeInSeconds(31536000)))
         .authorizeHttpRequests(auth -> auth
-            .requestMatchers("/api/auth/**", "/actuator/health").permitAll()
+            .requestMatchers(
+                "/api/auth/login",
+                "/api/auth/register",
+                "/api/auth/refresh").permitAll()
+            .requestMatchers("/actuator/health").permitAll()
             .anyRequest().authenticated())
         .exceptionHandling(exceptions -> exceptions
             .authenticationEntryPoint(authenticationEntryPoint)
