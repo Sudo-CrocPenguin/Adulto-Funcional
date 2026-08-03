@@ -40,3 +40,7 @@ server:
   tomcat:
     max-http-form-post-size: 1MB
     max-swallow-size: 1MB
+
+app:
+  http:
+    max-request-body-size: ${APP_HTTP_MAX_REQUEST_BODY_SIZE:1MB}

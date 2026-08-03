@@ -9,6 +9,7 @@ package org.adultofuncional.main.shared.response;
 public enum ApiErrorCode {
   VALIDATION_FAILED,
   REQUEST_BODY_INVALID,
+  REQUEST_TOO_LARGE,
   PARAMETER_INVALID,
   REQUIRED_PARAMETER_MISSING,
   BUSINESS_RULE_VIOLATION,
