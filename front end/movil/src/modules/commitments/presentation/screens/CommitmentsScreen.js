@@ -136,11 +136,16 @@ export function CommitmentsScreen({ navigation }) {
   }
 
   function selectDestination(destination) {
+    const destinations = {
+      Finanzas: APP_ROUTES.finances,
+      'Gastos Fijos': APP_ROUTES.fixedExpenses,
+      Inicio: APP_ROUTES.home,
+    };
     if (destination === 'Compromisos') {
       return;
     }
-    if (destination === 'Inicio') {
-      navigation.navigate(APP_ROUTES.home);
+    if (destinations[destination]) {
+      navigation.navigate(destinations[destination]);
       return;
     }
     Alert.alert(destination, 'Esta sección será construida en la siguiente etapa.');

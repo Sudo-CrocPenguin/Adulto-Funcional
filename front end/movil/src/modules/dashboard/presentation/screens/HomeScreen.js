@@ -114,11 +114,16 @@ export function HomeScreen({ navigation }) {
   }
 
   function showComingSoon(destination) {
+    const destinations = {
+      Compromisos: APP_ROUTES.commitments,
+      Finanzas: APP_ROUTES.finances,
+      'Gastos Fijos': APP_ROUTES.fixedExpenses,
+    };
     if (destination === 'Inicio') {
       return;
     }
-    if (destination === 'Compromisos') {
-      navigation.navigate(APP_ROUTES.commitments);
+    if (destinations[destination]) {
+      navigation.navigate(destinations[destination]);
       return;
     }
     Alert.alert(destination, 'Esta sección será construida en la siguiente etapa.');
