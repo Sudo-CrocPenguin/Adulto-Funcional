@@ -13,7 +13,27 @@ export class ApiClient {
     return this.request(path, { ...options, method: 'POST', body });
   }
 
-  async request(path, { method = 'GET', body, headers = {} } = {}) {
+  async get(path, options = {}) {
+    return this.request(path, { ...options, method: 'GET' });
+  }
+
+  async getPage(path, options = {}) {
+    return this.request(path, {
+      ...options,
+      includePage: true,
+      method: 'GET',
+    });
+  }
+
+  async request(
+    path,
+    {
+      method = 'GET',
+      body,
+      headers = {},
+      includePage = false,
+    } = {},
+  ) {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
@@ -35,6 +55,13 @@ export class ApiClient {
 
       if (!response.ok) {
         throw ApiError.fromResponse(payload, response.status);
+      }
+
+      if (includePage) {
+        return {
+          items: Array.isArray(payload?.data) ? payload.data : [],
+          page: payload?.page ?? null,
+        };
       }
 
       return payload?.data ?? null;
@@ -80,4 +107,3 @@ export class ApiClient {
     }
   }
 }
-

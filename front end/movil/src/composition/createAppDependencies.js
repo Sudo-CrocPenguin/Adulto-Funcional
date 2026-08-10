@@ -5,6 +5,8 @@ import { LoginAccountUseCase } from '../modules/auth/application/LoginAccountUse
 import { RegisterAccountUseCase } from '../modules/auth/application/RegisterAccountUseCase';
 import { RestoreSessionUseCase } from '../modules/auth/application/RestoreSessionUseCase';
 import { HttpAuthRepository } from '../modules/auth/infrastructure/HttpAuthRepository';
+import { LoadDashboardUseCase } from '../modules/dashboard/application/LoadDashboardUseCase';
+import { HttpDashboardRepository } from '../modules/dashboard/infrastructure/HttpDashboardRepository';
 
 export function createAppDependencies() {
   const apiClient = new ApiClient({
@@ -13,12 +15,14 @@ export function createAppDependencies() {
   });
   const sessionStore = new SecureSessionStore();
   const authRepository = new HttpAuthRepository(apiClient);
+  const dashboardRepository = new HttpDashboardRepository(apiClient);
 
   return Object.freeze({
     loginAccount: new LoginAccountUseCase({
       authRepository,
       sessionStore,
     }),
+    loadDashboard: new LoadDashboardUseCase(dashboardRepository),
     registerAccount: new RegisterAccountUseCase({
       authRepository,
       sessionStore,
