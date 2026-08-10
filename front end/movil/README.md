@@ -25,6 +25,12 @@ descartarlos durante la sesión de pantalla. El engranaje abre una configuració
 reducida al modo claro u oscuro; esta preferencia visual se restaura al volver a
 abrir la aplicación.
 
+La sección de Compromisos consulta eventos y categorías `AGENDA`, permite
+filtrar por estado y crea eventos con fecha, horarios, recurrencia, prioridad y
+recordatorio válidos. Consulta
+[docs/COMPROMISOS.md](./docs/COMPROMISOS.md) para conocer el contrato, las
+reglas y los estados de la pantalla.
+
 La navegación usa React Navigation con transiciones nativas. Recuperación de
 contraseña está maquetada y valida el correo, pero no simula el envío: el
 backend todavía no expone un endpoint para solicitar el restablecimiento.
@@ -117,6 +123,7 @@ src/
   session/          estado de autenticacion en memoria
   modules/
     auth/
+    commitments/
     dashboard/
       domain/       entidades y contratos
       application/  casos de uso
