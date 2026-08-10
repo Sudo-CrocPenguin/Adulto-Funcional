@@ -20,6 +20,11 @@ gastos, total de credenciales disponible, racha de compromisos, próximos
 elementos y estadísticas de los últimos tres meses. Consulta
 [docs/INICIO.md](./docs/INICIO.md) para conocer las fuentes y cálculos.
 
+La campana presenta avisos derivados de esos datos reales y permite
+descartarlos durante la sesión de pantalla. El engranaje abre una configuración
+reducida al modo claro u oscuro; esta preferencia visual se restaura al volver a
+abrir la aplicación.
+
 La navegación usa React Navigation con transiciones nativas. Recuperación de
 contraseña está maquetada y valida el correo, pero no simula el envío: el
 backend todavía no expone un endpoint para solicitar el restablecimiento.
@@ -97,7 +102,8 @@ En las operaciones autenticadas se enviará `Authorization: Bearer <token>`.
 Los refresh tokens se almacenan en `expo-secure-store`; nunca en texto plano,
 logs ni almacenamiento general. En login, `Recuérdame` decide si el refresh
 token persiste después de cerrar la aplicación. Registro conserva la sesión
-de forma predeterminada.
+de forma predeterminada. La preferencia no sensible de tema se guarda por
+separado en `AsyncStorage`.
 
 ## Arquitectura
 

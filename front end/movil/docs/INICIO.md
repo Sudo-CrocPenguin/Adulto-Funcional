@@ -24,6 +24,10 @@ El inicio permite responder rápidamente estas preguntas:
 También define la navegación inferior que se conectará progresivamente a las
 pantallas de compromisos, finanzas, gastos fijos, contraseñas y perfil.
 
+La campana abre un panel de avisos contextuales y el engranaje presenta la hoja
+de configuración. En esta etapa, configuración contiene exclusivamente el
+selector de tema claro u oscuro solicitado.
+
 ## Cómo funciona
 
 La presentación ejecuta `LoadDashboardUseCase` con la sesión autenticada. El
@@ -55,7 +59,7 @@ datos, conserva la última información y muestra el error de forma no invasiva.
 | Contraseñas | `/api/security/passwords` | total consultado solo con Master Key verificada |
 | Próximo gasto fijo | gastos fijos activos | primer elemento ordenado por `nextDueDate ASC` |
 | Próximo compromiso | eventos pendientes desde hoy | primer elemento ordenado por `startHour ASC` |
-| Badge superior | compromisos pendientes | reutiliza el total porque no existe API de notificaciones |
+| Badge superior | avisos derivados del inicio | cuenta el próximo gasto, el próximo compromiso y el saldo negativo que siguen visibles |
 | Estado de bóveda | `/api/security/master-key/status` | decide si el total de credenciales puede consultarse |
 
 Los listados que participan en sumas o rachas se recorren página por página con
@@ -93,6 +97,32 @@ El reporte toma los movimientos comprendidos entre hoy y tres meses atrás:
 La normalización ignora mayúsculas y tildes. Las barras usan una escala relativa
 al mayor valor del periodo y representan explícitamente los valores en cero.
 
+## Notificaciones contextuales
+
+El backend actual no expone un recurso de notificaciones. Para evitar cifras
+ficticias, `DashboardNotification` deriva avisos únicamente del
+`DashboardSnapshot` ya obtenido:
+
+- `Gastos fijos`: aparece cuando existe un próximo gasto fijo activo.
+- `Compromisos`: aparece cuando existe un próximo compromiso pendiente.
+- `Finanzas`: aparece solo cuando el balance calculado es negativo.
+
+El badge de la campana representa la cantidad exacta de tarjetas visibles, con
+un máximo actual de tres. La `X` descarta una tarjeta y actualiza el badge. El
+descarte dura durante la pantalla activa; no se envía ni se persiste porque aún
+no existe un identificador de notificación proporcionado por el backend.
+
+## Tema y configuración
+
+El engranaje abre una hoja modal con dos opciones: `Claro` y `Oscuro`. El tema
+se aplica al fondo, textos, tarjetas, navegación, estados de carga, panel de
+notificaciones y configuración. La elección se conserva entre aperturas de la
+aplicación mediante `AsyncStorage`.
+
+La preferencia visual no contiene información privada. Por eso se almacena de
+forma independiente al refresh token, que permanece protegido mediante
+`expo-secure-store`.
+
 ## Seguridad y sesión
 
 El inicio utiliza únicamente el access token en memoria. El refresh token
@@ -107,8 +137,10 @@ verificada.
 
 - El backend no expone un endpoint agregado de dashboard; el cliente compone
   varias consultas autenticadas.
-- No existe un módulo de notificaciones. La campana muestra compromisos
-  pendientes hasta que se defina ese contrato.
+- No existe un módulo remoto de notificaciones. Los avisos actuales son
+  contextuales y sus descartes no se sincronizan entre dispositivos.
+- Configuración contiene solo el selector de tema; las opciones de cuenta,
+  idioma, respaldo y seguridad quedan fuera de esta etapa.
 - Los botones de la navegación inferior anuncian la siguiente etapa mientras
   se reciben los diseños de cada pantalla.
 - La vista web de Expo sirve para revisión visual. La autenticación nativa debe
