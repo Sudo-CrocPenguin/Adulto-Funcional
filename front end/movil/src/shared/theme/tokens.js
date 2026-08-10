@@ -1,6 +1,8 @@
 export const colors = Object.freeze({
   brand: '#35598D',
+  brandDeep: '#2F578F',
   brandPressed: '#294873',
+  brandSecondary: '#416DAA',
   brandSoft: '#E7EEF8',
   background: '#F4F6F9',
   surface: '#FFFFFF',
@@ -15,6 +17,7 @@ export const colors = Object.freeze({
   successSoft: '#ECFDF3',
   shield: '#058798',
   lock: '#F5C451',
+  warning: '#F4A93D',
+  navigationMuted: '#9AA6B2',
   avatar: '#D5DAE1',
 });
-
