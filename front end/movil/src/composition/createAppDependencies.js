@@ -1,5 +1,6 @@
 import { environment } from '../core/config/environment';
 import { ApiClient } from '../core/http/ApiClient';
+import { AsyncThemePreferenceStore } from '../core/preferences/AsyncThemePreferenceStore';
 import { SecureSessionStore } from '../core/storage/SecureSessionStore';
 import { LoginAccountUseCase } from '../modules/auth/application/LoginAccountUseCase';
 import { RegisterAccountUseCase } from '../modules/auth/application/RegisterAccountUseCase';
@@ -16,6 +17,7 @@ export function createAppDependencies() {
   const sessionStore = new SecureSessionStore();
   const authRepository = new HttpAuthRepository(apiClient);
   const dashboardRepository = new HttpDashboardRepository(apiClient);
+  const themePreferenceStore = new AsyncThemePreferenceStore();
 
   return Object.freeze({
     loginAccount: new LoginAccountUseCase({
@@ -31,5 +33,6 @@ export function createAppDependencies() {
       authRepository,
       sessionStore,
     }),
+    themePreferenceStore,
   });
 }

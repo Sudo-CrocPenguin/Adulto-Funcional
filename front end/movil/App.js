@@ -6,6 +6,7 @@ import { AppDependenciesProvider } from './src/composition/AppDependenciesContex
 import { createAppDependencies } from './src/composition/createAppDependencies';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { AppSessionProvider } from './src/session/AppSessionContext';
+import { AppThemeProvider } from './src/theme/AppThemeContext';
 
 export default function App() {
   const dependencies = useMemo(() => createAppDependencies(), []);
@@ -14,9 +15,11 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar backgroundColor="#35598D" style="light" />
       <AppDependenciesProvider value={dependencies}>
-        <AppSessionProvider restoreSession={dependencies.restoreSession}>
-          <RootNavigator />
-        </AppSessionProvider>
+        <AppThemeProvider preferenceStore={dependencies.themePreferenceStore}>
+          <AppSessionProvider restoreSession={dependencies.restoreSession}>
+            <RootNavigator />
+          </AppSessionProvider>
+        </AppThemeProvider>
       </AppDependenciesProvider>
     </SafeAreaProvider>
   );
