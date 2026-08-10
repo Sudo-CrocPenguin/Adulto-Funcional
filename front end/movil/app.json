@@ -1,8 +1,10 @@
 {
   "expo": {
-    "name": "movil",
-    "slug": "movil",
-    "version": "1.0.0",
+    "name": "Adulto Funcional",
+    "slug": "adulto-funcional",
+    "version": "0.1.0",
+    "description": "Organizacion personal de finanzas, agenda y credenciales.",
+    "scheme": "adultofuncional",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -13,9 +15,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.adultofuncional.mobile"
     },
     "android": {
+      "package": "com.adultofuncional.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"

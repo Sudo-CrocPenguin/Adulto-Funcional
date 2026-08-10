@@ -1,12 +1,15 @@
 {
-  "name": "movil",
-  "version": "1.0.0",
+  "name": "adulto-funcional-movil",
+  "version": "0.1.0",
   "main": "index.js",
   "scripts": {
-    "start": "expo start",
+    "start": "expo start --lan",
+    "start:clear": "expo start --lan --clear",
+    "start:tunnel": "expo start --tunnel",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "doctor": "npx expo-doctor"
   },
   "dependencies": {
     "expo": "~54.0.35",
