@@ -23,6 +23,7 @@ export const themePalettes = Object.freeze({
     divider: '#DCE1E6',
     overlay: 'rgba(17, 24, 39, 0.28)',
     shadow: '#111827',
+    surfaceOnBrand: '#FFFFFF',
   }),
   dark: Object.freeze({
     ...colors,
@@ -38,6 +39,7 @@ export const themePalettes = Object.freeze({
     shadow: '#000000',
     successSoft: '#153529',
     surface: '#172033',
+    surfaceOnBrand: '#FFFFFF',
     text: '#F8FAFC',
     textMuted: '#C3CEDB',
   }),

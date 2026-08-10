@@ -15,12 +15,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppDependencies } from '../../../../composition/AppDependenciesContext';
 import { ApiError } from '../../../../core/http/ApiError';
 import { useAppSession } from '../../../../session/AppSessionContext';
-import { colors } from '../../../../shared/theme/tokens';
+import { useAppTheme } from '../../../../theme/AppThemeContext';
 import { BottomNavigation } from '../components/BottomNavigation';
 import { DashboardHeader } from '../components/DashboardHeader';
 import { StatisticsCard } from '../components/StatisticsCard';
 import { StreakCard } from '../components/StreakCard';
 import { SummaryCard } from '../components/SummaryCard';
+import { ThemeSettingsSheet } from '../components/ThemeSettingsSheet';
 import { UpcomingCard } from '../components/UpcomingCard';
 
 function formatCurrency(value) {
@@ -42,17 +43,21 @@ function formatDate(value) {
   }).format(date).replace('.', '');
 }
 
-function ErrorState({ message, onRetry }) {
+function ErrorState({ message, onRetry, palette }) {
   return (
     <View style={styles.centerState}>
-      <Text style={styles.errorTitle}>No pudimos cargar tu inicio</Text>
-      <Text style={styles.errorMessage}>{message}</Text>
+      <Text style={[styles.errorTitle, { color: palette.text }]}>No pudimos cargar tu inicio</Text>
+      <Text style={[styles.errorMessage, { color: palette.textMuted }]}>{message}</Text>
       <Pressable
         accessibilityRole="button"
         onPress={onRetry}
-        style={({ pressed }) => [styles.retryButton, pressed && styles.retryPressed]}
+        style={({ pressed }) => [
+          styles.retryButton,
+          { backgroundColor: palette.brand },
+          pressed && { backgroundColor: palette.brandPressed },
+        ]}
       >
-        <Text style={styles.retryText}>Reintentar</Text>
+        <Text style={[styles.retryText, { color: palette.surfaceOnBrand }]}>Reintentar</Text>
       </Pressable>
     </View>
   );
@@ -61,10 +66,12 @@ function ErrorState({ message, onRetry }) {
 export function HomeScreen() {
   const { loadDashboard } = useAppDependencies();
   const { session } = useAppSession();
+  const { isDark, palette } = useAppTheme();
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setLoading] = useState(true);
   const [isRefreshing, setRefreshing] = useState(false);
+  const [isSettingsVisible, setSettingsVisible] = useState(false);
 
   const load = useCallback(async ({ refresh = false } = {}) => {
     if (refresh) {
@@ -118,58 +125,73 @@ export function HomeScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} style={styles.safeArea}>
-      <StatusBar backgroundColor={colors.brandSoft} style="dark" />
+    <SafeAreaView
+      edges={['top', 'left', 'right']}
+      style={[styles.safeArea, { backgroundColor: palette.background }]}
+    >
+      <StatusBar backgroundColor={palette.brandSoft} style={isDark ? 'light' : 'dark'} />
       <DashboardHeader
         notificationCount={dashboard?.notificationCount ?? 0}
         onNotifications={showPending}
-        onSettings={() => showComingSoon('Configuración')}
+        onSettings={() => setSettingsVisible(true)}
+        palette={palette}
       />
 
       {isLoading && !dashboard ? (
         <View accessibilityLabel="Cargando inicio" style={styles.centerState}>
-          <ActivityIndicator color={colors.brand} size="large" />
-          <Text style={styles.loadingText}>Organizando tu información…</Text>
+          <ActivityIndicator color={palette.brand} size="large" />
+          <Text style={[styles.loadingText, { color: palette.textMuted }]}>Organizando tu información…</Text>
         </View>
       ) : error && !dashboard ? (
-        <ErrorState message={error} onRetry={() => load()} />
+        <ErrorState message={error} onRetry={() => load()} palette={palette} />
       ) : (
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={(
             <RefreshControl
-              colors={[colors.brand]}
+              colors={[palette.brand]}
               onRefresh={() => load({ refresh: true })}
               refreshing={isRefreshing}
-              tintColor={colors.brand}
+              tintColor={palette.brand}
             />
           )}
           showsVerticalScrollIndicator={false}
         >
-          {error ? <Text style={styles.inlineError}>{error}</Text> : null}
+          {error ? (
+            <Text style={[
+              styles.inlineError,
+              { backgroundColor: palette.errorSoft, color: palette.error },
+            ]}>
+              {error}
+            </Text>
+          ) : null}
           <View style={styles.summaryGrid}>
             <SummaryCard
-              backgroundColor={colors.brand}
+              backgroundColor={palette.brand}
               icon="currency-usd"
               label="SALDO ACTUAL"
+              palette={palette}
               value={formatCurrency(dashboard.balance)}
             />
             <SummaryCard
-              backgroundColor={colors.brandSecondary}
+              backgroundColor={palette.brandSecondary}
               icon="clipboard-list-outline"
               label="COMPROMISOS PENDIENTES"
+              palette={palette}
               value={String(dashboard.pendingCommitmentsCount)}
             />
             <SummaryCard
-              backgroundColor={colors.brandSecondary}
+              backgroundColor={palette.brandSecondary}
               icon="clock-outline"
               label="PRÓXIMOS GASTOS"
+              palette={palette}
               value={String(dashboard.upcomingExpensesCount)}
             />
             <SummaryCard
-              backgroundColor={colors.brandSecondary}
+              backgroundColor={palette.brandSecondary}
               icon="lock-outline"
               label="CONTRASEÑAS"
+              palette={palette}
               value={dashboard.passwordsCount === null
                 ? '—'
                 : String(dashboard.passwordsCount)}
@@ -177,12 +199,13 @@ export function HomeScreen() {
           </View>
 
           <View style={styles.horizontalPadding}>
-            <StreakCard days={dashboard.streakDays} />
+            <StreakCard days={dashboard.streakDays} palette={palette} />
             <View style={styles.upcomingRow}>
               <UpcomingCard
                 date={formatDate(dashboard.nextFixedExpense?.nextDueDate)}
                 emptyLabel="Sin gastos próximos"
                 onPress={() => showUpcoming(dashboard.nextFixedExpense, 'Gasto fijo')}
+                palette={palette}
                 title={dashboard.nextFixedExpense?.name}
                 type="Gastos fijos"
               />
@@ -190,17 +213,22 @@ export function HomeScreen() {
                 date={formatDate(dashboard.nextCommitment?.eventDate)}
                 emptyLabel="Sin compromisos"
                 onPress={() => showUpcoming(dashboard.nextCommitment, 'Compromiso')}
+                palette={palette}
                 title={dashboard.nextCommitment?.title}
                 type="Compromisos"
               />
             </View>
           </View>
 
-          <StatisticsCard statistics={dashboard.statistics} />
+          <StatisticsCard palette={palette} statistics={dashboard.statistics} />
         </ScrollView>
       )}
 
-      <BottomNavigation onSelect={showComingSoon} />
+      <BottomNavigation onSelect={showComingSoon} palette={palette} />
+      <ThemeSettingsSheet
+        onClose={() => setSettingsVisible(false)}
+        visible={isSettingsVisible}
+      />
     </SafeAreaView>
   );
 }
@@ -213,14 +241,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 35,
   },
   errorMessage: {
-    color: colors.textMuted,
     fontSize: 15,
     lineHeight: 22,
     marginTop: 8,
     textAlign: 'center',
   },
   errorTitle: {
-    color: colors.text,
     fontSize: 21,
     fontWeight: '800',
     textAlign: 'center',
@@ -229,36 +255,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
   },
   inlineError: {
-    backgroundColor: colors.errorSoft,
     borderRadius: 8,
-    color: colors.error,
     marginBottom: 12,
     marginHorizontal: 28,
     padding: 10,
     textAlign: 'center',
   },
   loadingText: {
-    color: colors.textMuted,
     fontSize: 15,
     marginTop: 13,
   },
   retryButton: {
-    backgroundColor: colors.brand,
     borderRadius: 9,
     marginTop: 20,
     paddingHorizontal: 26,
     paddingVertical: 12,
   },
-  retryPressed: {
-    backgroundColor: colors.brandPressed,
-  },
   retryText: {
-    color: colors.surface,
     fontSize: 16,
     fontWeight: '800',
   },
   safeArea: {
-    backgroundColor: colors.background,
     flex: 1,
   },
   scrollContent: {

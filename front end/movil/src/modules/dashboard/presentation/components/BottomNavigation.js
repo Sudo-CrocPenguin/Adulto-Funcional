@@ -2,8 +2,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors } from '../../../../shared/theme/tokens';
-
 const ITEMS = Object.freeze([
   { active: true, icon: 'home-variant-outline', label: 'Inicio' },
   { icon: 'clipboard-check-outline', label: 'Compromisos' },
@@ -13,12 +11,24 @@ const ITEMS = Object.freeze([
   { icon: 'account-circle-outline', label: 'Perfil' },
 ]);
 
-export function BottomNavigation({ onSelect }) {
+export function BottomNavigation({ onSelect, palette }) {
   return (
-    <SafeAreaView edges={['bottom']} style={styles.safeArea}>
-      <View accessibilityRole="tablist" style={styles.navigation}>
+    <SafeAreaView
+      edges={['bottom']}
+      style={[
+        styles.safeArea,
+        {
+          backgroundColor: palette.surface,
+          borderTopColor: palette.divider,
+        },
+      ]}
+    >
+      <View
+        accessibilityRole="tablist"
+        style={[styles.navigation, { backgroundColor: palette.surface }]}
+      >
         {ITEMS.map((item) => {
-          const color = item.active ? colors.brandDeep : colors.navigationMuted;
+          const color = item.active ? palette.brandDeep : palette.navigationMuted;
           return (
             <Pressable
               key={item.label}
@@ -60,7 +70,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   navigation: {
-    backgroundColor: colors.surface,
     flexDirection: 'row',
     minHeight: 66,
   },
@@ -68,8 +77,6 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   safeArea: {
-    backgroundColor: colors.surface,
-    borderTopColor: '#EDF0F3',
     borderTopWidth: StyleSheet.hairlineWidth,
   },
 });

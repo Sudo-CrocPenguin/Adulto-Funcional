@@ -1,17 +1,28 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '../../../../shared/theme/tokens';
-
-export function SummaryCard({ backgroundColor, icon, label, value }) {
+export function SummaryCard({ backgroundColor, icon, label, palette, value }) {
   return (
     <View
       accessibilityLabel={`${label}: ${value}`}
       style={[styles.card, { backgroundColor }]}
     >
-      <MaterialCommunityIcons color={colors.surface} name={icon} size={39} />
-      <Text numberOfLines={2} style={styles.label}>{label}</Text>
-      <Text adjustsFontSizeToFit numberOfLines={1} style={styles.value}>
+      <MaterialCommunityIcons
+        color={palette.surfaceOnBrand}
+        name={icon}
+        size={39}
+      />
+      <Text
+        numberOfLines={2}
+        style={[styles.label, { color: palette.surfaceOnBrand }]}
+      >
+        {label}
+      </Text>
+      <Text
+        adjustsFontSizeToFit
+        numberOfLines={1}
+        style={[styles.value, { color: palette.surfaceOnBrand }]}
+      >
         {value}
       </Text>
     </View>
@@ -30,7 +41,6 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
   },
   label: {
-    color: colors.surface,
     fontSize: 14,
     fontWeight: '500',
     lineHeight: 19,
@@ -39,7 +49,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   value: {
-    color: colors.surface,
     fontSize: 23,
     fontWeight: '800',
     marginTop: 7,

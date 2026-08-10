@@ -1,7 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '../../../../shared/theme/tokens';
-
 const SERIES = Object.freeze([
   { color: '#66D6D8', key: 'income', label: 'Ingresos' },
   { color: '#43B3CF', key: 'expenses', label: 'Egresos' },
@@ -16,33 +14,35 @@ function compactAmount(value) {
   }).format(value);
 }
 
-export function StatisticsCard({ statistics }) {
+export function StatisticsCard({ palette, statistics }) {
   const maximum = Math.max(...SERIES.map(({ key }) => statistics[key]), 1);
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: palette.surface }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Reporte estadístico</Text>
-        <Text style={styles.period}>Últimos 3 meses⌄</Text>
+        <Text style={[styles.title, { color: palette.text }]}>Reporte estadístico</Text>
+        <Text style={[styles.period, { color: palette.text }]}>Últimos 3 meses⌄</Text>
       </View>
       <View style={styles.legend}>
         {SERIES.map((serie) => (
           <View key={serie.key} style={styles.legendItem}>
             <View style={[styles.legendDot, { backgroundColor: serie.color }]} />
-            <Text style={styles.legendText}>{serie.label}</Text>
+            <Text style={[styles.legendText, { color: palette.textMuted }]}>{serie.label}</Text>
           </View>
         ))}
       </View>
       <View style={styles.chart}>
         <View pointerEvents="none" style={styles.grid}>
-          {[0, 1, 2, 3].map((line) => <View key={line} style={styles.gridLine} />)}
+          {[0, 1, 2, 3].map((line) => (
+            <View key={line} style={[styles.gridLine, { backgroundColor: palette.divider }]} />
+          ))}
         </View>
         {SERIES.map((serie) => {
           const value = statistics[serie.key];
           const barHeight = value > 0 ? Math.max((value / maximum) * 122, 5) : 2;
           return (
             <View key={serie.key} style={styles.barColumn}>
-              <Text numberOfLines={1} style={styles.barValue}>
+              <Text numberOfLines={1} style={[styles.barValue, { color: palette.textMuted }]}>
                 {compactAmount(value)}
               </Text>
               <View
@@ -52,7 +52,7 @@ export function StatisticsCard({ statistics }) {
                   { backgroundColor: serie.color, height: barHeight },
                 ]}
               />
-              <Text style={styles.barLabel}>{serie.label}</Text>
+              <Text style={[styles.barLabel, { color: palette.text }]}>{serie.label}</Text>
             </View>
           );
         })}
@@ -75,18 +75,15 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   barLabel: {
-    color: colors.text,
     fontSize: 11,
     marginTop: 6,
   },
   barValue: {
-    color: colors.textMuted,
     fontSize: 9,
     marginBottom: 3,
     maxWidth: 64,
   },
   card: {
-    backgroundColor: colors.surface,
     borderRadius: 18,
     marginHorizontal: 28,
     marginTop: 13,
@@ -109,7 +106,6 @@ const styles = StyleSheet.create({
     top: 17,
   },
   gridLine: {
-    backgroundColor: '#DCE1E6',
     height: StyleSheet.hairlineWidth,
   },
   header: {
@@ -135,15 +131,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   legendText: {
-    color: colors.textMuted,
     fontSize: 11,
   },
   period: {
-    color: colors.text,
     fontSize: 13,
   },
   title: {
-    color: colors.text,
     fontSize: 18,
     fontWeight: '800',
   },

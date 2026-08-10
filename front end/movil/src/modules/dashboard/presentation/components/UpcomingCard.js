@@ -1,30 +1,39 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '../../../../shared/theme/tokens';
-
-export function UpcomingCard({ date, emptyLabel, onPress, title, type }) {
+export function UpcomingCard({ date, emptyLabel, onPress, palette, title, type }) {
   const hasItem = Boolean(title);
 
   return (
-    <View accessibilityLabel={`${type}: ${title || emptyLabel}`} style={styles.card}>
-      <View style={styles.accent} />
-      <Text numberOfLines={1} style={styles.type}>{type}</Text>
-      <Text numberOfLines={2} style={[styles.title, !hasItem && styles.emptyTitle]}>
+    <View
+      accessibilityLabel={`${type}: ${title || emptyLabel}`}
+      style={[styles.card, { backgroundColor: palette.surface }]}
+    >
+      <View style={[styles.accent, { backgroundColor: palette.brandDeep }]} />
+      <Text numberOfLines={1} style={[styles.type, { color: palette.navigationMuted }]}>{type}</Text>
+      <Text
+        numberOfLines={2}
+        style={[
+          styles.title,
+          { color: palette.text },
+          !hasItem && { color: palette.textMuted, fontWeight: '500' },
+        ]}
+      >
         {title || emptyLabel}
       </Text>
       <View style={styles.footer}>
-        <Text style={styles.date}>{date || '—'}</Text>
+        <Text style={[styles.date, { color: palette.navigationMuted }]}>{date || '—'}</Text>
         <Pressable
           accessibilityRole="button"
           disabled={!hasItem}
           onPress={onPress}
           style={({ pressed }) => [
             styles.button,
+            { backgroundColor: palette.brandDeep },
             !hasItem && styles.buttonDisabled,
             pressed && styles.buttonPressed,
           ]}
         >
-          <Text style={styles.buttonText}>Ver</Text>
+          <Text style={[styles.buttonText, { color: palette.surfaceOnBrand }]}>Ver</Text>
         </Pressable>
       </View>
     </View>
@@ -33,7 +42,6 @@ export function UpcomingCard({ date, emptyLabel, onPress, title, type }) {
 
 const styles = StyleSheet.create({
   accent: {
-    backgroundColor: colors.brandDeep,
     bottom: 0,
     left: 0,
     position: 'absolute',
@@ -41,7 +49,6 @@ const styles = StyleSheet.create({
     width: 7,
   },
   button: {
-    backgroundColor: colors.brandDeep,
     borderRadius: 6,
     paddingHorizontal: 13,
     paddingVertical: 6,
@@ -53,11 +60,9 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
   buttonText: {
-    color: colors.surface,
     fontSize: 16,
   },
   card: {
-    backgroundColor: colors.surface,
     borderRadius: 6,
     flex: 1,
     minHeight: 126,
@@ -71,10 +76,6 @@ const styles = StyleSheet.create({
     color: '#969696',
     fontSize: 14,
   },
-  emptyTitle: {
-    color: colors.textMuted,
-    fontWeight: '500',
-  },
   footer: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -82,7 +83,6 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
   },
   title: {
-    color: colors.text,
     fontSize: 17,
     fontWeight: '800',
     lineHeight: 21,

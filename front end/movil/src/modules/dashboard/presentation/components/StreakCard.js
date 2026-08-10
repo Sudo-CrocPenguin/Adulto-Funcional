@@ -1,35 +1,41 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors } from '../../../../shared/theme/tokens';
-
 const MILESTONES = [7, 15, 23, 30];
 
-export function StreakCard({ days }) {
+export function StreakCard({ days, palette }) {
   const progress = `${Math.min(days / 30, 1) * 100}%`;
 
   return (
-    <View accessibilityLabel={`Racha de compromisos: ${days} días`} style={styles.card}>
-      <Text style={styles.title}>Racha de Compromisos</Text>
+    <View
+      accessibilityLabel={`Racha de compromisos: ${days} días`}
+      style={[styles.card, { backgroundColor: palette.brandDeep }]}
+    >
+      <Text style={[styles.title, { color: palette.surfaceOnBrand }]}>Racha de Compromisos</Text>
       <View style={styles.mainRow}>
         <View style={styles.daysBlock}>
-          <Text style={styles.daysNumber}>{days}</Text>
-          <Text style={styles.daysLabel}>Días Activos</Text>
+          <Text style={[styles.daysNumber, { color: palette.surfaceOnBrand }]}>{days}</Text>
+          <Text style={[styles.daysLabel, { color: palette.surfaceOnBrand }]}>Días Activos</Text>
         </View>
         <View style={styles.shieldWrap}>
-          <MaterialCommunityIcons color={colors.warning} name="shield" size={94} />
+          <MaterialCommunityIcons color={palette.warning} name="shield" size={94} />
           <View style={styles.shieldText}>
-            <Text style={styles.shieldNumber}>{days}</Text>
-            <Text style={styles.shieldDays}>Días</Text>
+            <Text style={[styles.shieldNumber, { color: palette.surfaceOnBrand }]}>{days}</Text>
+            <Text style={[styles.shieldDays, { color: palette.surfaceOnBrand }]}>Días</Text>
           </View>
         </View>
       </View>
-      <View style={styles.progressTrack}>
-        <View style={[styles.progressFill, { width: progress }]} />
+      <View style={[styles.progressTrack, { backgroundColor: palette.cardMuted }]}>
+        <View style={[styles.progressFill, { backgroundColor: palette.warning, width: progress }]} />
       </View>
       <View style={styles.milestones}>
         {MILESTONES.map((milestone) => (
-          <Text key={milestone} style={styles.milestone}>{milestone}</Text>
+          <Text
+            key={milestone}
+            style={[styles.milestone, { color: palette.surfaceOnBrand }]}
+          >
+            {milestone}
+          </Text>
         ))}
       </View>
     </View>
@@ -38,7 +44,6 @@ export function StreakCard({ days }) {
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.brandDeep,
     borderRadius: 6,
     marginTop: 18,
     paddingBottom: 16,
@@ -51,12 +56,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   daysLabel: {
-    color: colors.surface,
     fontSize: 14,
     marginBottom: 9,
   },
   daysNumber: {
-    color: colors.surface,
     fontSize: 48,
     fontWeight: '500',
     lineHeight: 55,
@@ -68,7 +71,6 @@ const styles = StyleSheet.create({
     minHeight: 75,
   },
   milestone: {
-    color: colors.surface,
     fontSize: 10,
     opacity: 0.92,
     textAlign: 'center',
@@ -81,25 +83,21 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   progressFill: {
-    backgroundColor: colors.warning,
     borderRadius: 5,
     height: '100%',
     minWidth: 0,
   },
   progressTrack: {
-    backgroundColor: '#E9EFF6',
     borderRadius: 5,
     height: 9,
     marginHorizontal: 19,
     overflow: 'hidden',
   },
   shieldDays: {
-    color: colors.surface,
     fontSize: 16,
     lineHeight: 18,
   },
   shieldNumber: {
-    color: colors.surface,
     fontSize: 27,
     fontWeight: '800',
     lineHeight: 30,
@@ -119,7 +117,6 @@ const styles = StyleSheet.create({
     width: 94,
   },
   title: {
-    color: colors.surface,
     fontSize: 16,
     fontWeight: '500',
   },
