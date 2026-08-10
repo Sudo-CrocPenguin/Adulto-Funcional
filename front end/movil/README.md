@@ -31,6 +31,14 @@ recordatorio válidos. Consulta
 [docs/COMPROMISOS.md](./docs/COMPROMISOS.md) para conocer el contrato, las
 reglas y los estados de la pantalla.
 
+Las secciones de Finanzas y Gastos Fijos consumen los movimientos, categorías
+`FINANCES` y pagos recurrentes reales de la cuenta. Finanzas calcula saldo,
+permite buscar y registrar ingresos o egresos; Gastos Fijos permite crear,
+filtrar y registrar un pago como egreso, avanzando su vencimiento. El ojo del
+saldo abre 20 visualizaciones financieras construidas con SVG. Consulta
+[docs/FINANZAS_Y_GASTOS_FIJOS.md](./docs/FINANZAS_Y_GASTOS_FIJOS.md) para
+conocer contratos, cálculos, referencias y el manejo de pagos parciales.
+
 La navegación usa React Navigation con transiciones nativas. Recuperación de
 contraseña está maquetada y valida el correo, pero no simula el envío: el
 backend todavía no expone un endpoint para solicitar el restablecimiento.
@@ -125,6 +133,7 @@ src/
     auth/
     commitments/
     dashboard/
+    finances/
       domain/       entidades y contratos
       application/  casos de uso
       infrastructure/adaptadores de API y dispositivo
