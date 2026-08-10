@@ -28,6 +28,7 @@ export function NotificationPanel({ notifications, onDismiss, palette }) {
   return (
     <View
       accessibilityLabel="Panel de notificaciones"
+      accessibilityRole="summary"
       style={[
         styles.panel,
         {

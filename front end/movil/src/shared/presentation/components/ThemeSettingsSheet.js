@@ -1,7 +1,7 @@
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { THEME_MODES, useAppTheme } from '../../../../theme/AppThemeContext';
+import { THEME_MODES, useAppTheme } from '../../../theme/AppThemeContext';
 
 export function ThemeSettingsSheet({ onClose, visible }) {
   const { mode, palette, selectMode } = useAppTheme();

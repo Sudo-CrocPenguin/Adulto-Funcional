@@ -17,13 +17,11 @@ import { ApiError } from '../../../../core/http/ApiError';
 import { DashboardNotification } from '../../domain/DashboardNotification';
 import { useAppSession } from '../../../../session/AppSessionContext';
 import { useAppTheme } from '../../../../theme/AppThemeContext';
-import { BottomNavigation } from '../components/BottomNavigation';
-import { DashboardHeader } from '../components/DashboardHeader';
-import { NotificationPanel } from '../components/NotificationPanel';
+import { AppBottomNavigation } from '../../../../shared/presentation/components/AppBottomNavigation';
+import { AuthenticatedHeader } from '../../../../shared/presentation/components/AuthenticatedHeader';
 import { StatisticsCard } from '../components/StatisticsCard';
 import { StreakCard } from '../components/StreakCard';
 import { SummaryCard } from '../components/SummaryCard';
-import { ThemeSettingsSheet } from '../components/ThemeSettingsSheet';
 import { UpcomingCard } from '../components/UpcomingCard';
 
 function formatCurrency(value) {
@@ -72,15 +70,12 @@ export function HomeScreen() {
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setLoading] = useState(true);
-  const [isNotificationsVisible, setNotificationsVisible] = useState(false);
   const [isRefreshing, setRefreshing] = useState(false);
-  const [isSettingsVisible, setSettingsVisible] = useState(false);
-  const [dismissedNotificationIds, setDismissedNotificationIds] = useState([]);
 
-  const notifications = useMemo(() => (
-    DashboardNotification.fromSnapshot(dashboard)
-      .filter(({ id }) => !dismissedNotificationIds.includes(id))
-  ), [dashboard, dismissedNotificationIds]);
+  const notifications = useMemo(
+    () => DashboardNotification.fromSnapshot(dashboard),
+    [dashboard],
+  );
 
   const load = useCallback(async ({ refresh = false } = {}) => {
     if (refresh) {
@@ -117,24 +112,6 @@ export function HomeScreen() {
     Alert.alert(type, `${title}${date ? ` · ${date}` : ''}`);
   }
 
-  function toggleNotifications() {
-    setSettingsVisible(false);
-    setNotificationsVisible((visible) => !visible);
-  }
-
-  function openSettings() {
-    setNotificationsVisible(false);
-    setSettingsVisible(true);
-  }
-
-  function dismissNotification(notificationId) {
-    setDismissedNotificationIds((currentIds) => (
-      currentIds.includes(notificationId)
-        ? currentIds
-        : [...currentIds, notificationId]
-    ));
-  }
-
   function showComingSoon(destination) {
     if (destination === 'Inicio') {
       return;
@@ -148,21 +125,7 @@ export function HomeScreen() {
       style={[styles.safeArea, { backgroundColor: palette.background }]}
     >
       <StatusBar backgroundColor={palette.brandSoft} style={isDark ? 'light' : 'dark'} />
-      <View style={styles.headerLayer}>
-        <DashboardHeader
-          notificationCount={notifications.length}
-          onNotifications={toggleNotifications}
-          onSettings={openSettings}
-          palette={palette}
-        />
-        {isNotificationsVisible ? (
-          <NotificationPanel
-            notifications={notifications}
-            onDismiss={dismissNotification}
-            palette={palette}
-          />
-        ) : null}
-      </View>
+      <AuthenticatedHeader notifications={notifications} title="Inicio" />
 
       {isLoading && !dashboard ? (
         <View accessibilityLabel="Cargando inicio" style={styles.centerState}>
@@ -251,10 +214,10 @@ export function HomeScreen() {
         </ScrollView>
       )}
 
-      <BottomNavigation onSelect={showComingSoon} palette={palette} />
-      <ThemeSettingsSheet
-        onClose={() => setSettingsVisible(false)}
-        visible={isSettingsVisible}
+      <AppBottomNavigation
+        activeItem="Inicio"
+        onSelect={showComingSoon}
+        palette={palette}
       />
     </SafeAreaView>
   );
@@ -280,10 +243,6 @@ const styles = StyleSheet.create({
   },
   horizontalPadding: {
     paddingHorizontal: 28,
-  },
-  headerLayer: {
-    position: 'relative',
-    zIndex: 10,
   },
   inlineError: {
     borderRadius: 8,

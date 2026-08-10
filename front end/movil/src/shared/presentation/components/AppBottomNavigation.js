@@ -11,7 +11,7 @@ const ITEMS = Object.freeze([
   { icon: 'account-circle-outline', label: 'Perfil' },
 ]);
 
-export function BottomNavigation({ onSelect, palette }) {
+export function AppBottomNavigation({ activeItem, onSelect, palette }) {
   return (
     <SafeAreaView
       edges={['bottom']}
@@ -28,19 +28,20 @@ export function BottomNavigation({ onSelect, palette }) {
         style={[styles.navigation, { backgroundColor: palette.surface }]}
       >
         {ITEMS.map((item) => {
-          const color = item.active ? palette.brandDeep : palette.navigationMuted;
+          const active = item.label === activeItem;
+          const color = active ? palette.brandDeep : palette.navigationMuted;
           return (
             <Pressable
               key={item.label}
               accessibilityRole="tab"
-              accessibilityState={{ selected: Boolean(item.active) }}
+              accessibilityState={{ selected: active }}
               onPress={() => onSelect(item.label)}
               style={({ pressed }) => [styles.item, pressed && styles.pressed]}
             >
               <MaterialCommunityIcons color={color} name={item.icon} size={29} />
               <Text
                 numberOfLines={1}
-                style={[styles.label, { color }, item.active && styles.activeLabel]}
+                style={[styles.label, { color }, active && styles.activeLabel]}
               >
                 {item.label}
               </Text>

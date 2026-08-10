@@ -1,11 +1,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-export function DashboardHeader({
+export function AppHeader({
   notificationCount,
   onNotifications,
   onSettings,
   palette,
+  title,
 }) {
   const badge = notificationCount > 99 ? '99+' : String(notificationCount);
 
@@ -14,7 +15,9 @@ export function DashboardHeader({
       styles.header,
       { backgroundColor: palette.brandSoft, borderBottomColor: palette.brandDeep },
     ]}>
-      <Text accessibilityRole="header" style={[styles.title, { color: palette.text }]}>Inicio</Text>
+      <Text accessibilityRole="header" style={[styles.title, { color: palette.text }]}>
+        {title}
+      </Text>
       <View style={styles.actions}>
         <Pressable
           accessibilityLabel={`Notificaciones: ${notificationCount}`}
