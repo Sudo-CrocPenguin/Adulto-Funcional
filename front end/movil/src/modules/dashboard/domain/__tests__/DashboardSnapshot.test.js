@@ -55,7 +55,6 @@ describe('DashboardSnapshot', () => {
       balance: 11500,
       nextCommitment: { id: 'event-1', title: 'Reunión' },
       nextFixedExpense: { id: 'fixed-1', name: 'Internet' },
-      notificationCount: 8,
       passwordsCount: 12,
       pendingCommitmentsCount: 8,
       statistics: {

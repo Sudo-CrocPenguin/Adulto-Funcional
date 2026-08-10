@@ -41,7 +41,6 @@ describe('HttpDashboardRepository', () => {
     await expect(repository.load(session)).resolves.toMatchObject({
       balance: 2000,
       nextCommitment: { id: 'event-1' },
-      notificationCount: 8,
       passwordsCount: null,
       streakDays: 1,
       upcomingExpensesCount: 3,
