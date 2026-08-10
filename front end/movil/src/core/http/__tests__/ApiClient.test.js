@@ -64,5 +64,44 @@ describe('ApiClient', () => {
       traceId: 'trace-1',
     });
   });
-});
 
+  it('conserva datos y metadatos al consultar una página autenticada', async () => {
+    const fetchImplementation = jest.fn().mockResolvedValue(
+      response({
+        ok: true,
+        status: 200,
+        payload: {
+          data: [{ id: 'movement-1' }],
+          page: {
+            hasNext: false,
+            number: 0,
+            size: 1,
+            totalElements: 1,
+            totalPages: 1,
+          },
+          status: 200,
+        },
+      }),
+    );
+    const client = new ApiClient({
+      baseUrl: 'http://localhost:8080',
+      fetchImplementation,
+    });
+
+    await expect(client.getPage('/api/finances/movements?page=0', {
+      headers: { Authorization: 'Bearer access-token' },
+    })).resolves.toEqual({
+      items: [{ id: 'movement-1' }],
+      page: expect.objectContaining({ totalElements: 1 }),
+    });
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      'http://localhost:8080/api/finances/movements?page=0',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer access-token',
+        }),
+        method: 'GET',
+      }),
+    );
+  });
+});
