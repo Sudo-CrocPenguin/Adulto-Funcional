@@ -104,4 +104,30 @@ describe('ApiClient', () => {
       }),
     );
   });
+
+  it('envía actualizaciones parciales mediante PATCH', async () => {
+    const fetchImplementation = jest.fn().mockResolvedValue(
+      response({
+        ok: true,
+        status: 200,
+        payload: { data: { id: 'fixed-1', nextDueDate: '2026-09-27' } },
+      }),
+    );
+    const client = new ApiClient({
+      baseUrl: 'http://localhost:8080',
+      fetchImplementation,
+    });
+
+    await client.patch('/api/finances/fixed-expenses/fixed-1', {
+      nextDueDate: '2026-09-27',
+    });
+
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      'http://localhost:8080/api/finances/fixed-expenses/fixed-1',
+      expect.objectContaining({
+        body: JSON.stringify({ nextDueDate: '2026-09-27' }),
+        method: 'PATCH',
+      }),
+    );
+  });
 });
