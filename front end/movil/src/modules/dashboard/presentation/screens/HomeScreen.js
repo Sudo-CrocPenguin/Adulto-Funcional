@@ -15,12 +15,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppDependencies } from '../../../../composition/AppDependenciesContext';
 import { ApiError } from '../../../../core/http/ApiError';
 import { DashboardNotification } from '../../domain/DashboardNotification';
+import { APP_ROUTES } from '../../../../navigation/routes';
 import { useAppSession } from '../../../../session/AppSessionContext';
 import { useAppTheme } from '../../../../theme/AppThemeContext';
 import { AppBottomNavigation } from '../../../../shared/presentation/components/AppBottomNavigation';
 import { AuthenticatedHeader } from '../../../../shared/presentation/components/AuthenticatedHeader';
 import { StatisticsCard } from '../components/StatisticsCard';
-import { StreakCard } from '../components/StreakCard';
+import { CommitmentStreakCard } from '../../../commitments/presentation/components/CommitmentStreakCard';
 import { SummaryCard } from '../components/SummaryCard';
 import { UpcomingCard } from '../components/UpcomingCard';
 
@@ -63,7 +64,7 @@ function ErrorState({ message, onRetry, palette }) {
   );
 }
 
-export function HomeScreen() {
+export function HomeScreen({ navigation }) {
   const { loadDashboard } = useAppDependencies();
   const { session } = useAppSession();
   const { isDark, palette } = useAppTheme();
@@ -114,6 +115,10 @@ export function HomeScreen() {
 
   function showComingSoon(destination) {
     if (destination === 'Inicio') {
+      return;
+    }
+    if (destination === 'Compromisos') {
+      navigation.navigate(APP_ROUTES.commitments);
       return;
     }
     Alert.alert(destination, 'Esta sección será construida en la siguiente etapa.');
@@ -189,7 +194,7 @@ export function HomeScreen() {
           </View>
 
           <View style={styles.horizontalPadding}>
-            <StreakCard days={dashboard.streakDays} palette={palette} />
+            <CommitmentStreakCard days={dashboard.streakDays} palette={palette} />
             <View style={styles.upcomingRow}>
               <UpcomingCard
                 date={formatDate(dashboard.nextFixedExpense?.nextDueDate)}

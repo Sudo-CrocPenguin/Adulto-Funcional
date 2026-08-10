@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 const MILESTONES = [7, 15, 23, 30];
 
-export function StreakCard({ days, palette }) {
+export function CommitmentStreakCard({ days, palette }) {
   const progress = `${Math.min(days / 30, 1) * 100}%`;
 
   return (

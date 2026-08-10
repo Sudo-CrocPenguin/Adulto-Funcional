@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ITEMS = Object.freeze([
-  { active: true, icon: 'home-variant-outline', label: 'Inicio' },
+  { icon: 'home-variant-outline', label: 'Inicio' },
   { icon: 'clipboard-check-outline', label: 'Compromisos' },
   { icon: 'wallet-outline', label: 'Finanzas' },
   { icon: 'hand-coin-outline', label: 'Gastos Fijos' },

@@ -60,4 +60,15 @@ export class CommitmentCollection {
     }
     return this.commitments;
   }
+
+  withAdded(commitment, now = new Date()) {
+    const commitments = [...this.commitments, commitment]
+      .sort((left, right) => String(left.startHour).localeCompare(String(right.startHour)));
+
+    return CommitmentCollection.create({
+      categories: this.categories,
+      commitments,
+      now,
+    });
+  }
 }
