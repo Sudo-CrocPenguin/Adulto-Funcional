@@ -14,6 +14,7 @@ export const FormField = forwardRef(function FormField(
   {
     error,
     label,
+    labelStyle,
     onChangeText,
     onSubmitEditing,
     secure = false,
@@ -27,7 +28,7 @@ export const FormField = forwardRef(function FormField(
 
   return (
     <View style={styles.group}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, labelStyle]}>{label}</Text>
       <View style={[styles.inputShell, error && styles.inputShellError]}>
         <TextInput
           ref={ref}
@@ -122,4 +123,3 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
-

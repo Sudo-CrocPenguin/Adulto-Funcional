@@ -2,8 +2,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useMemo } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { AppDependenciesProvider } from './src/composition/AppDependenciesContext';
 import { createAppDependencies } from './src/composition/createAppDependencies';
-import { RegisterScreen } from './src/modules/auth/presentation/screens/RegisterScreen';
+import { AuthNavigator } from './src/navigation/AuthNavigator';
 
 export default function App() {
   const dependencies = useMemo(() => createAppDependencies(), []);
@@ -11,7 +12,9 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar backgroundColor="#35598D" style="light" />
-      <RegisterScreen registerAccount={dependencies.registerAccount} />
+      <AppDependenciesProvider value={dependencies}>
+        <AuthNavigator />
+      </AppDependenciesProvider>
     </SafeAreaProvider>
   );
 }

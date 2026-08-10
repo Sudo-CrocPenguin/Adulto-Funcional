@@ -1,19 +1,16 @@
 import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Keyboard,
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
-  useWindowDimensions,
   View,
 } from 'react-native';
 
+import { useAppDependencies } from '../../../../composition/AppDependenciesContext';
 import { ApiError } from '../../../../core/http/ApiError';
+import { AUTH_ROUTES } from '../../../../navigation/routes';
 import {
   SessionPersistenceError,
 } from '../../application/RegisterAccountUseCase';
@@ -21,7 +18,7 @@ import {
   RegistrationValidationError,
 } from '../../domain/RegistrationCommand';
 import { colors } from '../../../../shared/theme/tokens';
-import { BrandHero } from '../components/BrandHero';
+import { AuthScreenLayout } from '../components/AuthScreenLayout';
 import { FormField } from '../components/FormField';
 
 const INITIAL_FORM = Object.freeze({
@@ -42,8 +39,8 @@ function backendFieldErrors(error) {
   }, {});
 }
 
-export function RegisterScreen({ registerAccount }) {
-  const { width } = useWindowDimensions();
+export function RegisterScreen({ navigation }) {
+  const { registerAccount } = useAppDependencies();
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [feedback, setFeedback] = useState(null);
@@ -53,8 +50,6 @@ export function RegisterScreen({ registerAccount }) {
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const confirmationRef = useRef(null);
-
-  const cardWidth = Math.min(width - 36, 520);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -107,28 +102,8 @@ export function RegisterScreen({ registerAccount }) {
     }
   }
 
-  function explainPendingLogin() {
-    Alert.alert(
-      'Inicio de sesión',
-      'Esta será la siguiente pantalla del flujo de autenticación.',
-    );
-  }
-
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.keyboardView}
-    >
-      <ScrollView
-        bounces={false}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        <BrandHero />
-
-        <View style={styles.formRegion}>
-          <View style={[styles.card, { width: cardWidth }]}>
+    <AuthScreenLayout>
             <Text accessibilityRole="header" style={styles.formTitle}>
               Registrarse
             </Text>
@@ -255,44 +230,16 @@ export function RegisterScreen({ registerAccount }) {
               <Pressable
                 accessibilityRole="link"
                 hitSlop={8}
-                onPress={explainPendingLogin}
+                onPress={() => navigation.navigate(AUTH_ROUTES.login)}
               >
                 <Text style={styles.loginLink}>Iniciar Sesión</Text>
               </Pressable>
             </View>
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </AuthScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardView: {
-    backgroundColor: colors.background,
-    flex: 1,
-  },
-  scrollContent: {
-    backgroundColor: colors.background,
-    flexGrow: 1,
-  },
-  formRegion: {
-    alignItems: 'center',
-    paddingBottom: 42,
-    paddingTop: 36,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 22,
-    elevation: 8,
-    paddingBottom: 24,
-    paddingHorizontal: 24,
-    paddingTop: 23,
-    shadowColor: '#A9B3C1',
-    shadowOffset: { width: -5, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 7,
-  },
   formTitle: {
     color: colors.text,
     fontSize: 29,
