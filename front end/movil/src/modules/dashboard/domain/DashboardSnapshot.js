@@ -115,7 +115,6 @@ export class DashboardSnapshot {
       balance: currentBalance(movements),
       nextCommitment: upcomingCommitments[0] ?? null,
       nextFixedExpense: fixedExpenses[0] ?? null,
-      notificationCount: pendingCommitmentsCount,
       passwordsCount,
       pendingCommitmentsCount,
       statistics: movementStatistics(movements, today),

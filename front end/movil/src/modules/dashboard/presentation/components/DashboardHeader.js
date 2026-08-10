@@ -17,7 +17,7 @@ export function DashboardHeader({
       <Text accessibilityRole="header" style={[styles.title, { color: palette.text }]}>Inicio</Text>
       <View style={styles.actions}>
         <Pressable
-          accessibilityLabel={`Compromisos pendientes: ${notificationCount}`}
+          accessibilityLabel={`Notificaciones: ${notificationCount}`}
           accessibilityRole="button"
           hitSlop={8}
           onPress={onNotifications}

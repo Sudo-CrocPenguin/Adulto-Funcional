@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -14,10 +14,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAppDependencies } from '../../../../composition/AppDependenciesContext';
 import { ApiError } from '../../../../core/http/ApiError';
+import { DashboardNotification } from '../../domain/DashboardNotification';
 import { useAppSession } from '../../../../session/AppSessionContext';
 import { useAppTheme } from '../../../../theme/AppThemeContext';
 import { BottomNavigation } from '../components/BottomNavigation';
 import { DashboardHeader } from '../components/DashboardHeader';
+import { NotificationPanel } from '../components/NotificationPanel';
 import { StatisticsCard } from '../components/StatisticsCard';
 import { StreakCard } from '../components/StreakCard';
 import { SummaryCard } from '../components/SummaryCard';
@@ -70,8 +72,15 @@ export function HomeScreen() {
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setLoading] = useState(true);
+  const [isNotificationsVisible, setNotificationsVisible] = useState(false);
   const [isRefreshing, setRefreshing] = useState(false);
   const [isSettingsVisible, setSettingsVisible] = useState(false);
+  const [dismissedNotificationIds, setDismissedNotificationIds] = useState([]);
+
+  const notifications = useMemo(() => (
+    DashboardNotification.fromSnapshot(dashboard)
+      .filter(({ id }) => !dismissedNotificationIds.includes(id))
+  ), [dashboard, dismissedNotificationIds]);
 
   const load = useCallback(async ({ refresh = false } = {}) => {
     if (refresh) {
@@ -108,13 +117,22 @@ export function HomeScreen() {
     Alert.alert(type, `${title}${date ? ` · ${date}` : ''}`);
   }
 
-  function showPending() {
-    Alert.alert(
-      'Compromisos pendientes',
-      dashboard?.pendingCommitmentsCount
-        ? `Tienes ${dashboard.pendingCommitmentsCount} compromisos pendientes.`
-        : 'No tienes compromisos pendientes.',
-    );
+  function toggleNotifications() {
+    setSettingsVisible(false);
+    setNotificationsVisible((visible) => !visible);
+  }
+
+  function openSettings() {
+    setNotificationsVisible(false);
+    setSettingsVisible(true);
+  }
+
+  function dismissNotification(notificationId) {
+    setDismissedNotificationIds((currentIds) => (
+      currentIds.includes(notificationId)
+        ? currentIds
+        : [...currentIds, notificationId]
+    ));
   }
 
   function showComingSoon(destination) {
@@ -130,12 +148,21 @@ export function HomeScreen() {
       style={[styles.safeArea, { backgroundColor: palette.background }]}
     >
       <StatusBar backgroundColor={palette.brandSoft} style={isDark ? 'light' : 'dark'} />
-      <DashboardHeader
-        notificationCount={dashboard?.notificationCount ?? 0}
-        onNotifications={showPending}
-        onSettings={() => setSettingsVisible(true)}
-        palette={palette}
-      />
+      <View style={styles.headerLayer}>
+        <DashboardHeader
+          notificationCount={notifications.length}
+          onNotifications={toggleNotifications}
+          onSettings={openSettings}
+          palette={palette}
+        />
+        {isNotificationsVisible ? (
+          <NotificationPanel
+            notifications={notifications}
+            onDismiss={dismissNotification}
+            palette={palette}
+          />
+        ) : null}
+      </View>
 
       {isLoading && !dashboard ? (
         <View accessibilityLabel="Cargando inicio" style={styles.centerState}>
@@ -253,6 +280,10 @@ const styles = StyleSheet.create({
   },
   horizontalPadding: {
     paddingHorizontal: 28,
+  },
+  headerLayer: {
+    position: 'relative',
+    zIndex: 10,
   },
   inlineError: {
     borderRadius: 8,
