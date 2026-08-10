@@ -3,6 +3,7 @@ import { ApiClient } from '../core/http/ApiClient';
 import { SecureSessionStore } from '../core/storage/SecureSessionStore';
 import { LoginAccountUseCase } from '../modules/auth/application/LoginAccountUseCase';
 import { RegisterAccountUseCase } from '../modules/auth/application/RegisterAccountUseCase';
+import { RestoreSessionUseCase } from '../modules/auth/application/RestoreSessionUseCase';
 import { HttpAuthRepository } from '../modules/auth/infrastructure/HttpAuthRepository';
 
 export function createAppDependencies() {
@@ -22,6 +23,9 @@ export function createAppDependencies() {
       authRepository,
       sessionStore,
     }),
+    restoreSession: new RestoreSessionUseCase({
+      authRepository,
+      sessionStore,
+    }),
   });
 }
-

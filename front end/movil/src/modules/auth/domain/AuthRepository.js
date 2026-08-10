@@ -6,4 +6,8 @@ export class AuthRepository {
   async register() {
     throw new Error('AuthRepository.register debe implementarse.');
   }
+
+  async refresh() {
+    throw new Error('AuthRepository.refresh debe implementarse.');
+  }
 }

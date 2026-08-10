@@ -24,4 +24,10 @@ export class HttpAuthRepository extends AuthRepository {
 
     return AuthSession.fromApi(data);
   }
+
+  async refresh(refreshToken) {
+    const data = await this.apiClient.post('/api/auth/refresh', { refreshToken });
+
+    return AuthSession.fromApi(data);
+  }
 }

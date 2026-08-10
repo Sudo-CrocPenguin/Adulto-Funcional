@@ -4,7 +4,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AppDependenciesProvider } from './src/composition/AppDependenciesContext';
 import { createAppDependencies } from './src/composition/createAppDependencies';
-import { AuthNavigator } from './src/navigation/AuthNavigator';
+import { RootNavigator } from './src/navigation/RootNavigator';
+import { AppSessionProvider } from './src/session/AppSessionContext';
 
 export default function App() {
   const dependencies = useMemo(() => createAppDependencies(), []);
@@ -13,7 +14,9 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar backgroundColor="#35598D" style="light" />
       <AppDependenciesProvider value={dependencies}>
-        <AuthNavigator />
+        <AppSessionProvider restoreSession={dependencies.restoreSession}>
+          <RootNavigator />
+        </AppSessionProvider>
       </AppDependenciesProvider>
     </SafeAreaProvider>
   );

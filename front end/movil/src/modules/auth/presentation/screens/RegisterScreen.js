@@ -11,6 +11,7 @@ import {
 import { useAppDependencies } from '../../../../composition/AppDependenciesContext';
 import { ApiError } from '../../../../core/http/ApiError';
 import { AUTH_ROUTES } from '../../../../navigation/routes';
+import { useAppSession } from '../../../../session/AppSessionContext';
 import {
   SessionPersistenceError,
 } from '../../application/RegisterAccountUseCase';
@@ -41,6 +42,7 @@ function backendFieldErrors(error) {
 
 export function RegisterScreen({ navigation }) {
   const { registerAccount } = useAppDependencies();
+  const { openSession } = useAppSession();
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [feedback, setFeedback] = useState(null);
@@ -73,10 +75,7 @@ export function RegisterScreen({ navigation }) {
     try {
       const session = await registerAccount.execute(form);
       setForm(INITIAL_FORM);
-      setFeedback({
-        type: 'success',
-        message: `Cuenta creada. ¡Bienvenido, ${session.names}!`,
-      });
+      openSession(session);
     } catch (error) {
       if (error instanceof RegistrationValidationError) {
         setErrors(error.fieldErrors);

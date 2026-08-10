@@ -12,6 +12,7 @@ import {
 import { useAppDependencies } from '../../../../composition/AppDependenciesContext';
 import { ApiError } from '../../../../core/http/ApiError';
 import { AUTH_ROUTES } from '../../../../navigation/routes';
+import { useAppSession } from '../../../../session/AppSessionContext';
 import { colors } from '../../../../shared/theme/tokens';
 import { SessionPersistenceError } from '../../application/SessionPersistenceError';
 import { LoginValidationError } from '../../domain/LoginCommand';
@@ -35,6 +36,7 @@ function backendFieldErrors(error) {
 
 export function LoginScreen({ navigation }) {
   const { loginAccount } = useAppDependencies();
+  const { openSession } = useAppSession();
   const [form, setForm] = useState(INITIAL_FORM);
   const [errors, setErrors] = useState({});
   const [feedback, setFeedback] = useState(null);
@@ -63,10 +65,7 @@ export function LoginScreen({ navigation }) {
     try {
       const session = await loginAccount.execute(form);
       setForm((current) => ({ ...current, password: '' }));
-      setFeedback({
-        type: 'success',
-        message: `Sesión iniciada. ¡Hola, ${session.names}!`,
-      });
+      openSession(session);
     } catch (error) {
       if (error instanceof LoginValidationError) {
         setErrors(error.fieldErrors);
@@ -319,4 +318,3 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
   },
 });
-
