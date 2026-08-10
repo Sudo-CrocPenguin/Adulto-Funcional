@@ -11,7 +11,14 @@ El flujo visual de autenticación incluye registro, inicio de sesión y
 recuperación de contraseña, implementados a partir de referencias visuales
 aprobadas. Registro y login consumen la API real, muestran errores locales y
 del backend, controlan estados de carga y permiten alternar la visibilidad de
-las contraseñas.
+las contraseñas. Una sesión válida abre el inicio autenticado y puede
+restaurarse mediante la rotación segura del refresh token.
+
+El inicio compone información real de movimientos, eventos, gastos fijos y
+estado de la Master Key. Presenta saldo, compromisos pendientes, próximos
+gastos, total de credenciales disponible, racha de compromisos, próximos
+elementos y estadísticas de los últimos tres meses. Consulta
+[docs/INICIO.md](./docs/INICIO.md) para conocer las fuentes y cálculos.
 
 La navegación usa React Navigation con transiciones nativas. Recuperación de
 contraseña está maquetada y valida el correo, pero no simula el envío: el
@@ -101,11 +108,10 @@ src/
   composition/      construccion e inyeccion de dependencias
   core/             red, configuracion y almacenamiento seguro
   navigation/       rutas y transiciones entre pantallas
+  session/          estado de autenticacion en memoria
   modules/
     auth/
-    finances/
-    agenda/
-    vault/
+    dashboard/
       domain/       entidades y contratos
       application/  casos de uso
       infrastructure/adaptadores de API y dispositivo
@@ -139,6 +145,11 @@ LoginScreen
 La confirmación de contraseña existe únicamente en la interfaz y nunca se
 envía a la API. El access token no se persiste en almacenamiento local; el
 refresh token se guarda cifrado mediante `expo-secure-store`.
+
+Al iniciar la aplicación, `RestoreSessionUseCase` busca el refresh token,
+solicita su rotación y sustituye el valor almacenado. Un rechazo terminal de
+la API elimina la sesión local; un fallo temporal de red conserva el token para
+evitar cerrar una sesión válida por falta de conectividad.
 
 ## Limitación conocida
 
