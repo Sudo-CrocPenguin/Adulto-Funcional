@@ -25,6 +25,10 @@ export class ApiClient {
     });
   }
 
+  async patch(path, body, options = {}) {
+    return this.request(path, { ...options, method: 'PATCH', body });
+  }
+
   async request(
     path,
     {
