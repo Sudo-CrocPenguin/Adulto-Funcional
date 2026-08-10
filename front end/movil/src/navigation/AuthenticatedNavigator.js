@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { CommitmentsScreen } from '../modules/commitments/presentation/screens/CommitmentsScreen';
 import { HomeScreen } from '../modules/dashboard/presentation/screens/HomeScreen';
 import { FinanceScreen } from '../modules/finances/presentation/screens/FinanceScreen';
+import { FinanceAnalyticsScreen } from '../modules/finances/presentation/screens/FinanceAnalyticsScreen';
 import { FixedExpensesScreen } from '../modules/finances/presentation/screens/FixedExpensesScreen';
 import { useAppTheme } from '../theme/AppThemeContext';
 import { APP_ROUTES } from './routes';
@@ -26,6 +27,10 @@ export function AuthenticatedNavigator() {
         name={APP_ROUTES.commitments}
       />
       <Stack.Screen component={FinanceScreen} name={APP_ROUTES.finances} />
+      <Stack.Screen
+        component={FinanceAnalyticsScreen}
+        name={APP_ROUTES.financeAnalytics}
+      />
       <Stack.Screen
         component={FixedExpensesScreen}
         name={APP_ROUTES.fixedExpenses}
