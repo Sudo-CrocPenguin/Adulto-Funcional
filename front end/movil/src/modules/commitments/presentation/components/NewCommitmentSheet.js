@@ -23,7 +23,7 @@ import {
   COMMITMENT_REMINDERS,
   CommitmentValidationError,
 } from '../../domain/CommitmentDraft';
-import { OptionPickerModal } from './OptionPickerModal';
+import { OptionPickerModal } from '../../../../shared/presentation/components/OptionPickerModal';
 
 function initialForm() {
   const eventDate = new Date();
