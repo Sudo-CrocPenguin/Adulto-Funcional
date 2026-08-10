@@ -1,0 +1,20 @@
+export const colors = Object.freeze({
+  brand: '#35598D',
+  brandPressed: '#294873',
+  brandSoft: '#E7EEF8',
+  background: '#F4F6F9',
+  surface: '#FFFFFF',
+  text: '#111827',
+  textMuted: '#4B5563',
+  border: '#DFE5EB',
+  fieldBackground: '#FFFFFF',
+  link: '#2676A3',
+  error: '#B42318',
+  errorSoft: '#FEF3F2',
+  success: '#18794E',
+  successSoft: '#ECFDF3',
+  shield: '#058798',
+  lock: '#F5C451',
+  avatar: '#D5DAE1',
+});
+

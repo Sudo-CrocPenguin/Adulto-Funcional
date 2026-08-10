@@ -1,20 +1,17 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { useMemo } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { createAppDependencies } from './src/composition/createAppDependencies';
+import { RegisterScreen } from './src/modules/auth/presentation/screens/RegisterScreen';
 
 export default function App() {
+  const dependencies = useMemo(() => createAppDependencies(), []);
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaProvider>
+      <StatusBar backgroundColor="#35598D" style="light" />
+      <RegisterScreen registerAccount={dependencies.registerAccount} />
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
