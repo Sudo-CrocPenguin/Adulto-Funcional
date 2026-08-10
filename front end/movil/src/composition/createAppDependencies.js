@@ -1,6 +1,7 @@
 import { environment } from '../core/config/environment';
 import { ApiClient } from '../core/http/ApiClient';
 import { SecureSessionStore } from '../core/storage/SecureSessionStore';
+import { LoginAccountUseCase } from '../modules/auth/application/LoginAccountUseCase';
 import { RegisterAccountUseCase } from '../modules/auth/application/RegisterAccountUseCase';
 import { HttpAuthRepository } from '../modules/auth/infrastructure/HttpAuthRepository';
 
@@ -13,6 +14,10 @@ export function createAppDependencies() {
   const authRepository = new HttpAuthRepository(apiClient);
 
   return Object.freeze({
+    loginAccount: new LoginAccountUseCase({
+      authRepository,
+      sessionStore,
+    }),
     registerAccount: new RegisterAccountUseCase({
       authRepository,
       sessionStore,

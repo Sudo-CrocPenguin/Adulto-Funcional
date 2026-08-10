@@ -7,6 +7,15 @@ export class HttpAuthRepository extends AuthRepository {
     this.apiClient = apiClient;
   }
 
+  async login(command) {
+    const data = await this.apiClient.post(
+      '/api/auth/login',
+      command.toRequest(),
+    );
+
+    return AuthSession.fromApi(data);
+  }
+
   async register(command) {
     const data = await this.apiClient.post(
       '/api/auth/register',
@@ -16,4 +25,3 @@ export class HttpAuthRepository extends AuthRepository {
     return AuthSession.fromApi(data);
   }
 }
-

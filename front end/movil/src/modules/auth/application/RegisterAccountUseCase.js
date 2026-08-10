@@ -1,14 +1,9 @@
 import {
   RegistrationCommand,
 } from '../domain/RegistrationCommand';
+import { SessionPersistenceError } from './SessionPersistenceError';
 
-export class SessionPersistenceError extends Error {
-  constructor(session, cause) {
-    super('La cuenta fue creada, pero no pudimos guardar la sesión.', { cause });
-    this.name = 'SessionPersistenceError';
-    this.session = session;
-  }
-}
+export { SessionPersistenceError } from './SessionPersistenceError';
 
 export class RegisterAccountUseCase {
   constructor({ authRepository, sessionStore }) {
@@ -29,4 +24,3 @@ export class RegisterAccountUseCase {
     return session;
   }
 }
-
