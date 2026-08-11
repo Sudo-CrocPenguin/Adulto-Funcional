@@ -29,6 +29,10 @@ export class ApiClient {
     return this.request(path, { ...options, method: 'PATCH', body });
   }
 
+  async delete(path, options = {}) {
+    return this.request(path, { ...options, method: 'DELETE' });
+  }
+
   async request(
     path,
     {
