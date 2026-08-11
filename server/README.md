@@ -339,6 +339,10 @@ El esquema, restricciones e índices están descritos en
 
 ## Despliegue
 
+El despliegue actual del homelab, su topología cliente-servidor, acceso por
+ZeroTier y comandos operativos están documentados en
+[docs/HOMELAB_DEPLOYMENT.md](./docs/HOMELAB_DEPLOYMENT.md).
+
 - `docker-compose.yml` es la base local: publica solo `127.0.0.1:8080` por
   defecto y mantiene MariaDB/Redis en una red interna.
 - `docker-compose.coolify.yml` añade la red externa y etiquetas necesarias para
@@ -380,6 +384,7 @@ La guía de operación, backups, rotación y diagnóstico está en
 | [docs/API_ERROR_CONTRACT.md](./docs/API_ERROR_CONTRACT.md) | Sobre y catálogo estable de errores |
 | [docs/SECURITY.md](./docs/SECURITY.md) | Modelo de amenazas y controles implementados |
 | [docs/OPERATIONS.md](./docs/OPERATIONS.md) | Configuración, despliegue, backups y troubleshooting |
+| [docs/HOMELAB_DEPLOYMENT.md](./docs/HOMELAB_DEPLOYMENT.md) | Despliegue privado actual en `server1`, ZeroTier y operación |
 | [docs/RESOURCE_OWNERSHIP.md](./docs/RESOURCE_OWNERSHIP.md) | Patrón obligatorio de aislamiento por cuenta |
 | [docs/decisions/README.md](./docs/decisions/README.md) | Índice de ADR y estado de implementación |
 
