@@ -55,6 +55,14 @@ disponibles y gastos fijos registrados. Consulta
 [docs/PERFIL.md](./docs/PERFIL.md) para conocer las fuentes, reglas y
 limitaciones del contrato actual.
 
+Las instalaciones de distribución verifican EAS Update antes de montar la
+sesión. Una actualización disponible se descarga y reinicia automáticamente;
+si la comprobación falla, la aplicación queda bloqueada hasta poder reintentar.
+Los cambios móviles enviados a `main` se publican al canal `production` mediante
+GitHub Actions. Consulta
+[docs/ACTUALIZACIONES.md](./docs/ACTUALIZACIONES.md) para configurar los
+secretos, crear el primer APK y validar el flujo obligatorio.
+
 SDK 54 se mantiene de forma intencional mientras Expo Go para dispositivos
 físicos use esa versión. Expo SDK 54 corresponde a React Native 0.81 y React
 19.1.
@@ -116,6 +124,10 @@ Comandos adicionales:
 | `npm test` | Ejecuta las pruebas unitarias una vez |
 | `npm run test:watch` | Reejecuta pruebas durante el desarrollo |
 
+Expo Go sirve para el desarrollo visual, pero no ejecuta el control OTA
+obligatorio. Ese flujo requiere un build interno o de producción creado con
+EAS.
+
 ## Conexión con la API
 
 El backend diferencia el cliente nativo mediante el encabezado:
@@ -148,6 +160,7 @@ src/
     finances/
     passwords/
     profile/
+    updates/
       domain/       entidades y contratos
       application/  casos de uso
       infrastructure/adaptadores de API y dispositivo
