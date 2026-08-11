@@ -11,4 +11,5 @@ export const APP_ROUTES = Object.freeze({
   fixedExpenses: 'FixedExpenses',
   home: 'Home',
   passwords: 'Passwords',
+  profile: 'Profile',
 });

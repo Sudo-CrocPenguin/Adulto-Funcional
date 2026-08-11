@@ -141,6 +141,7 @@ export function CommitmentsScreen({ navigation }) {
       'Gastos Fijos': APP_ROUTES.fixedExpenses,
       Inicio: APP_ROUTES.home,
       Contraseñas: APP_ROUTES.passwords,
+      Perfil: APP_ROUTES.profile,
     };
     if (destination === 'Compromisos') {
       return;

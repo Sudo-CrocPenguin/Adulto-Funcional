@@ -6,6 +6,7 @@ import { FinanceScreen } from '../modules/finances/presentation/screens/FinanceS
 import { FinanceAnalyticsScreen } from '../modules/finances/presentation/screens/FinanceAnalyticsScreen';
 import { FixedExpensesScreen } from '../modules/finances/presentation/screens/FixedExpensesScreen';
 import { PasswordVaultScreen } from '../modules/passwords/presentation/screens/PasswordVaultScreen';
+import { ProfileScreen } from '../modules/profile/presentation/screens/ProfileScreen';
 import { useAppTheme } from '../theme/AppThemeContext';
 import { APP_ROUTES } from './routes';
 
@@ -37,6 +38,7 @@ export function AuthenticatedNavigator() {
         name={APP_ROUTES.fixedExpenses}
       />
       <Stack.Screen component={PasswordVaultScreen} name={APP_ROUTES.passwords} />
+      <Stack.Screen component={ProfileScreen} name={APP_ROUTES.profile} />
     </Stack.Navigator>
   );
 }

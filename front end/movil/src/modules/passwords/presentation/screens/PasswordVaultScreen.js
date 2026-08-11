@@ -270,6 +270,7 @@ export function PasswordVaultScreen({ navigation }) {
       Finanzas: APP_ROUTES.finances,
       'Gastos Fijos': APP_ROUTES.fixedExpenses,
       Inicio: APP_ROUTES.home,
+      Perfil: APP_ROUTES.profile,
     };
     if (destination === 'Contraseñas') return;
     if (destinations[destination]) {

@@ -157,6 +157,7 @@ export function FixedExpensesScreen({ navigation }) {
       Contraseñas: APP_ROUTES.passwords,
       Finanzas: APP_ROUTES.finances,
       Inicio: APP_ROUTES.home,
+      Perfil: APP_ROUTES.profile,
     };
     if (destination === 'Gastos Fijos') {
       return;

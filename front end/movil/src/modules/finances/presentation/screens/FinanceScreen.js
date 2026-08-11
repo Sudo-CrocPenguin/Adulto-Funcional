@@ -108,6 +108,7 @@ export function FinanceScreen({ navigation }) {
       Contraseñas: APP_ROUTES.passwords,
       'Gastos Fijos': APP_ROUTES.fixedExpenses,
       Inicio: APP_ROUTES.home,
+      Perfil: APP_ROUTES.profile,
     };
     if (destination === 'Finanzas') {
       return;
