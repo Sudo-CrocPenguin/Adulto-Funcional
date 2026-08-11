@@ -5,6 +5,8 @@ import { useAppTheme } from '../../../theme/AppThemeContext';
 import { UPDATE_PHASES, UPDATE_RESULTS } from '../application/EnsureLatestUpdateUseCase';
 import { MandatoryUpdateScreen } from './MandatoryUpdateScreen';
 
+const ACTIVE_UPDATE_CHECK_INTERVAL_MS = 5 * 60 * 1000;
+
 export function MandatoryUpdateGate({ children, ensureLatestUpdate }) {
   const { palette } = useAppTheme();
   const appState = useRef(AppState.currentState);
@@ -48,6 +50,14 @@ export function MandatoryUpdateGate({ children, ensureLatestUpdate }) {
       if (becameActive) verify();
     });
     return () => subscription.remove();
+  }, [verify]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (appState.current === 'active') verify();
+    }, ACTIVE_UPDATE_CHECK_INTERVAL_MS);
+
+    return () => clearInterval(interval);
   }, [verify]);
 
   if (phase === 'ready') return children;
