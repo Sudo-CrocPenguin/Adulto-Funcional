@@ -10,4 +10,5 @@ export const APP_ROUTES = Object.freeze({
   finances: 'Finances',
   fixedExpenses: 'FixedExpenses',
   home: 'Home',
+  passwords: 'Passwords',
 });

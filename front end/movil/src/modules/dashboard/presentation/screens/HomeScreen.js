@@ -118,6 +118,7 @@ export function HomeScreen({ navigation }) {
       Compromisos: APP_ROUTES.commitments,
       Finanzas: APP_ROUTES.finances,
       'Gastos Fijos': APP_ROUTES.fixedExpenses,
+      Contraseñas: APP_ROUTES.passwords,
     };
     if (destination === 'Inicio') {
       return;

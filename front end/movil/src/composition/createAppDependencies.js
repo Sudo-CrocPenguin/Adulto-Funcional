@@ -17,6 +17,18 @@ import { PayFixedExpenseUseCase } from '../modules/finances/application/PayFixed
 import { HttpFinanceRepository } from '../modules/finances/infrastructure/HttpFinanceRepository';
 import { LoadDashboardUseCase } from '../modules/dashboard/application/LoadDashboardUseCase';
 import { HttpDashboardRepository } from '../modules/dashboard/infrastructure/HttpDashboardRepository';
+import {
+  ChangeMasterKeyUseCase,
+  ConfigureMasterKeyUseCase,
+  CreateCredentialUseCase,
+  DeleteCredentialUseCase,
+  LoadVaultUseCase,
+  LockVaultUseCase,
+  RevealCredentialUseCase,
+  UpdateCredentialUseCase,
+  VerifyMasterKeyUseCase,
+} from '../modules/passwords/application/VaultUseCases';
+import { HttpPasswordVaultRepository } from '../modules/passwords/infrastructure/HttpPasswordVaultRepository';
 
 export function createAppDependencies() {
   const apiClient = new ApiClient({
@@ -28,12 +40,17 @@ export function createAppDependencies() {
   const commitmentRepository = new HttpCommitmentRepository(apiClient);
   const dashboardRepository = new HttpDashboardRepository(apiClient);
   const financeRepository = new HttpFinanceRepository(apiClient);
+  const passwordVaultRepository = new HttpPasswordVaultRepository(apiClient);
   const themePreferenceStore = new AsyncThemePreferenceStore();
 
   return Object.freeze({
+    changeMasterKey: new ChangeMasterKeyUseCase(passwordVaultRepository),
+    configureMasterKey: new ConfigureMasterKeyUseCase(passwordVaultRepository),
     createCommitment: new CreateCommitmentUseCase(commitmentRepository),
     createFixedExpense: new CreateFixedExpenseUseCase(financeRepository),
     createMovement: new CreateMovementUseCase(financeRepository),
+    createCredential: new CreateCredentialUseCase(passwordVaultRepository),
+    deleteCredential: new DeleteCredentialUseCase(passwordVaultRepository),
     loginAccount: new LoginAccountUseCase({
       authRepository,
       sessionStore,
@@ -42,7 +59,10 @@ export function createAppDependencies() {
     loadCommitments: new LoadCommitmentsUseCase(commitmentRepository),
     loadFinances: new LoadFinancesUseCase(financeRepository),
     loadFixedExpenses: new LoadFixedExpensesUseCase(financeRepository),
+    loadVault: new LoadVaultUseCase(passwordVaultRepository),
+    lockVault: new LockVaultUseCase(passwordVaultRepository),
     payFixedExpense: new PayFixedExpenseUseCase(financeRepository),
+    revealCredential: new RevealCredentialUseCase(passwordVaultRepository),
     registerAccount: new RegisterAccountUseCase({
       authRepository,
       sessionStore,
@@ -52,5 +72,7 @@ export function createAppDependencies() {
       sessionStore,
     }),
     themePreferenceStore,
+    updateCredential: new UpdateCredentialUseCase(passwordVaultRepository),
+    verifyMasterKey: new VerifyMasterKeyUseCase(passwordVaultRepository),
   });
 }

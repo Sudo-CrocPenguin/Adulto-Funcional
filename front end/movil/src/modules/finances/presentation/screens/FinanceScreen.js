@@ -105,6 +105,7 @@ export function FinanceScreen({ navigation }) {
   function selectDestination(destination) {
     const destinations = {
       Compromisos: APP_ROUTES.commitments,
+      Contraseñas: APP_ROUTES.passwords,
       'Gastos Fijos': APP_ROUTES.fixedExpenses,
       Inicio: APP_ROUTES.home,
     };

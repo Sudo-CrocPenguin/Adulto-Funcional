@@ -154,6 +154,7 @@ export function FixedExpensesScreen({ navigation }) {
   function selectDestination(destination) {
     const destinations = {
       Compromisos: APP_ROUTES.commitments,
+      Contraseñas: APP_ROUTES.passwords,
       Finanzas: APP_ROUTES.finances,
       Inicio: APP_ROUTES.home,
     };

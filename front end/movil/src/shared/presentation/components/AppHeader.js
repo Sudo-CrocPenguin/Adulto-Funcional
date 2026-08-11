@@ -15,7 +15,13 @@ export function AppHeader({
       styles.header,
       { backgroundColor: palette.brandSoft, borderBottomColor: palette.brandDeep },
     ]}>
-      <Text accessibilityRole="header" style={[styles.title, { color: palette.text }]}>
+      <Text
+        accessibilityRole="header"
+        adjustsFontSizeToFit
+        minimumFontScale={0.68}
+        numberOfLines={1}
+        style={[styles.title, { color: palette.text }]}
+      >
         {title}
       </Text>
       <View style={styles.actions}>
@@ -92,8 +98,10 @@ const styles = StyleSheet.create({
     opacity: 0.65,
   },
   title: {
+    flex: 1,
     fontSize: 30,
     fontWeight: '800',
     letterSpacing: -0.4,
+    marginRight: 12,
   },
 });
