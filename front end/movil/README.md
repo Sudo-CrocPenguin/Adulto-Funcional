@@ -67,6 +67,11 @@ SDK 54 se mantiene de forma intencional mientras Expo Go para dispositivos
 físicos use esa versión. Expo SDK 54 corresponde a React Native 0.81 y React
 19.1.
 
+La identidad visual usa el logo oficial de persona, escudo y candado en el
+icono, adaptive icon, splash y favicon. Consulta
+[docs/IDENTIDAD_VISUAL.md](./docs/IDENTIDAD_VISUAL.md) para conocer el activo
+maestro, la zona segura y las reglas para futuras versiones.
+
 ## Requisitos
 
 - Node.js 20.19 o superior.
