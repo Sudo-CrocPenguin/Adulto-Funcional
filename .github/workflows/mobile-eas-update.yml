@@ -29,16 +29,10 @@ jobs:
 
       - name: Comprobar secretos requeridos
         env:
-          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
             echo "Falta el secreto EXPO_TOKEN del proyecto Expo."
-            exit 1
-          fi
-
-          if [ -z "$EXPO_PUBLIC_API_URL" ]; then
-            echo "Falta el secreto EXPO_PUBLIC_API_URL del backend de producción."
             exit 1
           fi
 
@@ -66,5 +60,5 @@ jobs:
 
       - name: Publicar actualización obligatoria
         env:
-          EXPO_PUBLIC_API_URL: ${{ secrets.EXPO_PUBLIC_API_URL }}
+          EXPO_PUBLIC_API_URL: ${{ vars.EXPO_PUBLIC_API_URL }}
         run: eas update --channel production --message "main:${GITHUB_SHA}" --non-interactive
