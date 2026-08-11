@@ -6,17 +6,20 @@
   "build": {
     "preview": {
       "channel": "preview",
-      "distribution": "internal"
+      "distribution": "internal",
+      "environment": "preview"
     },
     "production-apk": {
       "channel": "production",
       "distribution": "internal",
+      "environment": "production",
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "environment": "production"
     }
   },
   "submit": {
