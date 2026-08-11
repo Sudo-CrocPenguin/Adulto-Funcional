@@ -5,18 +5,19 @@ compromisos, gastos recurrentes y credenciales personales desde un único
 espacio. El repositorio contiene tres proyectos independientes que comparten el
 mismo dominio, pero se construyen y despliegan por separado.
 
-## Estado de la versión 0.2.0
+## Estado actual
 
 | Componente | Estado | Entorno |
 |---|---|---|
 | Backend y base de datos | Desplegados en el homelab | Docker Compose en `server1` |
-| Aplicación móvil | Primera versión funcional | Expo/EAS, Android y desarrollo con Expo Go |
+| Aplicación móvil | Versión 0.3.0 en preparación | Expo/EAS, Android y desarrollo con Expo Go |
 | Cliente web | Scaffold técnico | Sin desarrollo funcional ni despliegue |
 
-La API privada se encuentra en `http://10.119.54.220:8090` y solo debe
-alcanzarse desde la red ZeroTier autorizada. El frontend móvil consume esa URL;
-Expo no aloja el backend ni la base de datos. La aplicación web todavía no
-forma parte de la entrega.
+La API está publicada en
+`https://api-adulto-funcional.38-225-48-28.sslip.io` mediante Traefik y TLS. La
+aplicación móvil consume esa URL con cualquier conexión a Internet y no
+necesita ZeroTier. Expo no aloja el backend ni la base de datos. La aplicación
+web todavía no forma parte de la entrega.
 
 ## Capacidades actuales
 
@@ -38,11 +39,11 @@ informa expresamente y no simula una operación exitosa.
 ```text
 Aplicación móvil instalada
         │
-        │ HTTP privado sobre ZeroTier
+        │ HTTPS público
         ▼
-server1:10.119.54.220:8090
+Traefik en server1:443
         │
-        ├── Spring Boot 3 / Java 21
+        ├── Spring Boot 3 / Java 21 en red Docker
         ├── MariaDB 11.8
         └── Redis 7.4
 
@@ -100,10 +101,10 @@ npm start
 En `.env`, configura una URL alcanzable desde el dispositivo:
 
 ```dotenv
-EXPO_PUBLIC_API_URL=http://10.119.54.220:8090
+EXPO_PUBLIC_API_URL=https://api-adulto-funcional.38-225-48-28.sslip.io
 ```
 
-El teléfono necesita ZeroTier activo para consumir la API. Expo Go sirve para
+El teléfono solo necesita acceso normal a Internet. Expo Go sirve para
 desarrollo visual, pero las actualizaciones obligatorias se prueban en un APK
 creado con EAS. Consulta el
 [README móvil](<front end/movil/README.md>) y la

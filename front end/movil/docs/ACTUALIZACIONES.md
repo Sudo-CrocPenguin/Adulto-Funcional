@@ -51,7 +51,7 @@ monorepo no publican una actualización móvil.
 - Project ID: `ffd0b764-df14-4978-a424-de50e726a51b`.
 - Canal de distribución: `production`.
 - Runtime: política `appVersion`.
-- Versión nativa actual: `0.2.0` (`versionCode`/`buildNumber` 2).
+- Versión nativa actual: `0.3.0` (`versionCode`/`buildNumber` 3).
 
 La política `appVersion` evita que una actualización JavaScript se cargue en
 un binario con cambios nativos incompatibles. Cuando se agregue o actualice una
@@ -95,14 +95,12 @@ entornos EAS `preview` y `production`. El workflow publica con
 `--environment production`, por lo que builds y OTA incorporan la misma URL
 sin depender de la PC de desarrollo ni de una variable adicional de GitHub.
 La variable no es un secreto: contiene únicamente
-`http://10.119.54.220:8090`.
+`https://api-adulto-funcional.38-225-48-28.sslip.io`.
 
-La API es privada y el dispositivo debe pertenecer a la red ZeroTier del
-homelab. No se necesita un dominio en esta etapa. Android 0.2.0 habilita el
-tráfico HTTP mediante `expo-build-properties`; los datos viajan por el túnel
-cifrado de ZeroTier y el puerto no debe exponerse en el router. Antes de una
-distribución pública o una compilación iOS de producción se debe ofrecer HTTPS
-con certificado válido.
+La API se publica mediante Traefik con certificado TLS válido. El dispositivo
+solo necesita Internet y no requiere ZeroTier. Android 0.3.0 establece
+`usesCleartextTraffic=false`; el puerto directo de Spring Boot queda limitado a
+loopback y MariaDB/Redis continúan dentro de la red Docker.
 
 ## Primera instalación de prueba
 

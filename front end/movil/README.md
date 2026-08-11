@@ -99,12 +99,12 @@ Copia las variables locales:
 cp .env.example .env
 ```
 
-Edita `EXPO_PUBLIC_API_URL`. El backend se despliega por separado en `server1`;
-para este proyecto el teléfono debe estar unido a ZeroTier y usar su IP
-privada, nunca `localhost` ni la IP de la PC de desarrollo:
+Edita `EXPO_PUBLIC_API_URL`. El backend se despliega por separado en `server1`
+y se publica mediante Traefik con HTTPS. La aplicación instalada no necesita
+ZeroTier:
 
 ```dotenv
-EXPO_PUBLIC_API_URL=http://10.119.54.220:8090
+EXPO_PUBLIC_API_URL=https://api-adulto-funcional.38-225-48-28.sslip.io
 ```
 
 Los entornos EAS `preview` y `production` ya contienen esa misma variable. Los
@@ -122,9 +122,8 @@ npm start
 ```
 
 Expo mostrará un código QR. Para cargar Metro, el teléfono y la PC deben poder
-verse por LAN o mediante el túnel de Expo. Además, el teléfono debe mantener
-ZeroTier activo para alcanzar la API del servidor. Si la red bloquea Metro por
-LAN:
+verse por LAN o mediante el túnel de Expo. La API productiva solo requiere
+Internet. Si la red bloquea Metro por LAN:
 
 ```bash
 npm run start:tunnel

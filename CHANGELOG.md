@@ -6,6 +6,19 @@ semántico. El historial Git conserva el detalle progresivo de cada condición.
 
 ## No publicado
 
+### Cambiado
+
+- La aplicación móvil consume la API pública por HTTPS y ya no requiere
+  ZeroTier para funcionar.
+- La versión nativa móvil avanza a `0.3.0` (`versionCode`/`buildNumber` 3) y
+  deshabilita el tráfico HTTP claro en Android.
+- Spring Boot se publica mediante Traefik sin exponer MariaDB ni Redis.
+
+### Seguridad
+
+- El puerto directo de la API queda limitado a loopback; el único ingreso
+  público del backend es el proxy TLS por 443.
+
 ### Documentación
 
 - Auditoría y corrección integral de documentación end-to-end.

@@ -77,7 +77,7 @@ la instalación de CI a `npm ci`.
 
 | Área | Caso | Resultado esperado |
 |---|---|---|
-| Conectividad | Abrir healthcheck desde el teléfono | `UP` por ZeroTier |
+| Conectividad | Abrir healthcheck desde el teléfono | `UP` por HTTPS sin VPN |
 | Registro | Crear cuenta válida | `201`, sesión abierta y refresh seguro |
 | Registro | Email duplicado o datos inválidos | Error de campo o negocio visible |
 | Login | Credenciales válidas | Inicio autenticado |

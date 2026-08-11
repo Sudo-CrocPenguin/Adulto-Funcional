@@ -60,7 +60,9 @@ versión; no se marca como completado por defecto.
 - [ ] MariaDB y Redis no publican puertos al host.
 - [ ] Los tres servicios muestran `healthy`.
 - [ ] Docker inicia automáticamente y los servicios usan `unless-stopped`.
-- [ ] El healthcheck responde desde el host y desde ZeroTier.
+- [ ] El healthcheck responde desde el host y públicamente por HTTPS.
+- [ ] El puerto directo de Spring Boot está limitado a loopback.
+- [ ] MariaDB y Redis continúan sin puertos publicados.
 - [ ] Registro, refresh, consulta y eliminación con una cuenta descartable pasan.
 
 ## Datos y recuperación
