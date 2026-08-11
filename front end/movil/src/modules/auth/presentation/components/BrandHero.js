@@ -1,5 +1,4 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors } from '../../../../shared/theme/tokens';
@@ -8,31 +7,12 @@ export function BrandHero() {
   return (
     <SafeAreaView edges={['top']} style={styles.hero}>
       <View style={styles.content}>
-        <View
+        <Image
           accessibilityLabel="Logotipo de Adulto Funcional"
           accessibilityRole="image"
+          source={require('../../../../../assets/icon.png')}
           style={styles.logo}
-        >
-          <MaterialCommunityIcons
-            color={colors.avatar}
-            name="account"
-            size={52}
-            style={styles.avatar}
-          />
-          <View style={styles.shieldContainer}>
-            <MaterialCommunityIcons
-              color={colors.shield}
-              name="shield"
-              size={43}
-            />
-            <MaterialCommunityIcons
-              color={colors.lock}
-              name="lock"
-              size={17}
-              style={styles.lock}
-            />
-          </View>
-        </View>
+        />
 
         <Text style={styles.title}>Adulto Funcional</Text>
         <Text style={styles.subtitle}>
@@ -56,27 +36,11 @@ const styles = StyleSheet.create({
     paddingTop: 14,
   },
   logo: {
-    alignItems: 'center',
     backgroundColor: colors.surface,
     borderRadius: 44,
     height: 88,
-    justifyContent: 'flex-start',
-    overflow: 'hidden',
-    position: 'relative',
+    resizeMode: 'contain',
     width: 88,
-  },
-  avatar: {
-    marginTop: 2,
-  },
-  shieldContainer: {
-    alignItems: 'center',
-    bottom: 2,
-    height: 43,
-    justifyContent: 'center',
-    position: 'absolute',
-  },
-  lock: {
-    position: 'absolute',
   },
   title: {
     color: colors.surface,
@@ -95,4 +59,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-

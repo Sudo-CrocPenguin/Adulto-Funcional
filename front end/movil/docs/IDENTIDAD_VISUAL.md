@@ -21,7 +21,7 @@ pequeños.
 
 | Archivo | Uso | Tamaño |
 |---|---|---:|
-| `assets/icon.png` | Icono general de la aplicación | 1024 × 1024 |
+| `assets/icon.png` | Icono general y logo del encabezado de autenticación | 1024 × 1024 |
 | `assets/adaptive-icon.png` | Icono adaptable de Android | 1024 × 1024 |
 | `assets/splash-icon.png` | Imagen de arranque | 1024 × 1024 |
 | `assets/favicon.png` | Identificador auxiliar para el modo web de desarrollo | 48 × 48 |
@@ -41,4 +41,3 @@ ni el escudo.
   build. Una OTA de EAS no sustituye el icono instalado por el sistema.
 - Ejecuta `npx expo-doctor` y revisa `npx expo config --type public` antes de
   publicar el nuevo binario.
-
