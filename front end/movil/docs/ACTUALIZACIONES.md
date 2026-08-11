@@ -10,9 +10,10 @@ solo entonces permite continuar.
 
 El proyecto aplica una política estricta: una instalación de distribución que
 no pueda confirmar que está actualizada queda bloqueada y ofrece únicamente la
-acción `Reintentar`. Esto cumple el requisito de impedir el uso de una versión
-desactualizada, pero también significa que el primer arranque y cada regreso
-desde segundo plano necesitan conexión con el servicio de actualizaciones.
+acción `Reintentar`. Comprueba al iniciar, al regresar desde segundo plano y
+cada cinco minutos mientras permanece activa. Esto cumple el requisito de
+impedir el uso prolongado de una versión desactualizada, pero también significa
+que esas comprobaciones necesitan conexión con el servicio de actualizaciones.
 
 EAS Update no incluye una opción nativa denominada "actualización
 obligatoria". La obligatoriedad se implementa en este cliente mediante
@@ -32,6 +33,11 @@ push a main con cambios en front end/movil/**
        ├─ con actualización: descarga, muestra progreso y reinicia
        └─ error de red/servicio: bloquea la app y permite reintentar
 ```
+
+Si el dispositivo mantiene la aplicación abierta, repite la consulta cada
+cinco minutos. Si está suspendida, el sistema operativo no ejecuta el cliente y
+la consulta ocurre inmediatamente cuando vuelve a primer plano. No se requiere
+un servicio de notificaciones ni un endpoint del backend para este proceso.
 
 El flujo está definido en
 `.github/workflows/mobile-eas-update.yml` y solo se activa mediante un `push` a
