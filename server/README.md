@@ -76,10 +76,17 @@ La referencia de esta entrega es:
 | Endpoints REST propios | 41 |
 | Migraciones Flyway | 14 |
 | Entidades con `@Version` | 7 |
-| Regresión `./mvnw clean verify` | 137 pruebas, 0 fallos |
+| Regresión `./mvnw clean verify` | 137 pruebas, 1 fallo conocido |
 | Base de integración | MariaDB 11.8.8 mediante Testcontainers |
 
 El healthcheck público está en `GET /actuator/health`.
+
+La referencia fue auditada el 11 de agosto de 2026. El único fallo está en
+`ResourceOwnershipHttpIntegrationTest`: su fixture crea un evento el 10 de
+agosto de 2026 y la API lo rechaza correctamente por ser pasado. No se debe
+declarar una release verde hasta sustituir esa fecha fija por un reloj
+controlado o una fecha calculada. Consulta la
+[matriz de pruebas](../docs/TEST_MATRIX.md).
 
 ## Módulos
 
@@ -319,6 +326,11 @@ Los listados nunca incluyen la contraseña descifrada. Solo
 El build de Docker ejecuta las pruebas unitarias. Las pruebas que requieren
 Testcontainers se ejecutan fuera del build porque necesitan acceso al daemon de
 Docker.
+
+`./mvnw test` descubre también las clases `*IntegrationTest` y
+`*HttpIntegrationTest`; no es un alias de “solo unitarias”. El build de Docker
+usa una exclusión explícita para ejecutar únicamente pruebas que no requieren
+el daemon.
 
 ## Migraciones
 

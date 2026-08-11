@@ -22,11 +22,13 @@ actualizarla sin reescribir el contexto histórico del ADR.
 | ADR | Decisión | Estado | Implementación |
 |---|---|---|---|
 | [0001](0001-master-key-contract.md) | Contrato canónico de Master Key | Aceptada | Completa |
-| [0002](0002-authentication-sessions.md) | Sesiones de autenticación y revocación | Aceptada | Completa |
-| [0003](0003-category-ownership.md) | Categorías de sistema y personales | Aceptada | Completa |
+| [0002](0002-authentication-sessions.md) | Sesiones de autenticación y revocación | Parcialmente reemplazada por 0007 | Completa salvo detección nativa |
+| [0003](0003-category-ownership.md) | Categorías de sistema y personales | Parcialmente reemplazada por 0008 | Completa salvo orden de borrado |
 | [0004](0004-api-error-contract.md) | Contrato uniforme de errores HTTP | Aceptada | Completa |
 | [0005](0005-pagination-time-money.md) | Paginación, tiempo y precisión monetaria | Aceptada | Completa |
 | [0006](0006-master-key-error-semantics.md) | Semántica HTTP de los errores de Master Key | Aceptada | Completa |
+| [0007](0007-native-client-detection.md) | Detección de cliente nativo | Aceptada | Completa |
+| [0008](0008-account-deletion-cascade.md) | Eliminación de cuenta por cascada | Aceptada | Completa |
 
 ## Evidencia de implementación
 
@@ -38,6 +40,8 @@ actualizarla sin reescribir el contexto histórico del ADR.
 - ADR 0005: `PageResult`, consultas paginadas, `Clock`, UTC/IANA y validación de
   `DECIMAL(10,2)`.
 - ADR 0006: códigos `403` especializados y compatibilidad de la ruta histórica.
+- ADR 0007: `ClientTypeResolver`, contrato web/nativo y headers del cliente Expo.
+- ADR 0008: caso de uso de borrado y cascadas de V4, V6 y V10.
 
 La [referencia API](../API_REFERENCE.md), la [guía de seguridad](../SECURITY.md)
 y la [guía operativa](../OPERATIONS.md) describen el comportamiento resultante.

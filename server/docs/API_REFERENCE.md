@@ -7,8 +7,8 @@
 - Tamaño máximo del cuerpo: 1 MiB por defecto.
 - Identificadores: UUID v7 en formato canónico.
 - Fechas: ISO 8601 `YYYY-MM-DD`.
-- Horas civiles: ISO 8601 sin offset, por ejemplo `2026-08-04T09:30:00`.
-- Instantes: ISO 8601 UTC, por ejemplo `2026-08-04T14:30:00Z`.
+- Horas civiles: ISO 8601 sin offset, por ejemplo `2099-08-04T09:30:00`.
+- Instantes: ISO 8601 UTC, por ejemplo `2099-08-04T14:30:00Z`.
 - Los PATCH modifican únicamente campos no nulos; un string vacío no significa
   borrar y se rechaza donde existe una regla de no-vacío.
 
@@ -258,7 +258,7 @@ Creación:
 {
   "movementType": "EXPENSE",
   "amount": 125000.50,
-  "movementDate": "2026-08-03",
+  "movementDate": "2099-08-03",
   "description": "Mercado semanal",
   "categoryId": "01988e6b-0c00-7000-8000-000000000001"
 }
@@ -317,7 +317,8 @@ Filtros: `type`, `searchTerm` y paginación. Orden permitido: `name`, `type`,
 | `PATCH` | `/api/finances/fixed-expenses/{id}` | `UpdateFixedExpenseRequest` | gasto actualizado |
 | `DELETE` | `/api/finances/fixed-expenses/{id}` | — | confirmación |
 
-Ejemplo:
+Ejemplo con fechas deliberadamente lejanas para evitar que el contrato de
+creación caduque; reemplázalas por fechas válidas del caso real:
 
 ```json
 {
@@ -325,9 +326,9 @@ Ejemplo:
   "frequency": "MONTHLY",
   "amount": 1500000.00,
   "status": "ACTIVE",
-  "startDate": "2026-08-01",
+  "startDate": "2099-08-01",
   "reminderDays": 3,
-  "nextDueDate": "2026-09-01",
+  "nextDueDate": "2099-09-01",
   "categoryId": "01988e6b-0c00-7000-8000-000000000003"
 }
 ```
@@ -355,18 +356,19 @@ Filtros: `status`, `categoryId`, `searchTerm` y paginación. Orden permitido:
 | `PATCH` | `/api/agenda/events/{eventId}` | `EventUpdateRequest` | evento actualizado |
 | `DELETE` | `/api/agenda/events/{eventId}` | — | confirmación |
 
-Ejemplo:
+Ejemplo con una fecha futura deliberadamente lejana. En una prueba real se debe
+usar la zona y una fecha futura coherente con el reloj del servidor:
 
 ```json
 {
   "title": "Cita médica",
   "priority": "Alta",
-  "eventDate": "2026-08-10",
+  "eventDate": "2099-08-10",
   "zoneId": "America/Bogota",
   "frequency": 0,
-  "reminder": "2026-08-10T08:30:00",
-  "startHour": "2026-08-10T09:00:00",
-  "endHour": "2026-08-10T10:00:00",
+  "reminder": "2099-08-10T08:30:00",
+  "startHour": "2099-08-10T09:00:00",
+  "endHour": "2099-08-10T10:00:00",
   "description": "Control anual",
   "status": "Pendiente",
   "categoryId": "01988e6b-0c00-7000-8000-000000000011"
@@ -406,7 +408,7 @@ Estado:
 {
   "configured": true,
   "verified": true,
-  "expiresAt": "2026-08-03T20:00:00Z"
+  "expiresAt": "2099-08-03T20:00:00Z"
 }
 ```
 
@@ -464,7 +466,7 @@ Creación:
 {
   "applicationName": "GitHub",
   "password": "secreto almacenado",
-  "lastChangeDate": "2026-08-03"
+  "lastChangeDate": "2099-08-03"
 }
 ```
 
