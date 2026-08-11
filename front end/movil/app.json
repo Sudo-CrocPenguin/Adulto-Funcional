@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Adulto Funcional",
+    "owner": "servermiguel1",
     "slug": "adulto-funcional",
     "version": "0.1.0",
     "description": "Organizacion personal de finanzas, agenda y credenciales.",
@@ -9,16 +10,32 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "url": "https://u.expo.dev/ffd0b764-df14-4978-a424-de50e726a51b",
+      "checkAutomatically": "NEVER",
+      "fallbackToCacheTimeout": 0
+    },
+    "extra": {
+      "eas": {
+        "projectId": "ffd0b764-df14-4978-a424-de50e726a51b"
+      }
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
+      "buildNumber": "1",
       "supportsTablet": true,
       "bundleIdentifier": "com.adultofuncional.mobile"
     },
     "android": {
+      "versionCode": 1,
       "package": "com.adultofuncional.mobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
