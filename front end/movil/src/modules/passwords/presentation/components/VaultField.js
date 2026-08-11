@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 export function VaultField({
@@ -12,6 +12,11 @@ export function VaultField({
   ...inputProps
 }) {
   const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!value) setVisible(false);
+  }, [value]);
+
   return (
     <View style={styles.group}>
       <Text style={[styles.label, { color: palette.text }]}>{label}</Text>

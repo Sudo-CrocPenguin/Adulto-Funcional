@@ -116,6 +116,7 @@ export function CredentialFormSheet({ credential, onClose, onSubmit, palette, vi
                   value={form.applicationName}
                 />
                 <View style={styles.passwordHeading}>
+                  <Text style={[styles.strengthLabel, { color: palette.textMuted }]}>Fortaleza estimada</Text>
                   <View style={[styles.strengthBadge, { backgroundColor: colors.background }]}> 
                     <Text style={[styles.strengthText, { color: colors.text }]}>{strength.label}</Text>
                   </View>
@@ -211,10 +212,8 @@ const styles = StyleSheet.create({
   passwordHeading: {
     alignItems: 'center',
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: -30,
-    position: 'relative',
-    zIndex: 1,
+    justifyContent: 'space-between',
+    marginBottom: 8,
   },
   pressed: {
     opacity: 0.62,
@@ -247,6 +246,10 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     paddingHorizontal: 12,
     paddingVertical: 6,
+  },
+  strengthLabel: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   strengthText: {
     fontSize: 12,
