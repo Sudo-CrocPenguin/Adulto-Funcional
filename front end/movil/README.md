@@ -49,6 +49,12 @@ se consultan individualmente, viven solo en memoria y vuelven a ocultarse a los
 30 segundos. Consulta [docs/CONTRASENAS.md](./docs/CONTRASENAS.md) para conocer
 el contrato, los estados y las decisiones de seguridad.
 
+Perfil consulta y edita los datos reales de la cuenta, conserva la sesión al
+actualizarlos y calcula compromisos completados, racha máxima, contraseñas
+disponibles y gastos fijos registrados. Consulta
+[docs/PERFIL.md](./docs/PERFIL.md) para conocer las fuentes, reglas y
+limitaciones del contrato actual.
+
 SDK 54 se mantiene de forma intencional mientras Expo Go para dispositivos
 físicos use esa versión. Expo SDK 54 corresponde a React Native 0.81 y React
 19.1.
@@ -141,6 +147,7 @@ src/
     dashboard/
     finances/
     passwords/
+    profile/
       domain/       entidades y contratos
       application/  casos de uso
       infrastructure/adaptadores de API y dispositivo
