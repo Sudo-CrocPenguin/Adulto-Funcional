@@ -319,6 +319,12 @@ Un SCA exitoso no demuestra ausencia de vulnerabilidades desconocidas. Debe
 formar parte de CI y ejecutarse con una base de datos de vulnerabilidades
 actualizada.
 
+Actualmente solo el workflow móvil vive en `.github/workflows` raíz. El
+workflow histórico dentro de `server/.github/workflows` no es ejecutado por
+GitHub Actions en este monorepo. Hasta crear CI raíz para el backend,
+`clean verify` y SCA son controles manuales de release y su evidencia debe
+registrarse. Consulta la [matriz de pruebas](../../docs/TEST_MATRIX.md).
+
 ## Checklist de producción
 
 - [ ] TLS válido y redirección HTTP→HTTPS.

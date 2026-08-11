@@ -1,9 +1,10 @@
 # ADR 0003: Categorías de sistema y categorías personales
 
-- Estado: aceptada
-- Implementación: completa
+- Estado: aceptada; eliminación de cuenta reemplazada parcialmente por ADR 0008
+- Implementación: completa salvo el orden explícito sustituido
 - Fecha: 2026-07-31
 - Alcance: módulos `finances`, `agenda` y persistencia
+- Reemplazada parcialmente por: [ADR 0008](0008-account-deletion-cascade.md)
 
 ## Contexto
 

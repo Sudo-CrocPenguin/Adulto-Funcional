@@ -76,6 +76,20 @@ El workflow falla antes de publicar cuando falta el token. No necesita que el
 backend ni la base de datos estén desplegados: EAS distribuye únicamente el
 bundle y los recursos del frontend móvil.
 
+### Estado verificado de 0.2.0
+
+El workflow ejecutado después de publicar `main` falló en `Comprobar secretos
+requeridos` porque `EXPO_TOKEN` no estaba configurado. Para cerrar el flujo:
+
+1. crear el token en Expo;
+2. guardarlo como secreto `EXPO_TOKEN` del repositorio;
+3. reejecutar el workflow fallido o publicar un nuevo cambio móvil en `main`;
+4. comprobar que pruebas, Expo Doctor y `eas update` terminan en verde;
+5. instalar un binario compatible y validar la descarga en un dispositivo.
+
+No se debe describir la publicación automática como operativa hasta completar
+estos pasos.
+
 `EXPO_PUBLIC_API_URL` está configurada como variable de proyecto en los
 entornos EAS `preview` y `production`. El workflow publica con
 `--environment production`, por lo que builds y OTA incorporan la misma URL
@@ -104,8 +118,16 @@ Instala el APK entregado por EAS en el dispositivo. Para publicar una prueba
 manual en su mismo canal:
 
 ```bash
-npx eas-cli update --channel production --message "prueba OTA"
+npx eas-cli update \
+  --channel production \
+  --environment production \
+  --message "prueba OTA"
 ```
+
+`--environment production` es obligatorio en este proyecto: garantiza que la
+publicación incorpore `EXPO_PUBLIC_API_URL` desde el mismo entorno EAS que los
+builds de producción. La guía oficial de Expo explica el uso de entornos en
+<https://docs.expo.dev/eas/environment-variables/usage/>.
 
 Al abrir de nuevo el APK, la pantalla obligatoria debe consultar, descargar y
 reiniciar antes de mostrar autenticación o inicio. Para una entrega de tienda
