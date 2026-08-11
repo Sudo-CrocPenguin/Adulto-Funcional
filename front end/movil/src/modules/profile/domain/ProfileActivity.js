@@ -41,7 +41,10 @@ export class ProfileActivity {
       completedCommitments: commitments.length,
       fixedExpensesCount: Number(fixedExpensesCount) || 0,
       maximumStreakDays: maximumCommitmentStreak(commitments),
-      passwordsCount: Number.isFinite(Number(passwordsCount)) ? Number(passwordsCount) : null,
+      passwordsCount: passwordsCount !== null && passwordsCount !== undefined
+        && Number.isFinite(Number(passwordsCount))
+        ? Number(passwordsCount)
+        : null,
     });
   }
 }

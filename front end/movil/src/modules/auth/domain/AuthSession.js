@@ -28,12 +28,20 @@ export class AuthSession {
 
   withProfile(profile) {
     return new AuthSession({
-      ...this,
+      accountId: this.accountId,
       createdAt: profile.createdAt,
       email: profile.email,
+      expiresIn: this.expiresIn,
+      hasMasterKey: this.hasMasterKey,
       lastnames: profile.lastnames,
       names: profile.names,
       phone: profile.phone,
+      refreshExpiresIn: this.refreshExpiresIn,
+      refreshToken: this.refreshToken,
+      roles: this.roles,
+      sessionId: this.sessionId,
+      token: this.accessToken,
+      tokenType: this.tokenType,
     });
   }
 }
