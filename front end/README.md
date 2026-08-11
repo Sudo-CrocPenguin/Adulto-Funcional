@@ -1,38 +1,88 @@
 # Frontend de Adulto Funcional
 
-Este directorio reúne los clientes que consumen la API REST de Adulto
-Funcional. Los dos clientes comparten el mismo dominio de negocio, pero se
-mantienen como proyectos independientes para que cada plataforma pueda usar
-las capacidades y el ciclo de entrega que le corresponden.
+Este directorio contiene los dos clientes del sistema. Comparten contratos de
+negocio y el mismo repositorio Git, pero son proyectos independientes: no
+comparten dependencias, build ni despliegue.
 
 ## Proyectos
 
-| Proyecto | Tecnología | Estado |
-|---|---|---|
-| [`movil`](./movil) | Expo SDK 54, React Native y JavaScript | Desarrollo activo |
-| [`web`](./web) | React, Vite y TypeScript | Scaffold; desarrollo pospuesto |
+| Proyecto | Tecnología | Estado | Despliegue |
+|---|---|---|---|
+| [`movil`](./movil) | Expo SDK 54, React Native y JavaScript | Primera versión funcional | Expo/EAS |
+| [`web`](./web) | React 19, Vite 8 y TypeScript | Scaffold sin negocio | No desplegado |
 
-El desarrollo comienza por el cliente móvil. La interfaz web permanecerá en
-su scaffold hasta que se defina su experiencia visual.
+El cliente móvil implementa autenticación, inicio, compromisos, finanzas,
+gastos fijos, análisis, bóveda, perfil, tema y actualizaciones obligatorias. El
+cliente web conserva únicamente el scaffold hasta definir su experiencia y
+alcance.
 
-## Flujo de ramas
+## Arquitectura cliente-servidor
 
-Los dos proyectos pertenecen al repositorio raíz, por lo que comparten una
-misma rama Git. El trabajo nuevo nace de `develop` en ramas `feature/*`, se
-integra nuevamente en `develop` y solo llega a `main` mediante una release.
+```text
+Móvil instalado ──HTTP privado/ZeroTier──► server1:8090
+Web futuro      ──HTTPS/cookies/CSRF─────► API pública futura
 
-La rama inicial del frontend es `feature/frontend-foundation`. Ningún flujo
-automatizado de este directorio realiza `git push`.
+Expo/EAS distribuye móvil, pero no aloja API ni base de datos.
+server1 aloja Spring Boot, MariaDB y Redis, pero no sirve Metro ni el web.
+```
 
-## Backend
+La URL móvil vigente es:
 
-Los clientes se conectan al servidor Spring Boot disponible en `../server`.
-La URL cambia según el dispositivo:
+```dotenv
+EXPO_PUBLIC_API_URL=http://10.119.54.220:8090
+```
 
-- Emulador Android: normalmente `http://10.0.2.2:8080`.
-- Simulador iOS: normalmente `http://localhost:8080`.
-- Expo Go en un teléfono: `http://<IP-LAN-DEL-EQUIPO>:8080`.
+El teléfono debe pertenecer a la red ZeroTier autorizada. Para desarrollo con
+un backend local se puede usar `10.0.2.2` desde un emulador Android,
+`localhost` desde un simulador iOS o la IP LAN desde un teléfono, siempre que
+el servidor escuche en una interfaz alcanzable y su CORS lo permita.
 
-El teléfono y el equipo que ejecuta el backend deben estar en la misma red y
-el puerto del backend debe ser accesible desde esa red.
+## Diferencia de transporte de autenticación
 
+| Cliente | Access token | Refresh token | CSRF |
+|---|---|---|---|
+| Móvil nativo | Body inicial y `Authorization: Bearer` | Body y almacenamiento seguro | No para Bearer |
+| Navegador | Cookie HttpOnly | Cookie HttpOnly limitada a refresh | Obligatorio en mutaciones por cookie |
+
+Expo web sirve para revisión visual, pero no debe usarse para validar como si
+fuera una aplicación nativa: el navegador y el móvil usan contratos de
+transporte diferentes.
+
+## Instalación
+
+Móvil tiene lockfile y se instala de forma reproducible:
+
+```bash
+cd "front end/movil"
+npm ci
+```
+
+Web todavía no tiene lockfile registrado:
+
+```bash
+cd "front end/web"
+npm install
+```
+
+Cuando comience el desarrollo web se debe registrar `package-lock.json` y usar
+`npm ci` en automatización.
+
+## Flujo Git
+
+Los dos proyectos pertenecen al repositorio raíz y comparten sus ramas. El
+trabajo nace de `develop` en `feature/*`, `bugfix/*`, `docs/*`, `refactor/*` o
+`chore/*`. Una `release/*` estabiliza el paso a `main`; los hotfix nacen de
+`main` y regresan también a `develop`.
+
+La rama histórica `feature/frontend-foundation` ya fue integrada. La versión
+móvil actual fue publicada como `v0.2.0`; no debe tratarse esa rama como punto
+de partida para trabajo nuevo. Consulta [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+## Documentación
+
+- [Cliente móvil](./movil/README.md)
+- [Cliente web](./web/README.md)
+- [Ejecución end-to-end](../docs/END_TO_END.md)
+- [Matriz de pruebas](../docs/TEST_MATRIX.md)
+- [Contrato API](../server/docs/API_REFERENCE.md)
+- [Actualizaciones móviles](./movil/docs/ACTUALIZACIONES.md)

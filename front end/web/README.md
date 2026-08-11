@@ -1,32 +1,102 @@
-# React + TypeScript + Vite
+# Adulto Funcional Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Scaffold del futuro cliente web de Adulto Funcional, creado con React,
+TypeScript y Vite. Todavía no implementa pantallas de negocio, autenticación ni
+consumo de la API y no forma parte del despliegue de la versión 0.2.0.
 
-Currently, two official plugins are available:
+## Estado y alcance
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+El proyecto conserva una base técnica para iniciar el desarrollo cuando se
+aprueben los diseños web. Su presencia en el repositorio no significa que la
+aplicación móvil se adapte automáticamente al navegador ni que exista una
+versión web productiva.
 
-## React Compiler
+Antes de declararlo funcional se deben implementar como mínimo:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- configuración de entornos y cliente HTTP;
+- autenticación por cookies HttpOnly y protección CSRF;
+- rutas públicas y autenticadas;
+- módulos de inicio, compromisos, finanzas, gastos fijos, bóveda y perfil;
+- estados de carga, error, colección vacía y accesibilidad;
+- pruebas unitarias, integración y aceptación;
+- build reproducible, CI y estrategia de despliegue HTTPS.
 
-## Expanding the Oxlint configuration
+## Tecnologías actuales
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+| Herramienta | Uso |
+|---|---|
+| React 19 | interfaz |
+| TypeScript 6 | tipado estático |
+| Vite 8 | desarrollo y build |
+| Oxlint | análisis estático |
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+Consulta `package.json` para las versiones exactas.
+
+## Requisitos
+
+- Node.js compatible con Vite 8.
+- npm.
+
+El proyecto todavía no registra `package-lock.json`. Durante el estado de
+scaffold se instala con `npm install`; al comenzar el desarrollo funcional se
+debe registrar el lockfile y usar `npm ci` en CI.
+
+## Ejecución
+
+```bash
+cd "front end/web"
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Vite mostrará la URL local, normalmente `http://localhost:5173`.
+
+Otros comandos:
+
+| Comando | Función |
+|---|---|
+| `npm run lint` | Ejecuta Oxlint |
+| `npm run build` | Comprueba TypeScript y genera `dist` |
+| `npm run preview` | Sirve localmente el build existente |
+
+## Conexión futura con la API
+
+El navegador no debe imitar los headers del cliente móvil para obtener tokens
+en el body. El contrato previsto usa:
+
+- cookies `token` y `refresh_token` con `HttpOnly`;
+- credenciales incluidas en las solicitudes HTTP;
+- token CSRF para mutaciones autenticadas por cookie;
+- origen permitido exactamente en CORS;
+- HTTPS y cookies `Secure` en producción.
+
+La referencia vigente está en
+[API_REFERENCE.md](../../server/docs/API_REFERENCE.md) y
+[SECURITY.md](../../server/docs/SECURITY.md). La URL de producción web, dominio
+y hosting aún no están definidos.
+
+## Arquitectura propuesta
+
+Al comenzar el desarrollo, cada módulo debe separar:
+
+```text
+src/
+  composition/       dependencias y configuración
+  core/              HTTP, sesión y errores
+  modules/<modulo>/
+    domain/           modelos y reglas independientes de React
+    application/      casos de uso
+    infrastructure/   adaptadores HTTP
+    presentation/     rutas, páginas y componentes
+  shared/             componentes sin negocio propio
+```
+
+Esta estructura es una dirección documentada, no una afirmación sobre el
+scaffold actual.
+
+## Criterio para cambiar su estado
+
+El estado puede pasar de `scaffold` a `desarrollo activo` cuando existan un
+diseño aprobado, configuración de API, lockfile y primera prueba. Solo puede
+marcarse `desplegado` cuando haya URL, HTTPS, variables de entorno, CI y una
+validación autenticada contra un backend autorizado.
