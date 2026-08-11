@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppDependenciesProvider } from './src/composition/AppDependenciesContext';
 import { createAppDependencies } from './src/composition/createAppDependencies';
 import { RootNavigator } from './src/navigation/RootNavigator';
+import { MandatoryUpdateGate } from './src/modules/updates/presentation/MandatoryUpdateGate';
 import { AppSessionProvider } from './src/session/AppSessionContext';
 import { AppThemeProvider } from './src/theme/AppThemeContext';
 
@@ -16,9 +17,11 @@ export default function App() {
       <StatusBar backgroundColor="#35598D" style="light" />
       <AppDependenciesProvider value={dependencies}>
         <AppThemeProvider preferenceStore={dependencies.themePreferenceStore}>
-          <AppSessionProvider restoreSession={dependencies.restoreSession}>
-            <RootNavigator />
-          </AppSessionProvider>
+          <MandatoryUpdateGate ensureLatestUpdate={dependencies.ensureLatestUpdate}>
+            <AppSessionProvider restoreSession={dependencies.restoreSession}>
+              <RootNavigator />
+            </AppSessionProvider>
+          </MandatoryUpdateGate>
         </AppThemeProvider>
       </AppDependenciesProvider>
     </SafeAreaProvider>

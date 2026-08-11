@@ -31,6 +31,8 @@ import {
 import { HttpPasswordVaultRepository } from '../modules/passwords/infrastructure/HttpPasswordVaultRepository';
 import { LoadProfileUseCase, UpdateProfileUseCase } from '../modules/profile/application/ProfileUseCases';
 import { HttpProfileRepository } from '../modules/profile/infrastructure/HttpProfileRepository';
+import { EnsureLatestUpdateUseCase } from '../modules/updates/application/EnsureLatestUpdateUseCase';
+import { ExpoApplicationUpdateRepository } from '../modules/updates/infrastructure/ExpoApplicationUpdateRepository';
 
 export function createAppDependencies() {
   const apiClient = new ApiClient({
@@ -45,6 +47,7 @@ export function createAppDependencies() {
   const passwordVaultRepository = new HttpPasswordVaultRepository(apiClient);
   const profileRepository = new HttpProfileRepository(apiClient);
   const themePreferenceStore = new AsyncThemePreferenceStore();
+  const applicationUpdateRepository = new ExpoApplicationUpdateRepository();
 
   return Object.freeze({
     changeMasterKey: new ChangeMasterKeyUseCase(passwordVaultRepository),
@@ -54,6 +57,7 @@ export function createAppDependencies() {
     createMovement: new CreateMovementUseCase(financeRepository),
     createCredential: new CreateCredentialUseCase(passwordVaultRepository),
     deleteCredential: new DeleteCredentialUseCase(passwordVaultRepository),
+    ensureLatestUpdate: new EnsureLatestUpdateUseCase(applicationUpdateRepository),
     loginAccount: new LoginAccountUseCase({
       authRepository,
       sessionStore,
