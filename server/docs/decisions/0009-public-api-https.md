@@ -48,6 +48,9 @@ dominio propio con DNS dinámico puede sustituirlo sin cambiar el código.
   seguridad siguen activos sobre HTTPS.
 - El proxy no altera `X-Client-Type`, `User-Agent`, `Origin`, `Referer`,
   `Authorization`, CSRF ni `X-Trace-Id`.
+- Redis usa el alias interno exclusivo `adulto-funcional-redis`; el nombre
+  genérico `redis` no se usa desde la aplicación porque puede colisionar con el
+  servicio Redis propio de Coolify al conectar Spring Boot a ambas redes.
 - CORS continúa usando orígenes web exactos. La aplicación nativa no depende
   de CORS porque no envía un origen de navegador.
 - El healthcheck público permite comprobar disponibilidad, pero no expone

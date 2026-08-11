@@ -68,7 +68,7 @@ El Compose actual conserva el límite HTTP predeterminado de 1 MiB.
 
 | Variable | Predeterminado | Uso |
 |---|---|---|
-| `REDIS_HOST` | `redis` en prod | host |
+| `REDIS_HOST` | `adulto-funcional-redis` en Compose | alias exclusivo en la red interna |
 | `REDIS_PORT` | `6379` | puerto |
 | `REDIS_PASSWORD` | obligatorio en prod | autenticación y fail-fast |
 

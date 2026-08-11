@@ -36,7 +36,9 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - internal
+      internal:
+        aliases:
+          - adulto-funcional-redis
 
   # Aplicación Spring Boot
   app:
@@ -76,7 +78,7 @@ services:
       APP_FIXED_EXPENSE_CRON: ${APP_FIXED_EXPENSE_CRON:-0 5 * * * *}
       APP_FIXED_EXPENSE_BATCH_SIZE: ${APP_FIXED_EXPENSE_BATCH_SIZE:-100}
       APP_FIXED_EXPENSE_MAX_BATCHES: ${APP_FIXED_EXPENSE_MAX_BATCHES:-10}
-      REDIS_HOST: redis
+      REDIS_HOST: ${REDIS_HOST:-adulto-funcional-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     ports:
