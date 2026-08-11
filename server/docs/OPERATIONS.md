@@ -44,6 +44,7 @@ La configuración común aplica:
 | `SERVER_ADDRESS` | `127.0.0.1` | bind local; Compose usa `0.0.0.0` dentro del contenedor |
 | `SERVER_HOST_ADDRESS` | `127.0.0.1` | bind publicado por Compose |
 | `SERVER_HOST_PORT` | `8080` | puerto publicado por Compose |
+| `API_PUBLIC_HOST` | — | hostname HTTPS usado por el overlay de Coolify |
 | `APP_HTTP_MAX_REQUEST_BODY_SIZE` | `1MB` | límite del filtro HTTP al ejecutar la app directamente |
 
 El Compose actual conserva el límite HTTP predeterminado de 1 MiB.
@@ -238,6 +239,34 @@ docker network inspect "${COOLIFY_NETWORK:-coolify}"
 Configura HTTPS en el proxy. No publiques MariaDB ni Redis. El proxy debe
 preservar `Origin`, cookies, headers CSRF y `X-Trace-Id`.
 
+En `server1`, el puerto 443 es público y el 80 no está disponible. El resolver
+`letsencrypt` de Traefik debe habilitar el desafío TLS-ALPN:
+
+```yaml
+- '--certificatesresolvers.letsencrypt.acme.tlschallenge=true'
+```
+
+El `.env` productivo conserva:
+
+```dotenv
+SERVER_HOST_ADDRESS=127.0.0.1
+SERVER_HOST_PORT=8090
+COOLIFY_NETWORK=coolify
+API_PUBLIC_HOST=api-adulto-funcional.38-225-48-28.sslip.io
+```
+
+Arranca siempre el despliegue público con ambos archivos:
+
+```bash
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.coolify.yml \
+  up -d --build
+```
+
+Comprueba que solo `app` pertenezca a las redes `internal` y `coolify`;
+MariaDB y Redis deben permanecer únicamente en `internal`.
+
 ## Build y pruebas
 
 ```bash
@@ -424,6 +453,13 @@ misma operación y recrea ambos servicios.
 
 Comprueba esquema, host y puerto exactos en `CORS_ALLOWED_ORIGINS`. No incluyas
 rutas. El servidor normaliza slash final, pero no cambia HTTP por HTTPS.
+
+### El certificado público no se emite
+
+Comprueba que DNS resuelva a la IP pública, el puerto 443 llegue a Traefik, el
+router use `tls.certresolver=letsencrypt` y el resolver tenga
+`acme.tlschallenge=true`. El desafío HTTP no funciona si el puerto 80 no es
+alcanzable.
 
 ### `CSRF_TOKEN_INVALID`
 

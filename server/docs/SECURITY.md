@@ -328,6 +328,8 @@ registrarse. Consulta la [matriz de pruebas](../../docs/TEST_MATRIX.md).
 ## Checklist de producción
 
 - [ ] TLS válido y redirección HTTP→HTTPS.
+- [ ] El puerto directo de Spring Boot está enlazado a loopback y solo Traefik
+      recibe tráfico público.
 - [ ] `APP_COOKIE_SECURE=true` y SameSite acorde al despliegue.
 - [ ] Orígenes CORS exactos, sin comodines.
 - [ ] Secretos independientes en un gestor, con rotación documentada.

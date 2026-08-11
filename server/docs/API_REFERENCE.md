@@ -3,6 +3,8 @@
 ## Convenciones
 
 - URL local: `http://localhost:8080`.
+- URL desplegada:
+  `https://api-adulto-funcional.38-225-48-28.sslip.io`.
 - Formato: JSON UTF-8.
 - Tamaño máximo del cuerpo: 1 MiB por defecto.
 - Identificadores: UUID v7 en formato canónico.
