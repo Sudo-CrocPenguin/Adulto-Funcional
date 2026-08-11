@@ -29,6 +29,8 @@ import {
   VerifyMasterKeyUseCase,
 } from '../modules/passwords/application/VaultUseCases';
 import { HttpPasswordVaultRepository } from '../modules/passwords/infrastructure/HttpPasswordVaultRepository';
+import { LoadProfileUseCase, UpdateProfileUseCase } from '../modules/profile/application/ProfileUseCases';
+import { HttpProfileRepository } from '../modules/profile/infrastructure/HttpProfileRepository';
 
 export function createAppDependencies() {
   const apiClient = new ApiClient({
@@ -41,6 +43,7 @@ export function createAppDependencies() {
   const dashboardRepository = new HttpDashboardRepository(apiClient);
   const financeRepository = new HttpFinanceRepository(apiClient);
   const passwordVaultRepository = new HttpPasswordVaultRepository(apiClient);
+  const profileRepository = new HttpProfileRepository(apiClient);
   const themePreferenceStore = new AsyncThemePreferenceStore();
 
   return Object.freeze({
@@ -60,6 +63,7 @@ export function createAppDependencies() {
     loadFinances: new LoadFinancesUseCase(financeRepository),
     loadFixedExpenses: new LoadFixedExpensesUseCase(financeRepository),
     loadVault: new LoadVaultUseCase(passwordVaultRepository),
+    loadProfile: new LoadProfileUseCase(profileRepository),
     lockVault: new LockVaultUseCase(passwordVaultRepository),
     payFixedExpense: new PayFixedExpenseUseCase(financeRepository),
     revealCredential: new RevealCredentialUseCase(passwordVaultRepository),
@@ -73,6 +77,7 @@ export function createAppDependencies() {
     }),
     themePreferenceStore,
     updateCredential: new UpdateCredentialUseCase(passwordVaultRepository),
+    updateProfile: new UpdateProfileUseCase(profileRepository),
     verifyMasterKey: new VerifyMasterKeyUseCase(passwordVaultRepository),
   });
 }
