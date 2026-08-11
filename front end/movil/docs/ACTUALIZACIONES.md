@@ -22,7 +22,7 @@ obligatoria". La obligatoriedad se implementa en este cliente mediante
 
 ```text
 push a main con cambios en front end/movil/**
-  -> GitHub Actions valida secretos
+  -> GitHub Actions valida el acceso a Expo
   -> instala dependencias con npm ci
   -> ejecuta pruebas y expo-doctor
   -> publica con eas update en el canal production
@@ -54,23 +54,28 @@ se debe incrementar `expo.version` y generar un binario nuevo. Los cambios
 compatibles de JavaScript, estilos e imágenes pueden publicarse por OTA sin
 cambiar esa versión.
 
-## Configuración privada de GitHub
+## Configuración de GitHub
 
-Antes de ejecutar el flujo por primera vez, crea estos secretos en
+Antes de ejecutar el flujo por primera vez, crea este secreto en
 `Settings > Secrets and variables > Actions` del repositorio de GitHub:
 
 | Secreto | Contenido |
 |---|---|
 | `EXPO_TOKEN` | Token de acceso de la cuenta Expo con permiso sobre el proyecto |
-| `EXPO_PUBLIC_API_URL` | URL HTTPS pública del backend de producción |
 
 El token se genera en <https://expo.dev/settings/access-tokens>. No debe
-guardarse en el repositorio, en un commit ni compartirse por el chat. La URL de
-API sí queda embebida en el bundle y por eso no debe contener credenciales. No
-uses `localhost` ni una IP de la red local para una compilación distribuida.
+guardarse en el repositorio, en un commit ni compartirse por el chat.
 
-El workflow falla antes de publicar cuando falta uno de estos valores. Así se
-evita distribuir accidentalmente un bundle que no puede conectarse a la API.
+El workflow falla antes de publicar cuando falta el token. No necesita que el
+backend ni la base de datos estén desplegados: EAS distribuye únicamente el
+bundle y los recursos del frontend móvil.
+
+Cuando exista el servidor definitivo, agrega `EXPO_PUBLIC_API_URL` como
+**variable** del repositorio en la misma sección de Actions. Debe ser una URL
+HTTPS pública, sin credenciales, y no un secreto, `localhost` ni una IP LAN. La
+variable es independiente del sistema OTA; solo indica al frontend dónde
+consumir la API y puede incorporarse en publicaciones posteriores sin tocar el
+backend.
 
 ## Primera instalación de prueba
 
@@ -79,16 +84,14 @@ instala por sí mismo la aplicación. Para validar el flujo en Android, primero
 genera un APK interno desde `front end/movil`:
 
 ```bash
-EXPO_PUBLIC_API_URL=https://api.ejemplo.com \
-  npx eas-cli build --platform android --profile production-apk
+npx eas-cli build --platform android --profile production-apk
 ```
 
 Instala el APK entregado por EAS en el dispositivo. Para publicar una prueba
 manual en su mismo canal:
 
 ```bash
-EXPO_PUBLIC_API_URL=https://api.ejemplo.com \
-  npx eas-cli update --channel production --message "prueba OTA"
+npx eas-cli update --channel production --message "prueba OTA"
 ```
 
 Al abrir de nuevo el APK, la pantalla obligatoria debe consultar, descargar y
