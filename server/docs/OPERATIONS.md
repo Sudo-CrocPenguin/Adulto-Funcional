@@ -244,8 +244,12 @@ preservar `Origin`, cookies, headers CSRF y `X-Trace-Id`.
 # Regresión completa; necesita Docker
 ./mvnw clean verify
 
-# Solo unitarias
+# Mismo descubrimiento de Surefire; también incluye integraciones
 ./mvnw test
+
+# Solo pruebas sin Testcontainers, como en el Dockerfile
+./mvnw test \
+  -Dtest='!*IntegrationTest,!*HttpIntegrationTest,!AdultoFuncionalServerApplicationTests'
 
 # Artefacto
 ./mvnw clean package
@@ -257,7 +261,18 @@ preservar `Origin`, cookies, headers CSRF y `X-Trace-Id`.
 git diff --check
 ```
 
-La referencia actual de `clean verify` es 137 pruebas sin fallos.
+La referencia auditada el 11 de agosto de 2026 es 137 pruebas, 136 exitosas y
+1 fallo. `ResourceOwnershipHttpIntegrationTest` usa el evento fijo
+`2026-08-10`; al quedar en el pasado, la API responde `400` y la prueba esperaba
+`201`. Es un defecto del fixture temporal, no una razón para relajar la regla de
+dominio. La release permanece bloqueada hasta corregir la prueba.
+
+El repositorio no tiene actualmente un workflow de backend activo en la
+carpeta `.github/workflows` raíz. El archivo histórico
+`server/.github/workflows/ci-workflow.yml` no es descubierto por GitHub Actions
+desde un monorepo y su configuración tampoco representa todos los secretos
+actuales. Por tanto, regresión y SCA son controles manuales obligatorios hasta
+crear un workflow raíz específico.
 
 El primer SCA puede tardar por la descarga de datos. Un fallo de red no debe
 reinterpretarse como ausencia de vulnerabilidades; repite desde un entorno con
@@ -322,13 +337,20 @@ El dump contiene PII, hashes y ciphertext. Aunque las credenciales estén
 cifradas, el archivo debe cifrarse, tener permisos mínimos y retención
 definida.
 
-Verifica restauración en una base aislada y ejecuta después:
+Verifica checksum y compresión antes de restaurar. La guía del homelab incluye
+un [ensayo aislado completo](./HOMELAB_DEPLOYMENT.md#ensayo-de-restauración-aislada).
+Después de importar, comprueba:
 
 ```sql
 SELECT version, description, success
 FROM flyway_schema_history
 ORDER BY installed_rank;
 ```
+
+También se deben contar tablas principales, consultar una muestra no sensible
+y comprobar que ninguna fila de `flyway_schema_history` tenga `success=false`.
+Una copia nunca restaurada es un archivo no verificado, no una garantía de
+recuperación.
 
 ## Rollback
 

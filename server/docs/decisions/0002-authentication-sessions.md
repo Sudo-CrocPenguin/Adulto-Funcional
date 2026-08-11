@@ -1,9 +1,10 @@
 # ADR 0002: Sesiones de autenticación y revocación
 
-- Estado: aceptada
-- Implementación: completa
+- Estado: aceptada; transporte nativo reemplazado parcialmente por ADR 0007
+- Implementación: completa salvo la regla de detección sustituida
 - Fecha: 2026-07-31
 - Alcance: módulos `auth`, `security` y configuración de seguridad
+- Reemplazada parcialmente por: [ADR 0007](0007-native-client-detection.md)
 
 ## Contexto
 

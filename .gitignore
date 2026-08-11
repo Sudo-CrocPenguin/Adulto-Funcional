@@ -1,0 +1,3 @@
+# Contexto privado para continuidad entre sesiones. No contiene secretos, pero
+# conserva información operativa y decisiones que no deben publicarse.
+/CONTEXTO_PRIVADO.md

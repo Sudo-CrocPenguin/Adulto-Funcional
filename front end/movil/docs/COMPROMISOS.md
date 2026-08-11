@@ -101,19 +101,20 @@ Antes de enviar la solicitud, `CommitmentDraft` comprueba que:
 
 La fecha seleccionada se combina con las horas como tiempo civil, el
 recordatorio se calcula hacia atrás desde el inicio y se incluye la zona IANA
-del dispositivo. Ejemplo de solicitud:
+del dispositivo. El ejemplo usa deliberadamente una fecha lejana para que no
+caduque; al probarlo se debe reemplazar por una fecha futura válida:
 
 ```json
 {
   "title": "Reunión de equipo",
   "categoryId": "01988e6b-0c00-7000-8000-000000000011",
   "priority": "Alta",
-  "eventDate": "2026-08-11",
+  "eventDate": "2099-08-11",
   "zoneId": "America/Bogota",
   "frequency": 7,
-  "reminder": "2026-08-11T08:00:00",
-  "startHour": "2026-08-11T09:00:00",
-  "endHour": "2026-08-11T10:00:00",
+  "reminder": "2099-08-11T08:00:00",
+  "startHour": "2099-08-11T09:00:00",
+  "endHour": "2099-08-11T10:00:00",
   "status": "Pendiente"
 }
 ```
@@ -124,9 +125,9 @@ y desactiva `Guardar` para evitar una solicitud inválida.
 
 ## Navegación y estados
 
-La barra inferior navega entre Inicio y Compromisos mediante el stack nativo.
-Las demás secciones conservan el aviso de próxima etapa. Compromisos admite
-carga inicial, reintento, colección vacía y actualización al deslizar.
+La barra inferior navega mediante el stack nativo entre Inicio, Compromisos,
+Finanzas, Gastos Fijos, Contraseñas y Perfil. Compromisos admite carga inicial,
+reintento, colección vacía y actualización al deslizar.
 
 La campana presenta como aviso contextual el siguiente compromiso pendiente
 del listado. El engranaje reutiliza la configuración compartida de tema claro

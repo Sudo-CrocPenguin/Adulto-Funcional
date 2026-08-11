@@ -93,7 +93,7 @@ El formulario envía el contrato existente:
 {
   "movementType": "EXPENSE",
   "amount": 180.5,
-  "movementDate": "2026-08-10",
+  "movementDate": "2099-08-10",
   "description": "Supermercado",
   "categoryId": "01988e6b-0c00-7000-8000-000000000011"
 }
@@ -131,7 +131,8 @@ gasto inactivo.
 
 `FixedExpenseDraft` exige nombre de máximo 20 caracteres, categoría,
 frecuencia, monto positivo, estado válido y fecha de corte posterior al día
-actual. Ejemplo:
+actual. El ejemplo usa una fecha lejana; debe sustituirse por el vencimiento
+real al hacer una prueba:
 
 ```json
 {
@@ -139,9 +140,9 @@ actual. Ejemplo:
   "frequency": "MONTHLY",
   "amount": 45,
   "status": "ACTIVE",
-  "startDate": "2026-08-10",
+  "startDate": "2099-08-10",
   "reminderDays": 0,
-  "nextDueDate": "2026-08-27",
+  "nextDueDate": "2099-08-27",
   "categoryId": "01988e6b-0c00-7000-8000-000000000011"
 }
 ```

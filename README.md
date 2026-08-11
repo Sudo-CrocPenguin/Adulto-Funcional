@@ -1,176 +1,209 @@
 # Adulto Funcional
 
-Aplicación cliente-servidor para organizar la vida personal: finanzas, agenda, cuentas de usuario y gestor de contraseñas cifrado. El repositorio está organizado como un monorepo con backend REST, base de cliente web y aplicación móvil.
+Adulto Funcional es una aplicación cliente-servidor para organizar finanzas,
+compromisos, gastos recurrentes y credenciales personales desde un único
+espacio. El repositorio contiene tres proyectos independientes que comparten el
+mismo dominio, pero se construyen y despliegan por separado.
 
-## Descripción
+## Estado de la versión 0.2.0
 
-Adulto Funcional centraliza tareas cotidianas de gestión personal en una API segura y modular. El backend implementa autenticación, manejo de cuentas, registro de ingresos y egresos, gastos fijos recurrentes, eventos de agenda y almacenamiento de credenciales protegidas con Master Key.
+| Componente | Estado | Entorno |
+|---|---|---|
+| Backend y base de datos | Desplegados en el homelab | Docker Compose en `server1` |
+| Aplicación móvil | Primera versión funcional | Expo/EAS, Android y desarrollo con Expo Go |
+| Cliente web | Scaffold técnico | Sin desarrollo funcional ni despliegue |
 
-El objetivo del proyecto es ofrecer una base mantenible para clientes web y móviles, separando reglas de negocio, casos de uso e infraestructura mediante Clean Architecture.
+La API privada se encuentra en `http://10.119.54.220:8090` y solo debe
+alcanzarse desde la red ZeroTier autorizada. El frontend móvil consume esa URL;
+Expo no aloja el backend ni la base de datos. La aplicación web todavía no
+forma parte de la entrega.
 
-## Características
+## Capacidades actuales
 
-- Autenticación con JWT y hash de contraseñas con Argon2.
-- Gestión de cuentas de usuario con validación de ownership.
-- Finanzas personales: movimientos, categorías y gastos fijos.
-- Agenda personal: eventos con prioridad, estado, recordatorios y recurrencia.
-- Gestor de contraseñas con cifrado AES-256 y verificación de Master Key.
-- Persistencia relacional con MariaDB y migraciones versionadas con Flyway.
-- Sesiones de Master Key en memoria para desarrollo y Redis para producción.
-- Respuestas API estandarizadas y manejo global de excepciones.
-- Validación anti-XSS en campos de entrada mediante anotación `@NoHtml`.
-- Identificadores UUID v7 para entidades principales.
+- Registro, inicio de sesión, refresh rotativo y cierre de sesión.
+- Perfil y edición de datos personales.
+- Compromisos con categoría, prioridad, recurrencia, fecha y recordatorio.
+- Ingresos, egresos, saldo y análisis financiero con 20 visualizaciones.
+- Gastos fijos, vencimientos y registro de pagos como movimientos de egreso.
+- Bóveda cifrada con Master Key y secretos visibles temporalmente.
+- Dashboard, tema claro/oscuro y avisos contextuales.
+- Actualizaciones móviles obligatorias mediante EAS Update.
 
-## Stack
+Recuperar la contraseña de acceso y recuperar una Master Key olvidada no están
+implementados porque el backend no ofrece esos contratos. La interfaz móvil lo
+informa expresamente y no simula una operación exitosa.
+
+## Arquitectura de despliegue
+
+```text
+Aplicación móvil instalada
+        │
+        │ HTTP privado sobre ZeroTier
+        ▼
+server1:10.119.54.220:8090
+        │
+        ├── Spring Boot 3 / Java 21
+        ├── MariaDB 11.8
+        └── Redis 7.4
+
+GitHub main ──► GitHub Actions ──► EAS Update ──► aplicación instalada
+```
+
+- La PC de desarrollo sirve código y Metro; no es el entorno productivo.
+- `server1` aloja exclusivamente API, base de datos y Redis.
+- Expo/EAS construye y distribuye el frontend móvil.
+- El frontend web se desplegará en una etapa posterior.
+
+La separación completa está explicada en
+[Ejecución end-to-end](docs/END_TO_END.md).
+
+## Tecnologías
 
 | Capa | Tecnologías |
-| --- | --- |
-| Backend | Java 21, Spring Boot 3, Spring Web, Spring Security, Spring Data JPA |
-| Seguridad | JWT, Argon2, AES-256, cookies HttpOnly, validación anti-XSS |
-| Base de datos | MariaDB 11.8, Flyway |
-| Sesiones | Redis en producción, almacenamiento en memoria en desarrollo |
-| Testing | JUnit 5, Spring Boot Test, Mockito, Testcontainers |
-| Cliente web | React, TypeScript, Vite |
-| Cliente móvil | Expo, React Native, Expo Router, TypeScript |
-| DevOps | Docker, Docker Compose, Maven Wrapper |
+|---|---|
+| Backend | Java 21, Spring Boot 3, Spring Security, Spring Data JPA |
+| Datos | MariaDB 11.8, Flyway y Redis 7.4 |
+| Seguridad | JWT, refresh rotativo, Argon2, AES-256-GCM, CSRF y cookies HttpOnly |
+| Móvil | Expo SDK 54, React Native 0.81, React 19.1 y JavaScript |
+| Navegación móvil | React Navigation 7 |
+| Web | React 19, TypeScript y Vite 8 |
+| Calidad | JUnit 5, Mockito, Testcontainers, Jest y Expo Doctor |
+| Operación | Docker Compose, GitHub Actions y EAS Update |
 
-## Estructura
+## Estructura del repositorio
 
 ```text
 .
-├── server/   # API REST Spring Boot y documentación técnica
-├── web/      # Base/documentación del cliente web React + Vite
-└── movil/    # Aplicación móvil Expo + React Native
+├── server/             API, persistencia, contenedores y documentación técnica
+├── front end/
+│   ├── movil/          aplicación Expo/React Native en JavaScript
+│   └── web/            scaffold React/Vite en TypeScript
+├── docs/               guías transversales y validación de entregas
+├── CONTRIBUTING.md     GitFlow, commits y criterios de colaboración
+└── CHANGELOG.md        cambios publicados por versión
 ```
 
-### Backend
+Los clientes comparten repositorio y ramas Git; no son repositorios Git
+anidados.
 
-El backend sigue Clean Architecture:
+## Inicio rápido
 
-```text
-org.adultofuncional.main
-├── account/    # Cuentas de usuario
-├── auth/       # Login, registro, logout y emisión de JWT
-├── finances/   # Movimientos, categorías y gastos fijos
-├── agenda/     # Eventos y recordatorios
-├── security/   # Gestor de contraseñas y Master Key
-├── config/     # Beans, filtros JWT y configuración de seguridad
-└── shared/     # Respuestas, excepciones y utilidades transversales
-```
-
-Cada módulo separa dominio, casos de uso e infraestructura para mantener las reglas de negocio independientes de Spring, JPA y HTTP.
-
-## API principal
-
-La API expone sus rutas bajo `/api`:
-
-| Módulo | Endpoints |
-| --- | --- |
-| Autenticación | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/logout` |
-| Cuenta | `GET /api/account/{id}`, `PATCH /api/account/{id}`, `DELETE /api/account/{id}` |
-| Finanzas | CRUD de `/api/finances/movements`, `/api/finances/categories` y `/api/finances/fixed-expenses` |
-| Agenda | CRUD de `/api/agenda/events` |
-| Contraseñas | `POST /api/security/passwords/master-key/verify` y CRUD de `/api/security/passwords` |
-
-Las respuestas se devuelven con una estructura común:
-
-```json
-{
-  "status": 200,
-  "message": "Operación exitosa",
-  "data": {}
-}
-```
-
-## Requisitos
-
-- Java 21.
-- Docker y Docker Compose.
-- MariaDB 11.8 o superior si se ejecuta sin contenedores.
-- Node.js y npm para el cliente móvil.
-
-## Ejecución del backend en desarrollo
+### Aplicación móvil
 
 ```bash
-cd server
-cp src/main/resources/application-dev.yml.example src/main/resources/application-dev.yml
+cd "front end/movil"
+npm ci
+cp .env.example .env
+npm start
 ```
 
-Edita `src/main/resources/application-dev.yml` con la URL de MariaDB, usuario, contraseña y secreto JWT.
+En `.env`, configura una URL alcanzable desde el dispositivo:
 
-```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
+```dotenv
+EXPO_PUBLIC_API_URL=http://10.119.54.220:8090
 ```
 
-Por defecto la API queda disponible en:
+El teléfono necesita ZeroTier activo para consumir la API. Expo Go sirve para
+desarrollo visual, pero las actualizaciones obligatorias se prueban en un APK
+creado con EAS. Consulta el
+[README móvil](<front end/movil/README.md>) y la
+[guía OTA](<front end/movil/docs/ACTUALIZACIONES.md>).
 
-```text
-http://localhost:8080
-```
-
-## Ejecución con Docker
+### Backend local
 
 ```bash
 cd server
 cp .env.example .env
-```
-
-Completa las variables de `.env`. El `docker-compose.yml` usa una red externa llamada `coolify`; si no existe en tu entorno local, créala antes de levantar los servicios:
-
-```bash
-docker network create coolify
+# Completa los secretos y credenciales de .env
 docker compose up -d --build
+curl http://127.0.0.1:8080/actuator/health
 ```
 
-Servicios incluidos:
+El Compose base crea su propia red interna. La red externa `coolify` solo se
+usa cuando se añade explícitamente el archivo `docker-compose.coolify.yml`.
+Consulta el [README del servidor](server/README.md) antes de ejecutar el
+backend sin contenedores.
 
-- `app`: API Spring Boot.
-- `mariadb`: base de datos relacional.
-- `redis`: almacenamiento de sesiones de Master Key en producción.
-
-## Cliente móvil
+### Cliente web
 
 ```bash
-cd movil
+cd "front end/web"
 npm install
-npm start
+npm run dev
 ```
 
-Scripts disponibles:
+El proyecto web es únicamente un scaffold y no consume todavía la API. Consulta
+su [README](<front end/web/README.md>) para conocer el alcance real.
 
-- `npm run android`
-- `npm run ios`
-- `npm run web`
+## API
 
-## Testing
+Todas las rutas propias usan el prefijo `/api`. Los grupos principales son:
+
+| Módulo | Prefijo |
+|---|---|
+| Autenticación | `/api/auth` |
+| Cuenta | `/api/account` |
+| Finanzas | `/api/finances` |
+| Agenda | `/api/agenda` |
+| Master Key | `/api/security/master-key` |
+| Bóveda | `/api/security/passwords` |
+
+La ruta histórica
+`POST /api/security/passwords/master-key/verify` se conserva temporalmente por
+compatibilidad; los clientes nuevos deben usar
+`POST /api/security/master-key/verify`.
+
+Consulta la [referencia completa](server/docs/API_REFERENCE.md) y el
+[contrato de errores](server/docs/API_ERROR_CONTRACT.md). No existe todavía una
+especificación OpenAPI generada; la referencia Markdown y los DTO/controladores
+son las fuentes actuales del contrato.
+
+## Verificación
 
 ```bash
-cd server
-./mvnw test
+# Móvil
+cd "front end/movil"
+npm test -- --runInBand
+npm run doctor
+
+# Backend; requiere Docker para Testcontainers
+cd ../../server
+./mvnw clean verify
 ```
 
-Algunas pruebas usan Testcontainers, por lo que requieren Docker en ejecución.
+La versión 0.2.0 contiene 77 pruebas móviles. El backend contiene 137 pruebas,
+pero al 11 de agosto de 2026 una integración falla porque utiliza una fecha de
+evento fija que ya quedó en el pasado. El defecto y el procedimiento de
+validación se documentan en la
+[matriz de pruebas](docs/TEST_MATRIX.md); una entrega no debe declararse verde
+hasta corregirlo.
 
-## Documentación técnica
+## Documentación
 
+- [Ejecución y validación end-to-end](docs/END_TO_END.md)
+- [Matriz de pruebas y aceptación](docs/TEST_MATRIX.md)
+- [Checklist de release](docs/RELEASE_CHECKLIST.md)
+- [Datos y privacidad técnica](docs/DATA_AND_PRIVACY.md)
+- [Contribución y GitFlow](CONTRIBUTING.md)
+- [Historial de cambios](CHANGELOG.md)
 - [Arquitectura del backend](server/ARCHITECTURE.md)
-- [Esquema de base de datos](server/DATABASE.md)
-- [README del servidor](server/README.md)
-- [README del cliente web](web/README.md)
+- [Modelo de datos](server/DATABASE.md)
+- [Operación](server/docs/OPERATIONS.md)
+- [Despliegue en homelab](server/docs/HOMELAB_DEPLOYMENT.md)
+- [Seguridad](server/docs/SECURITY.md)
+- [Documentación del frontend](<front end/README.md>)
 
-## Seguridad
+## Entrega y ramas
 
-- Las contraseñas de acceso se almacenan con hash Argon2.
-- Las credenciales del gestor se cifran con AES-256.
-- La Master Key no se persiste como texto plano en la base de datos.
-- En producción, Redis mantiene sesiones temporales de Master Key con TTL.
-- Los clientes web reciben el JWT por cookie `HttpOnly`; clientes nativos pueden recibirlo también en el cuerpo de la respuesta.
-- La API aplica validaciones de entrada y defensas contra XSS almacenado.
+`main` representa producción y `develop` integración. El trabajo se realiza en
+ramas temporales creadas desde `develop`; no se hace `push` automático desde
+herramientas locales. Las reglas completas y los tipos de commit están en
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Estado del proyecto
+## Licencia y distribución
 
-El backend contiene la implementación principal y documentación técnica completa. El cliente móvil usa Expo Router como base de desarrollo y el cliente web está planteado para consumir la API REST de finanzas, agenda y seguridad.
-
-## Licencia
-
-Este proyecto incluye licencias en los módulos `server` y `web`. Revisa los archivos `LICENSE` correspondientes antes de reutilizar o distribuir el código.
+El backend contiene su propia licencia en `server/LICENSE`. Los clientes móvil
+y web no tienen todavía una licencia de reutilización independiente; no debe
+asumirse que el archivo del backend los cubre. Antes de una distribución
+pública deben definirse también la política de privacidad, los términos de uso
+y el responsable del tratamiento de datos.

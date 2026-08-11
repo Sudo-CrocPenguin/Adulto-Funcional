@@ -63,6 +63,11 @@ GitHub Actions. Consulta
 [docs/ACTUALIZACIONES.md](./docs/ACTUALIZACIONES.md) para configurar los
 secretos, crear el primer APK y validar el flujo obligatorio.
 
+Al 11 de agosto de 2026, la publicación automática sigue bloqueada porque el
+repositorio de GitHub no tiene configurado `EXPO_TOKEN`. La aplicación y la
+configuración OTA existen, pero no debe afirmarse que el último `push` se
+publicó hasta que el workflow termine exitosamente.
+
 SDK 54 se mantiene de forma intencional mientras Expo Go para dispositivos
 físicos use esa versión. Expo SDK 54 corresponde a React Native 0.81 y React
 19.1.
@@ -85,7 +90,7 @@ Instala las dependencias:
 
 ```bash
 cd "front end/movil"
-npm install
+npm ci
 ```
 
 Copia las variables locales:
@@ -161,7 +166,7 @@ separado en `AsyncStorage`.
 
 ## Arquitectura
 
-Cada módulo funcional conservará sus reglas y dependencias separadas:
+Cada módulo funcional conserva sus reglas y dependencias separadas:
 
 ```text
 src/

@@ -21,8 +21,8 @@ El inicio permite responder rápidamente estas preguntas:
 - ¿Qué gasto fijo y compromiso ocurren primero?
 - ¿Cómo se distribuyeron mis movimientos durante los últimos tres meses?
 
-También define la navegación inferior que se conectará progresivamente a las
-pantallas de compromisos, finanzas, gastos fijos, contraseñas y perfil.
+También define la navegación inferior conectada a compromisos, finanzas,
+gastos fijos, contraseñas y perfil.
 
 La campana abre un panel de avisos contextuales y el engranaje presenta la hoja
 de configuración. En esta etapa, configuración contiene exclusivamente el
@@ -141,8 +141,8 @@ verificada.
   contextuales y sus descartes no se sincronizan entre dispositivos.
 - Configuración contiene solo el selector de tema; las opciones de cuenta,
   idioma, respaldo y seguridad quedan fuera de esta etapa.
-- Los botones de la navegación inferior anuncian la siguiente etapa mientras
-  se reciben los diseños de cada pantalla.
+- Todas las rutas de la navegación inferior están implementadas. Cada módulo
+  mantiene sus propias limitaciones funcionales documentadas.
 - La vista web de Expo sirve para revisión visual. La autenticación nativa debe
   probarse en Expo Go porque navegador y aplicación móvil usan contratos de
   transporte diferentes.
