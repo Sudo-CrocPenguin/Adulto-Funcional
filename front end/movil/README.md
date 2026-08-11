@@ -43,6 +43,12 @@ La navegación usa React Navigation con transiciones nativas. Recuperación de
 contraseña está maquetada y valida el correo, pero no simula el envío: el
 backend todavía no expone un endpoint para solicitar el restablecimiento.
 
+El Gestor de Contraseñas integra el ciclo real de la Master Key y el CRUD de la
+bóveda. Permite configurar, verificar, rotar y bloquear la llave; los secretos
+se consultan individualmente, viven solo en memoria y vuelven a ocultarse a los
+30 segundos. Consulta [docs/CONTRASENAS.md](./docs/CONTRASENAS.md) para conocer
+el contrato, los estados y las decisiones de seguridad.
+
 SDK 54 se mantiene de forma intencional mientras Expo Go para dispositivos
 físicos use esa versión. Expo SDK 54 corresponde a React Native 0.81 y React
 19.1.
@@ -134,6 +140,7 @@ src/
     commitments/
     dashboard/
     finances/
+    passwords/
       domain/       entidades y contratos
       application/  casos de uso
       infrastructure/adaptadores de API y dispositivo
@@ -179,6 +186,11 @@ evitar cerrar una sesión válida por falta de conectividad.
 explica que el servicio aún no está disponible. Para completar esa función, el
 backend deberá definir solicitud, expiración y consumo de tokens de
 recuperación, además del canal de envío correspondiente.
+
+La Master Key tampoco admite recuperación mediante correo o código con el
+contrato actual. La aplicación permite cambiarla si el usuario conoce la llave
+vigente y explica la limitación si la olvidó; no simula una recuperación que no
+podría conservar las credenciales cifradas existentes.
 
 ## Dependencias y seguridad
 
