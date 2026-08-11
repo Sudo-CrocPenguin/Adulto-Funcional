@@ -130,4 +130,30 @@ describe('ApiClient', () => {
       }),
     );
   });
+
+  it('envía eliminaciones autenticadas mediante DELETE sin cuerpo', async () => {
+    const fetchImplementation = jest.fn().mockResolvedValue(
+      response({
+        ok: true,
+        status: 200,
+        payload: { data: null, message: 'Contraseña eliminada' },
+      }),
+    );
+    const client = new ApiClient({
+      baseUrl: 'http://localhost:8080',
+      fetchImplementation,
+    });
+
+    await expect(client.delete('/api/security/passwords/credential-1', {
+      headers: { Authorization: 'Bearer access-token' },
+    })).resolves.toBeNull();
+    expect(fetchImplementation).toHaveBeenCalledWith(
+      'http://localhost:8080/api/security/passwords/credential-1',
+      expect.objectContaining({
+        body: undefined,
+        headers: expect.objectContaining({ Authorization: 'Bearer access-token' }),
+        method: 'DELETE',
+      }),
+    );
+  });
 });
