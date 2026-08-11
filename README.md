@@ -10,7 +10,7 @@ mismo dominio, pero se construyen y despliegan por separado.
 | Componente | Estado | Entorno |
 |---|---|---|
 | Backend y base de datos | Desplegados en el homelab | Docker Compose en `server1` |
-| Aplicación móvil | Versión 0.3.0 en preparación | Expo/EAS, Android y desarrollo con Expo Go |
+| Aplicación móvil | APK 0.2 disponible con OTA HTTPS; build 0.3.0 en curso | Expo/EAS y Android |
 | Cliente web | Scaffold técnico | Sin desarrollo funcional ni despliegue |
 
 La API está publicada en
@@ -18,6 +18,19 @@ La API está publicada en
 aplicación móvil consume esa URL con cualquier conexión a Internet y no
 necesita ZeroTier. Expo no aloja el backend ni la base de datos. La aplicación
 web todavía no forma parte de la entrega.
+
+### Instalación Android disponible
+
+El APK interno 0.2 puede instalarse desde
+[Expo](https://expo.dev/artifacts/eas/PB5NQhNENOK1g_a0eN-IGD3pxqlif81Ywcw7QFdhoSk.apk).
+Al abrirlo con Internet, EAS Update entrega automáticamente el grupo
+`d31bcaf4-f06e-4838-987d-f9b8c020ecef`, que cambia la conexión a la API pública
+HTTPS. No hace falta instalar ni activar ZeroTier. Es un enlace interno
+temporal de Expo, con vencimiento previsto el 25 de agosto de 2026.
+
+La compilación nativa 0.3.0, que además deshabilita HTTP claro en Android, se
+puede seguir en el
+[build 815c9cab](https://expo.dev/accounts/servermiguel1/projects/adulto-funcional/builds/815c9cab-ea2d-402f-8122-c05f1169c92f).
 
 ## Capacidades actuales
 
@@ -172,7 +185,7 @@ cd ../../server
 ./mvnw clean verify
 ```
 
-La versión 0.2.0 contiene 77 pruebas móviles. El backend contiene 137 pruebas,
+La versión móvil 0.3.0 contiene 77 pruebas. El backend contiene 137 pruebas,
 pero al 11 de agosto de 2026 una integración falla porque utiliza una fecha de
 evento fija que ya quedó en el pasado. El defecto y el procedimiento de
 validación se documentan en la

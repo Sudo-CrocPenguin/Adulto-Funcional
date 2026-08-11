@@ -12,6 +12,8 @@ semántico. El historial Git conserva el detalle progresivo de cada condición.
   ZeroTier para funcionar.
 - La versión nativa móvil avanza a `0.3.0` (`versionCode`/`buildNumber` 3) y
   deshabilita el tráfico HTTP claro en Android.
+- El APK 0.2 existente recibe una actualización OTA compatible que migra su
+  conexión a HTTPS mientras se completa el nuevo binario.
 - Spring Boot se publica mediante Traefik sin exponer MariaDB ni Redis.
 
 ### Seguridad

@@ -91,7 +91,9 @@ Estado auditado el 11 de agosto de 2026:
 - `EXPO_TOKEN` no estaba configurado en GitHub; el workflow OTA falló antes de
   publicar.
 - `./mvnw clean verify` tenía una prueba fallida por una fecha absoluta vencida.
-- El build Android de prueba no tenía todavía un artefacto final confirmado.
+- El APK 0.2 ya tiene artefacto y OTA HTTPS confirmados, pero falta instalarlo
+  y recorrer la aceptación completa en un dispositivo físico. El build nativo
+  0.3.0 continúa pendiente de finalizar en EAS.
 - Los respaldos nuevos solo contaban con procedimiento manual, sin agenda ni
   restauración ensayada.
 
