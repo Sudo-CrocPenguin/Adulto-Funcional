@@ -36,6 +36,8 @@ Spring Security ───► principal autenticado
 Supuestos de producción:
 
 - TLS termina antes o en el servidor y `APP_COOKIE_SECURE=true`.
+- Spring confía en los headers reenviados únicamente porque su puerto directo
+  está limitado a loopback y Traefik es el único ingreso público.
 - MariaDB y Redis no son accesibles desde Internet.
 - Redis exige autenticación y, si cruza una red no confiable, TLS de transporte.
 - Los secretos provienen de un gestor o variables protegidas, no del repositorio.
@@ -327,7 +329,7 @@ registrarse. Consulta la [matriz de pruebas](../../docs/TEST_MATRIX.md).
 
 ## Checklist de producción
 
-- [ ] TLS válido y redirección HTTP→HTTPS.
+- [ ] TLS válido en 443; redirección HTTP→HTTPS si el puerto 80 está publicado.
 - [ ] El puerto directo de Spring Boot está enlazado a loopback y solo Traefik
       recibe tráfico público.
 - [ ] `APP_COOKIE_SECURE=true` y SameSite acorde al despliegue.

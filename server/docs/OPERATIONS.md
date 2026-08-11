@@ -44,6 +44,7 @@ La configuración común aplica:
 | `SERVER_ADDRESS` | `127.0.0.1` | bind local; Compose usa `0.0.0.0` dentro del contenedor |
 | `SERVER_HOST_ADDRESS` | `127.0.0.1` | bind publicado por Compose |
 | `SERVER_HOST_PORT` | `8080` | puerto publicado por Compose |
+| `SERVER_FORWARD_HEADERS_STRATEGY` | `framework` en Compose | aplica `Forwarded`/`X-Forwarded-*` recibidos del proxy confiable |
 | `API_PUBLIC_HOST` | — | hostname HTTPS usado por el overlay de Coolify |
 | `APP_HTTP_MAX_REQUEST_BODY_SIZE` | `1MB` | límite del filtro HTTP al ejecutar la app directamente |
 
@@ -253,6 +254,7 @@ SERVER_HOST_ADDRESS=127.0.0.1
 SERVER_HOST_PORT=8090
 COOLIFY_NETWORK=coolify
 API_PUBLIC_HOST=api-adulto-funcional.38-225-48-28.sslip.io
+SERVER_FORWARD_HEADERS_STRATEGY=framework
 ```
 
 Arranca siempre el despliegue público con ambos archivos:
@@ -266,6 +268,11 @@ docker compose \
 
 Comprueba que solo `app` pertenezca a las redes `internal` y `coolify`;
 MariaDB y Redis deben permanecer únicamente en `internal`.
+
+`framework` es necesario para que Spring reconozca el esquema HTTPS y la IP
+original entregados por Traefik. Sin ese ajuste, HSTS no se emite y todos los
+límites por IP pueden agrupar a los clientes bajo la dirección del proxy. No
+expongas directamente el puerto de Spring al configurar esta confianza.
 
 ## Build y pruebas
 

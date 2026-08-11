@@ -34,6 +34,9 @@ La API se publica exclusivamente detrás de Traefik con estas reglas:
    `usesCleartextTraffic=false`.
 6. ZeroTier deja de ser un requisito del cliente. Puede conservarse como canal
    administrativo del servidor, pero no participa en el contrato de la app.
+7. Spring usa `server.forward-headers-strategy=framework` para reconocer el
+   esquema HTTPS y la IP cliente comunicados por Traefik. Esta confianza solo
+   es válida porque el puerto directo está limitado a loopback y la red Docker.
 
 El hostname inicial es
 `api-adulto-funcional.38-225-48-28.sslip.io`, que resuelve la IP pública dentro
@@ -48,6 +51,8 @@ dominio propio con DNS dinámico puede sustituirlo sin cambiar el código.
   seguridad siguen activos sobre HTTPS.
 - El proxy no altera `X-Client-Type`, `User-Agent`, `Origin`, `Referer`,
   `Authorization`, CSRF ni `X-Trace-Id`.
+- Traefik sustituye/añade los headers de reenvío; Spring los usa para HSTS,
+  URLs seguras y límites de abuso por IP original.
 - Redis usa el alias interno exclusivo `adulto-funcional-redis`; el nombre
   genérico `redis` no se usa desde la aplicación porque puede colisionar con el
   servicio Redis propio de Coolify al conectar Spring Boot a ambas redes.
