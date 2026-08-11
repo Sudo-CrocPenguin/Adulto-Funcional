@@ -68,6 +68,18 @@ independientes para MariaDB y Redis, secretos criptográficos diferentes para
 JWT y sesiones de Master Key, el puerto 8090 y los orígenes CORS autorizados.
 Nunca se deben copiar estos valores a Expo ni a variables `EXPO_PUBLIC_*`.
 
+Como mínimo, las variables operativas que distinguen este host son:
+
+```dotenv
+COMPOSE_PROJECT_NAME=adulto-funcional-prod
+SERVER_HOST_ADDRESS=0.0.0.0
+SERVER_HOST_PORT=8090
+```
+
+`COMPOSE_PROJECT_NAME` es necesario para que los comandos `docker compose`
+usen siempre los contenedores y el volumen existentes. Si falta o cambia, Docker
+puede crear otro proyecto aparentemente vacío sin borrar el anterior.
+
 ## Operación cotidiana
 
 Estado y salud:
@@ -104,7 +116,16 @@ irreversible la base de datos.
 
 ## Actualizar el backend desde la PC de desarrollo
 
-Desde la raíz del repositorio local se sincroniza solo la carpeta `server`:
+El despliegue debe partir de un commit o tag conocido y de un árbol limpio.
+Desde la raíz del repositorio local:
+
+```bash
+git status --short
+git rev-parse HEAD
+```
+
+`git status --short` debe quedar vacío. Registra el hash en la evidencia de la
+entrega y después sincroniza solo la carpeta `server`:
 
 ```bash
 rsync -az \
@@ -120,6 +141,10 @@ ssh server1 \
 El archivo `.env` remoto permanece fuera de la sincronización. Después se debe
 validar `docker compose ps`, el healthcheck y un flujo autenticado descartable.
 El frontend móvil no se copia al servidor.
+
+`rsync` refleja el árbol local, no un artefacto inmutable. Para una release
+formal se recomienda hacer checkout del tag en un directorio limpio antes de
+sincronizar. No se debe desplegar desde archivos sin commit.
 
 ## Reinicio automático
 
@@ -140,7 +165,7 @@ adulto-funcional-prod-redis-1: unless-stopped
 Un reinicio controlado del stack conservó los datos, reaplicó la validación de
 Flyway y devolvió los tres contenedores al estado `healthy`.
 
-## Respaldos futuros
+## Respaldo y recuperación
 
 El borrón inicial no conservó ningún respaldo de la base anterior. A partir de
 los datos nuevos, un respaldo manual puede crearse así:
@@ -165,6 +190,56 @@ sha256sum -c "$backup_file.sha256"
 Los respaldos deben copiarse además a otro equipo; un archivo guardado solo en
 el mismo disco del servidor no protege frente a la pérdida de ese disco.
 
+### Estado actual y retención
+
+El procedimiento es manual: no existe todavía un timer ni una restauración
+ensayada para los datos nuevos. Antes de usar datos reales de terceros se debe
+asignar responsable, almacenamiento externo y una agenda. Referencia inicial:
+
+| Copia | Retención sugerida | Ubicación |
+|---|---:|---|
+| Diaria | 7 días | `server1` y copia externa |
+| Semanal | 4 semanas | equipo o almacenamiento externo |
+| Mensual | 6 meses | ubicación externa protegida |
+
+La política definitiva depende de los requisitos legales y capacidad del
+homelab. Una tarea automática debe fallar visiblemente cuando el dump,
+checksum, copia externa o espacio disponible no puedan verificarse.
+
+### Ensayo de restauración aislada
+
+Nunca ensayes sobre la base productiva. El siguiente procedimiento crea una
+base temporal dentro del mismo MariaDB, verifica el historial y la elimina al
+terminar:
+
+```bash
+ssh server1
+cd "$HOME/apps/adulto-funcional/server"
+backup_file="$HOME/backups/adulto-funcional/<ARCHIVO>.sql.gz"
+
+gzip -t "$backup_file"
+sha256sum -c "$backup_file.sha256"
+
+docker compose exec -T mariadb sh -c \
+  'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e \
+  "CREATE DATABASE adulto_funcional_restore CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"'
+
+gzip -dc "$backup_file" | docker compose exec -T mariadb sh -c \
+  'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" adulto_funcional_restore'
+
+docker compose exec -T mariadb sh -c \
+  'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" adulto_funcional_restore -e \
+  "SELECT version, description, success FROM flyway_schema_history ORDER BY installed_rank"'
+
+docker compose exec -T mariadb sh -c \
+  'mariadb -uroot -p"$MARIADB_ROOT_PASSWORD" -e \
+  "DROP DATABASE adulto_funcional_restore"'
+```
+
+Usa un nombre distinto si la base temporal ya existe. El ensayo debe registrar
+fecha, archivo, checksum, duración y resultado sin guardar contraseñas en la
+evidencia.
+
 ## Verificación mínima
 
 Una entrega del backend se considera operativa cuando:
@@ -176,4 +251,6 @@ Una entrega del backend se considera operativa cuando:
 4. Registro nativo, consulta autenticada, refresh y eliminación responden
    `201`, `200`, `200` y `200` respectivamente.
 5. La aplicación Expo/EAS usa exactamente `http://10.119.54.220:8090`.
-
+6. El hash desplegado coincide con la evidencia de la entrega.
+7. Existe un respaldo verificable y una restauración aislada reciente cuando
+   la base contiene datos que no pueden recrearse.

@@ -337,13 +337,20 @@ El dump contiene PII, hashes y ciphertext. Aunque las credenciales estén
 cifradas, el archivo debe cifrarse, tener permisos mínimos y retención
 definida.
 
-Verifica restauración en una base aislada y ejecuta después:
+Verifica checksum y compresión antes de restaurar. La guía del homelab incluye
+un [ensayo aislado completo](./HOMELAB_DEPLOYMENT.md#ensayo-de-restauración-aislada).
+Después de importar, comprueba:
 
 ```sql
 SELECT version, description, success
 FROM flyway_schema_history
 ORDER BY installed_rank;
 ```
+
+También se deben contar tablas principales, consultar una muestra no sensible
+y comprobar que ninguna fila de `flyway_schema_history` tenga `success=false`.
+Una copia nunca restaurada es un archivo no verificado, no una garantía de
+recuperación.
 
 ## Rollback
 
