@@ -89,16 +89,21 @@ Copia las variables locales:
 cp .env.example .env
 ```
 
-Edita `EXPO_PUBLIC_API_URL`. Para Expo Go en un teléfono debe contener la IP
-LAN del equipo, no `localhost`:
+Edita `EXPO_PUBLIC_API_URL`. El backend se despliega por separado en `server1`;
+para este proyecto el teléfono debe estar unido a ZeroTier y usar su IP
+privada, nunca `localhost` ni la IP de la PC de desarrollo:
 
 ```dotenv
-EXPO_PUBLIC_API_URL=http://192.168.1.100:8080
+EXPO_PUBLIC_API_URL=http://10.119.54.220:8090
 ```
+
+Los entornos EAS `preview` y `production` ya contienen esa misma variable. Los
+perfiles de `eas.json` la incorporan en los builds y las publicaciones OTA sin
+depender de archivos locales.
 
 No se deben guardar secretos en variables `EXPO_PUBLIC_*`, porque Expo las
 incluye en el bundle de la aplicación. Esta variable contiene únicamente una
-URL pública.
+URL de servicio no secreta.
 
 ## Ejecución
 
@@ -106,8 +111,10 @@ URL pública.
 npm start
 ```
 
-Expo mostrará un código QR. El teléfono y el equipo deben estar en la misma
-red; abre Expo Go y escanea el código. Si la red bloquea conexiones LAN:
+Expo mostrará un código QR. Para cargar Metro, el teléfono y la PC deben poder
+verse por LAN o mediante el túnel de Expo. Además, el teléfono debe mantener
+ZeroTier activo para alcanzar la API del servidor. Si la red bloquea Metro por
+LAN:
 
 ```bash
 npm run start:tunnel
@@ -129,6 +136,10 @@ obligatorio. Ese flujo requiere un build interno o de producción creado con
 EAS.
 
 ## Conexión con la API
+
+La arquitectura es cliente-servidor: Expo/EAS distribuye este frontend y
+`server1` ejecuta exclusivamente Spring Boot, MariaDB y Redis. El frontend web
+todavía no está desplegado.
 
 El backend diferencia el cliente nativo mediante el encabezado:
 

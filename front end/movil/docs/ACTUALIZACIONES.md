@@ -51,7 +51,7 @@ monorepo no publican una actualización móvil.
 - Project ID: `ffd0b764-df14-4978-a424-de50e726a51b`.
 - Canal de distribución: `production`.
 - Runtime: política `appVersion`.
-- Versión inicial compatible: `0.1.0`.
+- Versión nativa actual: `0.2.0` (`versionCode`/`buildNumber` 2).
 
 La política `appVersion` evita que una actualización JavaScript se cargue en
 un binario con cambios nativos incompatibles. Cuando se agregue o actualice una
@@ -76,12 +76,19 @@ El workflow falla antes de publicar cuando falta el token. No necesita que el
 backend ni la base de datos estén desplegados: EAS distribuye únicamente el
 bundle y los recursos del frontend móvil.
 
-Cuando exista el servidor definitivo, agrega `EXPO_PUBLIC_API_URL` como
-**variable** del repositorio en la misma sección de Actions. Debe ser una URL
-HTTPS pública, sin credenciales, y no un secreto, `localhost` ni una IP LAN. La
-variable es independiente del sistema OTA; solo indica al frontend dónde
-consumir la API y puede incorporarse en publicaciones posteriores sin tocar el
-backend.
+`EXPO_PUBLIC_API_URL` está configurada como variable de proyecto en los
+entornos EAS `preview` y `production`. El workflow publica con
+`--environment production`, por lo que builds y OTA incorporan la misma URL
+sin depender de la PC de desarrollo ni de una variable adicional de GitHub.
+La variable no es un secreto: contiene únicamente
+`http://10.119.54.220:8090`.
+
+La API es privada y el dispositivo debe pertenecer a la red ZeroTier del
+homelab. No se necesita un dominio en esta etapa. Android 0.2.0 habilita el
+tráfico HTTP mediante `expo-build-properties`; los datos viajan por el túnel
+cifrado de ZeroTier y el puerto no debe exponerse en el router. Antes de una
+distribución pública o una compilación iOS de producción se debe ofrecer HTTPS
+con certificado válido.
 
 ## Primera instalación de prueba
 
@@ -119,6 +126,10 @@ el comportamiento real de `checkForUpdateAsync`, `fetchUpdateAsync` y
 excepción permite seguir diseñando con Expo Go, pero la aceptación de la
 actualización obligatoria siempre debe hacerse con un APK o build de
 distribución.
+
+Expo/EAS aloja únicamente el bundle y los recursos del frontend móvil. La API,
+MariaDB y Redis permanecen en `server1`; el frontend web todavía no forma parte
+del despliegue.
 
 ## Recuperación y rollback
 
