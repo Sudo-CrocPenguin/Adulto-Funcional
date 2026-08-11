@@ -13,7 +13,7 @@ Referencia auditada el 11 de agosto de 2026 sobre la versión `v0.2.0`:
 | Móvil | `npm test -- --runInBand` | 30 suites, 77 pruebas, 0 fallos |
 | Expo | `npm run doctor` | 18/18 comprobaciones |
 | Backend | `./mvnw clean verify` | 137 pruebas, 1 fallo temporal |
-| Markdown | enlaces locales y bloques cercados | 46 enlaces; 1 roto antes de esta corrección |
+| Markdown | 40 archivos, enlaces locales y bloques cercados | 85 enlaces locales, 0 rotos |
 | Homelab | Compose y healthcheck | API, MariaDB y Redis saludables |
 | OTA automático | push móvil a `main` | Bloqueado por `EXPO_TOKEN` ausente |
 

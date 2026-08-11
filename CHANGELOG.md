@@ -42,4 +42,4 @@ semántico. El historial Git conserva el detalle progresivo de cada condición.
 - Una prueba de integración del backend usa una fecha fija del 10 de agosto de
   2026 y falla al ejecutarse después de esa fecha.
 
-[0.2.0]: https://github.com/Sudo-CrocPenguin/Adulto-Funcional/releases/tag/v0.2.0
+[0.2.0]: https://github.com/Sudo-CrocPenguin/Adulto-Funcional/tree/v0.2.0
