@@ -10,7 +10,7 @@ mismo dominio, pero se construyen y despliegan por separado.
 | Componente | Estado | Entorno |
 |---|---|---|
 | Backend y base de datos | Desplegados en el homelab | Docker Compose en `server1` |
-| Aplicación móvil | APK 0.2 disponible con OTA HTTPS; build 0.3.0 en curso | Expo/EAS y Android |
+| Aplicación móvil | Versión 0.3.0 con APK interno disponible | Expo/EAS y Android |
 | Cliente web | Scaffold técnico | Sin desarrollo funcional ni despliegue |
 
 La API está publicada en
@@ -21,15 +21,15 @@ web todavía no forma parte de la entrega.
 
 ### Instalación Android disponible
 
-El APK interno 0.2 puede instalarse desde
-[Expo](https://expo.dev/artifacts/eas/PB5NQhNENOK1g_a0eN-IGD3pxqlif81Ywcw7QFdhoSk.apk).
-Al abrirlo con Internet, EAS Update entrega automáticamente el grupo
-`d31bcaf4-f06e-4838-987d-f9b8c020ecef`, que cambia la conexión a la API pública
-HTTPS. No hace falta instalar ni activar ZeroTier. Es un enlace interno
-temporal de Expo, con vencimiento previsto el 25 de agosto de 2026.
+El APK interno 0.3.0 puede instalarse desde
+[Expo](https://expo.dev/artifacts/eas/jJVqGsO4YkZ1N2QkNQiPgIPj8C-cagwzcC35Yby6WVQ.apk).
+Solo necesita una conexión normal a Internet: usa la API pública HTTPS y no
+requiere instalar ni activar ZeroTier. Android deshabilita el tráfico HTTP
+claro. El artefacto pesa 79,284,510 bytes y su SHA-256 es
+`cfad7e0da80f12f9309e5cfa8ed4bed646b618356e9be530345e6ae7cf94ac1d`.
 
-La compilación nativa 0.3.0, que además deshabilita HTTP claro en Android, se
-puede seguir en el
+Es un enlace interno temporal de Expo, con vencimiento previsto el 25 de agosto
+de 2026. Los metadatos y logs permanecen en el
 [build 815c9cab](https://expo.dev/accounts/servermiguel1/projects/adulto-funcional/builds/815c9cab-ea2d-402f-8122-c05f1169c92f).
 
 ## Capacidades actuales
