@@ -69,13 +69,14 @@ cp .env.example .env
 Para el servidor desplegado:
 
 ```dotenv
-EXPO_PUBLIC_API_URL=http://10.119.54.220:8090
+EXPO_PUBLIC_API_URL=https://api-adulto-funcional.38-225-48-28.sslip.io
 ```
 
 El teléfono debe:
 
-1. pertenecer a la red ZeroTier autorizada;
-2. poder abrir `http://10.119.54.220:8090/actuator/health`;
+1. tener acceso normal a Internet;
+2. poder abrir
+   `https://api-adulto-funcional.38-225-48-28.sslip.io/actuator/health`;
 3. tener Expo Go compatible con SDK 54 para desarrollo;
 4. poder alcanzar la PC por LAN o túnel para cargar Metro.
 
@@ -124,7 +125,7 @@ rsync -az \
   server/ server1:/home/admin1/apps/adulto-funcional/server/
 
 ssh server1 \
-  'cd "$HOME/apps/adulto-funcional/server" && docker compose up -d --build'
+  'cd "$HOME/apps/adulto-funcional/server" && docker compose -f docker-compose.yml -f docker-compose.coolify.yml up -d --build'
 ```
 
 El `.env` remoto debe incluir `COMPOSE_PROJECT_NAME=adulto-funcional-prod` y
@@ -160,7 +161,7 @@ La entrega está completa únicamente cuando:
 - todas las validaciones aplicables de
   [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) están aprobadas;
 - la API y sus tres contenedores están saludables;
-- el teléfono alcanza la API por ZeroTier;
+- el teléfono alcanza la API pública por HTTPS sin ZeroTier;
 - el flujo autenticado mínimo fue comprobado con datos descartables;
 - existe un binario instalable compatible con el runtime publicado;
 - el workflow OTA termina exitosamente si hubo cambios móviles;
@@ -170,7 +171,7 @@ La entrega está completa únicamente cuando:
 
 | Síntoma | Comprobación |
 |---|---|
-| La app no conecta | ZeroTier activo, healthcheck y `EXPO_PUBLIC_API_URL` |
+| La app no conecta | DNS, certificado, healthcheck y `EXPO_PUBLIC_API_URL` |
 | Registro funciona en móvil pero no en web Expo | El navegador usa transporte cookie/CSRF; Expo web es revisión visual |
 | La app queda en actualización | Conectividad con EAS, canal/runtime y última publicación |
 | El backend no inicia | `docker compose ps`, logs, secretos y migraciones Flyway |

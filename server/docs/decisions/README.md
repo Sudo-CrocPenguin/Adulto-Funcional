@@ -29,6 +29,7 @@ actualizarla sin reescribir el contexto histórico del ADR.
 | [0006](0006-master-key-error-semantics.md) | Semántica HTTP de los errores de Master Key | Aceptada | Completa |
 | [0007](0007-native-client-detection.md) | Detección de cliente nativo | Aceptada | Completa |
 | [0008](0008-account-deletion-cascade.md) | Eliminación de cuenta por cascada | Aceptada | Completa |
+| [0009](0009-public-api-https.md) | API pública mediante proxy HTTPS | Aceptada | Completa |
 
 ## Evidencia de implementación
 
@@ -42,6 +43,8 @@ actualizarla sin reescribir el contexto histórico del ADR.
 - ADR 0006: códigos `403` especializados y compatibilidad de la ruta histórica.
 - ADR 0007: `ClientTypeResolver`, contrato web/nativo y headers del cliente Expo.
 - ADR 0008: caso de uso de borrado y cascadas de V4, V6 y V10.
+- ADR 0009: router Traefik, TLS público, API en loopback y cliente móvil sin
+  tráfico HTTP claro.
 
 La [referencia API](../API_REFERENCE.md), la [guía de seguridad](../SECURITY.md)
 y la [guía operativa](../OPERATIONS.md) describen el comportamiento resultante.

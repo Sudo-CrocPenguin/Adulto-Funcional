@@ -51,7 +51,7 @@ monorepo no publican una actualización móvil.
 - Project ID: `ffd0b764-df14-4978-a424-de50e726a51b`.
 - Canal de distribución: `production`.
 - Runtime: política `appVersion`.
-- Versión nativa actual: `0.2.0` (`versionCode`/`buildNumber` 2).
+- Versión nativa actual: `0.3.0` (`versionCode`/`buildNumber` 3).
 
 La política `appVersion` evita que una actualización JavaScript se cargue en
 un binario con cambios nativos incompatibles. Cuando se agregue o actualice una
@@ -90,19 +90,32 @@ requeridos` porque `EXPO_TOKEN` no estaba configurado. Para cerrar el flujo:
 No se debe describir la publicación automática como operativa hasta completar
 estos pasos.
 
+El build interno Android 0.2.0 `fe908663-7fd7-42c3-a481-8ac8e104bc7d` sí
+terminó. Su
+[APK instalable](https://expo.dev/artifacts/eas/PB5NQhNENOK1g_a0eN-IGD3pxqlif81Ywcw7QFdhoSk.apk)
+responde correctamente y pesa 79.3 MB. Para conservar compatibilidad con ese
+binario se publicó manualmente el grupo Android
+`d31bcaf4-f06e-4838-987d-f9b8c020ecef`, runtime 0.2.0, en la rama/canal
+`production`. El manifiesto de EAS devuelve el update
+`019ff2c1-a851-79a3-a5c7-ed9946b81636`; el bundle contiene la URL HTTPS pública
+y no contiene la dirección de ZeroTier.
+
+El enlace 0.2 es una entrega puente y vence el 25 de agosto de 2026. El build
+nativo recomendado 0.3.0 es
+[`815c9cab-ea2d-402f-8122-c05f1169c92f`](https://expo.dev/accounts/servermiguel1/projects/adulto-funcional/builds/815c9cab-ea2d-402f-8122-c05f1169c92f).
+Mientras EAS lo muestra en cola todavía no existe su URL de artefacto.
+
 `EXPO_PUBLIC_API_URL` está configurada como variable de proyecto en los
 entornos EAS `preview` y `production`. El workflow publica con
 `--environment production`, por lo que builds y OTA incorporan la misma URL
 sin depender de la PC de desarrollo ni de una variable adicional de GitHub.
 La variable no es un secreto: contiene únicamente
-`http://10.119.54.220:8090`.
+`https://api-adulto-funcional.38-225-48-28.sslip.io`.
 
-La API es privada y el dispositivo debe pertenecer a la red ZeroTier del
-homelab. No se necesita un dominio en esta etapa. Android 0.2.0 habilita el
-tráfico HTTP mediante `expo-build-properties`; los datos viajan por el túnel
-cifrado de ZeroTier y el puerto no debe exponerse en el router. Antes de una
-distribución pública o una compilación iOS de producción se debe ofrecer HTTPS
-con certificado válido.
+La API se publica mediante Traefik con certificado TLS válido. El dispositivo
+solo necesita Internet y no requiere ZeroTier. Android 0.3.0 establece
+`usesCleartextTraffic=false`; el puerto directo de Spring Boot queda limitado a
+loopback y MariaDB/Redis continúan dentro de la red Docker.
 
 ## Primera instalación de prueba
 
