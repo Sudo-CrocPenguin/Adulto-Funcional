@@ -3,6 +3,7 @@ import { ApiClient } from '../core/http/ApiClient';
 import { AsyncThemePreferenceStore } from '../core/preferences/AsyncThemePreferenceStore';
 import { SecureSessionStore } from '../core/storage/SecureSessionStore';
 import { LoginAccountUseCase } from '../modules/auth/application/LoginAccountUseCase';
+import { LogoutAccountUseCase } from '../modules/auth/application/LogoutAccountUseCase';
 import { RegisterAccountUseCase } from '../modules/auth/application/RegisterAccountUseCase';
 import { RestoreSessionUseCase } from '../modules/auth/application/RestoreSessionUseCase';
 import { HttpAuthRepository } from '../modules/auth/infrastructure/HttpAuthRepository';
@@ -65,6 +66,10 @@ export function createAppDependencies() {
     deleteFixedExpense: new DeleteFixedExpenseUseCase(financeRepository),
     ensureLatestUpdate: new EnsureLatestUpdateUseCase(applicationUpdateRepository),
     loginAccount: new LoginAccountUseCase({
+      authRepository,
+      sessionStore,
+    }),
+    logoutAccount: new LogoutAccountUseCase({
       authRepository,
       sessionStore,
     }),
