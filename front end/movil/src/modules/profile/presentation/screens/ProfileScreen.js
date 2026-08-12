@@ -19,7 +19,9 @@ import { useAppSession } from '../../../../session/AppSessionContext';
 import { AppBottomNavigation } from '../../../../shared/presentation/components/AppBottomNavigation';
 import { AuthenticatedHeader } from '../../../../shared/presentation/components/AuthenticatedHeader';
 import { useAppTheme } from '../../../../theme/AppThemeContext';
+import { LogoutAccountError } from '../../../auth/application/LogoutAccountUseCase';
 import { EditProfileSheet } from '../components/EditProfileSheet';
+import { LogoutConfirmationDialog } from '../components/LogoutConfirmationDialog';
 import { PasswordChangeNoticeSheet } from '../components/PasswordChangeNoticeSheet';
 import { PersonalInformationCard } from '../components/PersonalInformationCard';
 import { ProfileActivityCard } from '../components/ProfileActivityCard';
@@ -39,8 +41,8 @@ function ErrorState({ message, onRetry, palette }) {
 }
 
 export function ProfileScreen({ navigation }) {
-  const { loadProfile, updateProfile } = useAppDependencies();
-  const { openSession, session } = useAppSession();
+  const { loadProfile, logoutAccount, updateProfile } = useAppDependencies();
+  const { closeSession, openSession, session } = useAppSession();
   const { isDark, palette } = useAppTheme();
   const [changePasswordVisible, setChangePasswordVisible] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -48,6 +50,8 @@ export function ProfileScreen({ navigation }) {
   const [feedback, setFeedback] = useState(null);
   const [isLoading, setLoading] = useState(true);
   const [isRefreshing, setRefreshing] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const [logoutVisible, setLogoutVisible] = useState(false);
   const [snapshot, setSnapshot] = useState(null);
 
   const load = useCallback(async ({ refresh = false } = {}) => {
@@ -73,6 +77,24 @@ export function ProfileScreen({ navigation }) {
     setSnapshot((current) => current.withProfile(profile));
     openSession(session.withProfile(profile));
     setFeedback('Perfil actualizado correctamente.');
+  }
+
+  async function logout() {
+    setLoggingOut(true);
+    setError(null);
+    setFeedback(null);
+    try {
+      await logoutAccount.execute(session);
+      setLogoutVisible(false);
+      closeSession();
+    } catch (logoutError) {
+      setLogoutVisible(false);
+      setError(logoutError instanceof LogoutAccountError
+        ? logoutError.message
+        : 'No fue posible cerrar la sesión. Inténtalo nuevamente.');
+    } finally {
+      setLoggingOut(false);
+    }
   }
 
   function selectDestination(destination) {
@@ -126,6 +148,26 @@ export function ProfileScreen({ navigation }) {
               </View>
               <MaterialCommunityIcons color={palette.textMuted} name="chevron-right" size={32} />
             </Pressable>
+            <Pressable
+              accessibilityLabel="Cerrar sesión"
+              accessibilityRole="button"
+              onPress={() => setLogoutVisible(true)}
+              style={({ pressed }) => [
+                styles.accountRow,
+                { borderTopColor: palette.border },
+                styles.logoutRow,
+                pressed && styles.pressed,
+              ]}
+            >
+              <View style={[styles.accountIcon, { backgroundColor: palette.errorSoft }]}>
+                <MaterialCommunityIcons color={palette.error} name="logout-variant" size={31} />
+              </View>
+              <View style={styles.accountTextBlock}>
+                <Text style={[styles.accountLabel, { color: palette.error }]}>Cerrar sesión</Text>
+                <Text style={[styles.accountHint, { color: palette.textMuted }]}>Salir de la cuenta en este dispositivo</Text>
+              </View>
+              <MaterialCommunityIcons color={palette.error} name="chevron-right" size={32} />
+            </Pressable>
           </View>
         </ScrollView>
       )}
@@ -133,6 +175,13 @@ export function ProfileScreen({ navigation }) {
       <AppBottomNavigation activeItem="Perfil" onSelect={selectDestination} palette={palette} />
       {snapshot ? <EditProfileSheet onClose={() => setEditing(false)} onSubmit={submitProfile} palette={palette} profile={snapshot.profile} visible={editing} /> : null}
       <PasswordChangeNoticeSheet onClose={() => setChangePasswordVisible(false)} palette={palette} visible={changePasswordVisible} />
+      <LogoutConfirmationDialog
+        loggingOut={loggingOut}
+        onCancel={() => setLogoutVisible(false)}
+        onConfirm={logout}
+        palette={palette}
+        visible={logoutVisible}
+      />
     </SafeAreaView>
   );
 }
@@ -152,6 +201,7 @@ const styles = StyleSheet.create({
   errorTitle: { fontSize: 21, fontWeight: '800', marginTop: 12, textAlign: 'center' },
   feedback: { borderRadius: 8, marginBottom: 10, marginHorizontal: 24, padding: 10, textAlign: 'center' },
   loadingText: { fontSize: 15, marginTop: 13 },
+  logoutRow: { borderTopWidth: StyleSheet.hairlineWidth },
   pressed: { opacity: 0.62 },
   retryButton: { borderRadius: 9, marginTop: 20, paddingHorizontal: 26, paddingVertical: 12 },
   retryText: { fontSize: 16, fontWeight: '800' },
