@@ -2,6 +2,7 @@ import {
   CommitmentDraft,
   CommitmentValidationError,
 } from '../CommitmentDraft';
+import { Commitment } from '../Commitment';
 
 function validForm(overrides = {}) {
   return {
@@ -82,5 +83,31 @@ describe('CommitmentDraft', () => {
     )).toThrow(expect.objectContaining({
       fieldErrors: { endTime: expect.any(String) },
     }));
+  });
+
+  it('construye un PATCH mínimo y permite editar un evento pasado sin mover su fecha', () => {
+    const commitment = Commitment.fromApi({
+      category: { id: '01988e6b-0c00-7000-8000-000000000011', name: 'Trabajo' },
+      endHour: '2026-08-11T10:00:00',
+      eventDate: '2026-08-11',
+      frequency: 7,
+      id: 'event-1',
+      priority: 'Alta',
+      reminder: '2026-08-11T08:00:00',
+      startHour: '2026-08-11T09:00:00',
+      status: 'Pendiente',
+      title: 'Reunión de equipo',
+      zoneId: 'America/Bogota',
+    });
+    const draft = CommitmentDraft.update(
+      validForm({ status: 'Completado', title: 'Reunión terminada' }),
+      commitment,
+      new Date(2026, 7, 12, 12, 0),
+    );
+
+    expect(draft.toUpdateRequest(commitment)).toEqual({
+      status: 'Completado',
+      title: 'Reunión terminada',
+    });
   });
 });

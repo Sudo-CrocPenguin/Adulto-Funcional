@@ -4,8 +4,8 @@
 
 La sección de Compromisos es el cliente móvil del módulo de agenda personal.
 Permite consultar los eventos de la cuenta autenticada, distinguir su estado,
-visualizar la racha de actividad y crear un compromiso válido mediante la API
-existente.
+visualizar la racha de actividad y crear, editar o eliminar un compromiso
+mediante la API existente.
 
 La implementación reproduce la referencia visual con encabezado autenticado,
 tarjeta de racha, filtros, tarjetas por prioridad, navegación inferior y un
@@ -20,14 +20,16 @@ La pantalla permite:
 - reconocer categoría, frecuencia, prioridad y fecha de cada elemento;
 - calcular la racha de días consecutivos con compromisos completados;
 - crear compromisos con categoría, recurrencia, prioridad y recordatorio;
+- editar sus datos y cambiar su estado;
+- eliminar un compromiso después de una confirmación explícita;
 - actualizar el listado inmediatamente después de una creación exitosa;
 - conservar las acciones compartidas de notificaciones y tema.
 
 ## Cómo funciona
 
 La presentación depende de casos de uso y no construye solicitudes HTTP. La
-composición inyecta `LoadCommitmentsUseCase` y `CreateCommitmentUseCase`, ambos
-sobre el contrato `CommitmentRepository`.
+composición inyecta carga, creación, actualización y eliminación sobre el
+contrato `CommitmentRepository`.
 
 ```text
 CommitmentsScreen
@@ -44,6 +46,16 @@ NewCommitmentSheet
       -> validación y horario civil
     -> HttpCommitmentRepository
       -> POST /api/agenda/events
+
+NewCommitmentSheet (edición)
+  -> UpdateCommitmentUseCase
+    -> CommitmentDraft
+      -> validación y PATCH mínimo
+    -> PATCH /api/agenda/events/{id}
+
+CommitmentCard (eliminación confirmada)
+  -> DeleteCommitmentUseCase
+    -> DELETE /api/agenda/events/{id}
 ```
 
 Todos los endpoints reciben `Authorization: Bearer <access-token>` y
@@ -123,6 +135,23 @@ Los errores de campo del backend se proyectan nuevamente sobre el formulario.
 Si no existen categorías `AGENDA` accesibles, la pantalla explica la condición
 y desactiva `Guardar` para evitar una solicitud inválida.
 
+## Edición, estado y eliminación
+
+Cada tarjeta incluye acciones de editar y eliminar. El formulario de edición
+se inicializa con el compromiso seleccionado y permite cambiar categoría,
+frecuencia, prioridad, fecha, horario, recordatorio y estado (`Pendiente`,
+`Completado`, `Pospuesto` o `Cancelado`). El cliente compara el formulario con
+la entidad original y envía únicamente los campos modificados.
+
+Esta actualización parcial permite, por ejemplo, marcar como completado o
+renombrar un compromiso pasado sin volver a enviar su fecha histórica. La
+respuesta actualizada reemplaza el elemento dentro de la colección y vuelve a
+calcular filtros y racha.
+
+Eliminar requiere una segunda confirmación en un diálogo destructivo. Solo al
+confirmar se ejecuta `DELETE /api/agenda/events/{id}` y se retira el elemento
+de la lista.
+
 ## Navegación y estados
 
 La barra inferior navega mediante el stack nativo entre Inicio, Compromisos,
@@ -135,9 +164,6 @@ u oscuro.
 
 ## Límites actuales
 
-- La pantalla implementa las acciones mostradas en el diseño: consulta,
-  filtros y creación. Edición, cambio de estado y eliminación se incorporarán
-  cuando se definan sus interacciones visuales.
 - La API no expone un endpoint de racha; el cálculo se realiza sobre los
   eventos paginados recibidos.
 - La creación necesita al menos una categoría de tipo `AGENDA` existente en la

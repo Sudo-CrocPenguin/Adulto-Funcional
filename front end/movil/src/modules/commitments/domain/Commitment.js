@@ -12,6 +12,13 @@ export const COMMITMENT_FREQUENCIES = Object.freeze([
   Object.freeze({ label: 'Anual', value: 365 }),
 ]);
 
+export const COMMITMENT_STATUSES = Object.freeze([
+  Object.freeze({ label: 'Pendiente', value: 'Pendiente' }),
+  Object.freeze({ label: 'Completado', value: 'Completado' }),
+  Object.freeze({ label: 'Pospuesto', value: 'Pospuesto' }),
+  Object.freeze({ label: 'Cancelado', value: 'Cancelado' }),
+]);
+
 const FREQUENCY_LABELS = Object.freeze(
   Object.fromEntries(COMMITMENT_FREQUENCIES.map(({ label, value }) => [value, label])),
 );

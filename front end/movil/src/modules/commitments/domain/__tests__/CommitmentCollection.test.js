@@ -43,4 +43,20 @@ describe('CommitmentCollection', () => {
     expect(next.commitments.map(({ id }) => id)).toEqual(['sooner', 'later']);
     expect(collection.commitments).toHaveLength(1);
   });
+
+  it('actualiza y elimina compromisos sin mutar la colección original', () => {
+    const original = commitment('event-1', '2026-08-11', 'Pendiente');
+    const updated = commitment('event-1', '2026-08-11', 'Completado');
+    const collection = CommitmentCollection.create({
+      commitments: [original],
+      now: new Date(2026, 7, 10, 12),
+    });
+
+    const afterUpdate = collection.withUpdated(updated, new Date(2026, 7, 10, 12));
+    const afterDelete = afterUpdate.without('event-1', new Date(2026, 7, 10, 12));
+
+    expect(afterUpdate.commitments[0].isCompleted).toBe(true);
+    expect(afterDelete.commitments).toHaveLength(0);
+    expect(collection.commitments[0].isPending).toBe(true);
+  });
 });

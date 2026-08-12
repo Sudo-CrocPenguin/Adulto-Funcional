@@ -33,6 +33,28 @@ export class FixedExpenseDraft {
   }
 
   static create(form, clock = new Date()) {
+    const data = FixedExpenseDraft.validate(form, clock);
+
+    return new FixedExpenseDraft({
+      ...data,
+      reminderDays: 0,
+      startDate: isoDate(new Date(
+        clock.getFullYear(),
+        clock.getMonth(),
+        clock.getDate(),
+      )),
+    });
+  }
+
+  static update(form, expense, clock = new Date()) {
+    if (!expense?.id) {
+      throw new Error('El gasto fijo no tiene un identificador válido.');
+    }
+
+    return new FixedExpenseDraft(FixedExpenseDraft.validate(form, clock, expense));
+  }
+
+  static validate(form, clock, expense = null) {
     const name = String(form.name ?? '').trim();
     const categoryId = String(form.categoryId ?? '').trim();
     const frequency = String(form.frequency ?? '');
@@ -61,7 +83,9 @@ export class FixedExpenseDraft {
       errors.amount = 'Escribe un monto positivo con máximo dos decimales.';
     }
     const today = new Date(clock.getFullYear(), clock.getMonth(), clock.getDate());
-    if (!isValidDate(nextDueDate) || nextDueDate <= today) {
+    const unchangedDueDate = isValidDate(nextDueDate)
+      && isoDate(nextDueDate) === expense?.nextDueDate;
+    if (!isValidDate(nextDueDate) || (!unchangedDueDate && nextDueDate <= today)) {
       errors.nextDueDate = 'La fecha de corte debe ser posterior a hoy.';
     }
 
@@ -69,16 +93,14 @@ export class FixedExpenseDraft {
       throw new FixedExpenseValidationError(errors);
     }
 
-    return new FixedExpenseDraft({
+    return {
       amount: Number(amountText.replace(',', '.')),
       categoryId,
       frequency,
       nextDueDate: isoDate(nextDueDate),
-      reminderDays: 0,
-      startDate: isoDate(today),
       status,
       name,
-    });
+    };
   }
 
   toRequest() {
@@ -92,5 +114,27 @@ export class FixedExpenseDraft {
       startDate: this.startDate,
       status: this.status,
     };
+  }
+
+  toUpdateRequest(expense) {
+    const currentCategoryId = expense.category?.id ?? null;
+    const fields = {
+      amount: this.amount,
+      categoryId: this.categoryId,
+      frequency: this.frequency,
+      name: this.name,
+      nextDueDate: this.nextDueDate,
+      status: this.status,
+    };
+
+    return Object.fromEntries(Object.entries(fields).filter(([field, value]) => {
+      if (field === 'categoryId') {
+        return value !== currentCategoryId;
+      }
+      if (field === 'amount') {
+        return value !== Number(expense.amount);
+      }
+      return value !== expense[field];
+    }));
   }
 }

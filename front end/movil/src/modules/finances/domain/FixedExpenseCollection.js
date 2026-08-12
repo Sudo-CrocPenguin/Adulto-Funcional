@@ -62,9 +62,19 @@ export class FixedExpenseCollection {
   withUpdated(expense) {
     return FixedExpenseCollection.create({
       categories: this.categories,
-      expenses: this.expenses.map((current) => (
-        current.id === expense.id ? expense : current
-      )),
+      expenses: this.expenses
+        .map((current) => current.id === expense.id ? expense : current)
+        .sort((left, right) => (
+          String(left.nextDueDate).localeCompare(String(right.nextDueDate))
+        )),
+      now: this.now,
+    });
+  }
+
+  without(expenseId) {
+    return FixedExpenseCollection.create({
+      categories: this.categories,
+      expenses: this.expenses.filter(({ id }) => id !== expenseId),
       now: this.now,
     });
   }
