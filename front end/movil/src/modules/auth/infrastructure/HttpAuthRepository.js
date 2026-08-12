@@ -16,6 +16,14 @@ export class HttpAuthRepository extends AuthRepository {
     return AuthSession.fromApi(data);
   }
 
+  async logout(session) {
+    await this.apiClient.delete('/api/auth/sessions/current', {
+      headers: {
+        Authorization: `${session.tokenType || 'Bearer'} ${session.accessToken}`,
+      },
+    });
+  }
+
   async register(command) {
     const data = await this.apiClient.post(
       '/api/auth/register',

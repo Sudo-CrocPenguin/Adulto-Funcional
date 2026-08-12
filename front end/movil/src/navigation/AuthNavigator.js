@@ -7,10 +7,10 @@ import { AUTH_ROUTES } from './routes';
 
 const Stack = createNativeStackNavigator();
 
-export function AuthNavigator() {
+export function AuthNavigator({ initialRouteName = AUTH_ROUTES.register }) {
   return (
     <Stack.Navigator
-      initialRouteName={AUTH_ROUTES.register}
+      initialRouteName={initialRouteName}
       screenOptions={{
         animation: 'slide_from_right',
         contentStyle: { backgroundColor: '#F4F6F9' },

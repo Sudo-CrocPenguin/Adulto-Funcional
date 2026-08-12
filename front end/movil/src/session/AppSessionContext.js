@@ -13,6 +13,7 @@ export const SESSION_STATUS = Object.freeze({
   anonymous: 'anonymous',
   authenticated: 'authenticated',
   restoring: 'restoring',
+  signedOut: 'signed-out',
 });
 
 export function AppSessionProvider({ children, restoreSession }) {
@@ -55,7 +56,7 @@ export function AppSessionProvider({ children, restoreSession }) {
 
   const closeSession = useCallback(() => {
     setSession(null);
-    setStatus(SESSION_STATUS.anonymous);
+    setStatus(SESSION_STATUS.signedOut);
   }, []);
 
   const value = useMemo(() => ({

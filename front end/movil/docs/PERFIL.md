@@ -61,12 +61,34 @@ contraseña` explica esta limitación y no simula una actualización local o
 remota. La Master Key se administra de manera independiente en el Gestor de
 Contraseñas.
 
+## Cierre de sesión
+
+La sección `CUENTA` incluye la acción destructiva `Cerrar sesión`. Antes de
+ejecutarla, la aplicación solicita confirmación para evitar una salida
+accidental.
+
+Al confirmar se coordinan dos operaciones:
+
+1. `DELETE /api/auth/sessions/current` revoca la sesión actual, invalida sus
+   tokens en el backend y bloquea el desbloqueo de Master Key asociado.
+2. `SecureSessionStore.clear()` elimina del dispositivo el refresh token usado
+   por `Recuérdame`.
+
+La limpieza local es la condición principal para salir de la interfaz. Si el
+servidor está apagado o no hay red, el usuario puede cerrar sesión igualmente
+y vuelve a `Iniciar Sesión`; el intento remoto falla de forma segura y los
+tokens dejan de estar disponibles en el teléfono. Si el servidor alcanza a
+revocar la sesión, también es seguro salir aunque falle la limpieza local,
+porque el refresh token persistido ya no puede renovarla. Solo se mantiene la
+pantalla autenticada cuando fallan ambas protecciones.
+
 ## Estados de interfaz
 
 - carga inicial con indicador;
 - error recuperable con botón `Reintentar`;
 - actualización mediante gesto de refresco;
 - confirmación después de una edición correcta;
+- confirmación antes de cerrar sesión y retorno a la pantalla de acceso;
 - errores locales por campo y errores estructurados del backend;
 - formularios adaptados al teclado y a modo claro u oscuro.
 
@@ -77,7 +99,11 @@ src/modules/profile/
   domain/          perfil, actividad, borrador y contrato de repositorio
   application/     casos de uso de carga y actualización
   infrastructure/ adaptador HTTP y composición de métricas
-  presentation/   pantalla, tarjetas, editor y aviso de contraseña
+  presentation/   pantalla, tarjetas, editor, cuenta y confirmaciones
+
+src/modules/auth/
+  application/     cierre seguro de sesión
+  infrastructure/ revocación HTTP de la sesión actual
 ```
 
 La pantalla accede a las operaciones mediante el contenedor de dependencias.
@@ -92,7 +118,9 @@ Las pruebas unitarias verifican:
 - rachas con fechas duplicadas y saltos entre días;
 - contador desconocido cuando la bóveda está bloqueada;
 - rutas, autorización y paginación del repositorio;
-- conservación de los tokens al sincronizar el perfil con la sesión.
+- conservación de los tokens al sincronizar el perfil con la sesión;
+- revocación remota y limpieza local durante el cierre de sesión, incluyendo
+  funcionamiento cuando el servidor no está disponible.
 
 ```bash
 npm test -- --runInBand
