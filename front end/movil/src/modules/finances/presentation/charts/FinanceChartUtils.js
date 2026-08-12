@@ -13,8 +13,9 @@ export const CHART_COLORS = Object.freeze([
   '#D58BBD',
 ]);
 
-export function chartColor(index) {
-  return CHART_COLORS[index % CHART_COLORS.length];
+export function chartColor(index, palette) {
+  const chartColors = palette?.chartColors ?? CHART_COLORS;
+  return chartColors[index % chartColors.length];
 }
 
 export function compactMoney(value) {

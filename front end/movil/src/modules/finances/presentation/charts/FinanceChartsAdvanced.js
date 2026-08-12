@@ -72,8 +72,8 @@ export function FinancialRadarChart({ analytics, palette }) {
           </SvgText>
         </G>
       ))}
-      <Polygon fill={chartColor(2)} fillOpacity="0.25" points={pointsAttribute(values)} stroke={chartColor(2)} strokeWidth="3" />
-      {values.map((point, index) => <Circle cx={point.x} cy={point.y} fill={chartColor(2)} key={data[index].label} r="3" />)}
+      <Polygon fill={chartColor(2, palette)} fillOpacity="0.25" points={pointsAttribute(values)} stroke={chartColor(2, palette)} strokeWidth="3" />
+      {values.map((point, index) => <Circle cx={point.x} cy={point.y} fill={chartColor(2, palette)} key={data[index].label} r="3" />)}
     </Svg>
   );
 }
@@ -87,14 +87,14 @@ export function ExpensePieChart({ analytics, palette }) {
   let angle = 0;
   return (
     <Svg height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width="100%">
-      {data.length === 1 ? <Circle cx="87" cy="90" fill={chartColor(0)} r="62" /> : data.map((item, index) => {
+      {data.length === 1 ? <Circle cx="87" cy="90" fill={chartColor(0, palette)} r="62" /> : data.map((item, index) => {
         const start = angle;
         angle += (item.value / total) * 360;
-        return <Path d={pieSlicePath(87, 90, 62, start, angle)} fill={chartColor(index)} key={item.id} />;
+        return <Path d={pieSlicePath(87, 90, 62, start, angle)} fill={chartColor(index, palette)} key={item.id} />;
       })}
       {data.map((item, index) => (
         <G key={`legend:${item.id}`}>
-          <Rect fill={chartColor(index)} height="9" rx="2" width="9" x="169" y={23 + index * 21} />
+          <Rect fill={chartColor(index, palette)} height="9" rx="2" width="9" x="169" y={23 + index * 21} />
           <SvgText fill={palette.text} fontSize="9" x="183" y={31 + index * 21}>{item.label.slice(0, 15)}</SvgText>
           <SvgText fill={palette.textMuted} fontSize="9" textAnchor="end" x="309" y={31 + index * 21}>{Math.round((item.value / total) * 100)}%</SvgText>
         </G>
@@ -121,8 +121,8 @@ export function BalanceAreaChart({ analytics, palette }) {
   return (
     <Svg height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width="100%">
       {[0, 1, 2, 3].map((index) => <Line key={index} stroke={palette.divider} x1="24" x2="299" y1={25 + index * 40} y2={25 + index * 40} />)}
-      <Polygon fill={chartColor(0)} fillOpacity="0.24" points={pointsAttribute(areaPoints)} />
-      <Polyline fill="none" points={pointsAttribute(points)} stroke={chartColor(0)} strokeWidth="4" />
+      <Polygon fill={chartColor(0, palette)} fillOpacity="0.24" points={pointsAttribute(areaPoints)} />
+      <Polyline fill="none" points={pointsAttribute(points)} stroke={chartColor(0, palette)} strokeWidth="4" />
       <SvgText fill={palette.text} fontSize="11" fontWeight="700" x="25" y="167">Volumen acumulado</SvgText>
       <SvgText fill={palette.brandDeep} fontSize="12" fontWeight="900" textAnchor="end" x="297" y="167">{compactMoney(values[values.length - 1])}</SvgText>
     </Svg>
@@ -151,20 +151,20 @@ export function MoneySankeyChart({ analytics, palette }) {
             fill="none"
             key={`${source.id}:${target.id}`}
             opacity={0.18 + share * 0.45}
-            stroke={chartColor(targetIndex)}
+            stroke={chartColor(targetIndex, palette)}
             strokeWidth={Math.max(1, share * 18)}
           />
         );
       }))}
       {sources.map((item, index) => (
         <G key={item.id}>
-          <Rect fill={chartColor(index)} height="24" rx="3" width="9" x="67" y={20 + index * 40} />
+          <Rect fill={chartColor(index, palette)} height="24" rx="3" width="9" x="67" y={20 + index * 40} />
           <SvgText fill={palette.text} fontSize="8" textAnchor="end" x="62" y={31 + index * 40}>{item.label.slice(0, 9)}</SvgText>
         </G>
       ))}
       {targets.map((item, index) => (
         <G key={item.id}>
-          <Rect fill={chartColor(index)} height="20" rx="3" width="9" x="246" y={14 + index * 32} />
+          <Rect fill={chartColor(index, palette)} height="20" rx="3" width="9" x="246" y={14 + index * 32} />
           <SvgText fill={palette.text} fontSize="8" x="260" y={27 + index * 32}>{item.label.slice(0, 9)}</SvgText>
         </G>
       ))}
@@ -190,11 +190,11 @@ export function ExpenseTreemapChart({ analytics, palette }) {
         const width = Math.max((item.value / total) * 304, 1);
         const element = (
           <G key={item.id}>
-            <Rect fill={chartColor(index)} height="145" opacity="0.9" rx="3" width={Math.max(width - 3, 1)} x={x} y="9" />
+            <Rect fill={chartColor(index, palette)} height="145" opacity="0.9" rx="3" width={Math.max(width - 3, 1)} x={x} y="9" />
             {width > 46 ? (
               <>
-                <SvgText fill="#FFFFFF" fontSize="10" fontWeight="800" textAnchor="middle" x={x + width / 2} y="75">{item.label.slice(0, 10)}</SvgText>
-                <SvgText fill="#FFFFFF" fontSize="9" textAnchor="middle" x={x + width / 2} y="91">{Math.round((item.value / total) * 100)}%</SvgText>
+                <SvgText fill={palette.surfaceOnBrand} fontSize="10" fontWeight="800" textAnchor="middle" x={x + width / 2} y="75">{item.label.slice(0, 10)}</SvgText>
+                <SvgText fill={palette.surfaceOnBrand} fontSize="9" textAnchor="middle" x={x + width / 2} y="91">{Math.round((item.value / total) * 100)}%</SvgText>
               </>
             ) : null}
           </G>

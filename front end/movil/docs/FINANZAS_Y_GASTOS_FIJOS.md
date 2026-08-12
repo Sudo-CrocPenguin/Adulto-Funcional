@@ -30,7 +30,7 @@ El usuario puede:
 - registrar el pago de un gasto fijo como egreso financiero;
 - avanzar automáticamente el próximo vencimiento según la recurrencia;
 - revisar 20 lecturas visuales derivadas de su historial real;
-- utilizar las pantallas en modo claro u oscuro y en Expo Go o web.
+- utilizar las pantallas en modo Claro, Oscuro o Neón y en Expo Go o web.
 
 ## Flujo de arquitectura
 

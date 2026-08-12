@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const THEME_KEY = 'adulto_funcional.theme_mode';
-const SUPPORTED_MODES = new Set(['light', 'dark']);
+const SUPPORTED_MODES = new Set(['light', 'dark', 'neon']);
 
 export class AsyncThemePreferenceStore {
   constructor(storage = AsyncStorage) {

@@ -114,10 +114,16 @@ no existe un identificador de notificación proporcionado por el backend.
 
 ## Tema y configuración
 
-El engranaje abre una hoja modal con dos opciones: `Claro` y `Oscuro`. El tema
-se aplica al fondo, textos, tarjetas, navegación, estados de carga, panel de
-notificaciones y configuración. La elección se conserva entre aperturas de la
-aplicación mediante `AsyncStorage`.
+El engranaje abre una hoja modal con tres opciones: `Claro`, `Oscuro` y
+`Neón`. El tema se aplica al fondo, textos, tarjetas, navegación, estados de
+carga, panel de notificaciones, gráficos y configuración. La elección se
+conserva entre aperturas de la aplicación mediante `AsyncStorage`.
+
+Neón mantiene la estructura y los componentes existentes, pero adopta fondo
+negro azulado, superficies índigo, guía cian, acciones magenta y señales
+semánticas verdes, amarillas y rojas. Los brillos se limitan al encabezado,
+navegación y controles activos para conservar jerarquía y legibilidad. Las
+reglas completas se documentan en [TEMAS.md](./TEMAS.md).
 
 La preferencia visual no contiene información privada. Por eso se almacena de
 forma independiente al refresh token, que permanece protegido mediante

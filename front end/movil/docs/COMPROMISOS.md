@@ -159,8 +159,8 @@ Finanzas, Gastos Fijos, Contraseñas y Perfil. Compromisos admite carga inicial,
 reintento, colección vacía y actualización al deslizar.
 
 La campana presenta como aviso contextual el siguiente compromiso pendiente
-del listado. El engranaje reutiliza la configuración compartida de tema claro
-u oscuro.
+del listado. El engranaje reutiliza la configuración compartida de tema Claro,
+Oscuro o Neón.
 
 ## Límites actuales
 

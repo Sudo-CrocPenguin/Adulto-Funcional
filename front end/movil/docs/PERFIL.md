@@ -90,7 +90,7 @@ pantalla autenticada cuando fallan ambas protecciones.
 - confirmación después de una edición correcta;
 - confirmación antes de cerrar sesión y retorno a la pantalla de acceso;
 - errores locales por campo y errores estructurados del backend;
-- formularios adaptados al teclado y a modo claro u oscuro.
+- formularios adaptados al teclado y a los modos Claro, Oscuro y Neón.
 
 ## Arquitectura
 

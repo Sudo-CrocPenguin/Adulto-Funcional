@@ -1,10 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 const SERIES = Object.freeze([
-  { color: '#66D6D8', key: 'income', label: 'Ingresos' },
-  { color: '#43B3CF', key: 'expenses', label: 'Egresos' },
-  { color: '#3296BE', key: 'leisure', label: 'Ocio' },
-  { color: '#35669D', key: 'savings', label: 'Ahorros' },
+  { key: 'income', label: 'Ingresos' },
+  { key: 'expenses', label: 'Egresos' },
+  { key: 'leisure', label: 'Ocio' },
+  { key: 'savings', label: 'Ahorros' },
 ]);
 
 function compactAmount(value) {
@@ -24,9 +24,9 @@ export function StatisticsCard({ palette, statistics }) {
         <Text style={[styles.period, { color: palette.text }]}>Últimos 3 meses⌄</Text>
       </View>
       <View style={styles.legend}>
-        {SERIES.map((serie) => (
+        {SERIES.map((serie, index) => (
           <View key={serie.key} style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: serie.color }]} />
+            <View style={[styles.legendDot, { backgroundColor: palette.statisticsColors[index] }]} />
             <Text style={[styles.legendText, { color: palette.textMuted }]}>{serie.label}</Text>
           </View>
         ))}
@@ -37,7 +37,7 @@ export function StatisticsCard({ palette, statistics }) {
             <View key={line} style={[styles.gridLine, { backgroundColor: palette.divider }]} />
           ))}
         </View>
-        {SERIES.map((serie) => {
+        {SERIES.map((serie, index) => {
           const value = statistics[serie.key];
           const barHeight = value > 0 ? Math.max((value / maximum) * 122, 5) : 2;
           return (
@@ -49,7 +49,12 @@ export function StatisticsCard({ palette, statistics }) {
                 accessibilityLabel={`${serie.label}: ${value}`}
                 style={[
                   styles.bar,
-                  { backgroundColor: serie.color, height: barHeight },
+                  {
+                    backgroundColor: palette.statisticsColors[index],
+                    height: barHeight,
+                    shadowColor: palette.glow,
+                    shadowOpacity: palette.glowOpacity,
+                  },
                 ]}
               />
               <Text style={[styles.barLabel, { color: palette.text }]}>{serie.label}</Text>
@@ -66,6 +71,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 3,
     borderTopRightRadius: 3,
     width: 40,
+    shadowOffset: { height: 0, width: 0 },
+    shadowRadius: 7,
   },
   barColumn: {
     alignItems: 'center',

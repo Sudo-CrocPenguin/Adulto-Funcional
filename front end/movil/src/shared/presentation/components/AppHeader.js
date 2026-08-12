@@ -13,7 +13,13 @@ export function AppHeader({
   return (
     <View style={[
       styles.header,
-      { backgroundColor: palette.brandSoft, borderBottomColor: palette.brandDeep },
+      {
+        backgroundColor: palette.brandSoft,
+        borderBottomColor: palette.brandDeep,
+        elevation: palette.isNeon ? 8 : 0,
+        shadowColor: palette.glow,
+        shadowOpacity: palette.glowOpacity,
+      },
     ]}>
       <Text
         accessibilityRole="header"
@@ -34,8 +40,8 @@ export function AppHeader({
         >
           <MaterialCommunityIcons color={palette.warning} name="bell" size={38} />
           {notificationCount > 0 ? (
-            <View style={styles.badge}>
-              <Text style={[styles.badgeText, { color: palette.surface }]}>{badge}</Text>
+            <View style={[styles.badge, { backgroundColor: palette.error }]}>
+              <Text style={[styles.badgeText, { color: palette.surfaceOnBrand }]}>{badge}</Text>
             </View>
           ) : null}
         </Pressable>
@@ -65,7 +71,6 @@ const styles = StyleSheet.create({
   },
   badge: {
     alignItems: 'center',
-    backgroundColor: '#EF3D3D',
     borderRadius: 12,
     height: 22,
     justifyContent: 'center',
@@ -87,6 +92,8 @@ const styles = StyleSheet.create({
     minHeight: 94,
     paddingHorizontal: 28,
     paddingVertical: 17,
+    shadowOffset: { height: 0, width: 0 },
+    shadowRadius: 12,
   },
   iconButton: {
     alignItems: 'center',

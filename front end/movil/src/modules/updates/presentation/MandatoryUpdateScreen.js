@@ -34,13 +34,13 @@ export function MandatoryUpdateScreen({ onRetry, palette, phase }) {
 
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: palette.brandDeep }]}> 
-      <StatusBar backgroundColor={palette.brandDeep} style="light" />
+      <StatusBar backgroundColor={palette.brandDeep} style={palette.isNeon ? 'dark' : 'light'} />
       <View style={styles.content}>
         <View style={[styles.iconShell, { backgroundColor: palette.surface }]}> 
           <MaterialCommunityIcons color={blocked ? palette.error : palette.brandDeep} name={content.icon} size={72} />
         </View>
         <Text accessibilityRole="header" style={[styles.title, { color: palette.surfaceOnBrand }]}>{content.title}</Text>
-        <Text style={styles.message}>{content.message}</Text>
+        <Text style={[styles.message, { color: palette.surfaceOnBrand }]}>{content.message}</Text>
         {blocked ? (
           <Pressable accessibilityRole="button" onPress={onRetry} style={({ pressed }) => [styles.retryButton, { backgroundColor: palette.surface }, pressed && styles.pressed]}>
             <MaterialCommunityIcons color={palette.brandDeep} name="refresh" size={23} />
@@ -49,11 +49,11 @@ export function MandatoryUpdateScreen({ onRetry, palette, phase }) {
         ) : (
           <View accessibilityLabel="Actualización en curso" style={styles.progress}>
             <ActivityIndicator color={palette.surfaceOnBrand} size="large" />
-            <Text style={styles.progressText}>No cierres la aplicación</Text>
+            <Text style={[styles.progressText, { color: palette.surfaceOnBrand }]}>No cierres la aplicación</Text>
           </View>
         )}
       </View>
-      <Text style={styles.footer}>Adulto Funcional · Actualizaciones seguras</Text>
+      <Text style={[styles.footer, { color: palette.surfaceOnBrand }]}>Adulto Funcional · Actualizaciones seguras</Text>
     </SafeAreaView>
   );
 }
@@ -66,7 +66,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   footer: {
-    color: '#D4E0EF',
     fontSize: 12,
     paddingBottom: 22,
     textAlign: 'center',
@@ -79,7 +78,6 @@ const styles = StyleSheet.create({
     width: 124,
   },
   message: {
-    color: '#E7EEF8',
     fontSize: 16,
     lineHeight: 24,
     marginTop: 14,
@@ -94,7 +92,6 @@ const styles = StyleSheet.create({
     marginTop: 34,
   },
   progressText: {
-    color: '#D4E0EF',
     fontSize: 13,
     marginTop: 12,
   },

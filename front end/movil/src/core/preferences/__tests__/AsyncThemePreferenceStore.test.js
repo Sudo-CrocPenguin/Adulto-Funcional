@@ -22,6 +22,7 @@ function setup(storedMode = null) {
 describe('AsyncThemePreferenceStore', () => {
   it('recupera únicamente modos compatibles', async () => {
     await expect(setup('dark').store.getMode()).resolves.toBe('dark');
+    await expect(setup('neon').store.getMode()).resolves.toBe('neon');
     await expect(setup('desconocido').store.getMode()).resolves.toBeNull();
   });
 
@@ -33,6 +34,17 @@ describe('AsyncThemePreferenceStore', () => {
     expect(storage.setItem).toHaveBeenCalledWith(
       'adulto_funcional.theme_mode',
       'light',
+    );
+  });
+
+  it('guarda el modo neón como preferencia visual no sensible', async () => {
+    const { storage, store } = setup();
+
+    await store.saveMode('neon');
+
+    expect(storage.setItem).toHaveBeenCalledWith(
+      'adulto_funcional.theme_mode',
+      'neon',
     );
   });
 

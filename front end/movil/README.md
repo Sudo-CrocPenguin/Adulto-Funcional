@@ -21,9 +21,10 @@ elementos y estadísticas de los últimos tres meses. Consulta
 [docs/INICIO.md](./docs/INICIO.md) para conocer las fuentes y cálculos.
 
 La campana presenta avisos derivados de esos datos reales y permite
-descartarlos durante la sesión de pantalla. El engranaje abre una configuración
-reducida al modo claro u oscuro; esta preferencia visual se restaura al volver a
-abrir la aplicación.
+descartarlos durante la sesión de pantalla. El engranaje permite elegir entre
+los modos Claro, Oscuro y Neón; esta preferencia visual se restaura al volver a
+abrir la aplicación. Consulta [docs/TEMAS.md](./docs/TEMAS.md) para conocer las
+paletas, contrastes y reglas del tema futurista.
 
 La sección de Compromisos consulta eventos y categorías `AGENDA`, permite
 filtrar por estado y crea eventos con fecha, horarios, recurrencia, prioridad y
