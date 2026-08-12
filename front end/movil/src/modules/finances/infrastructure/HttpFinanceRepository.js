@@ -95,4 +95,11 @@ export class HttpFinanceRepository extends FinanceRepository {
     );
     return FixedExpense.fromApi(expense);
   }
+
+  async deleteFixedExpense(id, session) {
+    await this.apiClient.delete(
+      `/api/finances/fixed-expenses/${encodeURIComponent(id)}`,
+      { headers: this.authorization(session) },
+    );
+  }
 }

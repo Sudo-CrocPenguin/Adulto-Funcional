@@ -56,4 +56,16 @@ describe('HttpFinanceRepository', () => {
       { headers: { Authorization: 'Bearer access-token' } },
     );
   });
+
+  it('elimina un gasto fijo por su endpoint autenticado', async () => {
+    const apiClient = { delete: jest.fn().mockResolvedValue(null) };
+    const repository = new HttpFinanceRepository(apiClient);
+
+    await repository.deleteFixedExpense('fixed/1', session);
+
+    expect(apiClient.delete).toHaveBeenCalledWith(
+      '/api/finances/fixed-expenses/fixed%2F1',
+      { headers: { Authorization: 'Bearer access-token' } },
+    );
+  });
 });

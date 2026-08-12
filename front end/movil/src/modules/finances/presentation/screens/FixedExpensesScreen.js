@@ -19,6 +19,7 @@ import { APP_ROUTES } from '../../../../navigation/routes';
 import { useAppSession } from '../../../../session/AppSessionContext';
 import { AppBottomNavigation } from '../../../../shared/presentation/components/AppBottomNavigation';
 import { AuthenticatedHeader } from '../../../../shared/presentation/components/AuthenticatedHeader';
+import { DeleteConfirmationDialog } from '../../../../shared/presentation/components/DeleteConfirmationDialog';
 import { useAppTheme } from '../../../../theme/AppThemeContext';
 import { FixedExpensePaymentSyncError } from '../../application/PayFixedExpenseUseCase';
 import { FIXED_EXPENSE_TABS } from '../../domain/FixedExpenseCollection';
@@ -55,7 +56,13 @@ function ErrorState({ message, onRetry, palette }) {
 }
 
 export function FixedExpensesScreen({ navigation }) {
-  const { createFixedExpense, loadFixedExpenses, payFixedExpense } = useAppDependencies();
+  const {
+    createFixedExpense,
+    deleteFixedExpense,
+    loadFixedExpenses,
+    payFixedExpense,
+    updateFixedExpense,
+  } = useAppDependencies();
   const { session } = useAppSession();
   const { isDark, palette } = useAppTheme();
   const [collection, setCollection] = useState(null);
@@ -63,6 +70,9 @@ export function FixedExpensesScreen({ navigation }) {
   const [feedback, setFeedback] = useState(null);
   const [filters, setFilters] = useState(INITIAL_FILTERS);
   const [formVisible, setFormVisible] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [isLoading, setLoading] = useState(true);
   const [isRefreshing, setRefreshing] = useState(false);
   const [payingId, setPayingId] = useState(null);
@@ -111,9 +121,37 @@ export function FixedExpensesScreen({ navigation }) {
   ), [collection]);
 
   async function submitFixedExpense(form) {
-    const expense = await createFixedExpense.execute(form, session);
-    setCollection((current) => current?.withExpense(expense) ?? current);
-    setFeedback('Gasto fijo guardado correctamente.');
+    setError(null);
+    const expense = editTarget
+      ? await updateFixedExpense.execute(editTarget, form, session)
+      : await createFixedExpense.execute(form, session);
+    setCollection((current) => editTarget
+      ? current?.withUpdated(expense) ?? current
+      : current?.withExpense(expense) ?? current);
+    setFeedback(editTarget
+      ? 'Gasto fijo actualizado correctamente.'
+      : 'Gasto fijo guardado correctamente.');
+  }
+
+  async function removeFixedExpense() {
+    if (!deleteTarget) {
+      return;
+    }
+    setDeletingId(deleteTarget.id);
+    setError(null);
+    setFeedback(null);
+    try {
+      const deletedId = await deleteFixedExpense.execute(deleteTarget.id, session);
+      setCollection((current) => current?.without(deletedId) ?? current);
+      setFeedback(`Se eliminó ${deleteTarget.name}.`);
+      setDeleteTarget(null);
+    } catch (deleteError) {
+      setError(deleteError instanceof ApiError
+        ? deleteError.message
+        : 'No fue posible eliminar el gasto fijo. Inténtalo nuevamente.');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   async function pay(expense) {
@@ -228,9 +266,17 @@ export function FixedExpensesScreen({ navigation }) {
               {visibleExpenses.length > 0 ? visibleExpenses.map((expense) => (
                 <FixedExpenseCard
                   expense={expense}
+                  isDeleting={deletingId === expense.id}
                   isPaying={payingId === expense.id}
                   key={expense.id}
                   now={collection.now}
+                  onDelete={() => setDeleteTarget(expense)}
+                  onEdit={() => {
+                    setError(null);
+                    setFeedback(null);
+                    setEditTarget(expense);
+                    setFormVisible(true);
+                  }}
                   onPay={() => confirmPayment(expense)}
                   palette={palette}
                 />
@@ -252,6 +298,7 @@ export function FixedExpensesScreen({ navigation }) {
             accessibilityRole="button"
             onPress={() => {
               setFeedback(null);
+              setEditTarget(null);
               setFormVisible(true);
             }}
             style={({ pressed }) => [
@@ -268,10 +315,23 @@ export function FixedExpensesScreen({ navigation }) {
       <AppBottomNavigation activeItem="Gastos Fijos" onSelect={selectDestination} palette={palette} />
       <NewFixedExpenseSheet
         categories={collection?.categories ?? []}
-        onClose={() => setFormVisible(false)}
+        expense={editTarget}
+        onClose={() => {
+          setFormVisible(false);
+          setEditTarget(null);
+        }}
         onSubmit={submitFixedExpense}
         palette={palette}
         visible={formVisible}
+      />
+      <DeleteConfirmationDialog
+        deleting={Boolean(deletingId)}
+        message={`Se eliminará permanentemente el gasto fijo ${deleteTarget?.name ?? ''}. Esta acción no se puede deshacer.`}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={removeFixedExpense}
+        palette={palette}
+        title="Eliminar gasto fijo"
+        visible={Boolean(deleteTarget)}
       />
     </SafeAreaView>
   );

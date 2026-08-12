@@ -45,9 +45,9 @@ versión; no se marca como completado por defecto.
 
 ## EAS Update
 
-- [ ] GitHub contiene `EXPO_TOKEN` con el alcance necesario.
-- [ ] El workflow de `main` terminó exitosamente.
+- [ ] La sesión/token de EAS se proporcionó solo al proceso manual autorizado.
 - [ ] La publicación usó `--environment production`.
+- [ ] ID, runtime, canal y resultado de la publicación quedaron registrados.
 - [ ] El canal `production` apunta al runtime esperado.
 - [ ] Un dispositivo real descargó, reinició y abrió la versión nueva.
 - [ ] Existe un procedimiento de rollback probado para el canal.
@@ -88,8 +88,8 @@ Estos puntos no son opcionales para tiendas o exposición fuera del homelab:
 
 Estado auditado el 11 de agosto de 2026:
 
-- `EXPO_TOKEN` no estaba configurado en GitHub; el workflow OTA falló antes de
-  publicar.
+- El workflow OTA de 0.2.0 falló por `EXPO_TOKEN` ausente y posteriormente fue
+  eliminado; la publicación actual es manual.
 - `./mvnw clean verify` tenía una prueba fallida por una fecha absoluta vencida.
 - El APK 0.3.0 terminó, su integridad/configuración fueron verificadas y existe
   un enlace instalable; falta recorrer la aceptación completa en un dispositivo

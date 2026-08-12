@@ -6,6 +6,16 @@ semántico. El historial Git conserva el detalle progresivo de cada condición.
 
 ## No publicado
 
+### Eliminado
+
+- El workflow automático de EAS Update en GitHub Actions. Builds y OTA se
+  publican manualmente mientras se define una automatización necesaria.
+
+### Documentación
+
+- Política propuesta para operación offline-first y sincronización diferida con
+  el homelab apagado.
+
 ## 0.3.0 - 2026-08-11
 
 ### Cambiado

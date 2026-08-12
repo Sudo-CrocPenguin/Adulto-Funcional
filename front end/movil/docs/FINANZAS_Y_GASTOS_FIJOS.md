@@ -26,6 +26,7 @@ El usuario puede:
 - buscar movimientos por descripción o clasificación;
 - registrar un ingreso o egreso con fecha, monto y clasificación;
 - crear y filtrar gastos fijos;
+- editar y eliminar gastos fijos con confirmación;
 - registrar el pago de un gasto fijo como egreso financiero;
 - avanzar automáticamente el próximo vencimiento según la recurrencia;
 - revisar 20 lecturas visuales derivadas de su historial real;
@@ -58,6 +59,15 @@ NewFixedExpenseSheet
   -> CreateFixedExpenseUseCase
     -> FixedExpenseDraft
     -> POST /api/finances/fixed-expenses
+
+NewFixedExpenseSheet (edición)
+  -> UpdateFixedExpenseUseCase
+    -> FixedExpenseDraft
+    -> PATCH /api/finances/fixed-expenses/{id}
+
+FixedExpenseCard (eliminación confirmada)
+  -> DeleteFixedExpenseUseCase
+    -> DELETE /api/finances/fixed-expenses/{id}
 
 FinanceAnalyticsScreen
   -> LoadFinancesUseCase
@@ -180,6 +190,24 @@ crear otro movimiento automáticamente, porque eso podría duplicar el egreso.
 Una atomicidad completa requerirá que el backend incorpore una operación de
 pago única.
 
+### Editar y eliminar
+
+Cada tarjeta de gasto fijo ofrece acciones accesibles para editar y eliminar.
+La edición abre el mismo formulario con los datos actuales y permite cambiar
+nombre, clasificación, frecuencia, vencimiento, monto y estado. El cliente
+construye un `PATCH` mínimo: solo envía los campos que realmente cambiaron, por
+lo que editar el nombre de un gasto vencido no modifica ni revalida
+innecesariamente su fecha.
+
+La eliminación abre una confirmación explícita y solo después ejecuta
+`DELETE /api/finances/fixed-expenses/{id}`. Tras una respuesta exitosa, la
+colección inmutable retira el elemento sin necesitar una recarga completa.
+
+Los movimientos de la pantalla **Finanzas** se mantienen deliberadamente sin
+edición ni eliminación. Esa sección conserva el historial financiero tal como
+fue registrado; las nuevas acciones pertenecen exclusivamente al recurso de
+Gastos Fijos.
+
 ## Análisis financiero
 
 El botón con forma de ojo en `Saldo actual` abre una pantalla desplazable con
@@ -242,9 +270,8 @@ siete días. El engranaje mantiene la configuración compartida de tema.
   backend.
 - Presupuestos, metas y deudas no existen todavía como recursos de la API; los
   gráficos que los necesitan usan las referencias calculadas y declaradas.
-- La edición y eliminación de movimientos o gastos fijos no se añadieron
-  porque las referencias visuales entregadas definen consulta, creación,
-  filtros y pago.
+- Los movimientos financieros no tienen edición ni eliminación por decisión
+  de producto; los gastos fijos sí cuentan con ambas acciones.
 - Un análisis recién creado puede mostrar estados vacíos hasta que existan
   movimientos suficientes.
 

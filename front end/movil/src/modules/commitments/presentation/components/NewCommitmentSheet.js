@@ -1,6 +1,6 @@
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -17,7 +17,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ApiError } from '../../../../core/http/ApiError';
-import { COMMITMENT_FREQUENCIES } from '../../domain/Commitment';
+import { COMMITMENT_FREQUENCIES, COMMITMENT_STATUSES } from '../../domain/Commitment';
 import {
   COMMITMENT_PRIORITIES,
   COMMITMENT_REMINDERS,
@@ -43,7 +43,41 @@ function initialForm() {
     priority: 'Media',
     reminderMinutes: 60,
     startTime,
+    status: 'Pendiente',
     title: '',
+  };
+}
+
+function parseLocalDateTime(value, fallback) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(value));
+  if (!match) {
+    return fallback;
+  }
+  const [, year, month, day, hours, minutes] = match.map(Number);
+  return new Date(year, month - 1, day, hours, minutes, 0, 0);
+}
+
+function formFromCommitment(commitment) {
+  const defaults = initialForm();
+  const startTime = parseLocalDateTime(commitment.startHour, defaults.startTime);
+  const endTime = parseLocalDateTime(commitment.endHour, defaults.endTime);
+  const reminder = parseLocalDateTime(commitment.reminder, null);
+  const reminderMinutes = reminder
+    ? Math.round((startTime.getTime() - reminder.getTime()) / 60_000)
+    : defaults.reminderMinutes;
+
+  return {
+    categoryId: commitment.category?.id ?? '',
+    endTime,
+    eventDate: parseLocalDateTime(`${commitment.eventDate}T00:00`, defaults.eventDate),
+    frequency: commitment.frequency,
+    priority: commitment.priority,
+    reminderMinutes: COMMITMENT_REMINDERS.some(({ value }) => value === reminderMinutes)
+      ? reminderMinutes
+      : defaults.reminderMinutes,
+    startTime,
+    status: commitment.status,
+    title: commitment.title,
   };
 }
 
@@ -214,6 +248,7 @@ function DateTimeField({
 
 export function NewCommitmentSheet({
   categories,
+  commitment,
   onClose,
   onSubmit,
   palette,
@@ -225,6 +260,7 @@ export function NewCommitmentSheet({
   const [isSubmitting, setSubmitting] = useState(false);
   const [pickerField, setPickerField] = useState(null);
   const [selector, setSelector] = useState(null);
+  const editing = Boolean(commitment);
 
   const categoryOptions = categories.map(({ id, name }) => ({
     label: name,
@@ -239,6 +275,20 @@ export function NewCommitmentSheet({
   const selectedReminder = COMMITMENT_REMINDERS.find(({ value }) => (
     value === form.reminderMinutes
   ))?.label;
+  const selectedStatus = COMMITMENT_STATUSES.find(({ value }) => (
+    value === form.status
+  ))?.label;
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    setErrors({});
+    setFeedback(null);
+    setForm(commitment ? formFromCommitment(commitment) : initialForm());
+    setPickerField(null);
+    setSelector(null);
+  }, [commitment, visible]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -328,7 +378,7 @@ export function NewCommitmentSheet({
       >
         <View style={[styles.overlay, { backgroundColor: palette.overlay }]}>
           <Pressable
-            accessibilityLabel="Cerrar nuevo compromiso"
+            accessibilityLabel={editing ? 'Cerrar edición de compromiso' : 'Cerrar nuevo compromiso'}
             onPress={close}
             style={StyleSheet.absoluteFill}
           />
@@ -339,7 +389,9 @@ export function NewCommitmentSheet({
             <View style={[styles.sheet, { backgroundColor: palette.surface }]}>
               <SafeAreaView edges={['bottom']}>
                 <View style={[styles.handle, { backgroundColor: palette.navigationMuted }]} />
-                <Text style={[styles.title, { color: palette.text }]}>Nuevo Compromiso</Text>
+                <Text style={[styles.title, { color: palette.text }]}>
+                  {editing ? 'Editar Compromiso' : 'Nuevo Compromiso'}
+                </Text>
                 <ScrollView
                   contentContainerStyle={styles.formContent}
                   keyboardShouldPersistTaps="handled"
@@ -492,6 +544,21 @@ export function NewCommitmentSheet({
                     placeholder="Seleccionar"
                     value={selectedReminder}
                   />
+
+                  {editing ? (
+                    <SelectField
+                      error={errors.status}
+                      label="Estado"
+                      onPress={() => openSelector(
+                        'status',
+                        'Selecciona el estado',
+                        COMMITMENT_STATUSES,
+                      )}
+                      palette={palette}
+                      placeholder="Seleccionar"
+                      value={selectedStatus}
+                    />
+                  ) : null}
 
                   <View style={styles.actions}>
                     <Pressable

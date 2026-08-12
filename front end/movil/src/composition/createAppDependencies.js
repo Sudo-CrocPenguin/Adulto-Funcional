@@ -7,13 +7,17 @@ import { RegisterAccountUseCase } from '../modules/auth/application/RegisterAcco
 import { RestoreSessionUseCase } from '../modules/auth/application/RestoreSessionUseCase';
 import { HttpAuthRepository } from '../modules/auth/infrastructure/HttpAuthRepository';
 import { CreateCommitmentUseCase } from '../modules/commitments/application/CreateCommitmentUseCase';
+import { DeleteCommitmentUseCase } from '../modules/commitments/application/DeleteCommitmentUseCase';
 import { LoadCommitmentsUseCase } from '../modules/commitments/application/LoadCommitmentsUseCase';
+import { UpdateCommitmentUseCase } from '../modules/commitments/application/UpdateCommitmentUseCase';
 import { HttpCommitmentRepository } from '../modules/commitments/infrastructure/HttpCommitmentRepository';
 import { CreateFixedExpenseUseCase } from '../modules/finances/application/CreateFixedExpenseUseCase';
+import { DeleteFixedExpenseUseCase } from '../modules/finances/application/DeleteFixedExpenseUseCase';
 import { CreateMovementUseCase } from '../modules/finances/application/CreateMovementUseCase';
 import { LoadFinancesUseCase } from '../modules/finances/application/LoadFinancesUseCase';
 import { LoadFixedExpensesUseCase } from '../modules/finances/application/LoadFixedExpensesUseCase';
 import { PayFixedExpenseUseCase } from '../modules/finances/application/PayFixedExpenseUseCase';
+import { UpdateFixedExpenseUseCase } from '../modules/finances/application/UpdateFixedExpenseUseCase';
 import { HttpFinanceRepository } from '../modules/finances/infrastructure/HttpFinanceRepository';
 import { LoadDashboardUseCase } from '../modules/dashboard/application/LoadDashboardUseCase';
 import { HttpDashboardRepository } from '../modules/dashboard/infrastructure/HttpDashboardRepository';
@@ -56,7 +60,9 @@ export function createAppDependencies() {
     createFixedExpense: new CreateFixedExpenseUseCase(financeRepository),
     createMovement: new CreateMovementUseCase(financeRepository),
     createCredential: new CreateCredentialUseCase(passwordVaultRepository),
+    deleteCommitment: new DeleteCommitmentUseCase(commitmentRepository),
     deleteCredential: new DeleteCredentialUseCase(passwordVaultRepository),
+    deleteFixedExpense: new DeleteFixedExpenseUseCase(financeRepository),
     ensureLatestUpdate: new EnsureLatestUpdateUseCase(applicationUpdateRepository),
     loginAccount: new LoginAccountUseCase({
       authRepository,
@@ -81,6 +87,8 @@ export function createAppDependencies() {
     }),
     themePreferenceStore,
     updateCredential: new UpdateCredentialUseCase(passwordVaultRepository),
+    updateCommitment: new UpdateCommitmentUseCase(commitmentRepository),
+    updateFixedExpense: new UpdateFixedExpenseUseCase(financeRepository),
     updateProfile: new UpdateProfileUseCase(profileRepository),
     verifyMasterKey: new VerifyMasterKeyUseCase(passwordVaultRepository),
   });

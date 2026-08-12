@@ -71,4 +71,22 @@ export class CommitmentCollection {
       now,
     });
   }
+
+  withUpdated(commitment, now = new Date()) {
+    return CommitmentCollection.create({
+      categories: this.categories,
+      commitments: this.commitments
+        .map((current) => current.id === commitment.id ? commitment : current)
+        .sort((left, right) => String(left.startHour).localeCompare(String(right.startHour))),
+      now,
+    });
+  }
+
+  without(commitmentId, now = new Date()) {
+    return CommitmentCollection.create({
+      categories: this.categories,
+      commitments: this.commitments.filter(({ id }) => id !== commitmentId),
+      now,
+    });
+  }
 }

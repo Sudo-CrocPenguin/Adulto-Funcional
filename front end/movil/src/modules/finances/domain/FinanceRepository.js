@@ -7,6 +7,10 @@ export class FinanceRepository {
     throw new Error('FinanceRepository.createMovement debe implementarse.');
   }
 
+  async deleteFixedExpense() {
+    throw new Error('FinanceRepository.deleteFixedExpense debe implementarse.');
+  }
+
   async listCategories() {
     throw new Error('FinanceRepository.listCategories debe implementarse.');
   }

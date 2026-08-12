@@ -1,9 +1,10 @@
-import { COMMITMENT_FREQUENCIES } from './Commitment';
+import { COMMITMENT_FREQUENCIES, COMMITMENT_STATUSES } from './Commitment';
 
 const ALLOWED_FREQUENCIES = new Set(
   COMMITMENT_FREQUENCIES.map(({ value }) => value),
 );
 const ALLOWED_PRIORITIES = new Set(['Baja', 'Media', 'Alta']);
+const ALLOWED_STATUSES = new Set(COMMITMENT_STATUSES.map(({ value }) => value));
 
 export const COMMITMENT_PRIORITIES = Object.freeze(['Alta', 'Media', 'Baja']);
 export const COMMITMENT_REMINDERS = Object.freeze([
@@ -59,11 +60,24 @@ export class CommitmentDraft {
   }
 
   static create(form, clock = new Date()) {
+    return new CommitmentDraft(CommitmentDraft.validate(form, clock));
+  }
+
+  static update(form, commitment, clock = new Date()) {
+    if (!commitment?.id) {
+      throw new Error('El compromiso no tiene un identificador válido.');
+    }
+
+    return new CommitmentDraft(CommitmentDraft.validate(form, clock, commitment));
+  }
+
+  static validate(form, clock, commitment = null) {
     const title = String(form.title ?? '').trim();
     const categoryId = String(form.categoryId ?? '').trim();
     const frequency = Number(form.frequency);
     const priority = String(form.priority ?? 'Media');
     const reminderMinutes = Number(form.reminderMinutes);
+    const status = String(form.status ?? commitment?.status ?? 'Pendiente');
     const eventDate = form.eventDate;
     const startTime = form.startTime;
     const endTime = form.endTime;
@@ -89,7 +103,12 @@ export class CommitmentDraft {
     if (!COMMITMENT_REMINDERS.some(({ value }) => value === reminderMinutes)) {
       errors.reminderMinutes = 'Selecciona un recordatorio válido.';
     }
-    if (!isValidDate(eventDate) || eventDate < startOfToday(clock)) {
+    if (!ALLOWED_STATUSES.has(status)) {
+      errors.status = 'Selecciona un estado válido.';
+    }
+    const unchangedEventDate = isValidDate(eventDate)
+      && localIsoDate(eventDate) === commitment?.eventDate;
+    if (!isValidDate(eventDate) || (!unchangedEventDate && eventDate < startOfToday(clock))) {
       errors.eventDate = 'Selecciona una fecha actual o futura.';
     }
     if (!isValidDate(startTime)) {
@@ -112,10 +131,11 @@ export class CommitmentDraft {
     }
 
     const reminder = new Date(start.getTime() - reminderMinutes * 60_000);
-    const zoneId = Intl.DateTimeFormat().resolvedOptions().timeZone
+    const zoneId = commitment?.zoneId
+      || Intl.DateTimeFormat().resolvedOptions().timeZone
       || 'America/Bogota';
 
-    return new CommitmentDraft({
+    return {
       categoryId,
       endHour: localDateTime(end),
       eventDate: localIsoDate(eventDate),
@@ -123,9 +143,10 @@ export class CommitmentDraft {
       priority,
       reminder: localDateTime(reminder),
       startHour: localDateTime(start),
+      status,
       title,
       zoneId,
-    });
+    };
   }
 
   toRequest() {
@@ -137,9 +158,35 @@ export class CommitmentDraft {
       priority: this.priority,
       reminder: this.reminder,
       startHour: this.startHour,
-      status: 'Pendiente',
+      status: this.status,
       title: this.title,
       zoneId: this.zoneId,
     };
+  }
+
+  toUpdateRequest(commitment) {
+    const normalizeDateTime = (value) => String(value ?? '').slice(0, 19);
+    const fields = {
+      categoryId: this.categoryId,
+      endHour: this.endHour,
+      eventDate: this.eventDate,
+      frequency: this.frequency,
+      priority: this.priority,
+      reminder: this.reminder,
+      startHour: this.startHour,
+      status: this.status,
+      title: this.title,
+      zoneId: this.zoneId,
+    };
+
+    return Object.fromEntries(Object.entries(fields).filter(([field, value]) => {
+      if (field === 'categoryId') {
+        return value !== (commitment.category?.id ?? null);
+      }
+      if (['endHour', 'reminder', 'startHour'].includes(field)) {
+        return normalizeDateTime(value) !== normalizeDateTime(commitment[field]);
+      }
+      return value !== commitment[field];
+    }));
   }
 }
