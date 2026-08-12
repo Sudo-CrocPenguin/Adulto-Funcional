@@ -23,7 +23,7 @@ export function ProfileActivityCard({ activity, palette }) {
           value={String(activity.completedCommitments)}
         />
         <ActivityMetric
-          accent="#C99A25"
+          accent={palette.warning}
           label="Racha máxima (días)"
           palette={palette}
           value={String(activity.maximumStreakDays)}

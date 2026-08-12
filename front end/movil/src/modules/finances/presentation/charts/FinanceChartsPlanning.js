@@ -43,14 +43,14 @@ export function ParetoExpenseChart({ analytics, palette }) {
         const x = 27 + index * (270 / data.length);
         return (
           <G key={item.id}>
-            <Rect fill={chartColor(2)} height={height} opacity="0.75" rx="2" width={Math.max(22, 250 / data.length - 7)} x={x} y={137 - height} />
+            <Rect fill={chartColor(2, palette)} height={height} opacity="0.75" rx="2" width={Math.max(22, 250 / data.length - 7)} x={x} y={137 - height} />
             <SvgText fill={palette.textMuted} fontSize="8" textAnchor="middle" x={x + Math.max(22, 250 / data.length - 7) / 2} y="153">{item.label.slice(0, 5)}</SvgText>
           </G>
         );
       })}
-      <Polyline fill="none" points={pointsAttribute(points)} stroke={chartColor(6)} strokeWidth="3" />
-      {points.map((point, index) => <Circle cx={point.x} cy={point.y} fill={chartColor(6)} key={data[index].id} r="3" />)}
-      <SvgText fill={chartColor(6)} fontSize="9" textAnchor="end" x="305" y="18">100%</SvgText>
+      <Polyline fill="none" points={pointsAttribute(points)} stroke={chartColor(6, palette)} strokeWidth="3" />
+      {points.map((point, index) => <Circle cx={point.x} cy={point.y} fill={chartColor(6, palette)} key={data[index].id} r="3" />)}
+      <SvgText fill={chartColor(6, palette)} fontSize="9" textAnchor="end" x="305" y="18">100%</SvgText>
     </Svg>
   );
 }
@@ -71,14 +71,14 @@ export function BudgetDumbbellChart({ analytics, palette }) {
           <G key={item.id}>
             <SvgText fill={palette.text} fontSize="9" x="5" y={y + 4}>{item.label.slice(0, 13)}</SvgText>
             <Line stroke={palette.navigationMuted} strokeWidth="3" x1={Math.min(budgetX, currentX)} x2={Math.max(budgetX, currentX)} y1={y} y2={y} />
-            <Circle cx={budgetX} cy={y} fill={chartColor(4)} r="5" />
-            <Circle cx={currentX} cy={y} fill={chartColor(6)} r="5" />
+            <Circle cx={budgetX} cy={y} fill={chartColor(4, palette)} r="5" />
+            <Circle cx={currentX} cy={y} fill={chartColor(6, palette)} r="5" />
           </G>
         );
       })}
-      <Circle cx="102" cy="169" fill={chartColor(4)} r="4" />
+      <Circle cx="102" cy="169" fill={chartColor(4, palette)} r="4" />
       <SvgText fill={palette.textMuted} fontSize="9" x="111" y="172">Referencia</SvgText>
-      <Circle cx="197" cy="169" fill={chartColor(6)} r="4" />
+      <Circle cx="197" cy="169" fill={chartColor(6, palette)} r="4" />
       <SvgText fill={palette.textMuted} fontSize="9" x="206" y="172">Real</SvgText>
     </Svg>
   );
@@ -94,7 +94,7 @@ export function SavingBulletChart({ analytics, palette }) {
       <SvgText fill={palette.text} fontSize="13" fontWeight="800" x="27" y="32">Ahorro del mes</SvgText>
       <SvgText fill={palette.brandDeep} fontSize="24" fontWeight="900" x="27" y="61">{compactMoney(actual)}</SvgText>
       <Rect fill={palette.cardMuted} height="34" rx="4" width="268" x="27" y="84" />
-      <Rect fill={chartColor(4)} height="18" rx="3" width={(actual / scale) * 268} x="27" y="92" />
+      <Rect fill={chartColor(4, palette)} height="18" rx="3" width={(actual / scale) * 268} x="27" y="92" />
       <Line stroke={palette.text} strokeWidth="4" x1={goalX} x2={goalX} y1="78" y2="124" />
       <SvgText fill={palette.textMuted} fontSize="10" textAnchor="middle" x={goalX} y="141">Meta {compactMoney(goal)}</SvgText>
       <SvgText fill={palette.textMuted} fontSize="10" x="27" y="162">Compacto: progreso real frente a meta automática</SvgText>
@@ -117,11 +117,11 @@ export function ExpenseCalendarChart({ analytics, palette }) {
         const row = Math.floor(position / 7);
         const column = position % 7;
         const level = item.value / maximum;
-        const fill = !item.value ? palette.cardMuted : level > 0.65 ? chartColor(6) : level > 0.3 ? chartColor(5) : chartColor(4);
+        const fill = !item.value ? palette.cardMuted : level > 0.65 ? chartColor(6, palette) : level > 0.3 ? chartColor(5, palette) : chartColor(4, palette);
         return (
           <G key={item.day}>
             <Rect fill={fill} height="25" rx="5" width="34" x={20 + column * 41} y={23 + row * 29} />
-            <SvgText fill={item.value && level > 0.65 ? '#FFFFFF' : palette.text} fontSize="9" textAnchor="middle" x={37 + column * 41} y={39 + row * 29}>{item.day}</SvgText>
+            <SvgText fill={item.value && level > 0.65 ? palette.surfaceOnBrand : palette.text} fontSize="9" textAnchor="middle" x={37 + column * 41} y={39 + row * 29}>{item.day}</SvgText>
             {item.value ? <Circle cx={48 + column * 41} cy={28 + row * 29} fill={palette.surface} r="2" /> : null}
           </G>
         );
@@ -147,7 +147,7 @@ export function CategoryProgressList({ analytics, palette }) {
               <Text style={[styles.progressValue, { color: palette.textMuted }]}>{Math.round((item.current / reference) * 100)}%</Text>
             </View>
             <View style={[styles.track, { backgroundColor: palette.cardMuted }]}> 
-              <View style={[styles.fill, { backgroundColor: chartColor(index), width: `${progress * 100}%` }]} />
+              <View style={[styles.fill, { backgroundColor: chartColor(index, palette), width: `${progress * 100}%` }]} />
             </View>
             <Text style={[styles.progressMoney, { color: palette.textMuted }]}> 
               {compactMoney(item.current)} de {compactMoney(reference)}

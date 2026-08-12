@@ -18,7 +18,7 @@ function strengthStyle(strength, palette) {
     return { backgroundColor: palette.successSoft, color: palette.success };
   }
   if (strength.level === 2) {
-    return { backgroundColor: '#FFF3CD', color: '#9A6B00' };
+    return { backgroundColor: palette.warningSoft, color: palette.warningText };
   }
   if (strength.level === 1) {
     return { backgroundColor: palette.errorSoft, color: palette.error };

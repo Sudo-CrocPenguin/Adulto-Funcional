@@ -7,6 +7,18 @@ const PRIORITY_STYLES = Object.freeze({
   Media: Object.freeze({ accent: '#F4A93D', pill: '#F8E9B8', text: '#B78A18' }),
 });
 
+function priorityStyle(priority, palette) {
+  if (!palette.isNeon) {
+    return PRIORITY_STYLES[priority] ?? PRIORITY_STYLES.Media;
+  }
+  const neonStyles = {
+    Alta: { accent: palette.error, pill: palette.errorSoft, text: palette.error },
+    Baja: { accent: palette.success, pill: palette.successSoft, text: palette.success },
+    Media: { accent: palette.warning, pill: palette.warningSoft, text: palette.warning },
+  };
+  return neonStyles[priority] ?? neonStyles.Media;
+}
+
 function formatDate(value) {
   if (!value) {
     return 'Sin fecha';
@@ -20,8 +32,7 @@ function formatDate(value) {
 }
 
 export function CommitmentCard({ commitment, deleting, onDelete, onEdit, palette }) {
-  const priorityStyle = PRIORITY_STYLES[commitment.priority]
-    ?? PRIORITY_STYLES.Media;
+  const priority = priorityStyle(commitment.priority, palette);
 
   return (
     <View
@@ -41,7 +52,7 @@ export function CommitmentCard({ commitment, deleting, onDelete, onEdit, palette
         },
       ]}
     >
-      <View style={[styles.accent, { backgroundColor: priorityStyle.accent }]} />
+      <View style={[styles.accent, { backgroundColor: priority.accent }]} />
       <View style={styles.titleRow}>
         <Text
           numberOfLines={2}
@@ -97,8 +108,8 @@ export function CommitmentCard({ commitment, deleting, onDelete, onEdit, palette
         <Text numberOfLines={1} style={[styles.metadataText, { color: palette.navigationMuted }]}>
           {commitment.frequencyLabel}
         </Text>
-        <View style={[styles.priorityPill, { backgroundColor: priorityStyle.pill }]}>
-          <Text style={[styles.priorityText, { color: priorityStyle.text }]}>
+        <View style={[styles.priorityPill, { backgroundColor: priority.pill }]}>
+          <Text style={[styles.priorityText, { color: priority.text }]}>
             {commitment.priority}
           </Text>
         </View>

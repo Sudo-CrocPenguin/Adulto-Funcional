@@ -15,7 +15,7 @@ function membershipLabel(value) {
 export function ProfileHero({ onEdit, palette, profile }) {
   return (
     <View style={[styles.hero, { backgroundColor: palette.brandDeep }]}> 
-      <View style={[styles.avatar, { backgroundColor: palette.brandSecondary, borderColor: '#8FB3D8' }]}> 
+      <View style={[styles.avatar, { backgroundColor: palette.brandSecondary, borderColor: palette.divider }]}>
         <Text adjustsFontSizeToFit numberOfLines={1} style={[styles.initials, { color: palette.surfaceOnBrand }]}> 
           {profile.initials}
         </Text>
@@ -30,7 +30,7 @@ export function ProfileHero({ onEdit, palette, profile }) {
         </Pressable>
       </View>
       <Text numberOfLines={2} style={[styles.name, { color: palette.surfaceOnBrand }]}>{profile.fullName}</Text>
-      <Text numberOfLines={1} style={styles.email}>{profile.email}</Text>
+      <Text numberOfLines={1} style={[styles.email, { color: palette.surfaceOnBrand }]}>{profile.email}</Text>
       <View style={[styles.membership, { backgroundColor: palette.brandSoft }]}> 
         <Text numberOfLines={1} style={[styles.membershipText, { color: palette.brandDeep }]}>{membershipLabel(profile.createdAt)}</Text>
       </View>
@@ -59,7 +59,6 @@ const styles = StyleSheet.create({
     width: 36,
   },
   email: {
-    color: '#D4E0EF',
     fontSize: 14,
     marginTop: 3,
     maxWidth: '88%',

@@ -20,6 +20,9 @@ export function AppBottomNavigation({ activeItem, onSelect, palette }) {
         {
           backgroundColor: palette.surface,
           borderTopColor: palette.divider,
+          elevation: palette.isNeon ? 10 : 0,
+          shadowColor: palette.glow,
+          shadowOpacity: palette.glowOpacity,
         },
       ]}
     >
@@ -79,5 +82,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     borderTopWidth: StyleSheet.hairlineWidth,
+    shadowOffset: { height: 0, width: 0 },
+    shadowRadius: 12,
   },
 });
