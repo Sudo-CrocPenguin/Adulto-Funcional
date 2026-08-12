@@ -15,7 +15,7 @@ Referencia auditada el 11 de agosto de 2026 sobre la versión `v0.2.0`:
 | Backend | `./mvnw clean verify` | 137 pruebas, 1 fallo temporal |
 | Markdown | 40 archivos, enlaces locales y bloques cercados | 85 enlaces locales, 0 rotos |
 | Homelab | Compose y healthcheck | API, MariaDB y Redis saludables |
-| OTA automático | push móvil a `main` | Bloqueado por `EXPO_TOKEN` ausente |
+| OTA manual | EAS CLI, canal `production` | Publicación 0.2 HTTPS verificada |
 
 El fallo conocido está en
 `ResourceOwnershipHttpIntegrationTest.createEventAsOwner`: crea el evento del
@@ -144,6 +144,6 @@ Una validación formal registra:
 - fecha, sistema operativo y versiones de Java/Node/Docker;
 - comandos ejecutados;
 - conteos de pruebas y fallos;
-- URL del workflow/build sin incluir tokens;
+- URL o ID del build/update sin incluir tokens;
 - resultado del healthcheck;
 - identificadores de datos descartables eliminados al terminar.

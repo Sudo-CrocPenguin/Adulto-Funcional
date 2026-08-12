@@ -164,7 +164,7 @@ La entrega está completa únicamente cuando:
 - el teléfono alcanza la API pública por HTTPS sin ZeroTier;
 - el flujo autenticado mínimo fue comprobado con datos descartables;
 - existe un binario instalable compatible con el runtime publicado;
-- el workflow OTA termina exitosamente si hubo cambios móviles;
+- cualquier publicación OTA manual quedó registrada y verificada;
 - se registró la versión en `CHANGELOG.md` y mediante un tag.
 
 ## Diagnóstico rápido
