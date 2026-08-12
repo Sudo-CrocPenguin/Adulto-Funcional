@@ -70,16 +70,16 @@ publicó hasta que el workflow termine exitosamente.
 
 ## Instalación Android
 
-El APK interno 0.2 terminado por EAS está disponible en este
-[enlace directo de Expo](https://expo.dev/artifacts/eas/PB5NQhNENOK1g_a0eN-IGD3pxqlif81Ywcw7QFdhoSk.apk).
-Al abrirlo con Internet, la compuerta obligatoria descarga el grupo OTA
-`d31bcaf4-f06e-4838-987d-f9b8c020ecef` para runtime 0.2.0. Ese bundle fue
-verificado sin la IP de ZeroTier y contiene la URL pública HTTPS; por tanto el
-usuario solo instala, abre y deja finalizar el reinicio automático.
+El APK interno 0.3.0 (`versionCode` 3) está disponible en este
+[enlace directo de Expo](https://expo.dev/artifacts/eas/jJVqGsO4YkZ1N2QkNQiPgIPj8C-cagwzcC35Yby6WVQ.apk).
+El binario contiene la URL pública HTTPS, no contiene la dirección de ZeroTier
+y establece `usesCleartextTraffic=false`. El usuario solo necesita instalarlo
+y abrirlo con una conexión normal a Internet.
 
-El artefacto es temporal y Expo prevé eliminarlo el 25 de agosto de 2026. El
-reemplazo nativo 0.3.0 (`versionCode` 3), con tráfico HTTP claro deshabilitado,
-se encuentra en el
+El artefacto pesa 79,284,510 bytes, tiene SHA-256
+`cfad7e0da80f12f9309e5cfa8ed4bed646b618356e9be530345e6ae7cf94ac1d` y está
+firmado con APK Signature Scheme v2. Es temporal: Expo prevé eliminarlo el 25
+de agosto de 2026. Sus metadatos permanecen en el
 [build 815c9cab](https://expo.dev/accounts/servermiguel1/projects/adulto-funcional/builds/815c9cab-ea2d-402f-8122-c05f1169c92f).
 
 SDK 54 se mantiene de forma intencional mientras Expo Go para dispositivos

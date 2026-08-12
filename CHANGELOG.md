@@ -6,6 +6,8 @@ semántico. El historial Git conserva el detalle progresivo de cada condición.
 
 ## No publicado
 
+## 0.3.0 - 2026-08-11
+
 ### Cambiado
 
 - La aplicación móvil consume la API pública por HTTPS y ya no requiere
@@ -58,3 +60,4 @@ semántico. El historial Git conserva el detalle progresivo de cada condición.
   2026 y falla al ejecutarse después de esa fecha.
 
 [0.2.0]: https://github.com/Sudo-CrocPenguin/Adulto-Funcional/tree/v0.2.0
+[0.3.0]: https://github.com/Sudo-CrocPenguin/Adulto-Funcional/compare/v0.2.0...v0.3.0

@@ -76,7 +76,7 @@ El workflow falla antes de publicar cuando falta el token. No necesita que el
 backend ni la base de datos estén desplegados: EAS distribuye únicamente el
 bundle y los recursos del frontend móvil.
 
-### Estado verificado de 0.2.0
+### Estado verificado de 0.2.0 y 0.3.0
 
 El workflow ejecutado después de publicar `main` falló en `Comprobar secretos
 requeridos` porque `EXPO_TOKEN` no estaba configurado. Para cerrar el flujo:
@@ -100,10 +100,17 @@ binario se publicó manualmente el grupo Android
 `019ff2c1-a851-79a3-a5c7-ed9946b81636`; el bundle contiene la URL HTTPS pública
 y no contiene la dirección de ZeroTier.
 
-El enlace 0.2 es una entrega puente y vence el 25 de agosto de 2026. El build
-nativo recomendado 0.3.0 es
-[`815c9cab-ea2d-402f-8122-c05f1169c92f`](https://expo.dev/accounts/servermiguel1/projects/adulto-funcional/builds/815c9cab-ea2d-402f-8122-c05f1169c92f).
-Mientras EAS lo muestra en cola todavía no existe su URL de artefacto.
+El enlace 0.2 queda únicamente como entrega puente. El build nativo recomendado
+0.3.0
+[`815c9cab-ea2d-402f-8122-c05f1169c92f`](https://expo.dev/accounts/servermiguel1/projects/adulto-funcional/builds/815c9cab-ea2d-402f-8122-c05f1169c92f)
+terminó el 11 de agosto de 2026. Su
+[APK instalable](https://expo.dev/artifacts/eas/jJVqGsO4YkZ1N2QkNQiPgIPj8C-cagwzcC35Yby6WVQ.apk)
+pesa 79,284,510 bytes y tiene SHA-256
+`cfad7e0da80f12f9309e5cfa8ed4bed646b618356e9be530345e6ae7cf94ac1d`.
+La inspección confirmó package `com.adultofuncional.mobile`, versión 0.3.0,
+`versionCode` 3, firma v2, `usesCleartextTraffic=false`, URL HTTPS pública y
+ausencia de la dirección de ZeroTier. Ambos artefactos internos vencen el 25 de
+agosto de 2026.
 
 `EXPO_PUBLIC_API_URL` está configurada como variable de proyecto en los
 entornos EAS `preview` y `production`. El workflow publica con

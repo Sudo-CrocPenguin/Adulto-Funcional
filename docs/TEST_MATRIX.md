@@ -35,6 +35,7 @@ pública y el móvil 0.3.0:
 | Móvil | `npm test -- --runInBand` | 30 suites, 77 pruebas, 0 fallos |
 | Expo | `npx expo-doctor` | 18/18 comprobaciones |
 | Bundle Android | exportación con caché limpia | contiene HTTPS público; no contiene IP de ZeroTier |
+| APK Android 0.3 | integridad, firma y manifiesto | ZIP válido; firma v2; versión 0.3.0/3; HTTP claro deshabilitado |
 | OTA 0.2 | manifiesto runtime 0.2.0, canal `production` | devuelve update `019ff2c1-a851-79a3-a5c7-ed9946b81636` |
 
 La instalación en un teléfono físico todavía debe comprobarse como aceptación
