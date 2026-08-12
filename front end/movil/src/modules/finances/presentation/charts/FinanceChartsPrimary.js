@@ -41,15 +41,15 @@ export function GroupedVerticalBarChart({ analytics, palette }) {
         const expenseHeight = (item.expenses / maximum) * 118;
         return (
           <G key={item.key}>
-            <Rect fill={chartColor(0)} height={incomeHeight} rx="2" width="13" x={groupX} y={145 - incomeHeight} />
-            <Rect fill={chartColor(3)} height={expenseHeight} rx="2" width="13" x={groupX + 15} y={145 - expenseHeight} />
+            <Rect fill={chartColor(0, palette)} height={incomeHeight} rx="2" width="13" x={groupX} y={145 - incomeHeight} />
+            <Rect fill={chartColor(3, palette)} height={expenseHeight} rx="2" width="13" x={groupX + 15} y={145 - expenseHeight} />
             <SvgText fill={palette.textMuted} fontSize="10" textAnchor="middle" x={groupX + 14} y="164">{item.label}</SvgText>
           </G>
         );
       })}
-      <Circle cx="108" cy="10" fill={chartColor(0)} r="4" />
+      <Circle cx="108" cy="10" fill={chartColor(0, palette)} r="4" />
       <SvgText fill={palette.textMuted} fontSize="9" x="116" y="13">Ingresos</SvgText>
-      <Circle cx="181" cy="10" fill={chartColor(3)} r="4" />
+      <Circle cx="181" cy="10" fill={chartColor(3, palette)} r="4" />
       <SvgText fill={palette.textMuted} fontSize="9" x="189" y="13">Egresos</SvgText>
     </Svg>
   );
@@ -76,7 +76,7 @@ export function DonutExpenseChart({ analytics, palette }) {
               cy="90"
               fill="none"
               r={radius}
-              stroke={chartColor(index)}
+              stroke={chartColor(index, palette)}
               strokeDasharray={`${length} ${circumference - length}`}
               strokeDashoffset={-offset}
               strokeWidth="25"
@@ -90,7 +90,7 @@ export function DonutExpenseChart({ analytics, palette }) {
       <SvgText fill={palette.brandDeep} fontSize="13" fontWeight="800" textAnchor="middle" x="86" y="105">{compactMoney(total)}</SvgText>
       {data.map((item, index) => (
         <G key={`legend:${item.id}`}>
-          <Rect fill={chartColor(index)} height="9" rx="2" width="9" x="166" y={27 + index * 23} />
+          <Rect fill={chartColor(index, palette)} height="9" rx="2" width="9" x="166" y={27 + index * 23} />
           <SvgText fill={palette.text} fontSize="10" x="181" y={35 + index * 23}>{item.label.slice(0, 16)}</SvgText>
           <SvgText fill={palette.textMuted} fontSize="9" textAnchor="end" x="310" y={35 + index * 23}>{Math.round((item.value / total) * 100)}%</SvgText>
         </G>
@@ -113,9 +113,9 @@ export function CumulativeLineChart({ analytics, palette }) {
       {[0, 1, 2, 3].map((index) => (
         <Line key={index} stroke={palette.divider} x1="33" x2="308" y1={22 + index * 39} y2={22 + index * 39} />
       ))}
-      <Polyline fill="none" points={pointsAttribute(points)} stroke={chartColor(2)} strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
+      <Polyline fill="none" points={pointsAttribute(points)} stroke={chartColor(2, palette)} strokeLinecap="round" strokeLinejoin="round" strokeWidth="4" />
       {points.map((point, index) => (
-        <Circle cx={point.x} cy={point.y} fill={palette.surface} key={data[index].id ?? index} r="3.5" stroke={chartColor(2)} strokeWidth="2" />
+        <Circle cx={point.x} cy={point.y} fill={palette.surface} key={data[index].id ?? index} r="3.5" stroke={chartColor(2, palette)} strokeWidth="2" />
       ))}
       <SvgText fill={palette.textMuted} fontSize="9" x="33" y="165">{data[0]?.date?.slice(5)}</SvgText>
       <SvgText fill={palette.textMuted} fontSize="9" textAnchor="end" x="307" y="165">{data.at(-1)?.date?.slice(5)}</SvgText>
@@ -138,14 +138,14 @@ export function HorizontalBudgetChart({ analytics, palette }) {
           <G key={item.id}>
             <SvgText fill={palette.text} fontSize="9" x="4" y={y + 9}>{item.label.slice(0, 12)}</SvgText>
             <Rect fill={palette.cardMuted} height="8" rx="4" width="188" x="112" y={y} />
-            <Rect fill={chartColor(4)} height="8" rx="4" width={(item.budget / maximum) * 188} x="112" y={y} />
-            <Rect fill={chartColor(6)} height="8" rx="4" width={(item.current / maximum) * 188} x="112" y={y + 11} />
+            <Rect fill={chartColor(4, palette)} height="8" rx="4" width={(item.budget / maximum) * 188} x="112" y={y} />
+            <Rect fill={chartColor(6, palette)} height="8" rx="4" width={(item.current / maximum) * 188} x="112" y={y + 11} />
           </G>
         );
       })}
-      <Rect fill={chartColor(4)} height="8" rx="2" width="8" x="112" y="170" />
+      <Rect fill={chartColor(4, palette)} height="8" rx="2" width="8" x="112" y="170" />
       <SvgText fill={palette.textMuted} fontSize="9" x="124" y="178">Referencia</SvgText>
-      <Rect fill={chartColor(6)} height="8" rx="2" width="8" x="202" y="170" />
+      <Rect fill={chartColor(6, palette)} height="8" rx="2" width="8" x="202" y="170" />
       <SvgText fill={palette.textMuted} fontSize="9" x="214" y="178">Real</SvgText>
     </Svg>
   );
@@ -163,10 +163,10 @@ export function WaterfallChart({ analytics, palette }) {
   const range = maximum - minimum || 1;
   const y = (value) => 145 - ((value - minimum) / range) * 115;
   const bars = [
-    { color: chartColor(3), end: opening, label: 'Inicial', start: 0 },
-    { color: chartColor(4), end: afterIncome, label: 'Ingresos', start: opening },
-    { color: chartColor(6), end: final, label: 'Egresos', start: beforeExpense },
-    { color: chartColor(2), end: final, label: 'Final', start: 0 },
+    { color: chartColor(3, palette), end: opening, label: 'Inicial', start: 0 },
+    { color: chartColor(4, palette), end: afterIncome, label: 'Ingresos', start: opening },
+    { color: chartColor(6, palette), end: final, label: 'Egresos', start: beforeExpense },
+    { color: chartColor(2, palette), end: final, label: 'Final', start: 0 },
   ];
   return (
     <Svg height={HEIGHT} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} width="100%">

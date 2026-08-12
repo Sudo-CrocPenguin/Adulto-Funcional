@@ -27,7 +27,7 @@ function backendErrors(error) {
 
 function strengthColors(strength, palette) {
   if (strength.level === 3) return { background: palette.successSoft, text: palette.success };
-  if (strength.level === 2) return { background: '#FFF3CD', text: '#9A6B00' };
+  if (strength.level === 2) return { background: palette.warningSoft, text: palette.warningText };
   if (strength.level === 1) return { background: palette.errorSoft, text: palette.error };
   return { background: palette.cardMuted, text: palette.navigationMuted };
 }

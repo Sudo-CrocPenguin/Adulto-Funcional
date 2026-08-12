@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -41,6 +42,7 @@ export function ThemeSettingsSheet({ onClose, visible }) {
             <View style={styles.modeRow}>
               <ThemeButton
                 active={mode === THEME_MODES.light}
+                icon="white-balance-sunny"
                 label="Claro"
                 mode={THEME_MODES.light}
                 palette={palette}
@@ -48,8 +50,17 @@ export function ThemeSettingsSheet({ onClose, visible }) {
               />
               <ThemeButton
                 active={mode === THEME_MODES.dark}
+                icon="weather-night"
                 label="Oscuro"
                 mode={THEME_MODES.dark}
+                palette={palette}
+                selectMode={selectMode}
+              />
+              <ThemeButton
+                active={mode === THEME_MODES.neon}
+                icon="lightning-bolt"
+                label="Neón"
+                mode={THEME_MODES.neon}
                 palette={palette}
                 selectMode={selectMode}
               />
@@ -61,7 +72,7 @@ export function ThemeSettingsSheet({ onClose, visible }) {
   );
 }
 
-function ThemeButton({ active, label, mode, palette, selectMode }) {
+function ThemeButton({ active, icon, label, mode, palette, selectMode }) {
   return (
     <Pressable
       accessibilityRole="button"
@@ -72,10 +83,18 @@ function ThemeButton({ active, label, mode, palette, selectMode }) {
         {
           backgroundColor: active ? palette.brandSecondary : palette.cardMuted,
           borderColor: active ? palette.brandSecondary : palette.border,
+          shadowColor: palette.glow,
+          shadowOpacity: active ? palette.glowOpacity : 0,
         },
+        active && palette.isNeon && styles.neonActive,
         pressed && styles.pressed,
       ]}
     >
+      <MaterialCommunityIcons
+        color={active ? palette.surfaceOnBrand : palette.navigationMuted}
+        name={icon}
+        size={22}
+      />
       <Text
         style={[
           styles.modeText,
@@ -109,6 +128,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     minHeight: 58,
+    shadowOffset: { height: 0, width: 0 },
+    shadowRadius: 10,
   },
   modeRow: {
     flexDirection: 'row',
@@ -116,8 +137,12 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   modeText: {
-    fontSize: 21,
+    fontSize: 16,
     fontWeight: '800',
+    marginTop: 3,
+  },
+  neonActive: {
+    elevation: 7,
   },
   overlay: {
     flex: 1,
