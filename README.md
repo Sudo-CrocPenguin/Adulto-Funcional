@@ -5,18 +5,32 @@ compromisos, gastos recurrentes y credenciales personales desde un único
 espacio. El repositorio contiene tres proyectos independientes que comparten el
 mismo dominio, pero se construyen y despliegan por separado.
 
-## Estado de la versión 0.2.0
+## Estado actual
 
 | Componente | Estado | Entorno |
 |---|---|---|
 | Backend y base de datos | Desplegados en el homelab | Docker Compose en `server1` |
-| Aplicación móvil | Primera versión funcional | Expo/EAS, Android y desarrollo con Expo Go |
+| Aplicación móvil | Versión 0.3.0 con APK interno disponible | Expo/EAS y Android |
 | Cliente web | Scaffold técnico | Sin desarrollo funcional ni despliegue |
 
-La API privada se encuentra en `http://10.119.54.220:8090` y solo debe
-alcanzarse desde la red ZeroTier autorizada. El frontend móvil consume esa URL;
-Expo no aloja el backend ni la base de datos. La aplicación web todavía no
-forma parte de la entrega.
+La API está publicada en
+`https://api-adulto-funcional.38-225-48-28.sslip.io` mediante Traefik y TLS. La
+aplicación móvil consume esa URL con cualquier conexión a Internet y no
+necesita ZeroTier. Expo no aloja el backend ni la base de datos. La aplicación
+web todavía no forma parte de la entrega.
+
+### Instalación Android disponible
+
+El APK interno 0.3.0 puede instalarse desde
+[Expo](https://expo.dev/artifacts/eas/jJVqGsO4YkZ1N2QkNQiPgIPj8C-cagwzcC35Yby6WVQ.apk).
+Solo necesita una conexión normal a Internet: usa la API pública HTTPS y no
+requiere instalar ni activar ZeroTier. Android deshabilita el tráfico HTTP
+claro. El artefacto pesa 79,284,510 bytes y su SHA-256 es
+`cfad7e0da80f12f9309e5cfa8ed4bed646b618356e9be530345e6ae7cf94ac1d`.
+
+Es un enlace interno temporal de Expo, con vencimiento previsto el 25 de agosto
+de 2026. Los metadatos y logs permanecen en el
+[build 815c9cab](https://expo.dev/accounts/servermiguel1/projects/adulto-funcional/builds/815c9cab-ea2d-402f-8122-c05f1169c92f).
 
 ## Capacidades actuales
 
@@ -38,11 +52,11 @@ informa expresamente y no simula una operación exitosa.
 ```text
 Aplicación móvil instalada
         │
-        │ HTTP privado sobre ZeroTier
+        │ HTTPS público
         ▼
-server1:10.119.54.220:8090
+Traefik en server1:443
         │
-        ├── Spring Boot 3 / Java 21
+        ├── Spring Boot 3 / Java 21 en red Docker
         ├── MariaDB 11.8
         └── Redis 7.4
 
@@ -100,10 +114,10 @@ npm start
 En `.env`, configura una URL alcanzable desde el dispositivo:
 
 ```dotenv
-EXPO_PUBLIC_API_URL=http://10.119.54.220:8090
+EXPO_PUBLIC_API_URL=https://api-adulto-funcional.38-225-48-28.sslip.io
 ```
 
-El teléfono necesita ZeroTier activo para consumir la API. Expo Go sirve para
+El teléfono solo necesita acceso normal a Internet. Expo Go sirve para
 desarrollo visual, pero las actualizaciones obligatorias se prueban en un APK
 creado con EAS. Consulta el
 [README móvil](<front end/movil/README.md>) y la
@@ -171,7 +185,7 @@ cd ../../server
 ./mvnw clean verify
 ```
 
-La versión 0.2.0 contiene 77 pruebas móviles. El backend contiene 137 pruebas,
+La versión móvil 0.3.0 contiene 77 pruebas. El backend contiene 137 pruebas,
 pero al 11 de agosto de 2026 una integración falla porque utiliza una fecha de
 evento fija que ya quedó en el pasado. El defecto y el procedimiento de
 validación se documentan en la

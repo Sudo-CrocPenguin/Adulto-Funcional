@@ -60,7 +60,9 @@ versión; no se marca como completado por defecto.
 - [ ] MariaDB y Redis no publican puertos al host.
 - [ ] Los tres servicios muestran `healthy`.
 - [ ] Docker inicia automáticamente y los servicios usan `unless-stopped`.
-- [ ] El healthcheck responde desde el host y desde ZeroTier.
+- [ ] El healthcheck responde desde el host y públicamente por HTTPS.
+- [ ] El puerto directo de Spring Boot está limitado a loopback.
+- [ ] MariaDB y Redis continúan sin puertos publicados.
 - [ ] Registro, refresh, consulta y eliminación con una cuenta descartable pasan.
 
 ## Datos y recuperación
@@ -82,14 +84,16 @@ Estos puntos no son opcionales para tiendas o exposición fuera del homelab:
 - [ ] Canal de soporte y procedimiento de eliminación/exportación de datos.
 - [ ] Revisión de permisos, telemetría, retención y dependencias de terceros.
 
-## Bloqueos conocidos de 0.2.0
+## Bloqueos conocidos al preparar 0.3.0
 
 Estado auditado el 11 de agosto de 2026:
 
 - `EXPO_TOKEN` no estaba configurado en GitHub; el workflow OTA falló antes de
   publicar.
 - `./mvnw clean verify` tenía una prueba fallida por una fecha absoluta vencida.
-- El build Android de prueba no tenía todavía un artefacto final confirmado.
+- El APK 0.3.0 terminó, su integridad/configuración fueron verificadas y existe
+  un enlace instalable; falta recorrer la aceptación completa en un dispositivo
+  físico.
 - Los respaldos nuevos solo contaban con procedimiento manual, sin agenda ni
   restauración ensayada.
 

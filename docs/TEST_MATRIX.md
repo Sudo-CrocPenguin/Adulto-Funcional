@@ -24,6 +24,24 @@ correctamente por ser una fecha pasada. La solución pertenece al código de
 prueba y debe utilizar un `Clock` controlado o una fecha calculada; la
 documentación no debe ocultar el fallo ni declarar la regresión en verde.
 
+Validaciones adicionales realizadas el 11 de agosto de 2026 para la conexión
+pública y el móvil 0.3.0:
+
+| Componente | Comprobación | Resultado |
+|---|---|---|
+| API pública | healthcheck HTTPS detrás de Traefik | `200`, `UP`, certificado válido y HSTS |
+| Flujo nativo | registro, perfil y eliminación descartable | `201`, `200`, `200`; cuenta eliminada |
+| Redes | puertos y redes Docker | Spring en loopback; MariaDB/Redis sin puertos publicados |
+| Móvil | `npm test -- --runInBand` | 30 suites, 77 pruebas, 0 fallos |
+| Expo | `npx expo-doctor` | 18/18 comprobaciones |
+| Bundle Android | exportación con caché limpia | contiene HTTPS público; no contiene IP de ZeroTier |
+| APK Android 0.3 | integridad, firma y manifiesto | ZIP válido; firma v2; versión 0.3.0/3; HTTP claro deshabilitado |
+| OTA 0.2 | manifiesto runtime 0.2.0, canal `production` | devuelve update `019ff2c1-a851-79a3-a5c7-ed9946b81636` |
+
+La instalación en un teléfono físico todavía debe comprobarse como aceptación
+manual; las pruebas anteriores validan servidor, artefacto, configuración y
+distribución, pero no sustituyen esa ejecución en el dispositivo final.
+
 ## Automatizadas por componente
 
 ### Backend
@@ -77,7 +95,7 @@ la instalación de CI a `npm ci`.
 
 | Área | Caso | Resultado esperado |
 |---|---|---|
-| Conectividad | Abrir healthcheck desde el teléfono | `UP` por ZeroTier |
+| Conectividad | Abrir healthcheck desde el teléfono | `UP` por HTTPS sin VPN |
 | Registro | Crear cuenta válida | `201`, sesión abierta y refresh seguro |
 | Registro | Email duplicado o datos inválidos | Error de campo o negocio visible |
 | Login | Credenciales válidas | Inicio autenticado |

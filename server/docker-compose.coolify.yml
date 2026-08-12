@@ -1,7 +1,14 @@
 services:
   app:
     labels:
-      - "traefik.http.services.app.loadbalancer.server.port=8080"
+      - "traefik.enable=true"
+      - "traefik.docker.network=${COOLIFY_NETWORK:-coolify}"
+      - "traefik.http.routers.adulto-funcional-api.entrypoints=https"
+      - "traefik.http.routers.adulto-funcional-api.rule=Host(`${API_PUBLIC_HOST:?API_PUBLIC_HOST is required}`)"
+      - "traefik.http.routers.adulto-funcional-api.service=adulto-funcional-api"
+      - "traefik.http.routers.adulto-funcional-api.tls=true"
+      - "traefik.http.routers.adulto-funcional-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.adulto-funcional-api.loadbalancer.server.port=8080"
     networks:
       - internal
       - coolify

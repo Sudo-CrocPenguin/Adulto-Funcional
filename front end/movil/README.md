@@ -68,6 +68,20 @@ repositorio de GitHub no tiene configurado `EXPO_TOKEN`. La aplicación y la
 configuración OTA existen, pero no debe afirmarse que el último `push` se
 publicó hasta que el workflow termine exitosamente.
 
+## Instalación Android
+
+El APK interno 0.3.0 (`versionCode` 3) está disponible en este
+[enlace directo de Expo](https://expo.dev/artifacts/eas/jJVqGsO4YkZ1N2QkNQiPgIPj8C-cagwzcC35Yby6WVQ.apk).
+El binario contiene la URL pública HTTPS, no contiene la dirección de ZeroTier
+y establece `usesCleartextTraffic=false`. El usuario solo necesita instalarlo
+y abrirlo con una conexión normal a Internet.
+
+El artefacto pesa 79,284,510 bytes, tiene SHA-256
+`cfad7e0da80f12f9309e5cfa8ed4bed646b618356e9be530345e6ae7cf94ac1d` y está
+firmado con APK Signature Scheme v2. Es temporal: Expo prevé eliminarlo el 25
+de agosto de 2026. Sus metadatos permanecen en el
+[build 815c9cab](https://expo.dev/accounts/servermiguel1/projects/adulto-funcional/builds/815c9cab-ea2d-402f-8122-c05f1169c92f).
+
 SDK 54 se mantiene de forma intencional mientras Expo Go para dispositivos
 físicos use esa versión. Expo SDK 54 corresponde a React Native 0.81 y React
 19.1.
@@ -99,12 +113,12 @@ Copia las variables locales:
 cp .env.example .env
 ```
 
-Edita `EXPO_PUBLIC_API_URL`. El backend se despliega por separado en `server1`;
-para este proyecto el teléfono debe estar unido a ZeroTier y usar su IP
-privada, nunca `localhost` ni la IP de la PC de desarrollo:
+Edita `EXPO_PUBLIC_API_URL`. El backend se despliega por separado en `server1`
+y se publica mediante Traefik con HTTPS. La aplicación instalada no necesita
+ZeroTier:
 
 ```dotenv
-EXPO_PUBLIC_API_URL=http://10.119.54.220:8090
+EXPO_PUBLIC_API_URL=https://api-adulto-funcional.38-225-48-28.sslip.io
 ```
 
 Los entornos EAS `preview` y `production` ya contienen esa misma variable. Los
@@ -122,9 +136,8 @@ npm start
 ```
 
 Expo mostrará un código QR. Para cargar Metro, el teléfono y la PC deben poder
-verse por LAN o mediante el túnel de Expo. Además, el teléfono debe mantener
-ZeroTier activo para alcanzar la API del servidor. Si la red bloquea Metro por
-LAN:
+verse por LAN o mediante el túnel de Expo. La API productiva solo requiere
+Internet. Si la red bloquea Metro por LAN:
 
 ```bash
 npm run start:tunnel

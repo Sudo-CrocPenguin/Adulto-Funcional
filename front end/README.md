@@ -19,8 +19,8 @@ alcance.
 ## Arquitectura cliente-servidor
 
 ```text
-Móvil instalado ──HTTP privado/ZeroTier──► server1:8090
-Web futuro      ──HTTPS/cookies/CSRF─────► API pública futura
+Móvil instalado ──HTTPS──► Traefik:443 ──► Spring Boot en server1
+Web futuro      ──HTTPS/cookies/CSRF─────► la misma API pública
 
 Expo/EAS distribuye móvil, pero no aloja API ni base de datos.
 server1 aloja Spring Boot, MariaDB y Redis, pero no sirve Metro ni el web.
@@ -29,11 +29,11 @@ server1 aloja Spring Boot, MariaDB y Redis, pero no sirve Metro ni el web.
 La URL móvil vigente es:
 
 ```dotenv
-EXPO_PUBLIC_API_URL=http://10.119.54.220:8090
+EXPO_PUBLIC_API_URL=https://api-adulto-funcional.38-225-48-28.sslip.io
 ```
 
-El teléfono debe pertenecer a la red ZeroTier autorizada. Para desarrollo con
-un backend local se puede usar `10.0.2.2` desde un emulador Android,
+El teléfono no necesita ZeroTier; basta una conexión normal a Internet. Para
+desarrollo con un backend local se puede usar `10.0.2.2` desde un emulador Android,
 `localhost` desde un simulador iOS o la IP LAN desde un teléfono, siempre que
 el servidor escuche en una interfaz alcanzable y su CORS lo permita.
 

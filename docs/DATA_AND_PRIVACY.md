@@ -27,9 +27,10 @@ analítica o logs.
 - Las credenciales de la bóveda se cifran con AES-256-GCM y material derivado
   de la Master Key.
 - Redis conserva únicamente estado temporal de desbloqueo por cuenta y sesión.
-- La instalación privada actual usa HTTP dentro del túnel cifrado de ZeroTier.
-- Una distribución pública o iOS de producción requiere HTTPS con certificado
-  válido.
+- La aplicación transmite datos a la API pública mediante HTTPS con certificado
+  válido terminado por Traefik.
+- MariaDB y Redis permanecen en redes Docker internas y no aceptan conexiones
+  desde Internet.
 
 ## Acceso y aislamiento
 

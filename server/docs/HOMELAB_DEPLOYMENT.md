@@ -1,4 +1,4 @@
-# Despliegue privado en el homelab
+# Despliegue HTTPS en el homelab
 
 ## Propósito y alcance
 
@@ -19,7 +19,7 @@ server1
 
 Teléfono
   ├─ obtiene el frontend desde Expo/EAS
-  └─ consume la API de server1 mediante ZeroTier
+  └─ consume la API pública de server1 mediante HTTPS
 ```
 
 El frontend web no forma parte de este despliegue. Expo no aloja el backend ni
@@ -32,8 +32,9 @@ la base de datos, y `server1` no ejecuta Metro ni el frontend móvil.
 | Host SSH | `ssh server1` |
 | Ruta remota | `/home/admin1/apps/adulto-funcional/server` |
 | Proyecto Compose | `adulto-funcional-prod` |
-| URL privada de la API | `http://10.119.54.220:8090` |
-| Healthcheck | `http://10.119.54.220:8090/actuator/health` |
+| URL pública de la API | `https://api-adulto-funcional.38-225-48-28.sslip.io` |
+| Healthcheck público | `https://api-adulto-funcional.38-225-48-28.sslip.io/actuator/health` |
+| Proxy | Traefik 3.6 administrado por Coolify, puerto 443 |
 | Base de datos | MariaDB 11.8, solo en la red interna de Docker |
 | Estado efímero | Redis 7.4, solo en la red interna de Docker |
 | Esquema | Flyway V1–V14 |
@@ -43,17 +44,24 @@ sesiones, contenedores, volúmenes ni respaldos del despliegue anterior. Una
 instalación limpia contiene únicamente las 14 categorías globales `SYSTEM`
 creadas por Flyway.
 
-## Acceso privado
+## Acceso público
 
-No se necesita comprar un dominio para esta etapa. El teléfono debe estar
-unido a la misma red ZeroTier que `server1` y consumir
-`http://10.119.54.220:8090`.
+El teléfono solo necesita una conexión normal a Internet. El hostname inicial
+usa `sslip.io` y codifica la IP pública actual, evitando comprar un dominio:
 
-El puerto 8090 no está publicado por la IP pública del homelab. No debe crearse
-un port-forward en el router para ese puerto. Aunque la API usa HTTP, el enlace
-entre los miembros de la red privada viaja dentro del túnel cifrado de
-ZeroTier. Si en el futuro se ofrece acceso público, debe agregarse un dominio,
-HTTPS válido y un proxy inverso antes de exponer la API.
+```text
+api-adulto-funcional.38-225-48-28.sslip.io -> 38.225.48.28
+```
+
+El router publica únicamente el puerto 443 hacia Traefik. El puerto 80 no está
+disponible, por lo que Let's Encrypt valida el certificado mediante TLS-ALPN en
+443. El puerto 8090 de Spring Boot queda enlazado a `127.0.0.1`; no debe
+publicarse ni usarse desde el teléfono. ZeroTier puede conservarse para tareas
+administrativas, pero no es un requisito de la aplicación.
+
+El hostname depende de la IP pública. Si cambia, se actualizan
+`API_PUBLIC_HOST`, `EXPO_PUBLIC_API_URL`, el certificado y la entrega móvil.
+Un dominio propio con DNS dinámico puede reemplazarlo sin modificar el código.
 
 ## Configuración y secretos
 
@@ -65,15 +73,17 @@ La configuración productiva vive únicamente en:
 
 El archivo tiene permisos `600` y no se versiona. Contiene contraseñas
 independientes para MariaDB y Redis, secretos criptográficos diferentes para
-JWT y sesiones de Master Key, el puerto 8090 y los orígenes CORS autorizados.
+JWT y sesiones de Master Key, el hostname público y los orígenes CORS autorizados.
 Nunca se deben copiar estos valores a Expo ni a variables `EXPO_PUBLIC_*`.
 
 Como mínimo, las variables operativas que distinguen este host son:
 
 ```dotenv
 COMPOSE_PROJECT_NAME=adulto-funcional-prod
-SERVER_HOST_ADDRESS=0.0.0.0
+SERVER_HOST_ADDRESS=127.0.0.1
 SERVER_HOST_PORT=8090
+COOLIFY_NETWORK=coolify
+API_PUBLIC_HOST=api-adulto-funcional.38-225-48-28.sslip.io
 ```
 
 `COMPOSE_PROJECT_NAME` es necesario para que los comandos `docker compose`
@@ -100,8 +110,11 @@ docker compose logs --tail=200 -f app
 Recrear la API después de desplegar una versión del backend:
 
 ```bash
-docker compose up -d --build app
-docker compose ps
+docker compose \
+  -f docker-compose.yml \
+  -f docker-compose.coolify.yml \
+  up -d --build app
+docker compose -f docker-compose.yml -f docker-compose.coolify.yml ps
 ```
 
 Detener y volver a iniciar sin borrar datos:
@@ -135,7 +148,7 @@ rsync -az \
   server/ server1:/home/admin1/apps/adulto-funcional/server/
 
 ssh server1 \
-  'cd "$HOME/apps/adulto-funcional/server" && docker compose up -d --build'
+  'cd "$HOME/apps/adulto-funcional/server" && docker compose -f docker-compose.yml -f docker-compose.coolify.yml up -d --build'
 ```
 
 El archivo `.env` remoto permanece fuera de la sincronización. Después se debe
@@ -244,13 +257,17 @@ evidencia.
 
 Una entrega del backend se considera operativa cuando:
 
-1. `docker compose ps` muestra los tres servicios como `healthy`.
-2. `GET /actuator/health` devuelve `{"status":"UP"}` desde `server1` y desde
-   un miembro de ZeroTier.
+1. `docker compose -f docker-compose.yml -f docker-compose.coolify.yml ps`
+   muestra los tres servicios como `healthy`.
+2. `GET /actuator/health` devuelve `{"status":"UP"}` desde loopback en
+   `server1` y desde Internet mediante HTTPS.
 3. Flyway reporta 14 migraciones exitosas y ninguna fallida.
 4. Registro nativo, consulta autenticada, refresh y eliminación responden
    `201`, `200`, `200` y `200` respectivamente.
-5. La aplicación Expo/EAS usa exactamente `http://10.119.54.220:8090`.
+5. La aplicación Expo/EAS usa exactamente
+   `https://api-adulto-funcional.38-225-48-28.sslip.io`.
 6. El hash desplegado coincide con la evidencia de la entrega.
 7. Existe un respaldo verificable y una restauración aislada reciente cuando
    la base contiene datos que no pueden recrearse.
+8. Spring Boot solo publica `127.0.0.1:8090`; MariaDB y Redis no publican
+   puertos y únicamente `app` está conectada a `coolify`.

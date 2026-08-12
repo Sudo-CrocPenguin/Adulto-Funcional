@@ -6,6 +6,23 @@ semántico. El historial Git conserva el detalle progresivo de cada condición.
 
 ## No publicado
 
+## 0.3.0 - 2026-08-11
+
+### Cambiado
+
+- La aplicación móvil consume la API pública por HTTPS y ya no requiere
+  ZeroTier para funcionar.
+- La versión nativa móvil avanza a `0.3.0` (`versionCode`/`buildNumber` 3) y
+  deshabilita el tráfico HTTP claro en Android.
+- El APK 0.2 existente recibe una actualización OTA compatible que migra su
+  conexión a HTTPS mientras se completa el nuevo binario.
+- Spring Boot se publica mediante Traefik sin exponer MariaDB ni Redis.
+
+### Seguridad
+
+- El puerto directo de la API queda limitado a loopback; el único ingreso
+  público del backend es el proxy TLS por 443.
+
 ### Documentación
 
 - Auditoría y corrección integral de documentación end-to-end.
@@ -43,3 +60,4 @@ semántico. El historial Git conserva el detalle progresivo de cada condición.
   2026 y falla al ejecutarse después de esa fecha.
 
 [0.2.0]: https://github.com/Sudo-CrocPenguin/Adulto-Funcional/tree/v0.2.0
+[0.3.0]: https://github.com/Sudo-CrocPenguin/Adulto-Funcional/compare/v0.2.0...v0.3.0

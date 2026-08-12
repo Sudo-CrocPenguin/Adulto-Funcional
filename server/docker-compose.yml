@@ -36,7 +36,9 @@ services:
       timeout: 3s
       retries: 5
     networks:
-      - internal
+      internal:
+        aliases:
+          - adulto-funcional-redis
 
   # Aplicación Spring Boot
   app:
@@ -64,6 +66,7 @@ services:
       SPRING_FLYWAY_VALIDATE_ON_MIGRATE: ${SPRING_FLYWAY_VALIDATE_ON_MIGRATE:-true}
       SERVER_PORT: "8080"
       SERVER_ADDRESS: "0.0.0.0"
+      SERVER_FORWARD_HEADERS_STRATEGY: ${SERVER_FORWARD_HEADERS_STRATEGY:-framework}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-900000}
       REFRESH_TOKEN_EXPIRATION: ${REFRESH_TOKEN_EXPIRATION:-2592000000}
@@ -76,7 +79,7 @@ services:
       APP_FIXED_EXPENSE_CRON: ${APP_FIXED_EXPENSE_CRON:-0 5 * * * *}
       APP_FIXED_EXPENSE_BATCH_SIZE: ${APP_FIXED_EXPENSE_BATCH_SIZE:-100}
       APP_FIXED_EXPENSE_MAX_BATCHES: ${APP_FIXED_EXPENSE_MAX_BATCHES:-10}
-      REDIS_HOST: redis
+      REDIS_HOST: ${REDIS_HOST:-adulto-funcional-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
       REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
     ports:
