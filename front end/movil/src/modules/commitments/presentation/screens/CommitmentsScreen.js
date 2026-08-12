@@ -19,6 +19,7 @@ import { APP_ROUTES } from '../../../../navigation/routes';
 import { useAppSession } from '../../../../session/AppSessionContext';
 import { AppBottomNavigation } from '../../../../shared/presentation/components/AppBottomNavigation';
 import { AuthenticatedHeader } from '../../../../shared/presentation/components/AuthenticatedHeader';
+import { DeleteConfirmationDialog } from '../../../../shared/presentation/components/DeleteConfirmationDialog';
 import { useAppTheme } from '../../../../theme/AppThemeContext';
 import { COMMITMENT_FILTERS } from '../../domain/Commitment';
 import { CommitmentCard } from '../components/CommitmentCard';
@@ -75,7 +76,12 @@ function EmptyState({ activeFilter, palette }) {
 }
 
 export function CommitmentsScreen({ navigation }) {
-  const { createCommitment, loadCommitments } = useAppDependencies();
+  const {
+    createCommitment,
+    deleteCommitment,
+    loadCommitments,
+    updateCommitment,
+  } = useAppDependencies();
   const { session } = useAppSession();
   const { isDark, palette } = useAppTheme();
   const [activeFilter, setActiveFilter] = useState(COMMITMENT_FILTERS.all);
@@ -83,6 +89,9 @@ export function CommitmentsScreen({ navigation }) {
   const [error, setError] = useState(null);
   const [feedback, setFeedback] = useState(null);
   const [formVisible, setFormVisible] = useState(false);
+  const [editTarget, setEditTarget] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
   const [isLoading, setLoading] = useState(true);
   const [isRefreshing, setRefreshing] = useState(false);
 
@@ -130,9 +139,37 @@ export function CommitmentsScreen({ navigation }) {
   }, [collection]);
 
   async function submitCommitment(form) {
-    const commitment = await createCommitment.execute(form, session);
-    setCollection((current) => current?.withAdded(commitment) ?? current);
-    setFeedback('Compromiso guardado correctamente.');
+    setError(null);
+    const commitment = editTarget
+      ? await updateCommitment.execute(editTarget, form, session)
+      : await createCommitment.execute(form, session);
+    setCollection((current) => editTarget
+      ? current?.withUpdated(commitment) ?? current
+      : current?.withAdded(commitment) ?? current);
+    setFeedback(editTarget
+      ? 'Compromiso actualizado correctamente.'
+      : 'Compromiso guardado correctamente.');
+  }
+
+  async function removeCommitment() {
+    if (!deleteTarget) {
+      return;
+    }
+    setDeletingId(deleteTarget.id);
+    setError(null);
+    setFeedback(null);
+    try {
+      const deletedId = await deleteCommitment.execute(deleteTarget.id, session);
+      setCollection((current) => current?.without(deletedId) ?? current);
+      setFeedback(`Se eliminó ${deleteTarget.title}.`);
+      setDeleteTarget(null);
+    } catch (deleteError) {
+      setError(deleteError instanceof ApiError
+        ? deleteError.message
+        : 'No fue posible eliminar el compromiso. Inténtalo nuevamente.');
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   function selectDestination(destination) {
@@ -224,7 +261,15 @@ export function CommitmentsScreen({ navigation }) {
               ) : visibleCommitments.map((commitment) => (
                 <CommitmentCard
                   commitment={commitment}
+                  deleting={deletingId === commitment.id}
                   key={commitment.id}
+                  onDelete={() => setDeleteTarget(commitment)}
+                  onEdit={() => {
+                    setError(null);
+                    setFeedback(null);
+                    setEditTarget(commitment);
+                    setFormVisible(true);
+                  }}
                   palette={palette}
                 />
               ))}
@@ -236,6 +281,7 @@ export function CommitmentsScreen({ navigation }) {
             accessibilityRole="button"
             onPress={() => {
               setFeedback(null);
+              setEditTarget(null);
               setFormVisible(true);
             }}
             style={({ pressed }) => [
@@ -263,10 +309,23 @@ export function CommitmentsScreen({ navigation }) {
       />
       <NewCommitmentSheet
         categories={collection?.categories ?? []}
-        onClose={() => setFormVisible(false)}
+        commitment={editTarget}
+        onClose={() => {
+          setFormVisible(false);
+          setEditTarget(null);
+        }}
         onSubmit={submitCommitment}
         palette={palette}
         visible={formVisible}
+      />
+      <DeleteConfirmationDialog
+        deleting={Boolean(deletingId)}
+        message={`Se eliminará permanentemente el compromiso ${deleteTarget?.title ?? ''}. Esta acción no se puede deshacer.`}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={removeCommitment}
+        palette={palette}
+        title="Eliminar compromiso"
+        visible={Boolean(deleteTarget)}
       />
     </SafeAreaView>
   );

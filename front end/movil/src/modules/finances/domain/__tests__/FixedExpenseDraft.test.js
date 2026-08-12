@@ -1,4 +1,5 @@
 import { FixedExpense } from '../FixedExpense';
+import { FixedExpenseCollection } from '../FixedExpenseCollection';
 import {
   FixedExpenseDraft,
   FixedExpenseValidationError,
@@ -38,6 +39,31 @@ describe('FixedExpenseDraft', () => {
     }, new Date(2026, 7, 10))).toThrow(FixedExpenseValidationError);
   });
 
+  it('construye un PATCH mínimo y permite conservar un vencimiento anterior', () => {
+    const expense = FixedExpense.fromApi({
+      amount: 100,
+      category: { id: 'category-home', name: 'Hogar' },
+      frequency: 'MONTHLY',
+      id: 'fixed-1',
+      name: 'Alquiler',
+      nextDueDate: '2026-08-01',
+      status: 'ACTIVE',
+    });
+    const draft = FixedExpenseDraft.update({
+      amount: '100',
+      categoryId: 'category-home',
+      frequency: 'MONTHLY',
+      name: 'Arriendo',
+      nextDueDate: new Date(2026, 7, 1),
+      status: 'INACTIVE',
+    }, expense, new Date(2026, 7, 10));
+
+    expect(draft.toUpdateRequest(expense)).toEqual({
+      name: 'Arriendo',
+      status: 'INACTIVE',
+    });
+  });
+
   it('avanza vencimientos mensuales y conserva correctamente el fin de mes', () => {
     const expense = FixedExpense.fromApi({
       amount: 100,
@@ -50,5 +76,28 @@ describe('FixedExpenseDraft', () => {
     });
 
     expect(expense.nextDueDateAfterPayment(new Date(2026, 1, 1))).toBe('2026-02-28');
+  });
+
+  it('actualiza, reordena y elimina gastos sin mutar la colección original', () => {
+    const later = FixedExpense.fromApi({
+      id: 'later',
+      nextDueDate: '2026-09-10',
+    });
+    const current = FixedExpense.fromApi({
+      id: 'current',
+      nextDueDate: '2026-09-05',
+    });
+    const updated = FixedExpense.fromApi({
+      id: 'later',
+      nextDueDate: '2026-09-01',
+    });
+    const collection = FixedExpenseCollection.create({ expenses: [current, later] });
+
+    const afterUpdate = collection.withUpdated(updated);
+    const afterDelete = afterUpdate.without('current');
+
+    expect(afterUpdate.expenses.map(({ id }) => id)).toEqual(['later', 'current']);
+    expect(afterDelete.expenses.map(({ id }) => id)).toEqual(['later']);
+    expect(collection.expenses.map(({ id }) => id)).toEqual(['current', 'later']);
   });
 });

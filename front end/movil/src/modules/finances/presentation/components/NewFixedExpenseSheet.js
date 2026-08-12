@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
@@ -40,6 +40,23 @@ function initialForm() {
   };
 }
 
+function dateFromIso(value) {
+  const [year, month, day] = String(value).split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  return Number.isNaN(date.getTime()) ? initialForm().nextDueDate : date;
+}
+
+function formFromExpense(expense) {
+  return {
+    amount: String(expense.amount),
+    categoryId: expense.category?.id ?? '',
+    frequency: expense.frequency,
+    name: expense.name,
+    nextDueDate: dateFromIso(expense.nextDueDate),
+    status: expense.status,
+  };
+}
+
 function backendFieldErrors(error) {
   return (error.fieldErrors ?? []).reduce((result, fieldError) => {
     if (fieldError?.field && fieldError?.message) {
@@ -49,16 +66,34 @@ function backendFieldErrors(error) {
   }, {});
 }
 
-export function NewFixedExpenseSheet({ categories, onClose, onSubmit, palette, visible }) {
+export function NewFixedExpenseSheet({
+  categories,
+  expense,
+  onClose,
+  onSubmit,
+  palette,
+  visible,
+}) {
   const [errors, setErrors] = useState({});
   const [feedback, setFeedback] = useState(null);
   const [form, setForm] = useState(initialForm);
   const [isSubmitting, setSubmitting] = useState(false);
   const [selector, setSelector] = useState(null);
+  const editing = Boolean(expense);
   const categoryOptions = categories.map(({ id, name }) => ({ label: name, value: id }));
   const categoryLabel = categoryOptions.find(({ value }) => value === form.categoryId)?.label;
   const frequencyLabel = FIXED_EXPENSE_FREQUENCIES.find(({ value }) => value === form.frequency)?.label;
   const statusLabel = FIXED_EXPENSE_STATUSES.find(({ value }) => value === form.status)?.label;
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    setErrors({});
+    setFeedback(null);
+    setForm(expense ? formFromExpense(expense) : initialForm());
+    setSelector(null);
+  }, [expense, visible]);
 
   function updateField(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -128,7 +163,7 @@ export function NewFixedExpenseSheet({ categories, onClose, onSubmit, palette, v
       >
         <View style={[styles.overlay, { backgroundColor: palette.overlay }]}> 
           <Pressable
-            accessibilityLabel="Cerrar nuevo gasto fijo"
+            accessibilityLabel={editing ? 'Cerrar edición de gasto fijo' : 'Cerrar nuevo gasto fijo'}
             onPress={close}
             style={StyleSheet.absoluteFill}
           />
@@ -139,7 +174,9 @@ export function NewFixedExpenseSheet({ categories, onClose, onSubmit, palette, v
             <View style={[styles.sheet, { backgroundColor: palette.surface }]}> 
               <SafeAreaView edges={['bottom']}>
                 <View style={[styles.handle, { backgroundColor: palette.navigationMuted }]} />
-                <Text style={[styles.title, { color: palette.text }]}>Nuevo Gasto</Text>
+                <Text style={[styles.title, { color: palette.text }]}>
+                  {editing ? 'Editar Gasto' : 'Nuevo Gasto'}
+                </Text>
                 <ScrollView
                   contentContainerStyle={styles.formContent}
                   keyboardShouldPersistTaps="handled"

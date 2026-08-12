@@ -71,4 +71,30 @@ describe('HttpCommitmentRepository', () => {
     );
     expect(result).toMatchObject({ id: 'event-1', title: 'Reunión' });
   });
+
+  it('actualiza y elimina un compromiso por su endpoint autenticado', async () => {
+    const apiClient = {
+      delete: jest.fn().mockResolvedValue(null),
+      patch: jest.fn().mockResolvedValue({
+        id: 'event/1',
+        status: 'Completado',
+        title: 'Reunión',
+      }),
+    };
+    const repository = new HttpCommitmentRepository(apiClient);
+
+    const result = await repository.update('event/1', { status: 'Completado' }, session);
+    await repository.delete('event/1', session);
+
+    expect(apiClient.patch).toHaveBeenCalledWith(
+      '/api/agenda/events/event%2F1',
+      { status: 'Completado' },
+      { headers: { Authorization: 'Bearer access-token' } },
+    );
+    expect(apiClient.delete).toHaveBeenCalledWith(
+      '/api/agenda/events/event%2F1',
+      { headers: { Authorization: 'Bearer access-token' } },
+    );
+    expect(result).toMatchObject({ id: 'event/1', status: 'Completado' });
+  });
 });

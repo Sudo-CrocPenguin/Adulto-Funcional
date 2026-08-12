@@ -71,4 +71,20 @@ export class HttpCommitmentRepository extends CommitmentRepository {
 
     return Commitment.fromApi(event);
   }
+
+  async update(id, changes, session) {
+    const event = await this.apiClient.patch(
+      `/api/agenda/events/${encodeURIComponent(id)}`,
+      changes,
+      { headers: this.authorization(session) },
+    );
+    return Commitment.fromApi(event);
+  }
+
+  async delete(id, session) {
+    await this.apiClient.delete(
+      `/api/agenda/events/${encodeURIComponent(id)}`,
+      { headers: this.authorization(session) },
+    );
+  }
 }

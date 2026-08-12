@@ -39,7 +39,16 @@ function urgency(days, active, palette) {
   return palette.success;
 }
 
-export function FixedExpenseCard({ expense, isPaying, now, onPay, palette }) {
+export function FixedExpenseCard({
+  expense,
+  isDeleting,
+  isPaying,
+  now,
+  onDelete,
+  onEdit,
+  onPay,
+  palette,
+}) {
   const days = daysUntil(expense.nextDueDate, now);
   const accent = urgency(days, expense.isActive, palette);
   const daysLabel = days < 0
@@ -57,10 +66,46 @@ export function FixedExpenseCard({ expense, isPaying, now, onPay, palette }) {
             {expense.categoryName.toLocaleUpperCase('es')}
           </Text>
         </View>
-        <View style={[styles.statusTag, { backgroundColor: expense.isActive ? palette.successSoft : palette.cardMuted }]}> 
-          <Text style={[styles.statusText, { color: expense.isActive ? palette.success : palette.textMuted }]}> 
-            {expense.isActive ? 'Activo' : 'Inactivo'}
-          </Text>
+        <View style={styles.headerActions}>
+          <View
+            style={[
+              styles.statusTag,
+              { backgroundColor: expense.isActive ? palette.successSoft : palette.cardMuted },
+            ]}
+          >
+            <Text
+              style={[
+                styles.statusText,
+                { color: expense.isActive ? palette.success : palette.textMuted },
+              ]}
+            >
+              {expense.isActive ? 'Activo' : 'Inactivo'}
+            </Text>
+          </View>
+          <Pressable
+            accessibilityLabel={`Editar ${expense.name}`}
+            accessibilityRole="button"
+            disabled={isDeleting || isPaying}
+            hitSlop={7}
+            onPress={onEdit}
+            style={({ pressed }) => pressed && styles.pressed}
+          >
+            <MaterialCommunityIcons color={palette.navigationMuted} name="pencil" size={25} />
+          </Pressable>
+          <Pressable
+            accessibilityLabel={`Eliminar ${expense.name}`}
+            accessibilityRole="button"
+            disabled={isDeleting || isPaying}
+            hitSlop={7}
+            onPress={onDelete}
+            style={({ pressed }) => pressed && styles.pressed}
+          >
+            {isDeleting ? (
+              <ActivityIndicator color={palette.error} size="small" />
+            ) : (
+              <MaterialCommunityIcons color={palette.error} name="delete" size={26} />
+            )}
+          </Pressable>
         </View>
       </View>
 
@@ -160,6 +205,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
   name: {
     fontSize: 22,
     fontWeight: '900',
@@ -179,6 +229,9 @@ const styles = StyleSheet.create({
   payText: {
     fontSize: 11,
     fontWeight: '900',
+  },
+  pressed: {
+    opacity: 0.58,
   },
   statusTag: {
     alignSelf: 'flex-start',

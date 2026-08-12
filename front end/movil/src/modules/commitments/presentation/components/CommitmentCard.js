@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 
 const PRIORITY_STYLES = Object.freeze({
   Alta: Object.freeze({ accent: '#FF7477', pill: '#FFD6D7', text: '#E6383D' }),
@@ -19,7 +19,7 @@ function formatDate(value) {
   }).format(new Date(year, month - 1, day)).replace('.', '');
 }
 
-export function CommitmentCard({ commitment, palette }) {
+export function CommitmentCard({ commitment, deleting, onDelete, onEdit, palette }) {
   const priorityStyle = PRIORITY_STYLES[commitment.priority]
     ?? PRIORITY_STYLES.Media;
 
@@ -53,9 +53,37 @@ export function CommitmentCard({ commitment, palette }) {
         >
           {commitment.title}
         </Text>
-        <Text style={[styles.date, { color: palette.navigationMuted }]}>
-          {formatDate(commitment.eventDate)}
-        </Text>
+        <View style={styles.sideActions}>
+          <Text style={[styles.date, { color: palette.navigationMuted }]}>
+            {formatDate(commitment.eventDate)}
+          </Text>
+          <View style={styles.actionButtons}>
+            <Pressable
+              accessibilityLabel={`Editar ${commitment.title}`}
+              accessibilityRole="button"
+              disabled={deleting}
+              hitSlop={7}
+              onPress={onEdit}
+              style={({ pressed }) => pressed && styles.pressed}
+            >
+              <MaterialCommunityIcons color={palette.navigationMuted} name="pencil" size={24} />
+            </Pressable>
+            <Pressable
+              accessibilityLabel={`Eliminar ${commitment.title}`}
+              accessibilityRole="button"
+              disabled={deleting}
+              hitSlop={7}
+              onPress={onDelete}
+              style={({ pressed }) => pressed && styles.pressed}
+            >
+              {deleting ? (
+                <ActivityIndicator color={palette.error} size="small" />
+              ) : (
+                <MaterialCommunityIcons color={palette.error} name="delete" size={25} />
+              )}
+            </Pressable>
+          </View>
+        </View>
       </View>
       <View style={styles.metadata}>
         <Text numberOfLines={1} style={[styles.metadataText, { color: palette.navigationMuted }]}>
@@ -80,6 +108,13 @@ export function CommitmentCard({ commitment, palette }) {
 }
 
 const styles = StyleSheet.create({
+  actionButtons: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'flex-end',
+    marginTop: 10,
+  },
   accent: {
     bottom: 0,
     left: 0,
@@ -111,6 +146,9 @@ const styles = StyleSheet.create({
     gap: 5,
     marginTop: 17,
   },
+  pressed: {
+    opacity: 0.58,
+  },
   metadataText: {
     fontSize: 13,
     fontWeight: '700',
@@ -125,6 +163,10 @@ const styles = StyleSheet.create({
   priorityText: {
     fontSize: 13,
     fontWeight: '800',
+  },
+  sideActions: {
+    alignItems: 'flex-end',
+    marginLeft: 10,
   },
   title: {
     flex: 1,
