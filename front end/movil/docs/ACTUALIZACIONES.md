@@ -19,14 +19,13 @@ EAS Update no incluye una opción nativa denominada "actualización
 obligatoria". La obligatoriedad se implementa en este cliente mediante
 `MandatoryUpdateGate`, antes de `SessionProvider` y de la navegación.
 
-## Flujo automático
+## Flujo manual
 
 ```text
-push a main con cambios en front end/movil/**
-  -> GitHub Actions valida el acceso a Expo
+responsable prepara una entrega móvil
   -> instala dependencias con npm ci
-  -> ejecuta pruebas y expo-doctor
-  -> publica con eas update en el canal production
+  -> ejecuta pruebas y expo-doctor localmente
+  -> publica con eas build o eas update en el canal production
   -> una instalación production vuelve a abrirse o pasa a primer plano
   -> MandatoryUpdateGate consulta EAS
        ├─ sin actualización: monta sesión y navegación
@@ -39,10 +38,9 @@ cinco minutos. Si está suspendida, el sistema operativo no ejecuta el cliente y
 la consulta ocurre inmediatamente cuando vuelve a primer plano. No se requiere
 un servicio de notificaciones ni un endpoint del backend para este proceso.
 
-El flujo está definido en
-`.github/workflows/mobile-eas-update.yml` y solo se activa mediante un `push` a
-`main` que modifique archivos de `front end/movil`. Los demás cambios del
-monorepo no publican una actualización móvil.
+No existe un workflow activo en `.github/workflows`. Un `push` a `main` no
+publica builds ni actualizaciones móviles. Cada publicación debe registrar
+comando, runtime, canal, ID del build/update y resultado de sus pruebas.
 
 ## Proyecto, canal y compatibilidad
 
@@ -60,35 +58,24 @@ se debe incrementar `expo.version` y generar un binario nuevo. Los cambios
 compatibles de JavaScript, estilos e imágenes pueden publicarse por OTA sin
 cambiar esa versión.
 
-## Configuración de GitHub
+## Credenciales para publicación manual
 
-Antes de ejecutar el flujo por primera vez, crea este secreto en
-`Settings > Secrets and variables > Actions` del repositorio de GitHub:
+El responsable inicia sesión con EAS CLI o entrega `EXPO_TOKEN` únicamente al
+proceso local/CI autorizado. El token se genera en
+<https://expo.dev/settings/access-tokens> y nunca se guarda en el repositorio,
+en un commit ni en el chat. GitHub no necesita ese secreto mientras no exista
+un workflow de publicación.
 
-| Secreto | Contenido |
-|---|---|
-| `EXPO_TOKEN` | Token de acceso de la cuenta Expo con permiso sobre el proyecto |
-
-El token se genera en <https://expo.dev/settings/access-tokens>. No debe
-guardarse en el repositorio, en un commit ni compartirse por el chat.
-
-El workflow falla antes de publicar cuando falta el token. No necesita que el
-backend ni la base de datos estén desplegados: EAS distribuye únicamente el
-bundle y los recursos del frontend móvil.
+EAS distribuye únicamente el bundle y los recursos del frontend móvil; no
+necesita que el backend ni la base de datos estén encendidos para construir o
+publicar.
 
 ### Estado verificado de 0.2.0 y 0.3.0
 
-El workflow ejecutado después de publicar `main` falló en `Comprobar secretos
-requeridos` porque `EXPO_TOKEN` no estaba configurado. Para cerrar el flujo:
-
-1. crear el token en Expo;
-2. guardarlo como secreto `EXPO_TOKEN` del repositorio;
-3. reejecutar el workflow fallido o publicar un nuevo cambio móvil en `main`;
-4. comprobar que pruebas, Expo Doctor y `eas update` terminan en verde;
-5. instalar un binario compatible y validar la descarga en un dispositivo.
-
-No se debe describir la publicación automática como operativa hasta completar
-estos pasos.
+El workflow que acompañó 0.2.0 falló por `EXPO_TOKEN` ausente y fue eliminado
+después de 0.3.0. Este antecedente es histórico: no hay publicación automática
+pendiente de habilitar. Las publicaciones manuales deben comprobar pruebas,
+Expo Doctor, build/update e instalación en un dispositivo.
 
 El build interno Android 0.2.0 `fe908663-7fd7-42c3-a481-8ac8e104bc7d` sí
 terminó. Su
@@ -113,7 +100,7 @@ ausencia de la dirección de ZeroTier. Ambos artefactos internos vencen el 25 de
 agosto de 2026.
 
 `EXPO_PUBLIC_API_URL` está configurada como variable de proyecto en los
-entornos EAS `preview` y `production`. El workflow publica con
+entornos EAS `preview` y `production`. Los comandos manuales usan
 `--environment production`, por lo que builds y OTA incorporan la misma URL
 sin depender de la PC de desarrollo ni de una variable adicional de GitHub.
 La variable no es un secreto: contiene únicamente

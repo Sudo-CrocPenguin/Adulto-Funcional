@@ -58,15 +58,16 @@ limitaciones del contrato actual.
 Las instalaciones de distribución verifican EAS Update antes de montar la
 sesión. Una actualización disponible se descarga y reinicia automáticamente;
 si la comprobación falla, la aplicación queda bloqueada hasta poder reintentar.
-Los cambios móviles enviados a `main` se publican al canal `production` mediante
-GitHub Actions. Consulta
-[docs/ACTUALIZACIONES.md](./docs/ACTUALIZACIONES.md) para configurar los
-secretos, crear el primer APK y validar el flujo obligatorio.
+Builds y actualizaciones OTA se publican manualmente mediante EAS; el repositorio
+no contiene un workflow activo de publicación. Consulta
+[docs/ACTUALIZACIONES.md](./docs/ACTUALIZACIONES.md) para crear un APK y validar
+el flujo obligatorio.
 
-Al 11 de agosto de 2026, la publicación automática sigue bloqueada porque el
-repositorio de GitHub no tiene configurado `EXPO_TOKEN`. La aplicación y la
-configuración OTA existen, pero no debe afirmarse que el último `push` se
-publicó hasta que el workflow termine exitosamente.
+La versión 0.3.0 no es offline-first: sin backend solo persisten el refresh
+token y el tema; las entidades funcionales no tienen base local ni cola de
+sincronización. La [política offline propuesta](./docs/OFFLINE_FIRST.md)
+documenta el comportamiento actual y los cambios necesarios para usar la app
+mientras el homelab está apagado.
 
 ## Instalación Android
 
@@ -232,7 +233,8 @@ refresh token se guarda cifrado mediante `expo-secure-store`.
 Al iniciar la aplicación, `RestoreSessionUseCase` busca el refresh token,
 solicita su rotación y sustituye el valor almacenado. Un rechazo terminal de
 la API elimina la sesión local; un fallo temporal de red conserva el token para
-evitar cerrar una sesión válida por falta de conectividad.
+evitar perderlo, pero `AppSessionProvider` deja la interfaz en estado anónimo
+porque todavía no existe una sesión offline persistida.
 
 ## Limitación conocida
 

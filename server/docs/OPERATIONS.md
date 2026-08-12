@@ -303,8 +303,8 @@ La referencia auditada el 11 de agosto de 2026 es 137 pruebas, 136 exitosas y
 `201`. Es un defecto del fixture temporal, no una razón para relajar la regla de
 dominio. La release permanece bloqueada hasta corregir la prueba.
 
-El repositorio no tiene actualmente un workflow de backend activo en la
-carpeta `.github/workflows` raíz. El archivo histórico
+El repositorio no tiene actualmente ningún workflow activo en la carpeta
+`.github/workflows` raíz. El archivo histórico
 `server/.github/workflows/ci-workflow.yml` no es descubierto por GitHub Actions
 desde un monorepo y su configuración tampoco representa todos los secretos
 actuales. Por tanto, regresión y SCA son controles manuales obligatorios hasta

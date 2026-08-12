@@ -60,7 +60,7 @@ Traefik en server1:443
         ├── MariaDB 11.8
         └── Redis 7.4
 
-GitHub main ──► GitHub Actions ──► EAS Update ──► aplicación instalada
+Publicación manual ──► EAS Build/Update ──► aplicación instalada
 ```
 
 - La PC de desarrollo sirve código y Metro; no es el entorno productivo.
@@ -82,7 +82,7 @@ La separación completa está explicada en
 | Navegación móvil | React Navigation 7 |
 | Web | React 19, TypeScript y Vite 8 |
 | Calidad | JUnit 5, Mockito, Testcontainers, Jest y Expo Doctor |
-| Operación | Docker Compose, GitHub Actions y EAS Update |
+| Operación | Docker Compose y publicación manual mediante EAS |
 
 ## Estructura del repositorio
 
